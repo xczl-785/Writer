@@ -14,8 +14,8 @@
 
 ### Step 1：冻结 V1 范围（Must 12）
 - 目标：把 Must 12 变成“最终冻结列表”，不再摇摆
-- 输入：`COMPETITOR_AUDIT_RESULT.md`
-- 输出：`SCOPE_FREEZE_V1.md`
+- 输入：`docs/archive/COMPETITOR_AUDIT_RESULT.md`
+- 输出：`docs/frozen/SCOPE_FREEZE_V1.md`
 - 完成定义（DoD）：
   - Must 12 列表明确
   - Should/Could 明确进入 Backlog
@@ -25,8 +25,8 @@
 
 ### Step 2：PRD V1（可执行）
 - 目标：让模型拿到文档即可直接开发
-- 输入：`SCOPE_FREEZE_V1.md`
-- 输出：`PRD_V1.md`
+- 输入：`docs/frozen/SCOPE_FREEZE_V1.md`
+- 输出：`docs/frozen/PRD_V1.md`
 - 完成定义（DoD）：
   - 每个 Must 都有用户场景
   - 每个 Must 都有交互规则
@@ -37,7 +37,7 @@
 
 ### Step 3：开发任务拆分（首迭代）
 - 目标：形成可并行执行的任务单
-- 输入：`PRD_V1.md`
+- 输入：`docs/frozen/PRD_V1.md`
 - 输出：`SPRINT_1_TASKS.md`
 - 完成定义（DoD）：
   - 任务粒度可在 1-2 天内完成
