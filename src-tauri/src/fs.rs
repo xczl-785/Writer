@@ -174,3 +174,31 @@ pub fn delete_node(path: &str) -> Result<(), String> {
     }
     Ok(())
 }
+
+#[tauri::command]
+pub fn save_image(path: &str, data: Vec<u8>) -> Result<(), String> {
+    let path_obj = Path::new(path);
+    let parent = path_obj.parent().ok_or("Invalid path")?;
+
+    if !parent.exists() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+
+    let temp_file_path = parent.join(format!(
+        ".{}.tmp",
+        path_obj.file_name().unwrap_or_default().to_string_lossy()
+    ));
+
+    match fs::write(&temp_file_path, &data) {
+        Ok(_) => {}
+        Err(e) => return Err(e.to_string()),
+    }
+
+    match fs::rename(&temp_file_path, path) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            let _ = fs::remove_file(&temp_file_path);
+            Err(e.to_string())
+        }
+    }
+}
