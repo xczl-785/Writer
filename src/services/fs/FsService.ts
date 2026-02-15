@@ -13,4 +13,20 @@ export const FsService = {
   async writeFileAtomic(path: string, content: string): Promise<void> {
     return invoke('write_file_atomic', { path, content });
   },
+
+  async createFile(path: string): Promise<void> {
+    return invoke('create_file', { path });
+  },
+
+  async createDir(path: string): Promise<void> {
+    return invoke('create_dir', { path });
+  },
+
+  async renameNode(oldPath: string, newPath: string): Promise<void> {
+    return invoke('rename_node', { oldPath, newPath });
+  },
+
+  async deleteNode(path: string): Promise<void> {
+    return invoke('delete_node', { path });
+  },
 };
