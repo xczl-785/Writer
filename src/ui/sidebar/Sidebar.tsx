@@ -1,11 +1,80 @@
 import { useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
+import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
+import { FsService } from '../../services/fs/FsService';
 import type { FileNode } from '../../state/types';
-import { Folder, FolderOpen, FileText } from 'lucide-react';
+import {
+  Folder,
+  FolderOpen,
+  FileText,
+  FilePlus,
+  FolderPlus,
+} from 'lucide-react';
 
 export function Sidebar() {
   const { nodes } = useFileTreeStore();
+
+  const handleCreateFile = async () => {
+    const { currentPath, activeFile } = useWorkspaceStore.getState();
+    if (!currentPath) {
+      alert('Please open a workspace first.');
+      return;
+    }
+
+    let basePath = currentPath;
+    if (activeFile) {
+      const lastSlashIndex = activeFile.lastIndexOf('/');
+      if (lastSlashIndex !== -1) {
+        basePath = activeFile.substring(0, lastSlashIndex);
+      }
+    }
+
+    const fileName = prompt('Enter file name:');
+    if (!fileName) return;
+
+    const fullPath = `${basePath}/${fileName}`.replace(/\/+/g, '/');
+
+    try {
+      await FsService.createFile(fullPath);
+      const nodes = await FsService.listTree(currentPath);
+      useFileTreeStore.getState().setNodes(nodes);
+      await openFile(fullPath);
+    } catch (error) {
+      console.error('Failed to create file:', error);
+      alert('Failed to create file. It might already exist.');
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    const { currentPath, activeFile } = useWorkspaceStore.getState();
+    if (!currentPath) {
+      alert('Please open a workspace first.');
+      return;
+    }
+
+    let basePath = currentPath;
+    if (activeFile) {
+      const lastSlashIndex = activeFile.lastIndexOf('/');
+      if (lastSlashIndex !== -1) {
+        basePath = activeFile.substring(0, lastSlashIndex);
+      }
+    }
+
+    const folderName = prompt('Enter folder name:');
+    if (!folderName) return;
+
+    const fullPath = `${basePath}/${folderName}`.replace(/\/+/g, '/');
+
+    try {
+      await FsService.createDir(fullPath);
+      const nodes = await FsService.listTree(currentPath);
+      useFileTreeStore.getState().setNodes(nodes);
+    } catch (error) {
+      console.error('Failed to create folder:', error);
+      alert('Failed to create folder. It might already exist.');
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-gray-50/50 border-r border-gray-200 w-64 flex-shrink-0 select-none">
@@ -13,13 +82,29 @@ export function Sidebar() {
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Explorer
         </span>
-        <button
-          onClick={openWorkspace}
-          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
-          title="Open Folder"
-        >
-          <FolderOpen size={16} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleCreateFile}
+            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
+            title="New File"
+          >
+            <FilePlus size={16} />
+          </button>
+          <button
+            onClick={handleCreateFolder}
+            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
+            title="New Folder"
+          >
+            <FolderPlus size={16} />
+          </button>
+          <button
+            onClick={openWorkspace}
+            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
+            title="Open Folder"
+          >
+            <FolderOpen size={16} />
+          </button>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-2">
         {nodes.length === 0 ? (
