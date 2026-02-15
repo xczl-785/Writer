@@ -2,38 +2,56 @@ import { useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
 import type { FileNode } from '../../state/types';
+import { Folder, FolderOpen, FileText } from 'lucide-react';
 
 export function Sidebar() {
   const { nodes } = useFileTreeStore();
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 border-r border-gray-200 w-64 flex-shrink-0">
-      <div className="p-4 border-b border-gray-200">
+    <div className="h-full flex flex-col bg-gray-50/50 border-r border-gray-200 w-64 flex-shrink-0 select-none">
+      <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Explorer
+        </span>
         <button
           onClick={openWorkspace}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm font-medium"
+          className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
+          title="Open Folder"
         >
-          Open Folder
+          <FolderOpen size={16} />
         </button>
       </div>
-      <div className="flex-1 overflow-auto p-2">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-2">
         {nodes.length === 0 ? (
-          <div className="text-gray-400 text-sm text-center mt-4">
-            No folder opened
+          <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
+            <Folder size={24} className="mb-2 opacity-20" />
+            <span>No folder opened</span>
+            <button
+              onClick={openWorkspace}
+              className="mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium"
+            >
+              Open Folder
+            </button>
           </div>
         ) : (
-          nodes.map((node) => <FileTreeNode key={node.path} node={node} />)
+          <div className="space-y-0.5">
+            {nodes.map((node) => (
+              <FileTreeNode key={node.path} node={node} level={0} />
+            ))}
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function FileTreeNode({ node }: { node: FileNode }) {
+function FileTreeNode({ node, level }: { node: FileNode; level: number }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isDirectory = node.type === 'directory';
+  const hasChildren = node.children && node.children.length > 0;
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isDirectory) {
       setIsExpanded(!isExpanded);
     } else {
@@ -42,18 +60,33 @@ function FileTreeNode({ node }: { node: FileNode }) {
   };
 
   return (
-    <div className="select-none">
+    <div>
       <div
-        className="py-1 px-2 hover:bg-gray-100 rounded cursor-pointer text-sm truncate"
+        className="group flex items-center gap-1.5 py-1 px-2 hover:bg-gray-200/60 rounded-md cursor-pointer text-sm text-gray-700 transition-colors duration-150 ease-in-out"
+        style={{ paddingLeft: `${level * 12 + 8}px` }}
         onClick={handleClick}
       >
-        {isDirectory ? (isExpanded ? '📂 ' : '📁 ') : '📄 '}
-        {node.name}
+        <span className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0">
+          {isDirectory ? (
+            isExpanded ? (
+              <FolderOpen size={16} className="text-blue-500" />
+            ) : (
+              <Folder size={16} className="text-blue-500" />
+            )
+          ) : (
+            <FileText size={16} className="text-gray-500" />
+          )}
+        </span>
+
+        <span className="truncate flex-1 leading-none py-0.5">{node.name}</span>
+
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center"></div>
       </div>
-      {isDirectory && isExpanded && node.children && (
-        <div className="pl-4 border-l border-gray-200 ml-2">
-          {node.children.map((child) => (
-            <FileTreeNode key={child.path} node={child} />
+
+      {isDirectory && isExpanded && hasChildren && (
+        <div>
+          {node.children!.map((child) => (
+            <FileTreeNode key={child.path} node={child} level={level + 1} />
           ))}
         </div>
       )}
