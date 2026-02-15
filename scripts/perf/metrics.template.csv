@@ -1,0 +1,6 @@
+metric,value
+cold_start_ttc_p95_ms,1200
+hot_start_ttc_p95_ms,600
+input_latency_p95_ms,16
+input_dropped_chars,0
+atomic_write_integrity_pass,true

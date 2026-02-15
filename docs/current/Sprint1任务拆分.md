@@ -8,30 +8,36 @@
 1. 工程骨架初始化（目录、构建、基础脚手架）
 2. `FsService` 最小可用实现（读/写原子化/列树）
 3. `MarkdownService` 最小实现（parse/serialize）
-4. `editor` 最小可编辑链路（TipTap + 快捷键基础）
+4. `editor` 最小可编辑链路（TipTap，含代码块、撤销/重做、快捷键基础子集）
 5. `AutosaveService`（800ms 防抖 + 失焦 + 关闭前 flush）
 6. 单工作区打开与文件加载
 
 ### Out of Scope（本期不承诺）
-1. 图片粘贴完整链路（放 Sprint 2）
+1. 图片粘贴完整链路（放 Sprint 2/3）
 2. 文件重命名/删除完整交互（放 Sprint 2）
 3. 搜索/标签页/导出等 Should/Could 功能
+
+### 2.1 S1-06 边界冻结（Step F 对齐）
+1. 段落级快捷键：本期仅覆盖标题快捷键（Cmd/Ctrl + 1..3）。
+2. 行内样式快捷键：本期仅覆盖加粗/斜体（Cmd/Ctrl + B / I）。
+3. 代码块：支持通过三个反引号创建代码块并可编辑，语言标识可保留。
+4. 撤销/重做：覆盖 Cmd/Ctrl + Z 与 Cmd/Ctrl + Shift + Z（或平台等价）。
 
 ## 3. 任务拆分（0.5-2 天粒度）
 
 | ID | 任务 | 预计 | 依赖 | 并行组 | 完成标准（DoD） | 回归点 |
 |---|---|---:|---|---|---|---|
-| S1-01 | 初始化前端工程骨架（React+TS+Vite） | 0.5d | - | A | 能启动基础页面，目录结构符合 Blueprint | 应用可启动 |
-| S1-02 | 初始化 `src-tauri` 壳与前后端通信最小示例 | 0.5d | S1-01 | A | 桌面壳可拉起前端，能调用 1 个 Tauri 命令 | 桌面启动可用 |
-| S1-03 | 定义 `state` 基础 slice（workspace/filetree/editor/status） | 0.5d | S1-01 | B | 状态结构稳定，事件流可追踪 | 状态变更可见 |
-| S1-04 | 实现 `FsService.listTree/readFile/writeFileAtomic` 最小版 | 1.0d | S1-02 | B | 支持读取树、读取文件、原子写入 | 原文件不被破坏 |
-| S1-05 | 实现 `MarkdownService.parse/serialize`（对齐 Spike 选型） | 1.0d | S1-01 | C | 能完成 md<->doc 双向转换 | Roundtrip 关键用例通过 |
-| S1-06 | 集成 TipTap 编辑器最小能力（输入/标题/基础快捷键） | 1.0d | S1-01,S1-05 | C | 编辑器可输入并触发快捷键 | 即时渲染可用 |
-| S1-07 | 实现 `AutosaveService.schedule/flush/cancel` | 1.0d | S1-03,S1-04,S1-05 | D | 防抖保存可用，flush 可手动触发 | 保存状态可见 |
-| S1-08 | 工作区打开流程（选择目录 -> 文件树加载） | 1.0d | S1-03,S1-04 | D | 可打开单根目录并显示树 | 树结构正确 |
-| S1-09 | 文件选择流程（dirty flush -> read -> load） | 1.0d | S1-06,S1-07,S1-08 | E | 切文件前会 flush，切后内容正确 | 切换不丢数据 |
-| S1-10 | 关闭前保存双保险（WindowCloseRequested + beforeunload） | 0.5d | S1-07,S1-09 | E | 关闭前触发 flush（含超时策略） | 关闭后重开内容存在 |
-| S1-11 | 基础错误映射（fs/save 错误 -> UI 可见状态） | 0.5d | S1-07,S1-09 | F | 失败不静默，状态栏可见 | 故障可观测 |
+| S1-01 | 初始化前端工程骨架（React+TS+Vite） | 0.5d | - | A | 能启动基础页面，目录结构符合 Blueprint，符合 CODING_STANDARD | 应用可启动 |
+| S1-02 | 初始化 `src-tauri` 壳与前后端通信最小示例 | 0.5d | S1-01 | A | 桌面壳可拉起前端，能调用 1 个 Tauri 命令，符合 CODING_STANDARD | 桌面启动可用 |
+| S1-03 | 定义 `state` 基础 slice（workspace/filetree/editor/status） | 0.5d | S1-01 | B | 状态结构稳定，事件流可追踪，符合 CODING_STANDARD | 状态变更可见 |
+| S1-04 | 实现 `FsService.listTree/readFile/writeFileAtomic` 最小版 | 1.0d | S1-02 | B | 支持读取树、读取文件、原子写入，符合 CODING_STANDARD | 原文件不被破坏 |
+| S1-05 | 实现 `MarkdownService.parse/serialize`（对齐 Spike 选型） | 1.0d | S1-01 | C | 能完成 md<->doc 双向转换，符合 CODING_STANDARD | Roundtrip 关键用例通过 |
+| S1-06 | 集成 TipTap 编辑器最小能力 | 1.0d | S1-01,S1-05 | C | 可完成输入即渲染；标题快捷键(1..3)；B/I 行内样式；``` 代码块；撤销/重做；符合 CODING_STANDARD | 即时渲染与编辑操作稳定 |
+| S1-07 | 实现 `AutosaveService.schedule/flush/cancel` | 1.0d | S1-03,S1-04,S1-05 | D | 防抖保存可用，flush 可手动触发，符合 CODING_STANDARD | 保存状态可见 |
+| S1-08 | 工作区打开流程（选择目录 -> 文件树加载） | 1.0d | S1-03,S1-04 | D | 可打开单根目录并显示树，符合 CODING_STANDARD | 树结构正确 |
+| S1-09 | 文件选择流程（dirty flush -> read -> load） | 1.0d | S1-06,S1-07,S1-08 | E | 切文件前会 flush，切后内容正确，符合 CODING_STANDARD | 切换不丢数据 |
+| S1-10 | 关闭前保存双保险（WindowCloseRequested + beforeunload） | 0.5d | S1-07,S1-09 | E | 关闭前触发 flush（含超时策略），符合 CODING_STANDARD | 关闭后重开内容存在 |
+| S1-11 | 基础错误映射（fs/save 错误 -> UI 可见状态） | 0.5d | S1-07,S1-09 | F | 失败不静默，状态栏可见，符合 CODING_STANDARD | 故障可观测 |
 | S1-12 | Sprint 1 回归脚本与最小检查清单 | 0.5d | 全部 | F | 提供可重复执行的回归步骤 | 回归可复跑 |
 
 ## 4. 建议执行顺序
@@ -42,7 +48,7 @@
 
 ## 5. Sprint 1 出口标准
 1. 单工作区内可完成：打开目录 -> 打开文件 -> 编辑 -> 自动保存 -> 关闭重开恢复。
-2. 编辑器最小能力可用：输入、基础快捷键、撤销重做。
+2. 编辑器最小能力可用：输入即渲染、标题快捷键(1..3)、B/I 样式、代码块创建、撤销重做。
 3. 保存失败有可见反馈，且无静默数据丢失。
 4. 形成可执行回归清单。
 

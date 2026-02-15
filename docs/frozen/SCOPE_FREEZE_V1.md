@@ -25,7 +25,7 @@
 12. 文件夹作为工作区（打开目录即开始）
 
 ## V1 Backlog（不进入当前版本）
-来源：`/Users/zhengpanpan/Program/Writer/docs/archive/COMPETITOR_AUDIT_RESULT.md`
+来源：`docs/archive/COMPETITOR_AUDIT_RESULT.md`
 
 ### Should（延后）
 - 表格可视化编辑（Phase 2 Top Priority）

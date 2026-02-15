@@ -27,6 +27,7 @@
 - [V1 全阶段路线图](docs/current/V1全阶段路线图.md)
 - [V1 后续需求池](docs/current/V1后续需求池.md)
 - [QA 验收清单 V1](docs/current/QA_CHECKLIST_V1.md)
+- [Step F 执行台账](docs/current/StepF执行台账.md)
 
 ### 02. 归档历史 (Archive)
 > 过程资产与历史记录
@@ -49,4 +50,4 @@
 ```
 
 ## ⚠️ 注意
-冻结文档 (`docs/frozen/`) 可能含历史绝对路径引用，请以当前目录结构为准。
+归档历史文档可能包含历史上下文或旧路径引用；执行时以 `docs/frozen/` 与 `docs/current/` 最新内容为准。
