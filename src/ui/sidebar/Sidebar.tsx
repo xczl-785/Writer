@@ -4,6 +4,7 @@ import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { useEditorStore } from '../../state/slices/editorSlice';
 import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
 import { FsService } from '../../services/fs/FsService';
+import { FsSafety } from '../../services/fs/FsSafety';
 import type { FileNode } from '../../state/types';
 import {
   Folder,
@@ -152,6 +153,12 @@ function FileTreeNode({ node, level }: { node: FileNode; level: number }) {
     const newName = prompt('Enter new name:', node.name);
     if (!newName || newName === node.name) return;
 
+    const success = await FsSafety.flushAffectedFiles(node.path);
+    if (!success) {
+      alert('Failed to save changes before rename. Operation aborted.');
+      return;
+    }
+
     const parentPath = node.path.substring(0, node.path.lastIndexOf('/'));
     const newPath = `${parentPath}/${newName}`;
 
@@ -180,6 +187,12 @@ function FileTreeNode({ node, level }: { node: FileNode; level: number }) {
       }`,
     );
     if (!confirmed) return;
+
+    const success = await FsSafety.flushAffectedFiles(node.path);
+    if (!success) {
+      alert('Failed to save changes before delete. Operation aborted.');
+      return;
+    }
 
     try {
       await FsService.deleteNode(node.path);
