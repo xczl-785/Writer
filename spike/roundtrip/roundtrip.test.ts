@@ -17,7 +17,14 @@ const cases: Case[] = [
   {
     name: 'headings',
     input: '# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6\n',
-    mustContain: ['# H1', '## H2', '### H3', '#### H4', '##### H5', '###### H6'],
+    mustContain: [
+      '# H1',
+      '## H2',
+      '### H3',
+      '#### H4',
+      '##### H5',
+      '###### H6',
+    ],
   },
   {
     name: 'nested lists',

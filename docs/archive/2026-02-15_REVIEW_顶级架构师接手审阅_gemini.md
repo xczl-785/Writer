@@ -28,25 +28,33 @@ docs/
 ## 🔍 问题清单
 
 ### 🔴 P0: QA 清单中 NFR 自动化验证缺失
+
 尽管 `QA_CHECKLIST_V1.md` 的 R4/R5 用例提及了“启动速度”与“输入时延”，但目前仅停留在**手工抽样**阶段（"各测5次"）。
+
 - **缺失项**: 缺乏具体的自动化测试方案或工具选型（如基于 Trace 的性能守门）。
 - **风险**: “冷启动 <= 1800ms” 与 “输入 <= 33ms” 在后续 Feature 堆叠时极易劣化且难以察觉。手工测试无法覆盖长尾场景。
 - **建议**: 在 Sprint 1 中必须引入基础的 Performance Benchmark 脚本，哪怕只是简单的 `console.time` 埋点统计。
 
 ### 🔴 P0: 工程规范 (Engineering Standards) 真空
+
 当前文档体系中完全缺失针对代码层面的“法度”：
+
 - **Git Workflow**: 分支策略？Commit Message 规范（Conventional Commits）？
 - **Lint/Format**: 无 ESLint/Prettier 统一配置基线。
 - **Code Review**: 无 MR/PR 验收标准。
 - **风险**: 团队协作开始后，代码风格将迅速熵增，导致后期维护成本指数级上升。
 
 ### 🟡 P1: S1-06 (TipTap 集成) DoD 颗粒度模糊
+
 `S1-06` 任务定义的 DoD 为“编辑器最小能力可用... B/I... 代码块”。对于富文本编辑器而言，这过于笼统：
+
 - **模糊点**: "代码块"是否包含语言高亮？嵌套结构如何处理？Markdown -> TipTap -> Markdown 的 Roundtrip 在复杂场景下的表现？
 - **建议**: 增加 **Stress Test (压力测试)** 环节。不仅是基础的 Parse/Serialize，更需要验证由嵌套列表、混合代码块、大文件构成的“脏”数据的转换稳定性。
 
 ### 🟡 P1: Markdown Roundtrip 鲁棒性隐忧
+
 D-007 验证了可行性，但未定义“数据无损”的严格边界。
+
 - **缺失**: 缺乏对“不支持的 Markdown 语法”的 Fallback 策略定义（是丢弃、转义还是保留源码？）。
 
 ---
@@ -70,12 +78,12 @@ docs/
 
 在 Sprint 1 启动前（或 S1 第一周内），必须完成以下动作：
 
-| 优先级 | 动作 | 交付物 |
-| :--- | :--- | :--- |
-| **P0** | 定义代码与提交规范 | `docs/standards/CODING_STANDARD.md`, `GIT_WORKFLOW.md` |
-| **P1** | 细化 S1-06 验收标准 | 更新 `docs/current/Sprint1任务拆分.md` DoD 字段 |
-| **P1** | 设计 Markdown 压力测试用例 | 新增 `tests/fixtures/stress-test.md` 及配套脚本 |
-| **P2** | 补充 NFR 自动化方案 | 更新 `QA_CHECKLIST_V1.md`，追加自动化工具说明 |
+| 优先级 | 动作                       | 交付物                                                 |
+| :----- | :------------------------- | :----------------------------------------------------- |
+| **P0** | 定义代码与提交规范         | `docs/standards/CODING_STANDARD.md`, `GIT_WORKFLOW.md` |
+| **P1** | 细化 S1-06 验收标准        | 更新 `docs/current/Sprint1任务拆分.md` DoD 字段        |
+| **P1** | 设计 Markdown 压力测试用例 | 新增 `tests/fixtures/stress-test.md` 及配套脚本        |
+| **P2** | 补充 NFR 自动化方案        | 更新 `QA_CHECKLIST_V1.md`，追加自动化工具说明          |
 
 ---
 

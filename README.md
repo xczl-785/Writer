@@ -1,10 +1,12 @@
 # Writer 项目导航
 
 ## 项目定位
+
 - **风格**：Typora (所见即所得、流畅) + Obsidian (本地文件管理)
 - **核心原则**：无打断写作主流程优先
 
 ## 🚀 快速入口
+
 - **任务看板**：[docs/current/任务看板.md](docs/current/任务看板.md) (当前进度: Step F)
 - **工程蓝图**：[docs/frozen/ENGINEERING_BLUEPRINT.md](docs/frozen/ENGINEERING_BLUEPRINT.md)
 - **评审记录**：[docs/archive/ENGINEERING_BLUEPRINT_REVIEW.md](docs/archive/ENGINEERING_BLUEPRINT_REVIEW.md)
@@ -12,7 +14,9 @@
 ## 📚 文档索引 (Docs)
 
 ### 00. 冻结基线 (Frozen)
+
 > 不应随意变更的约束文档
+
 - [产品需求 (PRD)](docs/frozen/PRD_V1.md)
 - [技术基线 (Tech)](docs/frozen/TECH_BASELINE.md)
 - [设计基线 (Design)](docs/frozen/DESIGN_BASELINE.md)
@@ -20,7 +24,9 @@
 - [工程蓝图 (Blueprint)](docs/frozen/ENGINEERING_BLUEPRINT.md)
 
 ### 01. 活跃文档 (Current)
+
 > 当前开发阶段工作文档
+
 - [任务看板](docs/current/任务看板.md)
 - [Sprint 1 任务拆分](docs/current/Sprint1任务拆分.md)
 - [V1 完成标准](docs/current/V1完成标准.md)
@@ -30,7 +36,9 @@
 - [Step F 执行台账](docs/current/StepF执行台账.md)
 
 ### 02. 归档历史 (Archive)
+
 > 过程资产与历史记录
+
 - [docs/archive/](docs/archive/)
 
 ---
@@ -50,4 +58,5 @@
 ```
 
 ## ⚠️ 注意
+
 归档历史文档可能包含历史上下文或旧路径引用；执行时以 `docs/frozen/` 与 `docs/current/` 最新内容为准。
