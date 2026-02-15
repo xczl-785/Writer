@@ -11,9 +11,9 @@
 - 门禁要求：Step D 结束前必须完成，未通过不得进入 Step E
 
 ## 3. 输入文档
-1. `docs/current/ENGINEERING_BLUEPRINT.md`
+1. `docs/frozen/ENGINEERING_BLUEPRINT.md`
 2. `docs/frozen/TECH_BASELINE.md`
-3. `docs/current/SPIKE_ROUNDTRIP_REPORT.md`（报告模板）
+3. `docs/archive/SPIKE_ROUNDTRIP_REPORT.md`（报告模板）
 4. `spike/roundtrip/README.md`
 5. `spike/roundtrip/roundtrip.test.ts`
 
@@ -41,7 +41,7 @@
 
 ## 6. 交付物（必须）
 1. 可执行 Spike 代码（含运行命令）
-2. `docs/current/SPIKE_ROUNDTRIP_REPORT.md` 完整填充：
+2. `docs/archive/SPIKE_ROUNDTRIP_REPORT.md` 完整填充：
 - 环境信息
 - 各用例结果
 - 是否通过 D-007

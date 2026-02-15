@@ -15,7 +15,7 @@
 npm install
 npm test
 ```
-报告产出：`docs/current/SPIKE_ROUNDTRIP_REPORT.md`
+报告产出：`docs/archive/SPIKE_ROUNDTRIP_REPORT.md`
 
 ## 判定规则
 - 语义一致即通过（允许空白、换行微差异）

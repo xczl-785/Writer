@@ -182,7 +182,7 @@ src-tauri/
 - 可执行产物：
   1. `spike/roundtrip/roundtrip.test.ts`
   2. `spike/roundtrip/README.md`
-  3. `docs/current/SPIKE_ROUNDTRIP_REPORT.md`
+  3. `docs/archive/SPIKE_ROUNDTRIP_REPORT.md`
 - 失败处理：进入备选内核评估流程（不直接硬切）。
 
 ### D-009 原子写入
@@ -201,9 +201,13 @@ Step E 拆任务时必须覆盖：
 4. `editor/filetree/workspace/state` 五域最小闭环
 5. Roundtrip Spike 与结果记录
 
-## 11. Step D 复盘占位
-- 结果：待确认
-- 核心结论：待填写
-- 发现问题：待填写
-- 调整决策：待填写
-- 是否进入 Step E：待确认
+## 11. Step D 复盘（已确认）
+- 结果：通过
+- 核心结论：模块边界、接口契约、数据流与门禁定义已达可执行状态
+- 发现问题：初版存在 D-007 可执行性与 MarkdownService 定义缺失，已补齐并复验通过
+- 调整决策：
+  1. 增补 `MarkdownService`（parse/serialize）
+  2. 明确 autosave 输入为已序列化 Markdown
+  3. 增加文件切换前 dirty flush
+  4. 明确 D-009 临时文件命名规则
+- 是否进入 Step E：是
