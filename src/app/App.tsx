@@ -21,12 +21,13 @@ function App() {
 
   // Handle window close requests (Tauri)
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
+    let unlistenFn: (() => void) | undefined;
+    let isMounted = true;
 
     const setupListener = async () => {
       try {
         const appWindow = getCurrentWindow();
-        unlisten = await appWindow.onCloseRequested(async (event) => {
+        const unlisten = await appWindow.onCloseRequested(async (event) => {
           const state = useEditorStore.getState();
           const isDirty = Object.values(state.fileStates).some(
             (f) => f.isDirty,
@@ -46,6 +47,12 @@ function App() {
             }
           }
         });
+
+        if (isMounted) {
+          unlistenFn = unlisten;
+        } else {
+          unlisten();
+        }
       } catch (error) {
         console.warn(
           'Failed to setup Tauri window listener (ignore if in browser):',
@@ -57,8 +64,9 @@ function App() {
     setupListener();
 
     return () => {
-      if (unlisten) {
-        unlisten();
+      isMounted = false;
+      if (unlistenFn) {
+        unlistenFn();
       }
     };
   }, []);
