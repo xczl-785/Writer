@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
+import { useEditorStore } from '../../state/slices/editorSlice';
 import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
 import { FsService } from '../../services/fs/FsService';
 import type { FileNode } from '../../state/types';
@@ -10,6 +11,8 @@ import {
   FileText,
   FilePlus,
   FolderPlus,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -144,6 +147,57 @@ function FileTreeNode({ node, level }: { node: FileNode; level: number }) {
     }
   };
 
+  const handleRename = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newName = prompt('Enter new name:', node.name);
+    if (!newName || newName === node.name) return;
+
+    const parentPath = node.path.substring(0, node.path.lastIndexOf('/'));
+    const newPath = `${parentPath}/${newName}`;
+
+    try {
+      await FsService.renameNode(node.path, newPath);
+
+      useWorkspaceStore.getState().renameFile(node.path, newPath);
+      useEditorStore.getState().renameFile(node.path, newPath);
+
+      const { currentPath } = useWorkspaceStore.getState();
+      if (currentPath) {
+        const nodes = await FsService.listTree(currentPath);
+        useFileTreeStore.getState().setNodes(nodes);
+      }
+    } catch (error) {
+      console.error('Failed to rename:', error);
+      alert('Failed to rename file/folder.');
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${node.name}?${
+        isDirectory ? ' This will delete all contents within the folder.' : ''
+      }`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await FsService.deleteNode(node.path);
+
+      useWorkspaceStore.getState().removePath(node.path);
+      useEditorStore.getState().removePath(node.path);
+
+      const { currentPath } = useWorkspaceStore.getState();
+      if (currentPath) {
+        const nodes = await FsService.listTree(currentPath);
+        useFileTreeStore.getState().setNodes(nodes);
+      }
+    } catch (error) {
+      console.error('Failed to delete:', error);
+      alert('Failed to delete file/folder.');
+    }
+  };
+
   return (
     <div>
       <div
@@ -165,7 +219,22 @@ function FileTreeNode({ node, level }: { node: FileNode; level: number }) {
 
         <span className="truncate flex-1 leading-none py-0.5">{node.name}</span>
 
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center"></div>
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+          <button
+            onClick={handleRename}
+            className="p-0.5 hover:bg-gray-300 rounded text-gray-500 hover:text-gray-700"
+            title="Rename"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={handleDelete}
+            className="p-0.5 hover:bg-gray-300 rounded text-red-400 hover:text-red-600"
+            title="Delete"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
 
       {isDirectory && isExpanded && hasChildren && (

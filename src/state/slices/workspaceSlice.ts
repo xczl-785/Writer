@@ -11,6 +11,8 @@ export interface WorkspaceActions {
   openFile: (path: string) => void;
   closeFile: (path: string) => void;
   setActiveFile: (path: string | null) => void;
+  renameFile: (oldPath: string, newPath: string) => void;
+  removePath: (path: string) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
@@ -49,5 +51,28 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
       }),
 
     setActiveFile: (path) => set({ activeFile: path }),
+
+    renameFile: (oldPath, newPath) =>
+      set((state) => ({
+        openFiles: state.openFiles.map((f) => (f === oldPath ? newPath : f)),
+        activeFile: state.activeFile === oldPath ? newPath : state.activeFile,
+      })),
+
+    removePath: (path) =>
+      set((state) => {
+        const isMatch = (f: string) => f === path || f.startsWith(`${path}/`);
+        const newOpenFiles = state.openFiles.filter((f) => !isMatch(f));
+        let newActiveFile = state.activeFile;
+        if (state.activeFile && isMatch(state.activeFile)) {
+          newActiveFile =
+            newOpenFiles.length > 0
+              ? newOpenFiles[newOpenFiles.length - 1]
+              : null;
+        }
+        return {
+          openFiles: newOpenFiles,
+          activeFile: newActiveFile,
+        };
+      }),
   }),
 );
