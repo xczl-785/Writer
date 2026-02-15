@@ -1,116 +1,116 @@
-# QA Checklist V1 (Sprint 1 Regression)
+# QA 验收清单 V1（Sprint 1 回归）
 
-## 1. Purpose
+## 1. 目的
 
-This document provides a standardized manual regression script for Sprint 1 features. It ensures that every release meets the "Minimum Writable Loop" criteria and maintains data integrity.
+本清单用于 Sprint 1 的标准化手工回归，确保版本满足“最小可写作闭环”要求，并保持数据完整性。
 
-## 2. Scope
+## 2. 范围
 
-- **Sprint 1 Features**: Launch, File Tree, Editor, Autosave, and Close Protection.
-- **Core Flow**: Open Folder -> Select File -> Edit -> Autosave -> Close & Reopen.
-- **Quality Goals**: No silent data loss, visible error feedback, reproducible regression.
+- Sprint 1 功能：启动、文件树、编辑器、自动保存、关闭前保护。
+- 核心流程：打开目录 -> 打开文件 -> 编辑 -> 自动保存 -> 关闭重开。
+- 质量目标：无静默数据丢失、错误反馈可见、回归可复现。
 
-## 3. Environment Baseline
+## 3. 环境基线
 
-- **Platform**: macOS (Primary) / Windows (Secondary).
-- **Workspace**: Single root directory.
-- **Sample Files**:
-  - `sample-plain.md`: Plain text paragraphs.
-  - `sample-list.md`: Bullet and numbered lists.
-  - `sample-code.md`: Code blocks.
-
----
-
-## 4. Manual Regression Script
-
-### 4.1 Launch & Communication (S1-01, S1-02)
-
-| ID           | Action                                               | Expected Result                                                          | Status |
-| :----------- | :--------------------------------------------------- | :----------------------------------------------------------------------- | :----- |
-| **QA-S1-01** | Double-click the application icon to launch.         | Application window opens; UI loads without white screen or fatal errors. | [ ]    |
-| **QA-S1-02** | Check the status bar or logs for backend connection. | Backend (Tauri) communication is active; no "Connection Failed" alerts.  | [ ]    |
-
-### 4.2 File Tree & Selection (S1-04, S1-08, S1-09)
-
-| ID           | Action                                                           | Expected Result                                                                    | Status |
-| :----------- | :--------------------------------------------------------------- | :--------------------------------------------------------------------------------- | :----- |
-| **QA-S1-08** | Click "Open Folder" (or use Cmd+O) and select a local directory. | File tree populates with the directory structure; markdown files are visible.      | [ ]    |
-| **QA-S1-04** | Click on a `.md` file in the file tree.                          | File content is read and displayed in the editor correctly.                        | [ ]    |
-| **QA-S1-09** | 1. Modify File A.<br>2. Immediately click File B in the tree.    | 1. File A is saved to disk (Dirty Flush).<br>2. File B content loads successfully. | [ ]    |
-
-### 4.3 Editor & Markdown (S1-05, S1-06)
-
-| ID            | Action                                                               | Expected Result                                                                    | Status |
-| :------------ | :------------------------------------------------------------------- | :--------------------------------------------------------------------------------- | :----- |
-| **QA-S1-06a** | Type text into the editor.                                           | Text appears immediately; rendering is smooth.                                     | [ ]    |
-| **QA-S1-06b** | Use shortcuts: `Cmd+1`, `Cmd+2`, `Cmd+3`.                            | Current line transforms into H1, H2, or H3 respectively.                           | [ ]    |
-| **QA-S1-06c** | Select text and press `Cmd+B` or `Cmd+I`.                            | Text becomes **Bold** or _Italic_ immediately.                                     | [ ]    |
-| **QA-S1-06d** | Type ` ``` ` and press Enter.                                        | A code block is created; syntax highlighting (if any) or block styling is visible. | [ ]    |
-| **QA-S1-06e** | Press `Cmd+Z` and `Cmd+Shift+Z`.                                     | Last edit is undone and then redone correctly.                                     | [ ]    |
-| **QA-S1-05**  | 1. Edit a file with various styles.<br>2. Close and reopen the file. | Markdown serialization/parsing is consistent; no semantic loss (Roundtrip).        | [ ]    |
-
-### 4.4 Autosave & Close Protection (S1-07, S1-10)
-
-| ID           | Action                                                                                                  | Expected Result                                                                  | Status |
-| :----------- | :------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------- | :----- |
-| **QA-S1-07** | Type a sentence and wait for 1 second without clicking anything.                                        | "Saving..." indicator appears/disappears; file on disk is updated.               | [ ]    |
-| **QA-S1-10** | 1. Modify a file.<br>2. Immediately close the app window (Cmd+Q or Close button).<br>3. Reopen the app. | The last modification is preserved; no data loss occurred during the quick exit. | [ ]    |
-
-### 4.5 Error Handling (S1-11)
-
-| ID           | Action                                            | Expected Result                                                                 | Status |
-| :----------- | :------------------------------------------------ | :------------------------------------------------------------------------------ | :----- |
-| **QA-S1-11** | Attempt to save to a read-only file or directory. | UI displays a clear error message (e.g., in the status bar); no silent failure. | [ ]    |
+- 平台：macOS（主）/ Windows（辅）。
+- 工作区：单根目录。
+- 样例文件：
+  - `sample-plain.md`：普通段落文本
+  - `sample-list.md`：有序/无序列表
+  - `sample-code.md`：代码块内容
 
 ---
 
-## 5. Core Regression Scenarios (R-Series)
+## 4. 手工回归脚本
 
-### R1: The "Writer's Loop"
+### 4.1 启动与通信（S1-01, S1-02）
 
-- **Steps**: Open Folder -> Open File -> Type for 30 seconds -> Wait for Autosave -> Close App -> Reopen.
-- **Expected**: All content is perfectly preserved.
+| 用例ID       | 操作                               | 期望结果                                | 状态 |
+| :----------- | :--------------------------------- | :-------------------------------------- | :--- |
+| **QA-S1-01** | 双击应用图标启动。                 | 应用窗口正常打开；UI 无白屏或致命报错。 | [ ]  |
+| **QA-S1-02** | 检查状态栏或日志中的后端连接状态。 | Tauri 通信可用；无“连接失败”告警。      | [ ]  |
 
-### R2: Rapid File Switching
+### 4.2 文件树与文件选择（S1-04, S1-08, S1-09）
 
-- **Steps**: Edit File A -> Click File B -> Click File A.
-- **Expected**: File A's changes are saved; switching is responsive.
+| 用例ID       | 操作                                           | 期望结果                                           | 状态 |
+| :----------- | :--------------------------------------------- | :------------------------------------------------- | :--- |
+| **QA-S1-08** | 点击 `Open Folder`（或 Cmd+O）并选择本地目录。 | 文件树正确加载目录结构，可见 Markdown 文件。       | [ ]  |
+| **QA-S1-04** | 点击文件树中的 `.md` 文件。                    | 文件内容正确读取并显示到编辑器。                   | [ ]  |
+| **QA-S1-09** | 1）修改文件 A；2）立即点击文件 B。             | 1）文件 A 先完成 Dirty Flush；2）文件 B 成功加载。 | [ ]  |
 
-### R3: Error Observability
+### 4.3 编辑器与 Markdown（S1-05, S1-06）
 
-- **Steps**: Manually make a file read-only or disconnect drive, then attempt to edit/save.
-- **Expected**: UI shows clear error state; no "fake success".
+| 用例ID        | 操作                                             | 期望结果                                                | 状态 |
+| :------------ | :----------------------------------------------- | :------------------------------------------------------ | :--- |
+| **QA-S1-06a** | 在编辑器输入文本。                               | 文本即时显示，渲染流畅。                                | [ ]  |
+| **QA-S1-06b** | 使用快捷键 `Cmd+1`、`Cmd+2`、`Cmd+3`。           | 当前行分别变为 H1/H2/H3。                               | [ ]  |
+| **QA-S1-06c** | 选中文本后按 `Cmd+B` 或 `Cmd+I`。                | 文本即时变为加粗/斜体。                                 | [ ]  |
+| **QA-S1-06d** | 输入 ``` 后回车。                                | 成功创建代码块并显示对应块样式。                        | [ ]  |
+| **QA-S1-06e** | 按 `Cmd+Z` 与 `Cmd+Shift+Z`。                    | 撤销与重做行为正确。                                    | [ ]  |
+| **QA-S1-05**  | 1）编辑包含多种格式的文件；2）关闭并重开该文件。 | Markdown 序列化/解析保持一致，语义不丢失（Roundtrip）。 | [ ]  |
 
-### R4: Cold/Hot Start Latency
+### 4.4 自动保存与关闭保护（S1-07, S1-10）
 
-- **Steps**: Measure time from launch to editor being interactive (5 samples each).
-- **Expected**: P95 within thresholds defined in NFR.
+| 用例ID       | 操作                                                                | 期望结果                                 | 状态 |
+| :----------- | :------------------------------------------------------------------ | :--------------------------------------- | :--- |
+| **QA-S1-07** | 输入一句话后静置约 1 秒。                                           | 出现并结束“保存中”状态；磁盘文件已更新。 | [ ]  |
+| **QA-S1-10** | 1）修改文件；2）立即关闭应用（Cmd+Q 或关闭按钮）；3）重新打开应用。 | 最后修改仍被保留，无数据丢失。           | [ ]  |
 
-### R5: Typing Fluency
+### 4.5 错误处理（S1-11）
 
-- **Steps**: Type continuously in a 50KB+ file for 60 seconds.
-- **Expected**: No dropped characters; responsive rendering.
-
-### R6: Atomic Write Integrity
-
-- **Steps**: Check file hash before and after a failed save attempt.
-- **Expected**: Original file remains unchanged; no corruption.
-
----
-
-## 6. Non-Functional Requirements (NFR)
-
-| ID         | Metric                             | Threshold                                      | Result |
-| :--------- | :--------------------------------- | :--------------------------------------------- | :----- |
-| **NFR-01** | Cold Start TTC (Time to Clickable) | P95 <= 1800ms                                  |        |
-| **NFR-02** | Hot Start TTC                      | P95 <= 900ms                                   |        |
-| **NFR-03** | Typing Latency                     | P95 <= 33ms                                    |        |
-| **NFR-04** | File Safety                        | Atomic write failure does not corrupt original |        |
+| 用例ID       | 操作                               | 期望结果                                              | 状态 |
+| :----------- | :--------------------------------- | :---------------------------------------------------- | :--- |
+| **QA-S1-11** | 尝试对只读文件或只读目录执行保存。 | UI 显示明确错误信息（如状态栏提示）；不允许静默失败。 | [ ]  |
 
 ---
 
-## 7. Approval Criteria
+## 5. 核心回归场景（R 系列）
 
-1. All **QA-S1-xx** items marked as [x].
-2. All **R-Series** scenarios passed.
-3. No P0 bugs (Data loss, Crash on launch, Silent save failure).
+### R1：写作主循环
+
+- 步骤：打开目录 -> 打开文件 -> 持续输入 30 秒 -> 等待自动保存 -> 关闭应用 -> 重开。
+- 期望：内容完整保留。
+
+### R2：快速切文件
+
+- 步骤：编辑文件 A -> 点击文件 B -> 再点击文件 A。
+- 期望：文件 A 修改被保存；切换响应正常。
+
+### R3：错误可观测
+
+- 步骤：将文件设为只读或断开磁盘后尝试编辑/保存。
+- 期望：UI 明确显示错误状态；不出现“假成功”。
+
+### R4：冷启动/热启动时延
+
+- 步骤：分别采集 5 次从启动到可编辑的耗时。
+- 期望：P95 满足 NFR 阈值。
+
+### R5：连续输入流畅性
+
+- 步骤：在 50KB+ 文件中连续输入 60 秒。
+- 期望：无掉字，渲染响应稳定。
+
+### R6：原子写完整性
+
+- 步骤：在失败写入场景前后对比文件哈希。
+- 期望：失败时原文件不被破坏。
+
+---
+
+## 6. 非功能指标（NFR）
+
+| 指标ID     | 指标项                   | 阈值                   | 结果 |
+| :--------- | :----------------------- | :--------------------- | :--- |
+| **NFR-01** | 冷启动 TTC（可交互时间） | P95 <= 1800ms          |      |
+| **NFR-02** | 热启动 TTC               | P95 <= 900ms           |      |
+| **NFR-03** | 输入时延                 | P95 <= 33ms            |      |
+| **NFR-04** | 文件安全性               | 原子写失败不破坏原文件 |      |
+
+---
+
+## 7. 通过标准
+
+1. 所有 **QA-S1-xx** 用例标记为通过。
+2. 所有 **R 系列** 场景通过。
+3. 无 P0 问题（数据丢失、启动崩溃、静默保存失败）。

@@ -1,84 +1,65 @@
-# QA Checklist Sprint 2 (File Management Loop)
+# QA 验收清单 Sprint 2（文件管理闭环）
 
-## 1. Purpose
+## 1. 目的
 
-This document provides a standardized manual regression script for Sprint 2 features, focusing on the file management loop within a single workspace. It ensures that users can manage their files and folders directly within the application without data loss or UI inconsistencies.
+本清单用于 Sprint 2 手工回归，重点验证应用内文件管理闭环：新建、重命名、删除，以及与编辑器状态联动的安全性。
 
-## 2. Scope
+## 2. 范围
 
-- **Sprint 2 Features**: Create File/Folder, Rename File/Folder, Delete File/Folder, Sidebar UI (Icons), and Dirty-file Safety.
-- **Core Flow**: Create -> Rename -> Edit -> Delete.
-- **Quality Goals**: Atomic file operations, consistent UI state, safety for unsaved changes.
+- Sprint 2 功能：新建文件/文件夹、重命名文件/文件夹、删除文件/文件夹、侧边栏操作入口、脏文件安全联动。
+- 核心流程：新建 -> 重命名 -> 编辑 -> 删除。
+- 质量目标：原子操作、UI 状态一致、无静默数据丢失。
 
-## 3. Regression Prerequisites (Workspace Setup)
+## 3. 回归前置
 
-Before starting the tests, ensure the following environment is set up:
+- 使用独立本地目录作为测试工作区。
+- 应用已打开该工作区。
+- 至少准备一个已有文件 `existing.md` 并包含文本内容。
+- 确保目录有读写权限。
 
-- **Workspace**: A dedicated local directory for testing.
-- **Initial State**:
-  - The workspace should be opened in the application.
-  - Prepare at least one existing markdown file (`existing.md`) with some content.
-  - Ensure the application has write permissions to this directory.
+## 4. 手工回归脚本
 
-## 4. Manual Regression Script
+### 4.1 新建文件与文件夹（S2-03）
 
-### 4.1 Create File & Folder (S2-03)
+| 用例ID      | 操作            | 期望结果                       | 状态                                      |
+| --------- | ------------- | -------------------------- | --------------------------------------- |
+| QA-S2-03a | 点击侧边栏“新建文件”。  | 成功创建新文件；文件树刷新；新文件自动在编辑区打开。 | [ ]                                     |
+| QA-S2-03b | 点击侧边栏“新建文件夹”。 | 成功创建新文件夹；文件树刷新并可见新目录。      | [ ]                                     |
+| QA-S2-03c | 在子目录下创建文件。    | 文件创建在正确路径；树结构层级显示正确。       | [-]阻断问题：无法在子目录下新建文件（选中目录，再新建，文件仍然在根目录下） |
 
-| ID            | Action                                     | Expected Result                                                                                       | Status |
-| :------------ | :----------------------------------------- | :---------------------------------------------------------------------------------------------------- | :----- |
-| **QA-S2-03a** | Click "New File" button/menu in sidebar.   | A new `.md` file is created; file tree refreshes; the new file is automatically opened in the editor. | [ ]    |
-| **QA-S2-03b** | Click "New Folder" button/menu in sidebar. | A new folder is created; file tree refreshes; the folder is visible in the tree.                      | [ ]    |
-| **QA-S2-03c** | Create a file inside a subfolder.          | File is created at the correct path; tree structure correctly displays the nesting.                   | [ ]    |
+### 4.2 重命名文件与文件夹（S2-04）
 
-### 4.2 Rename File & Folder (S2-04)
+| 用例ID      | 操作            | 期望结果                 | 状态                                                                            |
+| --------- | ------------- | -------------------- | ----------------------------------------------------------------------------- |
+| QA-S2-04a | 重命名一个非激活文件。   | 侧边栏名称更新；磁盘文件名同步更新。   | 重命名全部存在问题，点击按钮无效。期望效果：点击重命名按钮，文件/文件夹名称变为可编辑状态，修改后提交（需判断修改、未修改、名称是否合法、是否重名等逻辑） |
+| QA-S2-04b | 重命名当前激活文件。    | 侧边栏更新；激活路径更新；内容保持完整。 |                                                                               |
+| QA-S2-04c | 重命名包含子文件的文件夹。 | 目录名更新；子文件在新路径下可继续访问。 |                                                                               |
 
-| ID            | Action                            | Expected Result                                                             | Status |
-| :------------ | :-------------------------------- | :-------------------------------------------------------------------------- | :----- |
-| **QA-S2-04a** | Rename an inactive file.          | File name updates in the sidebar; file on disk is renamed.                  | [ ]    |
-| **QA-S2-04b** | Rename the currently active file. | Sidebar updates; editor title/path updates; content remains intact.         | [ ]    |
-| **QA-S2-04c** | Rename a folder containing files. | Folder name updates; all nested files remain accessible under the new path. | [ ]    |
+### 4.3 删除文件与文件夹（S2-05）
 
-### 4.3 Delete File & Folder (S2-05)
+| 用例ID      | 操作               | 期望结果                        | 状态                                                                     |
+| --------- | ---------------- | --------------------------- | ---------------------------------------------------------------------- |
+| QA-S2-05a | 删除单个文件（触发删除并确认）。 | 弹出确认；确认后文件从侧边栏与磁盘移除。        | 删除操作全部存在问题。 弹窗还在显示时，文件/文件夹就已经被删除了（点击取消按钮，取消删除操作，但是文件不会还原。判断为删除触发点存在问题） |
+| QA-S2-05b | 删除当前激活文件。        | 弹出确认；确认后文件删除；编辑器关闭或切换到安全状态。 |                                                                        |
+| QA-S2-05c | 删除非空文件夹。         | 弹出确认；确认后文件夹及其子内容全部移除。       |                                                                        |
 
-| ID            | Action                                     | Expected Result                                                                        | Status |
-| :------------ | :----------------------------------------- | :------------------------------------------------------------------------------------- | :----- |
-| **QA-S2-05a** | Delete a file (trigger delete -> confirm). | Confirmation dialog appears; file is removed from sidebar and disk after confirmation. | [ ]    |
-| **QA-S2-05b** | Delete the currently active file.          | Confirmation dialog appears; file is deleted; editor is closed or cleared.             | [ ]    |
-| **QA-S2-05c** | Delete a non-empty folder.                 | Confirmation dialog appears; folder and all its contents are removed from disk.        | [ ]    |
+### 4.4 脏文件安全（S2-06）
 
-### 4.4 Dirty-file Safety (S2-06)
+| 用例ID    | 操作                             | 期望结果                                     | 状态 |
+| --------- | -------------------------------- | -------------------------------------------- | ---- |
+| QA-S2-06a | 对有未保存修改的文件执行重命名。 | 重命名前先 flush（或给出提示）；不丢内容。   | [ ]  |
+| QA-S2-06b | 对有未保存修改的文件执行删除。   | 删除前触发保护流程；取消后文件与修改仍保留。 | [ ]  |
 
-| ID            | Action                              | Expected Result                                                                           | Status |
-| :------------ | :---------------------------------- | :---------------------------------------------------------------------------------------- | :----- |
-| **QA-S2-06a** | Rename a file with unsaved changes. | Changes are flushed to disk (or user is prompted) before the rename occurs; no data loss. | [ ]    |
-| **QA-S2-06b** | Delete a file with unsaved changes. | Confirmation dialog warns about unsaved changes; if cancelled, file and changes remain.   | [ ]    |
+### 4.5 负向与错误路径
 
-### 4.5 Negative & Error Paths
+| 用例ID       | 操作                           | 期望结果                         | 状态 |
+| ------------ | ------------------------------ | -------------------------------- | ---- |
+| QA-S2-ERR-01 | 新建/重命名为已存在名称。      | 显示明确错误提示；操作被拒绝。   | [ ]  |
+| QA-S2-ERR-02 | 在权限不足目录下重命名或删除。 | 显示明确错误提示；状态保持一致。 | [ ]  |
+| QA-S2-ERR-03 | 使用非法字符命名文件/文件夹。  | 阻止操作或给出校验错误提示。     | [ ]  |
 
-| ID               | Action                                                    | Expected Result                                                                | Status |
-| :--------------- | :-------------------------------------------------------- | :----------------------------------------------------------------------------- | :----- |
-| **QA-S2-ERR-01** | Create/Rename to a name that already exists.              | UI shows an error message (e.g., "File already exists"); operation is aborted. | [ ]    |
-| **QA-S2-ERR-02** | Attempt to delete/rename a file with "Permission Denied". | UI displays a clear error message; state remains consistent.                   | [ ]    |
-| **QA-S2-ERR-03** | Use invalid characters in file/folder name.               | UI prevents the action or shows a validation error.                            | [ ]    |
+## 5. 通过标准
 
-## 5. Acceptance Summary
-
-### Current Implemented Scope
-
-- **FsService CRUD**: Full support for create, rename, and delete operations on files and folders.
-- **Sidebar UI**: Integrated `lucide-react` icons; added action buttons for file management.
-- **Editor Linkage**: Automatic updates for active file renaming and closing on deletion.
-- **Safety**: Dirty state handling ensures no silent data loss during management operations.
-
-### Out of Scope (Sprint 2)
-
-- **Drag & Drop**: Moving files via mouse interaction is not implemented.
-- **Search**: File/Content search is deferred to later sprints.
-- **Multi-tabs**: Application remains in single-editor mode.
-- **Image Management**: Handling of non-markdown assets is out of scope.
-
-## 6. Approval Criteria
-
-1. All **QA-S2-xx** items marked as [x].
-2. All **QA-S2-ERR-xx** items marked as [x].
-3. No P0 bugs (Data loss, Crash on file operation, UI desync).
+1. QA-S2-xx 全部通过。
+2. QA-S2-ERR-xx 全部通过。
+3. 无 P0 问题（崩溃、数据丢失、UI 状态错乱）。

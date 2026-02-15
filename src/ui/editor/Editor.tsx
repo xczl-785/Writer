@@ -4,12 +4,23 @@ import {
   EditorContent,
   Editor as TiptapEditor,
 } from '@tiptap/react';
+import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { useEditorStore } from '../../state/slices/editorSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { MarkdownService } from '../../services/markdown/MarkdownService';
 import { AutosaveService } from '../../services/autosave/AutosaveService';
 import './Editor.css';
+
+const ShortcutExtension = Extension.create({
+  name: 'shortcut-extension',
+  addKeyboardShortcuts() {
+    return {
+      'Mod-i': () => this.editor.commands.toggleItalic(),
+      'Mod-b': () => this.editor.commands.toggleBold(),
+    };
+  },
+});
 
 export const Editor = () => {
   const { activeFile } = useWorkspaceStore();
@@ -23,6 +34,7 @@ export const Editor = () => {
   const editor = useEditor(
     {
       extensions: [
+        ShortcutExtension,
         StarterKit.configure({
           heading: {
             levels: [1, 2, 3],

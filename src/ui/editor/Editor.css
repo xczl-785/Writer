@@ -35,21 +35,27 @@
 
 .ProseMirror em {
   font-style: italic;
+  color: #334155;
 }
 
 .ProseMirror pre {
-  background: #f4f4f4;
-  padding: 0.75rem;
-  border-radius: 4px;
-  font-family: monospace;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #1e293b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
   overflow-x: auto;
 }
 
 .ProseMirror code {
-  background: #f4f4f4;
-  padding: 0.2rem 0.4rem;
-  border-radius: 3px;
-  font-family: monospace;
+  background: #e2e8f0;
+  color: #0f172a;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
   font-size: 0.9em;
 }
 

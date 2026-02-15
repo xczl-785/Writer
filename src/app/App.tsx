@@ -10,14 +10,7 @@ import { AutosaveService } from '../services/autosave/AutosaveService';
 import './App.css';
 
 function App() {
-  const { activeFile, openFile } = useWorkspaceStore();
-  const { initializeFile } = useEditorStore();
-
-  useEffect(() => {
-    const testFile = 'test.md';
-    initializeFile(testFile, '# Hello World\n\nStart typing here...');
-    openFile(testFile);
-  }, [initializeFile, openFile]);
+  const { activeFile } = useWorkspaceStore();
 
   // Handle window close requests (Tauri)
   useEffect(() => {
