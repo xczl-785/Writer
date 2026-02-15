@@ -1,4 +1,4 @@
-# QA 验收总入口 Sprint 1 + Sprint 2
+# QA 验收总入口 Sprint 1 + Sprint 2 + Sprint 2.5
 
 用于你按阶段逐条验收的总入口。
 
@@ -26,6 +26,21 @@
 - [ ] QA-S2-05a ~ QA-S2-05c（删除）
 - [ ] QA-S2-06a ~ QA-S2-06b（脏文件安全）
 - [ ] QA-S2-ERR-01 ~ QA-S2-ERR-03（负向与错误路径）
+
+## Sprint 2.5（交互体验纠偏）
+
+- 主清单：`docs/current/QA_CHECKLIST_SPRINT2_5.md`
+- 交互规范：`docs/current/Sprint2.5交互规范.md`
+- 任务拆分：`docs/current/Sprint2.5任务拆分.md`
+
+### Sprint 2.5 执行顺序建议
+
+- [ ] QA-S2.5-NEW-01 ~ QA-S2.5-NEW-03（新建交互）
+- [ ] QA-S2.5-REN-01 ~ QA-S2.5-REN-03（重命名交互）
+- [ ] QA-S2.5-DEL-01 ~ QA-S2.5-DEL-03（删除交互）
+- [ ] QA-S2.5-KB-01 ~ QA-S2.5-KB-04（平台快捷键）
+- [ ] QA-S2.5-VIS-01 ~ QA-S2.5-VIS-03（显示与过滤）
+- [ ] QA-S2.5-ERR-01 ~ QA-S2.5-ERR-03（负向路径）
 
 ## 统一记录模板
 
