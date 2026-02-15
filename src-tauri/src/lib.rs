@@ -18,7 +18,8 @@ pub fn run() {
             fs::create_dir,
             fs::rename_node,
             fs::delete_node,
-            fs::save_image
+            fs::save_image,
+            fs::check_exists
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
