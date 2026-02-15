@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileNode {
@@ -26,10 +26,18 @@ pub fn list_tree(path: &str) -> Result<Vec<FileNode>, String> {
         .filter_map(|res| res.ok())
         .map(|entry| {
             let path = entry.path();
-            let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+            let name = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string();
             let path_str = path.to_string_lossy().to_string();
             let is_dir = path.is_dir();
-            let node_type = if is_dir { "directory".to_string() } else { "file".to_string() };
+            let node_type = if is_dir {
+                "directory".to_string()
+            } else {
+                "file".to_string()
+            };
 
             let children = if is_dir {
                 list_tree(&path_str).ok()
@@ -71,18 +79,24 @@ pub fn read_file(path: &str) -> Result<String, String> {
 pub fn write_file_atomic(path: &str, content: &str) -> Result<(), String> {
     let path_obj = Path::new(path);
     let parent = path_obj.parent().ok_or("Invalid path")?;
-    
+
     if !parent.exists() {
-        return Err(format!("Parent directory does not exist: {}", parent.to_string_lossy()));
+        return Err(format!(
+            "Parent directory does not exist: {}",
+            parent.to_string_lossy()
+        ));
     }
 
-    let temp_file_path = parent.join(format!(".{}.tmp", path_obj.file_name().unwrap_or_default().to_string_lossy()));
-    
+    let temp_file_path = parent.join(format!(
+        ".{}.tmp",
+        path_obj.file_name().unwrap_or_default().to_string_lossy()
+    ));
+
     match fs::write(&temp_file_path, content) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(e) => return Err(e.to_string()),
     }
-    
+
     match fs::rename(&temp_file_path, path) {
         Ok(_) => Ok(()),
         Err(e) => {
@@ -90,4 +104,73 @@ pub fn write_file_atomic(path: &str, content: &str) -> Result<(), String> {
             Err(e.to_string())
         }
     }
+}
+
+#[tauri::command]
+pub fn create_file(path: &str) -> Result<(), String> {
+    let path_obj = Path::new(path);
+    if path_obj.exists() {
+        return Err(format!("File already exists: {}", path));
+    }
+
+    let parent = path_obj.parent().ok_or("Invalid path")?;
+    if !parent.exists() {
+        return Err(format!(
+            "Parent directory does not exist: {}",
+            parent.to_string_lossy()
+        ));
+    }
+
+    fs::File::create(path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn create_dir(path: &str) -> Result<(), String> {
+    let path_obj = Path::new(path);
+    if path_obj.exists() {
+        return Err(format!("Directory already exists: {}", path));
+    }
+
+    let parent = path_obj.parent().ok_or("Invalid path")?;
+    if !parent.exists() {
+        return Err(format!(
+            "Parent directory does not exist: {}",
+            parent.to_string_lossy()
+        ));
+    }
+
+    fs::create_dir(path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn rename_node(old_path: &str, new_path: &str) -> Result<(), String> {
+    let old_path_obj = Path::new(old_path);
+    if !old_path_obj.exists() {
+        return Err(format!("Source path does not exist: {}", old_path));
+    }
+
+    let new_path_obj = Path::new(new_path);
+    if new_path_obj.exists() {
+        return Err(format!("Destination path already exists: {}", new_path));
+    }
+
+    fs::rename(old_path, new_path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_node(path: &str) -> Result<(), String> {
+    let path_obj = Path::new(path);
+    if !path_obj.exists() {
+        return Err(format!("Path does not exist: {}", path));
+    }
+
+    if path_obj.is_dir() {
+        fs::remove_dir_all(path).map_err(|e| e.to_string())?;
+    } else {
+        fs::remove_file(path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
