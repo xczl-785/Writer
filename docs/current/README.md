@@ -4,11 +4,11 @@
 1. `docs/current/V1完成标准.md`
 2. `docs/current/V1全阶段路线图.md`
 3. `docs/current/Sprint1任务拆分.md`
-4. `docs/current/QA_CHECKLIST_V1.md`
-5. `docs/current/StepF执行台账.md`
+4. `docs/current/质量验收清单_V1.md`
+5. `docs/current/步骤F执行台账.md`
 
 ## 2. 追溯与约束
-1. `docs/current/REQUIREMENTS_TRACEABILITY_V1.md`
+1. `docs/current/需求追溯表_V1.md`
 2. `docs/current/MarkdownService工程约束.md`
 
 ## 3. 审阅记录

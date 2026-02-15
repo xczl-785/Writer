@@ -1,12 +1,12 @@
 # Step F 执行台账（V1）
 
 ## 1. 目的
-把 `QA_CHECKLIST_V1.md` 转成可执行、可回填、可审计的门禁台账。
+把 `质量验收清单_V1.md` 转成可执行、可回填、可审计的门禁台账。
 
 ## 1.1 约束引用
-1. `docs/current/QA_CHECKLIST_V1.md`
+1. `docs/current/质量验收清单_V1.md`
 2. `docs/standards/RELEASE_EVIDENCE_STANDARD.md`
-3. `docs/current/REQUIREMENTS_TRACEABILITY_V1.md`
+3. `docs/current/需求追溯表_V1.md`
 
 ## 2. 状态定义
 - `NOT_STARTED`：未开始
