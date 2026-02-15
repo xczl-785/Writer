@@ -18,6 +18,10 @@ const ShortcutExtension = Extension.create({
     return {
       'Mod-i': () => this.editor.commands.toggleItalic(),
       'Mod-b': () => this.editor.commands.toggleBold(),
+      'Mod-1': () => this.editor.commands.toggleHeading({ level: 1 }),
+      'Mod-2': () => this.editor.commands.toggleHeading({ level: 2 }),
+      'Mod-3': () => this.editor.commands.toggleHeading({ level: 3 }),
+      'Mod-4': () => this.editor.commands.setParagraph(),
     };
   },
 });

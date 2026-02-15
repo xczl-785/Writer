@@ -1,5 +1,8 @@
 # Sprint 2 Tasks（Step E）
 
+> 注：Sprint 2.5 已新增为独立阶段，用于交互体验纠偏。  
+> 本文仅保留 Sprint 2 原始功能闭环拆分；交互优化请参考 `docs/current/Sprint2.5任务拆分.md`。
+
 ## 1. Sprint 目标
 
 **完成单工作区文件流闭环**。

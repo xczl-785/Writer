@@ -1,34 +1,27 @@
-# current 文档索引（已整理）
+# current 文档索引（Sprint 2.5 准备态）
 
-本目录用于“当前阶段可执行”的计划、验收与追溯文档。
+本目录仅保留下一阶段（Sprint 2.5）执行所需文档。
 
-## 1) 验收清单（优先使用）
+## 1) 当前阶段主文档
 
-1. `docs/current/QA_CHECKLIST_S1_S2.md`：Sprint 1 + Sprint 2 总入口（按阶段执行）。
-2. `docs/current/QA_CHECKLIST_SPRINT1.md`：Sprint 1 专项清单（中文）。
-3. `docs/current/QA_CHECKLIST_SPRINT2.md`：Sprint 2 专项清单（中文）。
-4. `docs/current/QA_CHECKLIST_S2-05_DeleteFlow.md`：S2-05 删除流细化用例（中文）。
-5. `docs/current/QA_CHECKLIST_V1.md`：V1 清单（当前为 Sprint 1 回归版，中文）。
-6. `docs/current/QA 验收清单_V1.md`：V1 任务映射验收表（中文）。
+1. `docs/current/Sprint2.5任务拆分.md`：Sprint 2.5 任务清单与执行边界。
+2. `docs/current/Sprint2.5交互规范.md`：Sprint 2.5 交互与体验规范。
+3. `docs/current/QA_CHECKLIST_SPRINT2_5.md`：Sprint 2.5 验收清单。
 
-## 2) 计划与范围
+## 2) 全局基线（跨阶段保留）
 
 1. `docs/current/V1完成标准.md`
 2. `docs/current/V1全阶段路线图.md`
-3. `docs/current/Sprint2任务拆分.md`
+3. `docs/current/V1 需求追溯矩阵.md`
 4. `docs/current/V1后续需求池.md`
+5. `docs/current/MarkdownService工程约束.md`
 
-## 3) 追溯与约束
+## 3) 已归档（Sprint 1 / Sprint 2 收尾）
 
-1. `docs/current/V1 需求追溯矩阵.md`
-2. `docs/current/MarkdownService工程约束.md`
+- 归档目录：`docs/archive/2026-02-15_sprint1-sprint2-closeout/`
+- 包含：Sprint1/Sprint2 清单、问题修复留档、Step F 台账、Sprint2 拆分等历史文档。
 
-## 4) 执行台账
+## 4) 使用建议
 
-1. `docs/current/Step F执行台账.md`
-
-## 5) 使用建议
-
-- 你正在做逐条测试时，建议主入口使用 `docs/current/QA_CHECKLIST_S1_S2.md`。
-- 若需要深入某一阶段，直接打开对应 Sprint 专项清单。
-- 若出现阻断问题，记录用例ID + 现象 + 截图，便于快速回归定位。
+- 下一阶段验收入口：`docs/current/QA_CHECKLIST_SPRINT2_5.md`。
+- 若需回溯 Sprint1/2 决策与问题记录，请直接查看归档目录。
