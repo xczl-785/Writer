@@ -114,6 +114,7 @@ export const openWorkspace = async (): Promise<void> => {
       const nodes = await FsService.listTree(path);
 
       useFileTreeStore.getState().setNodes(nodes);
+      useFileTreeStore.getState().setSelectedPath(null);
       useStatusStore
         .getState()
         .setStatus('idle', `Workspace loaded: ${nodes.length} item(s)`);

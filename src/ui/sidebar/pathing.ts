@@ -103,3 +103,21 @@ export const filterVisibleNodes = (nodes: FileNode[]): FileNode[] => {
   }
   return filtered;
 };
+
+export const findNodeByPath = (
+  nodes: FileNode[],
+  path: string,
+): FileNode | null => {
+  for (const node of nodes) {
+    if (node.path === path) {
+      return node;
+    }
+    if (node.children && node.children.length > 0) {
+      const childMatch = findNodeByPath(node.children, path);
+      if (childMatch) {
+        return childMatch;
+      }
+    }
+  }
+  return null;
+};

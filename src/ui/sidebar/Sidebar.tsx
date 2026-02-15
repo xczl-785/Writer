@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { useEditorStore } from '../../state/slices/editorSlice';
@@ -7,7 +7,12 @@ import { FsService } from '../../services/fs/FsService';
 import { FsSafety } from '../../services/fs/FsSafety';
 import type { FileNode } from '../../state/types';
 import {
+  InlineInput,
+  type InlineCommitTrigger,
+} from './InlineInput';
+import {
   ensureMarkdownExtension,
+  findNodeByPath,
   filterVisibleNodes,
   getDisplayName,
   getFileExtension,
@@ -15,6 +20,8 @@ import {
   hasInvalidNodeName,
   resolveCreateBasePath,
 } from './pathing';
+import { dispatchExplorerCommand, EXPLORER_COMMANDS } from './explorerCommands';
+import { matchExplorerShortcut } from './explorerKeybindings';
 import {
   Folder,
   FolderOpen,
@@ -25,61 +32,74 @@ import {
   Trash2,
 } from 'lucide-react';
 
-export function Sidebar() {
-  const { nodes } = useFileTreeStore();
-  const { currentPath } = useWorkspaceStore();
-  const visibleNodes = filterVisibleNodes(nodes);
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<FileNode['type'] | null>(
-    null,
-  );
-  const [createMode, setCreateMode] = useState<'file' | 'folder' | null>(null);
-  const [draftName, setDraftName] = useState('');
-  const [pendingDeleteNode, setPendingDeleteNode] = useState<FileNode | null>(
-    null,
-  );
+type GhostNode = {
+  parentPath: string | null;
+  type: 'file' | 'directory';
+};
 
-  const startCreate = (mode: 'file' | 'folder') => {
-    setCreateMode(mode);
-    setDraftName(mode === 'file' ? 'untitled' : 'new-folder');
+export function Sidebar() {
+  const { nodes, selectedPath, setSelectedPath } = useFileTreeStore();
+  const { currentPath, activeFile } = useWorkspaceStore();
+  const visibleNodes = filterVisibleNodes(nodes);
+  const [ghostNode, setGhostNode] = useState<GhostNode | null>(null);
+  const [pendingDeleteNode, setPendingDeleteNode] = useState<FileNode | null>(null);
+  const [renamingPath, setRenamingPath] = useState<string | null>(null);
+  const [renameTrigger, setRenameTrigger] = useState(0);
+  const [explorerFocus, setExplorerFocus] = useState(false);
+
+  const selectedNode = selectedPath ? findNodeByPath(visibleNodes, selectedPath) : null;
+
+  const startCreate = (type: 'file' | 'directory') => {
+    if (!currentPath) {
+      return;
+    }
+    const basePath = resolveCreateBasePath({
+      currentPath,
+      selectedPath,
+      selectedType: selectedNode?.type ?? null,
+      activeFile,
+    });
+    setGhostNode({
+      parentPath: basePath === currentPath ? null : basePath,
+      type,
+    });
   };
 
   const cancelCreate = () => {
-    setCreateMode(null);
-    setDraftName('');
+    setGhostNode(null);
   };
 
-  const submitCreate = async () => {
-    const { currentPath, activeFile } = useWorkspaceStore.getState();
-    if (!currentPath || !createMode) {
+  const commitCreate = async (
+    nameRaw: string,
+    trigger: InlineCommitTrigger,
+  ): Promise<void> => {
+    if (!ghostNode || !currentPath) {
+      return;
+    }
+
+    const trimmed = nameRaw.trim();
+    if (!trimmed) {
       cancelCreate();
       return;
     }
 
-    if (hasInvalidNodeName(draftName)) {
-      alert(
-        createMode === 'file'
-          ? 'File name is invalid.'
-          : 'Folder name is invalid.',
-      );
+    const nodeName =
+      ghostNode.type === 'file' ? ensureMarkdownExtension(trimmed) : trimmed;
+
+    if (hasInvalidNodeName(nodeName)) {
+      if (trigger === 'enter') {
+        alert('Name is invalid.');
+      } else {
+        cancelCreate();
+      }
       return;
     }
 
-    const basePath = resolveCreateBasePath({
-      currentPath,
-      selectedPath,
-      selectedType,
-      activeFile,
-    });
-
-    const nodeName =
-      createMode === 'file'
-        ? ensureMarkdownExtension(draftName)
-        : draftName.trim();
+    const basePath = ghostNode.parentPath || currentPath;
     const fullPath = `${basePath}/${nodeName}`.replace(/\/+/g, '/');
 
     try {
-      if (createMode === 'file') {
+      if (ghostNode.type === 'file') {
         await FsService.createFile(fullPath);
       } else {
         await FsService.createDir(fullPath);
@@ -87,66 +107,103 @@ export function Sidebar() {
 
       const refreshedNodes = await FsService.listTree(currentPath);
       useFileTreeStore.getState().setNodes(refreshedNodes);
-
       setSelectedPath(fullPath);
-      setSelectedType(createMode === 'file' ? 'file' : 'directory');
 
-      if (createMode === 'file') {
+      if (ghostNode.type === 'file') {
         await openFile(fullPath);
       }
 
       cancelCreate();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      alert(
-        createMode === 'file'
-          ? `Failed to create file: ${message}`
-          : `Failed to create folder: ${message}`,
-      );
+      if (trigger === 'enter') {
+        alert(`Failed to create: ${message}`);
+      } else {
+        cancelCreate();
+      }
     }
   };
 
-  const handleCreateFile = async () => {
-    const { currentPath } = useWorkspaceStore.getState();
-    if (!currentPath) {
-      alert('Please open a workspace first.');
+  const beginRenameSelection = () => {
+    if (!selectedNode) {
       return;
     }
-    startCreate('file');
+    setRenamingPath(selectedNode.path);
+    setRenameTrigger((v) => v + 1);
   };
 
-  const handleCreateFolder = async () => {
-    const { currentPath } = useWorkspaceStore.getState();
-    if (!currentPath) {
-      alert('Please open a workspace first.');
+  const requestDeleteSelection = () => {
+    if (!selectedNode) {
       return;
     }
-    startCreate('folder');
+    setPendingDeleteNode(selectedNode);
   };
+
+  const commandCtx = {
+    hasWorkspace: Boolean(currentPath),
+    hasSelection: Boolean(selectedNode),
+    openWorkspace,
+    beginCreateFile: () => startCreate('file'),
+    beginCreateFolder: () => startCreate('directory'),
+    beginRenameSelection,
+    requestDeleteSelection,
+    showWorkspaceRequiredAlert: () => alert('Please open a workspace first.'),
+  };
+
+  useEffect(() => {
+    const inputActive = ghostNode !== null || renamingPath !== null;
+    const modalOpen = pendingDeleteNode !== null;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!explorerFocus || inputActive || modalOpen) {
+        return;
+      }
+
+      const command = matchExplorerShortcut(event);
+      if (!command) {
+        return;
+      }
+
+      event.preventDefault();
+      dispatchExplorerCommand(command, commandCtx);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [explorerFocus, ghostNode, renamingPath, pendingDeleteNode, selectedNode]);
 
   return (
-    <div className="h-full flex flex-col bg-gray-50/50 border-r border-gray-200 w-64 flex-shrink-0 select-none">
+    <div
+      className="h-full flex flex-col bg-gray-50/50 border-r border-gray-200 w-64 flex-shrink-0 select-none"
+      tabIndex={0}
+      onFocusCapture={() => setExplorerFocus(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setExplorerFocus(false);
+        }
+      }}
+    >
       <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Explorer
         </span>
         <div className="flex items-center gap-1">
           <button
-            onClick={handleCreateFile}
+            onClick={() => dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx)}
             className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
             title="New File"
           >
             <FilePlus size={16} />
           </button>
           <button
-            onClick={handleCreateFolder}
+            onClick={() => dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx)}
             className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
             title="New Folder"
           >
             <FolderPlus size={16} />
           </button>
           <button
-            onClick={openWorkspace}
+            onClick={() => dispatchExplorerCommand(EXPLORER_COMMANDS.OPEN_WORKSPACE, commandCtx)}
             className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
             title="Open Folder"
           >
@@ -154,46 +211,9 @@ export function Sidebar() {
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-2">
-        {createMode && (
-          <div className="mb-2 rounded-md border border-gray-300 bg-white p-2 space-y-2">
-            <div className="text-xs text-gray-600">
-              {createMode === 'file' ? 'Create new file' : 'Create new folder'}
-            </div>
-            <input
-              autoFocus
-              value={draftName}
-              onChange={(e) => setDraftName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  void submitCreate();
-                }
-                if (e.key === 'Escape') {
-                  e.preventDefault();
-                  cancelCreate();
-                }
-              }}
-              className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => void submitCreate()}
-                className="rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600"
-              >
-                Create
-              </button>
-              <button
-                onClick={cancelCreate}
-                className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
 
-        {visibleNodes.length === 0 ? (
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-2">
+        {visibleNodes.length === 0 && !ghostNode ? (
           <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
             <Folder size={24} className="mb-2 opacity-20" />
             <span>{currentPath ? 'No markdown files' : 'No folder opened'}</span>
@@ -208,22 +228,36 @@ export function Sidebar() {
           </div>
         ) : (
           <div className="space-y-0.5">
+            {ghostNode && ghostNode.parentPath === null && (
+              <GhostRow
+                level={0}
+                type={ghostNode.type}
+                onCommit={commitCreate}
+                onCancel={cancelCreate}
+              />
+            )}
+
             {visibleNodes.map((node) => (
               <FileTreeNode
                 key={node.path}
                 node={node}
                 level={0}
                 selectedPath={selectedPath}
+                renamingPath={renamingPath}
+                renameTrigger={renameTrigger}
+                ghostNode={ghostNode}
+                onGhostCommit={commitCreate}
+                onGhostCancel={cancelCreate}
                 onRequestDelete={(target) => setPendingDeleteNode(target)}
-                onSelect={(path, type) => {
-                  setSelectedPath(path);
-                  setSelectedType(type);
-                }}
+                onRequestRenameStart={(path) => setRenamingPath(path)}
+                onRequestRenameEnd={() => setRenamingPath(null)}
+                onSelect={(path) => setSelectedPath(path)}
               />
             ))}
           </div>
         )}
       </div>
+
       {pendingDeleteNode && (
         <DeleteConfirmDialog
           node={pendingDeleteNode}
@@ -235,18 +269,66 @@ export function Sidebar() {
   );
 }
 
+function GhostRow({
+  level,
+  type,
+  onCommit,
+  onCancel,
+}: {
+  level: number;
+  type: 'file' | 'directory';
+  onCommit: (name: string, trigger: InlineCommitTrigger) => Promise<void>;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      className="flex items-center gap-1.5 py-1 px-2 rounded-md text-sm text-gray-700"
+      style={{ paddingLeft: `${level * 12 + 8}px` }}
+    >
+      <span className="text-gray-400 flex-shrink-0">
+        {type === 'directory' ? (
+          <Folder size={16} className="text-blue-500" />
+        ) : (
+          <FileText size={16} className="text-gray-500" />
+        )}
+      </span>
+      <InlineInput
+        value=""
+        placeholder={type === 'file' ? 'untitled' : 'new-folder'}
+        onCommit={onCommit}
+        onCancel={() => onCancel()}
+        autoFocus={true}
+      />
+    </div>
+  );
+}
+
 function FileTreeNode({
   node,
   level,
   selectedPath,
+  renamingPath,
+  renameTrigger,
+  ghostNode,
+  onGhostCommit,
+  onGhostCancel,
   onRequestDelete,
+  onRequestRenameStart,
+  onRequestRenameEnd,
   onSelect,
 }: {
   node: FileNode;
   level: number;
   selectedPath: string | null;
+  renamingPath: string | null;
+  renameTrigger: number;
+  ghostNode: GhostNode | null;
+  onGhostCommit: (name: string, trigger: InlineCommitTrigger) => Promise<void>;
+  onGhostCancel: () => void;
   onRequestDelete: (node: FileNode) => void;
-  onSelect: (path: string, type: FileNode['type']) => void;
+  onRequestRenameStart: (path: string) => void;
+  onRequestRenameEnd: () => void;
+  onSelect: (path: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -255,9 +337,22 @@ function FileTreeNode({
   const hasChildren = node.children && node.children.length > 0;
   const isSelected = selectedPath === node.path;
 
+  useEffect(() => {
+    if (renamingPath === node.path) {
+      setRenameDraft(getDisplayName(node));
+      setIsRenaming(true);
+    }
+  }, [node, renamingPath, renameTrigger]);
+
+  useEffect(() => {
+    if (isDirectory && ghostNode?.parentPath === node.path && !isExpanded) {
+      setIsExpanded(true);
+    }
+  }, [ghostNode, isDirectory, isExpanded, node.path]);
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onSelect(node.path, node.type);
+    onSelect(node.path);
 
     if (isRenaming) {
       return;
@@ -272,33 +367,42 @@ function FileTreeNode({
 
   const startRename = (e: React.MouseEvent) => {
     e.stopPropagation();
+    onRequestRenameStart(node.path);
     setRenameDraft(getDisplayName(node));
     setIsRenaming(true);
   };
 
-  const cancelRename = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setRenameDraft(getDisplayName(node));
-    setIsRenaming(false);
-  };
+  const commitRename = async (
+    nameRaw: string,
+    trigger: InlineCommitTrigger,
+  ): Promise<void> => {
+    const oldName = getDisplayName(node);
+    const newName = nameRaw.trim();
 
-  const submitRename = async (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-
-    const newName = renameDraft.trim();
-    if (newName === getDisplayName(node)) {
+    if (!newName || newName === oldName) {
       setIsRenaming(false);
+      onRequestRenameEnd();
       return;
     }
 
     if (hasInvalidNodeName(newName)) {
-      alert('Name is invalid.');
+      if (trigger === 'enter') {
+        alert('Name is invalid.');
+      }
+      setRenameDraft(oldName);
+      setIsRenaming(false);
+      onRequestRenameEnd();
       return;
     }
 
     const success = await FsSafety.flushAffectedFiles(node.path);
     if (!success) {
-      alert('Failed to save changes before rename. Operation aborted.');
+      if (trigger === 'enter') {
+        alert('Failed to save changes before rename. Operation aborted.');
+      }
+      setRenameDraft(oldName);
+      setIsRenaming(false);
+      onRequestRenameEnd();
       return;
     }
 
@@ -311,7 +415,6 @@ function FileTreeNode({
 
     try {
       await FsService.renameNode(node.path, newPath);
-
       useWorkspaceStore.getState().renameFile(node.path, newPath);
       useEditorStore.getState().renameFile(node.path, newPath);
 
@@ -321,12 +424,16 @@ function FileTreeNode({
         useFileTreeStore.getState().setNodes(nodes);
       }
 
-      onSelect(newPath, node.type);
-      setIsRenaming(false);
+      onSelect(newPath);
     } catch (error) {
-      console.error('Failed to rename:', error);
-      const message = error instanceof Error ? error.message : String(error);
-      alert(`Failed to rename file/folder: ${message}`);
+      if (trigger === 'enter') {
+        const message = error instanceof Error ? error.message : String(error);
+        alert(`Failed to rename file/folder: ${message}`);
+      }
+      setRenameDraft(oldName);
+    } finally {
+      setIsRenaming(false);
+      onRequestRenameEnd();
     }
   };
 
@@ -357,47 +464,21 @@ function FileTreeNode({
         </span>
 
         {isRenaming ? (
-          <input
-            autoFocus
+          <InlineInput
             value={renameDraft}
-            onChange={(e) => setRenameDraft(e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                void submitRename();
-              }
-              if (e.key === 'Escape') {
-                e.preventDefault();
-                cancelRename();
-              }
+            onCommit={commitRename}
+            onCancel={() => {
+              setRenameDraft(getDisplayName(node));
+              setIsRenaming(false);
+              onRequestRenameEnd();
             }}
-            className="flex-1 rounded border border-gray-300 px-1 py-0.5 text-sm"
+            autoFocus={true}
           />
         ) : (
-          <span className="truncate flex-1 leading-none py-0.5">
-            {getDisplayName(node)}
-          </span>
+          <span className="truncate flex-1 leading-none py-0.5">{getDisplayName(node)}</span>
         )}
 
-        {isRenaming ? (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => void submitRename()}
-              className="rounded border border-gray-300 px-1 text-[10px] text-gray-700 hover:bg-gray-100"
-              title="Save"
-            >
-              Save
-            </button>
-            <button
-              onClick={cancelRename}
-              className="rounded border border-gray-300 px-1 text-[10px] text-gray-700 hover:bg-gray-100"
-              title="Cancel"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
+        {!isRenaming && (
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
             <button
               onClick={startRename}
@@ -417,18 +498,34 @@ function FileTreeNode({
         )}
       </div>
 
-      {isDirectory && isExpanded && hasChildren && (
+      {isDirectory && isExpanded && (
         <div>
-          {node.children!.map((child) => (
-            <FileTreeNode
-              key={child.path}
-              node={child}
+          {ghostNode && ghostNode.parentPath === node.path && (
+            <GhostRow
               level={level + 1}
-              selectedPath={selectedPath}
-              onRequestDelete={onRequestDelete}
-              onSelect={onSelect}
+              type={ghostNode.type}
+              onCommit={onGhostCommit}
+              onCancel={onGhostCancel}
             />
-          ))}
+          )}
+          {hasChildren &&
+            node.children!.map((child) => (
+              <FileTreeNode
+                key={child.path}
+                node={child}
+                level={level + 1}
+                selectedPath={selectedPath}
+                renamingPath={renamingPath}
+                renameTrigger={renameTrigger}
+                ghostNode={ghostNode}
+                onGhostCommit={onGhostCommit}
+                onGhostCancel={onGhostCancel}
+                onRequestDelete={onRequestDelete}
+                onRequestRenameStart={onRequestRenameStart}
+                onRequestRenameEnd={onRequestRenameEnd}
+                onSelect={onSelect}
+              />
+            ))}
         </div>
       )}
     </div>
@@ -465,6 +562,14 @@ function DeleteConfirmDialog({
       if (currentPath) {
         const nodes = await FsService.listTree(currentPath);
         useFileTreeStore.getState().setNodes(nodes);
+      }
+
+      const selectedPath = useFileTreeStore.getState().selectedPath;
+      if (
+        selectedPath &&
+        (selectedPath === node.path || selectedPath.startsWith(`${node.path}/`))
+      ) {
+        useFileTreeStore.getState().setSelectedPath(null);
       }
       onConfirm();
     } catch (error) {

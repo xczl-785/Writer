@@ -7,6 +7,7 @@
 1. `docs/current/Sprint2.5任务拆分.md`：Sprint 2.5 任务清单与执行边界。
 2. `docs/current/Sprint2.5交互规范.md`：Sprint 2.5 交互与体验规范。
 3. `docs/current/QA_CHECKLIST_SPRINT2_5.md`：Sprint 2.5 验收清单。
+4. `docs/current/Sprint2.5_问题修复留档.md`：Sprint 2.5 问题归档与修复追踪。
 
 ## 2) 全局基线（跨阶段保留）
 
