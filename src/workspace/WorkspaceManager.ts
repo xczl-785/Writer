@@ -1,6 +1,6 @@
 import { open } from '@tauri-apps/plugin-dialog';
 import { FsService } from '../services/fs/FsService';
-import { AutosaveService } from '../services/autosave/AutosaveService';
+import { FsSafety } from '../services/fs/FsSafety';
 import { useWorkspaceStore } from '../state/slices/workspaceSlice';
 import { useFileTreeStore } from '../state/slices/filetreeSlice';
 import { useStatusStore } from '../state/slices/statusSlice';
@@ -9,15 +9,21 @@ import { useEditorStore } from '../state/slices/editorSlice';
 export const openFile = async (path: string): Promise<void> => {
   try {
     const { activeFile } = useWorkspaceStore.getState();
-    const { fileStates } = useEditorStore.getState();
 
-    if (activeFile && fileStates[activeFile]?.isDirty) {
-      useStatusStore.getState().setStatus('saving', 'Saving changes...');
-      try {
-        await AutosaveService.flush(activeFile);
-      } catch (error) {
-        console.error(`Failed to save ${activeFile}:`, error);
+    if (activeFile) {
+      const success = await FsSafety.flushAffectedFiles(activeFile);
+      if (!success) {
         useStatusStore.getState().setStatus('error', 'Failed to save changes');
+        return;
+      }
+    }
+
+    if (path !== activeFile) {
+      const success = await FsSafety.flushAffectedFiles(path);
+      if (!success) {
+        useStatusStore
+          .getState()
+          .setStatus('error', 'Failed to save target file');
         return;
       }
     }

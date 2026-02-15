@@ -8,6 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { useEditorStore } from '../../state/slices/editorSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { MarkdownService } from '../../services/markdown/MarkdownService';
+import { AutosaveService } from '../../services/autosave/AutosaveService';
 import './Editor.css';
 
 export const Editor = () => {
@@ -53,6 +54,7 @@ export const Editor = () => {
           const markdown = await MarkdownService.serialize(json);
           updateFileContent(activeFile, markdown);
           setDirty(activeFile, true);
+          AutosaveService.schedule(activeFile, markdown);
         } catch (error) {
           console.error('Failed to serialize editor content:', error);
         }

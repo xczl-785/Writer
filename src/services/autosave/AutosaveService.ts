@@ -1,5 +1,6 @@
 import { FsService } from '../fs/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { useEditorStore } from '../../state/slices/editorSlice';
 
 const DEBOUNCE_MS = 800;
 
@@ -37,6 +38,7 @@ export const AutosaveService = {
     try {
       useStatusStore.getState().setStatus('saving', `Saving ${path}...`);
       await FsService.writeFileAtomic(path, content);
+      useEditorStore.getState().setDirty(path, false);
       useStatusStore.getState().setStatus('idle', 'Saved');
     } catch (error) {
       console.error(`Failed to autosave ${path}:`, error);

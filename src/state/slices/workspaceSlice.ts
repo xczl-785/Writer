@@ -53,10 +53,20 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
     setActiveFile: (path) => set({ activeFile: path }),
 
     renameFile: (oldPath, newPath) =>
-      set((state) => ({
-        openFiles: state.openFiles.map((f) => (f === oldPath ? newPath : f)),
-        activeFile: state.activeFile === oldPath ? newPath : state.activeFile,
-      })),
+      set((state) => {
+        const replacePath = (f: string) => {
+          if (f === oldPath) return newPath;
+          if (f.startsWith(`${oldPath}/`)) {
+            return f.replace(oldPath, newPath);
+          }
+          return f;
+        };
+
+        return {
+          openFiles: state.openFiles.map(replacePath),
+          activeFile: state.activeFile ? replacePath(state.activeFile) : null,
+        };
+      }),
 
     removePath: (path) =>
       set((state) => {

@@ -85,12 +85,21 @@ export const useEditorStore = create<EditorState & EditorActions>((set) => ({
 
   renameFile: (oldPath, newPath) =>
     set((state) => {
-      const fileState = state.fileStates[oldPath];
-      if (!fileState) return state;
       const newFileStates = { ...state.fileStates };
-      delete newFileStates[oldPath];
-      newFileStates[newPath] = fileState;
-      return { fileStates: newFileStates };
+      let changed = false;
+
+      Object.keys(newFileStates).forEach((path) => {
+        if (path === oldPath || path.startsWith(`${oldPath}/`)) {
+          const fileState = newFileStates[path];
+          delete newFileStates[path];
+          const updatedPath =
+            path === oldPath ? newPath : path.replace(oldPath, newPath);
+          newFileStates[updatedPath] = fileState;
+          changed = true;
+        }
+      });
+
+      return changed ? { fileStates: newFileStates } : state;
     }),
 
   removePath: (path) =>
