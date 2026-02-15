@@ -202,3 +202,8 @@ pub fn save_image(path: &str, data: Vec<u8>) -> Result<(), String> {
         }
     }
 }
+
+#[tauri::command]
+pub fn check_exists(path: &str) -> Result<bool, String> {
+    Ok(Path::new(path).exists())
+}
