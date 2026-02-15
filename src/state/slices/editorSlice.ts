@@ -21,6 +21,8 @@ export interface EditorActions {
   updateCursor: (path: string, cursor: CursorPosition) => void;
   setDirty: (path: string, isDirty: boolean) => void;
   closeFileState: (path: string) => void;
+  renameFile: (oldPath: string, newPath: string) => void;
+  removePath: (path: string) => void;
 }
 
 export const useEditorStore = create<EditorState & EditorActions>((set) => ({
@@ -79,5 +81,28 @@ export const useEditorStore = create<EditorState & EditorActions>((set) => ({
       const remaining = { ...state.fileStates };
       delete remaining[path];
       return { fileStates: remaining };
+    }),
+
+  renameFile: (oldPath, newPath) =>
+    set((state) => {
+      const fileState = state.fileStates[oldPath];
+      if (!fileState) return state;
+      const newFileStates = { ...state.fileStates };
+      delete newFileStates[oldPath];
+      newFileStates[newPath] = fileState;
+      return { fileStates: newFileStates };
+    }),
+
+  removePath: (path) =>
+    set((state) => {
+      const newFileStates = { ...state.fileStates };
+      let changed = false;
+      Object.keys(newFileStates).forEach((f) => {
+        if (f === path || f.startsWith(`${path}/`)) {
+          delete newFileStates[f];
+          changed = true;
+        }
+      });
+      return changed ? { fileStates: newFileStates } : state;
     }),
 }));
