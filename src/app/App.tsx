@@ -104,12 +104,12 @@ function App() {
         <Sidebar />
 
         {/* Main Editor Area */}
-        <main className="flex-grow flex flex-col relative w-2/3 border-r h-full">
+        <main className="flex-1 flex flex-col relative min-w-0 h-full">
           <Editor />
         </main>
 
         {/* Debug Sidebar */}
-        <aside className="w-1/3 overflow-auto bg-gray-100 p-4 h-full">
+        <aside className="w-80 flex-shrink-0 overflow-auto bg-gray-100 p-4 h-full border-l">
           <StateDebug />
         </aside>
       </div>

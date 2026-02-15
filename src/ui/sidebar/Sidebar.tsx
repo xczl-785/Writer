@@ -7,7 +7,7 @@ export function Sidebar() {
   const { nodes } = useFileTreeStore();
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 border-r border-gray-200 w-64">
+    <div className="h-full flex flex-col bg-gray-50 border-r border-gray-200 w-64 flex-shrink-0">
       <div className="p-4 border-b border-gray-200">
         <button
           onClick={openWorkspace}
