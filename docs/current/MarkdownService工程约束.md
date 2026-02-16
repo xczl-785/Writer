@@ -6,12 +6,13 @@
 
 ## 2. 选型结论（已验证，来源：D-007）
 
-| 项目        | 选型                        | 版本    |
-| ----------- | --------------------------- | ------- |
-| 核心包      | `@tiptap/markdown`          | ^3.19.0 |
-| Parser 引擎 | MarkedJS（CommonMark 合规） | 内置    |
-| 基础扩展    | `@tiptap/starter-kit`       | ^3.19.0 |
-| 图片扩展    | `@tiptap/extension-image`   | ^3.19.0 |
+| 项目        | 选型                        | 版本      |
+| --------- | ------------------------- | ------- |
+| 核心包       | `@tiptap/markdown`        | ^3.19.0 |
+| Parser 引擎 | MarkedJS（CommonMark 合规）   | 内置      |
+| 基础扩展      | `@tiptap/starter-kit`     | ^3.19.0 |
+| 图片扩展      | `@tiptap/extension-image` | ^3.19.0 |
+
 
 **参考实现**：`spike/roundtrip/roundtrip.test.ts`
 
