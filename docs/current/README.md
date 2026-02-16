@@ -25,6 +25,9 @@
 3. `docs/archive/2026-02-15_sprint3-closeout/`
    - Sprint 3 任务拆分、图片与资源规范、验收清单、启动文档与技术沉淀。
 
+4. `docs/archive/2026-02-16_sprint4-closeout/`
+   - Sprint 4 回归清单、平台矩阵、发布就绪清单与收尾结论（Windows 待补测）。
+
 ## 4) 使用建议
 
 - 继续推进新阶段前，请先在 `docs/current` 新建该阶段的“任务拆分 + 交互规范 + QA 清单”。
