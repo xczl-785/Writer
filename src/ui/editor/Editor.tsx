@@ -100,15 +100,6 @@ export const Editor = () => {
   ); // Re-create editor when activeFile changes
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      AutosaveService.flushAll();
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
-  useEffect(() => {
     if (!editor || !activeFile) return;
 
     let isMounted = true;
