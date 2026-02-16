@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   useEditor,
   EditorContent,
@@ -11,6 +11,7 @@ import { useEditorStore } from '../../state/slices/editorSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { MarkdownService } from '../../services/markdown/MarkdownService';
 import { AutosaveService } from '../../services/autosave/AutosaveService';
+import { ImageResolver } from '../../services/images/ImageResolver';
 import { useImagePaste } from './useImagePaste';
 import { createHandleDOMEvents } from './pasteHandler';
 import './Editor.css';
@@ -40,17 +41,35 @@ export const Editor = () => {
 
   const content = activeFile ? fileStates[activeFile]?.content || '' : '';
 
+  const extensions = useMemo(() => {
+    return [
+      ShortcutExtension,
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+      }),
+      Image.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            src: {
+              default: null,
+              renderHTML: (attributes) => {
+                return {
+                  src: ImageResolver.resolve(attributes.src, activeFile),
+                };
+              },
+            },
+          };
+        },
+      }),
+    ];
+  }, [activeFile]);
+
   const editor = useEditor(
     {
-      extensions: [
-        ShortcutExtension,
-        StarterKit.configure({
-          heading: {
-            levels: [1, 2, 3],
-          },
-        }),
-        Image,
-      ],
+      extensions,
       content: '', // Initial content empty, loaded via useEffect
       editorProps: {
         attributes: {
