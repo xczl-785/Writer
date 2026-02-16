@@ -7,6 +7,7 @@ import {
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { FsService } from '../../services/fs/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { ImageResolver } from '../../services/images/ImageResolver';
 
 vi.mock('../../state/slices/workspaceSlice', () => ({
   useWorkspaceStore: vi.fn(),
@@ -22,6 +23,12 @@ vi.mock('../../services/fs/FsService', () => ({
   FsService: {
     saveImage: vi.fn(),
     checkExists: vi.fn(),
+  },
+}));
+
+vi.mock('../../services/images/ImageResolver', () => ({
+  ImageResolver: {
+    resolve: vi.fn(),
   },
 }));
 
@@ -72,6 +79,7 @@ describe('useImagePaste', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
     (useWorkspaceStore as any).mockReturnValue({
       activeFile: '/project/docs/file.md',
       currentPath: '/project/docs',
@@ -81,6 +89,9 @@ describe('useImagePaste', () => {
     });
     vi.mocked(FsService.saveImage).mockResolvedValue(undefined);
     vi.mocked(FsService.checkExists).mockResolvedValue(false);
+    vi.mocked(ImageResolver.resolve).mockReturnValue(
+      'asset:///project/docs/assets/image.png',
+    );
   });
 
   it('should reject unsupported image formats and set status error', async () => {
@@ -243,6 +254,47 @@ describe('useImagePaste', () => {
     expect(FsService.saveImage).toHaveBeenCalledWith(
       expect.stringMatching(/-1\.png$/),
       expect.any(Uint8Array),
+    );
+  });
+
+  it('should show raw to resolved image diagnostic when enabled', async () => {
+    vi.stubEnv('VITE_SHOW_IMAGE_DIAGNOSTIC', '1');
+    const setStatusMock = vi.fn();
+    (useStatusStore.getState as any).mockReturnValue({
+      setStatus: setStatusMock,
+    });
+
+    const { handlePaste } = useImagePaste(mockEditor);
+
+    const mockFile = {
+      size: 1024,
+      type: 'image/png',
+      arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)),
+    };
+
+    const mockEvent = {
+      clipboardData: {
+        items: [
+          {
+            type: 'image/png',
+            getAsFile: () => mockFile,
+          },
+        ],
+      },
+      preventDefault: vi.fn(),
+    } as any;
+
+    await handlePaste(mockEvent);
+
+    expect(ImageResolver.resolve).toHaveBeenCalledWith(
+      expect.stringMatching(/^\.\/assets\/image-\d{8}-\d{6}\.png$/),
+      '/project/docs/file.md',
+    );
+    expect(setStatusMock).toHaveBeenCalledWith(
+      'idle',
+      expect.stringMatching(
+        /^Image src: \.\/assets\/image-\d{8}-\d{6}\.png -> asset:\/\/\/project\/docs\/assets\/image\.png$/,
+      ),
     );
   });
 });
