@@ -2,6 +2,10 @@ import { Editor } from '@tiptap/react';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { FsService } from '../../services/fs/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { ImageResolver } from '../../services/images/ImageResolver';
+
+const shouldShowImageRenderDiagnostic = (): boolean =>
+  import.meta.env?.VITE_SHOW_IMAGE_DIAGNOSTIC === '1';
 
 export const generateUniqueFilename = async (
   baseDir: string,
@@ -90,8 +94,18 @@ export const useImagePaste = (editor: Editor | null = null) => {
           await FsService.saveImage(imagePath, uint8Array);
 
           const relativePath = getRelativePath(activeFile, imagePath);
+          const resolvedPath = ImageResolver.resolve(relativePath, activeFile);
 
           targetEditor.commands.setImage({ src: relativePath });
+
+          if (shouldShowImageRenderDiagnostic()) {
+            useStatusStore
+              .getState()
+              .setStatus(
+                'idle',
+                `Image src: ${relativePath} -> ${resolvedPath}`,
+              );
+          }
         } catch (error) {
           console.error('Failed to save image:', error);
           useStatusStore.getState().setStatus('error', 'Failed to save image');
