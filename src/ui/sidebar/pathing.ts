@@ -97,9 +97,7 @@ export const filterVisibleNodes = (nodes: FileNode[]): FileNode[] => {
     }
 
     const children = node.children ? filterVisibleNodes(node.children) : [];
-    if (children.length > 0) {
-      filtered.push({ ...node, children });
-    }
+    filtered.push({ ...node, children });
   }
   return filtered;
 };

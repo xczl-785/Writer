@@ -74,9 +74,9 @@ describe('sidebar pathing', () => {
   });
 
   it('builds display name without markdown extension', () => {
-    expect(getDisplayName({ path: '/ws/a.md', name: 'a.md', type: 'file' })).toBe(
-      'a',
-    );
+    expect(
+      getDisplayName({ path: '/ws/a.md', name: 'a.md', type: 'file' }),
+    ).toBe('a');
     expect(
       getDisplayName({ path: '/ws/docs', name: 'docs', type: 'directory' }),
     ).toBe('docs');
@@ -88,7 +88,7 @@ describe('sidebar pathing', () => {
     expect(ensureMarkdownExtension('note.markdown')).toBe('note.markdown');
   });
 
-  it('filters out non-markdown files and empty folders', () => {
+  it('filters out non-markdown files and keeps directories visible', () => {
     const filtered = filterVisibleNodes([
       {
         path: '/ws/a.md',
@@ -115,6 +115,12 @@ describe('sidebar pathing', () => {
         type: 'directory',
         children: [{ path: '/ws/empty/c.txt', name: 'c.txt', type: 'file' }],
       },
+      {
+        path: '/ws/new-folder',
+        name: 'new-folder',
+        type: 'directory',
+        children: [],
+      },
     ]);
 
     expect(filtered).toEqual([
@@ -124,6 +130,18 @@ describe('sidebar pathing', () => {
         name: 'folder',
         type: 'directory',
         children: [{ path: '/ws/folder/b.md', name: 'b.md', type: 'file' }],
+      },
+      {
+        path: '/ws/empty',
+        name: 'empty',
+        type: 'directory',
+        children: [],
+      },
+      {
+        path: '/ws/new-folder',
+        name: 'new-folder',
+        type: 'directory',
+        children: [],
       },
     ]);
   });
