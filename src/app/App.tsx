@@ -9,6 +9,7 @@ import { useStatusStore } from '../state/slices/statusSlice';
 import { StatusBar } from '../ui/statusbar/StatusBar';
 import { AutosaveService } from '../services/autosave/AutosaveService';
 import { FsService } from '../services/fs/FsService';
+import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
 import {
   filterSavableDirtyPaths,
   getCloseAction,
@@ -28,6 +29,11 @@ function App() {
   useEffect(() => {
     currentPathRef.current = currentPath;
   }, [currentPath]);
+
+  // Warm up Tauri IPC on idle time to reduce first native dialog latency.
+  useEffect(() => {
+    scheduleTauriBridgeWarmup();
+  }, []);
 
   // Handle window close requests (Tauri)
   useEffect(() => {
