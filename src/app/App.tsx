@@ -1,16 +1,33 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Editor } from '../ui/editor/Editor';
 import { StateDebug } from '../ui/StateDebug';
 import { Sidebar } from '../ui/sidebar/Sidebar';
 import { useWorkspaceStore } from '../state/slices/workspaceSlice';
 import { useEditorStore } from '../state/slices/editorSlice';
+import { useStatusStore } from '../state/slices/statusSlice';
 import { StatusBar } from '../ui/statusbar/StatusBar';
 import { AutosaveService } from '../services/autosave/AutosaveService';
+import { FsService } from '../services/fs/FsService';
+import {
+  filterSavableDirtyPaths,
+  getCloseAction,
+  getForceCloseHint,
+} from './closeWorkflow';
 import './App.css';
 
 function App() {
-  const { activeFile } = useWorkspaceStore();
+  const { activeFile, currentPath } = useWorkspaceStore();
+  const isClosingRef = useRef(false);
+  const isProgrammaticCloseRef = useRef(false);
+  const forceCloseRequestedRef = useRef(false);
+  const currentPathRef = useRef(currentPath);
+  const showStateDebug =
+    import.meta.env.DEV && import.meta.env.VITE_SHOW_STATE_DEBUG === '1';
+
+  useEffect(() => {
+    currentPathRef.current = currentPath;
+  }, [currentPath]);
 
   // Handle window close requests (Tauri)
   useEffect(() => {
@@ -21,23 +38,69 @@ function App() {
       try {
         const appWindow = getCurrentWindow();
         const unlisten = await appWindow.onCloseRequested(async (event) => {
-          const state = useEditorStore.getState();
-          const isDirty = Object.values(state.fileStates).some(
-            (f) => f.isDirty,
-          );
+          if (isProgrammaticCloseRef.current) {
+            return;
+          }
 
-          if (isDirty) {
-            // Prevent immediate close to allow saving
+          if (isClosingRef.current) {
             event.preventDefault();
+            return;
+          }
 
-            try {
-              await AutosaveService.flushAll();
-              // Save successful, now we can close
-              await appWindow.destroy();
-            } catch (error) {
-              console.error('Failed to autosave on close:', error);
-              // If save fails, we keep the window open (since we prevented default)
+          const state = useEditorStore.getState();
+          const dirtyPaths = Object.entries(state.fileStates)
+            .filter(([, fileState]) => fileState.isDirty)
+            .map(([path]) => path);
+          const savableDirtyPaths = filterSavableDirtyPaths(
+            dirtyPaths,
+            currentPathRef.current,
+          );
+          const action = getCloseAction({
+            hasDirty: savableDirtyPaths.length > 0,
+            forceCloseRequested: forceCloseRequestedRef.current,
+          });
+
+          if (action === 'close_now') {
+            forceCloseRequestedRef.current = false;
+            return;
+          }
+
+          event.preventDefault();
+          isClosingRef.current = true;
+
+          try {
+            // Flush only files in current workspace; avoid invalid/stale paths.
+            for (const path of savableDirtyPaths) {
+              if (AutosaveService.isPending(path)) {
+                await AutosaveService.flush(path);
+              }
             }
+
+            // Persist any remaining dirty in-memory states (no pending timer).
+            const latestFileStates = useEditorStore.getState().fileStates;
+            const remainingDirtyPaths = filterSavableDirtyPaths(
+              Object.entries(latestFileStates)
+                .filter(([, fileState]) => fileState.isDirty)
+                .map(([path]) => path),
+              currentPathRef.current,
+            );
+            for (const path of remainingDirtyPaths) {
+              const fileState = latestFileStates[path];
+              if (!fileState) continue;
+              await FsService.writeFileAtomic(path, fileState.content);
+              useEditorStore.getState().setDirty(path, false);
+            }
+
+            isProgrammaticCloseRef.current = true;
+            forceCloseRequestedRef.current = false;
+            await appWindow.close();
+          } catch (error) {
+            console.error('Failed to autosave on close:', error);
+            useStatusStore.getState().setStatus('error', getForceCloseHint());
+            forceCloseRequestedRef.current = true;
+            isProgrammaticCloseRef.current = false;
+          } finally {
+            isClosingRef.current = false;
           }
         });
 
@@ -64,26 +127,6 @@ function App() {
     };
   }, []);
 
-  // Handle browser beforeunload (for web version or fallback)
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const state = useEditorStore.getState();
-      const isDirty = Object.values(state.fileStates).some((f) => f.isDirty);
-
-      if (isDirty) {
-        // Trigger save immediately
-        AutosaveService.flushAll().catch(console.error);
-
-        // Standard browser behavior to show confirmation dialog
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
   return (
     <div className="app-container h-screen flex flex-col">
       <header className="p-4 border-b bg-gray-50 flex justify-between items-center">
@@ -101,10 +144,12 @@ function App() {
           <Editor />
         </main>
 
-        {/* Debug Sidebar */}
-        <aside className="w-80 flex-shrink-0 overflow-auto bg-gray-100 p-4 h-full border-l">
-          <StateDebug />
-        </aside>
+        {/* Debug Sidebar (opt-in): set VITE_SHOW_STATE_DEBUG=1 */}
+        {showStateDebug ? (
+          <aside className="w-80 flex-shrink-0 overflow-auto bg-gray-100 p-4 h-full border-l">
+            <StateDebug />
+          </aside>
+        ) : null}
       </div>
       <StatusBar />
     </div>
