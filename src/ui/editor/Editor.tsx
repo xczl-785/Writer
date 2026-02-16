@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   useEditor,
   EditorContent,
@@ -6,10 +6,13 @@ import {
 } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
 import { useEditorStore } from '../../state/slices/editorSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { MarkdownService } from '../../services/markdown/MarkdownService';
 import { AutosaveService } from '../../services/autosave/AutosaveService';
+import { useImagePaste } from './useImagePaste';
+import { createHandleDOMEvents } from './pasteHandler';
 import './Editor.css';
 
 const ShortcutExtension = Extension.create({
@@ -29,6 +32,8 @@ const ShortcutExtension = Extension.create({
 export const Editor = () => {
   const { activeFile } = useWorkspaceStore();
   const { fileStates, updateFileContent, setDirty } = useEditorStore();
+  const { handlePaste } = useImagePaste();
+  const editorRef = useRef<TiptapEditor | null>(null);
 
   // Local state to track if content is loading to avoid race conditions
   const [isLoading, setIsLoading] = useState(false);
@@ -44,12 +49,16 @@ export const Editor = () => {
             levels: [1, 2, 3],
           },
         }),
+        Image,
       ],
       content: '', // Initial content empty, loaded via useEffect
       editorProps: {
         attributes: {
           class: 'editor-content h-full focus:outline-none',
         },
+        handleDOMEvents: createHandleDOMEvents((event) =>
+          handlePaste(event, editorRef.current),
+        ),
         handleKeyDown: (_view, event) => {
           if ((event.metaKey || event.ctrlKey) && event.key === 's') {
             event.preventDefault();
@@ -75,10 +84,30 @@ export const Editor = () => {
           console.error('Failed to serialize editor content:', error);
         }
       },
+      onBlur: () => {
+        if (activeFile) {
+          AutosaveService.flush(activeFile);
+        }
+      },
+      onCreate: ({ editor }: { editor: TiptapEditor }) => {
+        editorRef.current = editor;
+      },
+      onDestroy: () => {
+        editorRef.current = null;
+      },
     },
     [activeFile],
   ); // Re-create editor when activeFile changes
 
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      AutosaveService.flushAll();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
   useEffect(() => {
     if (!editor || !activeFile) return;
 
@@ -90,7 +119,7 @@ export const Editor = () => {
         const json = await MarkdownService.parse(content);
         if (isMounted) {
           editor.commands.setContent(json, { emitUpdate: false });
-          // @ts-expect-error - clearHistory might not be typed in StarterKit's SingleCommands
+          // @ts-expect-error tiptap clearHistory command exists at runtime but is missing in typing.
           editor.commands.clearHistory();
         }
       } catch (error) {

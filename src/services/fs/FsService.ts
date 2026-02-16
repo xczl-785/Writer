@@ -29,4 +29,12 @@ export const FsService = {
   async deleteNode(path: string): Promise<void> {
     return invoke('delete_node', { path });
   },
+
+  async saveImage(path: string, data: Uint8Array): Promise<void> {
+    return invoke('save_image', { path, data });
+  },
+
+  async checkExists(path: string): Promise<boolean> {
+    return invoke('check_exists', { path });
+  },
 };
