@@ -12,10 +12,7 @@
 
 ## 2) 当前 Sprint 执行包（进行中）
 
-1. `docs/current/SPRINT3_START.md`
-2. `docs/current/Sprint3任务拆分.md`
-3. `docs/current/Sprint3图片与资源规范.md`
-4. `docs/current/QA_CHECKLIST_SPRINT3.md`
+(暂无进行中的 Sprint)
 
 ## 3) 已归档目录
 
@@ -24,6 +21,9 @@
 
 2. `docs/archive/2026-02-15_sprint2.5-closeout/`
    - Sprint2.5 任务拆分、交互规范、验收清单、修复方案与回归清单。
+
+3. `docs/archive/2026-02-15_sprint3-closeout/`
+   - Sprint 3 任务拆分、图片与资源规范、验收清单、启动文档与技术沉淀。
 
 ## 4) 使用建议
 

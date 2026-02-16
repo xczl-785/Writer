@@ -2,14 +2,12 @@ import { useEffect, useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { useEditorStore } from '../../state/slices/editorSlice';
+import { useStatusStore } from '../../state/slices/statusSlice';
 import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
 import { FsService } from '../../services/fs/FsService';
 import { FsSafety } from '../../services/fs/FsSafety';
 import type { FileNode } from '../../state/types';
-import {
-  InlineInput,
-  type InlineCommitTrigger,
-} from './InlineInput';
+import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import {
   ensureMarkdownExtension,
   findNodeByPath,
@@ -42,12 +40,16 @@ export function Sidebar() {
   const { currentPath, activeFile } = useWorkspaceStore();
   const visibleNodes = filterVisibleNodes(nodes);
   const [ghostNode, setGhostNode] = useState<GhostNode | null>(null);
-  const [pendingDeleteNode, setPendingDeleteNode] = useState<FileNode | null>(null);
+  const [pendingDeleteNode, setPendingDeleteNode] = useState<FileNode | null>(
+    null,
+  );
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameTrigger, setRenameTrigger] = useState(0);
   const [explorerFocus, setExplorerFocus] = useState(false);
 
-  const selectedNode = selectedPath ? findNodeByPath(visibleNodes, selectedPath) : null;
+  const selectedNode = selectedPath
+    ? findNodeByPath(visibleNodes, selectedPath)
+    : null;
 
   const startCreate = (type: 'file' | 'directory') => {
     if (!currentPath) {
@@ -88,7 +90,7 @@ export function Sidebar() {
 
     if (hasInvalidNodeName(nodeName)) {
       if (trigger === 'enter') {
-        alert('Name is invalid.');
+        useStatusStore.getState().setStatus('error', 'Invalid name');
       } else {
         cancelCreate();
       }
@@ -117,7 +119,9 @@ export function Sidebar() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (trigger === 'enter') {
-        alert(`Failed to create: ${message}`);
+        useStatusStore
+          .getState()
+          .setStatus('error', `Failed to create: ${message}`);
       } else {
         cancelCreate();
       }
@@ -147,7 +151,10 @@ export function Sidebar() {
     beginCreateFolder: () => startCreate('directory'),
     beginRenameSelection,
     requestDeleteSelection,
-    showWorkspaceRequiredAlert: () => alert('Please open a workspace first.'),
+    showWorkspaceRequiredAlert: () =>
+      useStatusStore
+        .getState()
+        .setStatus('error', 'Please open a workspace first.'),
   };
 
   useEffect(() => {
@@ -189,21 +196,30 @@ export function Sidebar() {
         </span>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx)}
+            onClick={() =>
+              dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx)
+            }
             className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
             title="New File"
           >
             <FilePlus size={16} />
           </button>
           <button
-            onClick={() => dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx)}
+            onClick={() =>
+              dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx)
+            }
             className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
             title="New Folder"
           >
             <FolderPlus size={16} />
           </button>
           <button
-            onClick={() => dispatchExplorerCommand(EXPLORER_COMMANDS.OPEN_WORKSPACE, commandCtx)}
+            onClick={() =>
+              dispatchExplorerCommand(
+                EXPLORER_COMMANDS.OPEN_WORKSPACE,
+                commandCtx,
+              )
+            }
             className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
             title="Open Folder"
           >
@@ -216,7 +232,9 @@ export function Sidebar() {
         {visibleNodes.length === 0 && !ghostNode ? (
           <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
             <Folder size={24} className="mb-2 opacity-20" />
-            <span>{currentPath ? 'No markdown files' : 'No folder opened'}</span>
+            <span>
+              {currentPath ? 'No markdown files' : 'No folder opened'}
+            </span>
             {!currentPath && (
               <button
                 onClick={openWorkspace}
@@ -387,7 +405,7 @@ function FileTreeNode({
 
     if (hasInvalidNodeName(newName)) {
       if (trigger === 'enter') {
-        alert('Name is invalid.');
+        useStatusStore.getState().setStatus('error', 'Invalid name');
       }
       setRenameDraft(oldName);
       setIsRenaming(false);
@@ -398,7 +416,9 @@ function FileTreeNode({
     const success = await FsSafety.flushAffectedFiles(node.path);
     if (!success) {
       if (trigger === 'enter') {
-        alert('Failed to save changes before rename. Operation aborted.');
+        useStatusStore
+          .getState()
+          .setStatus('error', 'Failed to save changes before rename');
       }
       setRenameDraft(oldName);
       setIsRenaming(false);
@@ -428,7 +448,9 @@ function FileTreeNode({
     } catch (error) {
       if (trigger === 'enter') {
         const message = error instanceof Error ? error.message : String(error);
-        alert(`Failed to rename file/folder: ${message}`);
+        useStatusStore
+          .getState()
+          .setStatus('error', `Failed to rename: ${message}`);
       }
       setRenameDraft(oldName);
     } finally {
@@ -475,7 +497,9 @@ function FileTreeNode({
             autoFocus={true}
           />
         ) : (
-          <span className="truncate flex-1 leading-none py-0.5">{getDisplayName(node)}</span>
+          <span className="truncate flex-1 leading-none py-0.5">
+            {getDisplayName(node)}
+          </span>
         )}
 
         {!isRenaming && (
@@ -548,7 +572,9 @@ function DeleteConfirmDialog({
     const success = await FsSafety.flushAffectedFiles(node.path);
     if (!success) {
       setIsDeleting(false);
-      alert('Failed to save changes before delete. Operation aborted.');
+      useStatusStore
+        .getState()
+        .setStatus('error', 'Failed to save changes before delete');
       return;
     }
 
@@ -574,7 +600,9 @@ function DeleteConfirmDialog({
       onConfirm();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      alert(`Failed to delete file/folder: ${message}`);
+      useStatusStore
+        .getState()
+        .setStatus('error', `Failed to delete: ${message}`);
     } finally {
       setIsDeleting(false);
     }
@@ -583,9 +611,14 @@ function DeleteConfirmDialog({
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 p-4">
       <div className="w-full max-w-sm rounded-lg bg-white p-4 shadow-lg">
-        <h3 className="text-sm font-semibold text-gray-900">Delete confirmation</h3>
+        <h3 className="text-sm font-semibold text-gray-900">
+          Delete confirmation
+        </h3>
         <p className="mt-2 text-sm text-gray-600">
-          Delete <span className="font-medium text-gray-900">{getDisplayName(node)}</span>
+          Delete{' '}
+          <span className="font-medium text-gray-900">
+            {getDisplayName(node)}
+          </span>
           {node.type === 'directory' ? ' and all its contents?' : '?'}
         </p>
         <label className="mt-3 flex items-center gap-2 text-xs text-gray-400">

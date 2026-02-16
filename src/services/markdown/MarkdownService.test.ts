@@ -28,6 +28,11 @@ describe('MarkdownService Roundtrip', () => {
       input: '> This is a blockquote.',
       mustContain: ['> This is a blockquote.'],
     },
+    {
+      name: 'images',
+      input: '![alt text](https://example.com/image.png)',
+      mustContain: ['![alt text](https://example.com/image.png)'],
+    },
   ];
 
   it.each(cases)(

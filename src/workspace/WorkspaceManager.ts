@@ -123,13 +123,11 @@ export const openWorkspace = async (): Promise<void> => {
       useStatusStore
         .getState()
         .setStatus('error', 'Failed to load workspace files');
-      alert('Failed to load workspace files. Please check folder permissions.');
     }
   } catch (error) {
     console.error('Failed to open dialog:', error);
     useStatusStore
       .getState()
       .setStatus('error', 'Failed to open directory dialog');
-    alert('Failed to open directory dialog.');
   }
 };
