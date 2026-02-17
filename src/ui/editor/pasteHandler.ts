@@ -1,4 +1,6 @@
-export type PasteHandler = (event: ClipboardEvent) => boolean | Promise<boolean>;
+export type PasteHandler = (
+  event: ClipboardEvent,
+) => boolean | Promise<boolean>;
 
 export const createHandleDOMEvents = (handlePaste: PasteHandler) => ({
   paste: (_view: unknown, event: ClipboardEvent): boolean => {

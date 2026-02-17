@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Editor } from '@tiptap/react';
 import {
   getRelativePath,
   useImagePaste,
@@ -75,16 +76,18 @@ describe('useImagePaste', () => {
     commands: {
       setImage: vi.fn(),
     },
-  } as any;
+  } as unknown as Editor;
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    (useWorkspaceStore as any).mockReturnValue({
+    vi.mocked(useWorkspaceStore).mockReturnValue({
       activeFile: '/project/docs/file.md',
       currentPath: '/project/docs',
     });
-    (useStatusStore.getState as any).mockReturnValue({
+    vi.mocked(useStatusStore.getState).mockReturnValue({
+      status: 'idle',
+      message: null,
       setStatus: vi.fn(),
     });
     vi.mocked(FsService.saveImage).mockResolvedValue(undefined);
@@ -97,7 +100,9 @@ describe('useImagePaste', () => {
   it('should reject unsupported image formats and set status error', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const setStatusMock = vi.fn();
-    (useStatusStore.getState as any).mockReturnValue({
+    vi.mocked(useStatusStore.getState).mockReturnValue({
+      status: 'idle',
+      message: null,
       setStatus: setStatusMock,
     });
 
@@ -113,7 +118,7 @@ describe('useImagePaste', () => {
         ],
       },
       preventDefault: vi.fn(),
-    } as any;
+    } as unknown as ClipboardEvent;
 
     await handlePaste(mockEvent);
 
@@ -131,7 +136,9 @@ describe('useImagePaste', () => {
   it('should reject large images and set status error', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const setStatusMock = vi.fn();
-    (useStatusStore.getState as any).mockReturnValue({
+    vi.mocked(useStatusStore.getState).mockReturnValue({
+      status: 'idle',
+      message: null,
       setStatus: setStatusMock,
     });
 
@@ -147,7 +154,7 @@ describe('useImagePaste', () => {
         ],
       },
       preventDefault: vi.fn(),
-    } as any;
+    } as unknown as ClipboardEvent;
 
     await handlePaste(mockEvent);
 
@@ -163,7 +170,9 @@ describe('useImagePaste', () => {
   it('should set status error when save fails', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const setStatusMock = vi.fn();
-    (useStatusStore.getState as any).mockReturnValue({
+    vi.mocked(useStatusStore.getState).mockReturnValue({
+      status: 'idle',
+      message: null,
       setStatus: setStatusMock,
     });
 
@@ -187,7 +196,7 @@ describe('useImagePaste', () => {
         ],
       },
       preventDefault: vi.fn(),
-    } as any;
+    } as unknown as ClipboardEvent;
 
     await handlePaste(mockEvent);
 
@@ -218,7 +227,7 @@ describe('useImagePaste', () => {
         ],
       },
       preventDefault: vi.fn(),
-    } as any;
+    } as unknown as ClipboardEvent;
 
     await handlePaste(mockEvent);
 
@@ -247,7 +256,7 @@ describe('useImagePaste', () => {
         ],
       },
       preventDefault: vi.fn(),
-    } as any;
+    } as unknown as ClipboardEvent;
 
     await handlePaste(mockEvent);
 
@@ -260,7 +269,9 @@ describe('useImagePaste', () => {
   it('should show raw to resolved image diagnostic when enabled', async () => {
     vi.stubEnv('VITE_SHOW_IMAGE_DIAGNOSTIC', '1');
     const setStatusMock = vi.fn();
-    (useStatusStore.getState as any).mockReturnValue({
+    vi.mocked(useStatusStore.getState).mockReturnValue({
+      status: 'idle',
+      message: null,
       setStatus: setStatusMock,
     });
 
@@ -282,7 +293,7 @@ describe('useImagePaste', () => {
         ],
       },
       preventDefault: vi.fn(),
-    } as any;
+    } as unknown as ClipboardEvent;
 
     await handlePaste(mockEvent);
 

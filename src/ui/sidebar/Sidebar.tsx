@@ -177,6 +177,7 @@ export function Sidebar() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- commandCtx is an object literal recreated every render; adding it would cause listener re-subscription on every render. Actual reactive deps are already listed.
   }, [explorerFocus, ghostNode, renamingPath, pendingDeleteNode, selectedNode]);
 
   return (

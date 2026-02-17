@@ -9,6 +9,17 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* StatusBar 及全局 UI 语义色 — 与现有 #f5f5f5/#333 浅色主题一致 */
+  --bg-secondary: #f3f4f6;
+  --border-color: #e5e7eb;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --accent-color: #3b82f6;
+  --success-color: #22c55e;
+  --error-color: #ef4444;
+  --error-bg: #fef2f2;
+  --error-text: #dc2626;
 }
 
 body {
