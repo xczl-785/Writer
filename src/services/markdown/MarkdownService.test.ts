@@ -33,6 +33,12 @@ describe('MarkdownService Roundtrip', () => {
       input: '![alt text](https://example.com/image.png)',
       mustContain: ['![alt text](https://example.com/image.png)'],
     },
+    {
+      name: 'tables (gfm)',
+      input:
+        '| Name | Age | City |\n| --- | ---: | --- |\n| Alice | 30 | Paris |\n| Bob | 25 | Berlin |',
+      mustContain: ['| Name', '| -', '| Alice', '| Bob'],
+    },
   ];
 
   it.each(cases)(
@@ -49,7 +55,7 @@ describe('MarkdownService Roundtrip', () => {
 
   it('should handle double roundtrip', async () => {
     const input =
-      '# Title\n\n**Bold** and *Italic* text.\n\n```js\nconsole.log("hello");\n```';
+      '# Title\n\n**Bold** and *Italic* text.\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n```js\nconsole.log("hello");\n```';
     const doc1 = await MarkdownService.parse(input);
     const output1 = await MarkdownService.serialize(doc1);
 
