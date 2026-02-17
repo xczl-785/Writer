@@ -2,3 +2,13 @@
 node_modules/
 .DS_Store
 *.log
+
+# Local/editor artifacts
+.vscode/
+.sisyphus/notepads/
+
+# Build artifacts
+dist/
+
+# Local evidence scratch
+docs/archive/evidence/
