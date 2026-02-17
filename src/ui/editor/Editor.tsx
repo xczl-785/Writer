@@ -146,6 +146,7 @@ export const Editor = () => {
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- content is intentionally excluded to avoid infinite loop (content changes → effect → editor update → onUpdate → content changes)
   }, [activeFile, editor]);
   // removed content from deps to avoid loop.
   // It only loads initial content when activeFile changes (and editor is recreated).

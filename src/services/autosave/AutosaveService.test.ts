@@ -24,7 +24,9 @@ describe('AutosaveService', () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     AutosaveService.cancel('test.md');
-    (useStatusStore.getState as any).mockReturnValue({
+    vi.mocked(useStatusStore.getState).mockReturnValue({
+      status: 'idle',
+      message: null,
       setStatus: setStatusMock,
     });
   });
@@ -103,7 +105,7 @@ describe('AutosaveService', () => {
 
   it('should update status on error', async () => {
     const error = new Error('Save failed');
-    (FsService.writeFileAtomic as any).mockRejectedValueOnce(error);
+    vi.mocked(FsService.writeFileAtomic).mockRejectedValueOnce(error);
 
     AutosaveService.schedule('test.md', 'content');
 
