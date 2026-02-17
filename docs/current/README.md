@@ -14,28 +14,31 @@
 8. `docs/current/V2工程蓝图.md`
 9. `docs/current/V2 需求追溯矩阵.md`
 
-## 2) 当前 Sprint 执行包（进行中）
+## 2) 当前 Sprint 执行包（待创建）
 
-1. `docs/current/Sprint1任务拆分_V2.md`
-2. `docs/current/QA_CHECKLIST_SPRINT1_V2.md`
-3. `docs/current/Sprint0任务拆分_V2.md`（已完成）
-4. `docs/current/QA_CHECKLIST_SPRINT0_V2.md`（已完成）
+（暂无进行中的 Sprint 执行文档）
 
 ## 3) 已归档目录
 
-1. `docs/archive/2026-02-15_sprint1-sprint2-closeout/`
+1. `docs/archive/2026-02-17_sprint1-v2-closeout/`
+   - Sprint1 任务拆分与 QA 验收清单（V2 阶段）。
+
+2. `docs/archive/2026-02-17_sprint0-v2-closeout/`
+   - Sprint0 启动拆分与 QA 验收清单。
+
+3. `docs/archive/2026-02-15_sprint1-sprint2-closeout/`
    - Sprint1/Sprint2 清单、问题修复留档、台账与任务拆分。
 
-2. `docs/archive/2026-02-15_sprint2.5-closeout/`
+4. `docs/archive/2026-02-15_sprint2.5-closeout/`
    - Sprint2.5 任务拆分、交互规范、验收清单、修复方案与回归清单。
 
-3. `docs/archive/2026-02-15_sprint3-closeout/`
+5. `docs/archive/2026-02-15_sprint3-closeout/`
    - Sprint 3 任务拆分、图片与资源规范、验收清单、启动文档与技术沉淀。
 
-4. `docs/archive/2026-02-16_sprint4-closeout/`
+6. `docs/archive/2026-02-16_sprint4-closeout/`
    - Sprint 4 回归清单、平台矩阵、发布就绪清单与收尾结论（Windows 待补测）。
 
-5. `docs/archive/2026-02-16_v1-final-closeout/`
+7. `docs/archive/2026-02-16_v1-final-closeout/`
    - V1 完成标准、全阶段路线、追溯矩阵与工程约束最终版。
 
 ## 4) 常态维护文档
