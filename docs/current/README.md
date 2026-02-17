@@ -16,8 +16,10 @@
 
 ## 2) 当前 Sprint 执行包（进行中）
 
-1. `docs/current/Sprint0任务拆分_V2.md`
-2. `docs/current/QA_CHECKLIST_SPRINT0_V2.md`
+1. `docs/current/Sprint1任务拆分_V2.md`
+2. `docs/current/QA_CHECKLIST_SPRINT1_V2.md`
+3. `docs/current/Sprint0任务拆分_V2.md`（已完成）
+4. `docs/current/QA_CHECKLIST_SPRINT0_V2.md`（已完成）
 
 ## 3) 已归档目录
 
