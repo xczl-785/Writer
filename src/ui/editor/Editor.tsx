@@ -12,6 +12,7 @@ import {
   EditorContent,
   Editor as TiptapEditor,
 } from '@tiptap/react';
+import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -28,6 +29,57 @@ import { useImagePaste } from './useImagePaste';
 import { createHandleDOMEvents } from './pasteHandler';
 import './Editor.css';
 
+type FindTextMatch = {
+  from: number;
+  to: number;
+};
+
+function collectFindTextMatches(
+  editor: TiptapEditor,
+  query: string,
+): FindTextMatch[] {
+  if (!query) return [];
+
+  const matches: FindTextMatch[] = [];
+  const term = query;
+
+  editor.state.doc.descendants((node, pos) => {
+    if (!node.isText || !node.text) return true;
+
+    const text = node.text;
+    let searchFrom = 0;
+    while (true) {
+      const index = text.indexOf(term, searchFrom);
+      if (index === -1) break;
+      const from = pos + index;
+      matches.push({ from, to: from + term.length });
+      searchFrom = index + Math.max(1, term.length);
+    }
+
+    return true;
+  });
+
+  return matches;
+}
+
+function getActiveFindMatchIndex(
+  matches: readonly FindTextMatch[],
+  selectionFrom: number,
+  selectionTo: number,
+): number {
+  if (matches.length === 0) return -1;
+  const exact = matches.findIndex(
+    (m) => m.from === selectionFrom && m.to === selectionTo,
+  );
+  if (exact !== -1) return exact;
+
+  const anchor = selectionFrom;
+  const containing = matches.findIndex(
+    (m) => anchor >= m.from && anchor <= m.to,
+  );
+  return containing;
+}
+
 type ToolbarCommandId =
   | 'bold'
   | 'italic'
@@ -43,7 +95,8 @@ type ToolbarCommandId =
   | 'addTableRow'
   | 'deleteTableRow'
   | 'addTableColumn'
-  | 'deleteTableColumn';
+  | 'deleteTableColumn'
+  | 'deleteTable';
 
 type ToolbarCommandSpec = {
   id: ToolbarCommandId;
@@ -205,6 +258,15 @@ const TOOLBAR_COMMANDS: readonly ToolbarCommandSpec[] = [
     canRun: (editor) => editor.can().chain().focus().deleteColumn().run(),
     run: (editor) => editor.chain().focus().deleteColumn().run(),
   },
+  {
+    id: 'deleteTable',
+    label: 'Del Tbl',
+    ariaLabel: 'Delete table',
+    shortcut: '',
+    isActive: () => false,
+    canRun: (editor) => editor.can().chain().focus().deleteTable().run(),
+    run: (editor) => editor.chain().focus().deleteTable().run(),
+  },
 ] as const;
 
 export type EditorHandle = {
@@ -230,7 +292,16 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const [insertTableRows, setInsertTableRows] = useState('3');
   const [insertTableCols, setInsertTableCols] = useState('3');
   const insertTableRowsInputRef = useRef<HTMLInputElement | null>(null);
-  const [, forceRerender] = useState(0);
+  const [editorRevision, forceRerender] = useState(0);
+
+  const [isFindPanelOpen, setIsFindPanelOpen] = useState(false);
+  const [isReplaceMode, setIsReplaceMode] = useState(false);
+  const [findQuery, setFindQuery] = useState('');
+  const [replaceQuery, setReplaceQuery] = useState('');
+  const [findMatches, setFindMatches] = useState<FindTextMatch[]>([]);
+  const [activeFindMatchIndex, setActiveFindMatchIndex] = useState(-1);
+  const findInputRef = useRef<HTMLInputElement | null>(null);
+  const replaceInputRef = useRef<HTMLInputElement | null>(null);
 
   const content = activeFile ? fileStates[activeFile]?.content || '' : '';
 
@@ -364,9 +435,41 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     [],
   );
 
+  const openFindPanel = useCallback((mode: 'find' | 'replace') => {
+    setIsFindPanelOpen(true);
+    setIsReplaceMode(mode === 'replace');
+  }, []);
+
+  const closeFindPanel = useCallback(() => {
+    setIsFindPanelOpen(false);
+    setIsReplaceMode(false);
+    editorRef.current?.commands.focus();
+  }, []);
+
+  const findReplaceShortcutExtension = useMemo(
+    () =>
+      Extension.create({
+        name: 'editor-find-replace-shortcuts',
+        addKeyboardShortcuts() {
+          return {
+            'Mod-f': () => {
+              openFindPanel('find');
+              return true;
+            },
+            'Mod-h': () => {
+              openFindPanel('replace');
+              return true;
+            },
+          };
+        },
+      }),
+    [openFindPanel],
+  );
+
   const extensions = useMemo(() => {
     return [
       toolbarShortcutExtension,
+      findReplaceShortcutExtension,
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
@@ -394,7 +497,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         },
       }),
     ];
-  }, [activeFile, toolbarShortcutExtension]);
+  }, [activeFile, findReplaceShortcutExtension, toolbarShortcutExtension]);
 
   const editor = useEditor(
     {
@@ -414,6 +517,50 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
             // In the future, this would call a saveFile action
             return true;
           }
+
+          if (
+            event.key === 'Backspace' &&
+            !event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            !event.shiftKey
+          ) {
+            const { state, dispatch } = _view;
+            const { selection, doc } = state;
+
+            if (
+              selection instanceof NodeSelection &&
+              selection.node.type.name === 'table'
+            ) {
+              event.preventDefault();
+              if (editorRef.current) {
+                editorRef.current.commands.deleteTable();
+                setTransientStatus('Table deleted');
+              }
+              return true;
+            }
+
+            if (
+              selection instanceof TextSelection &&
+              selection.empty &&
+              selection.$anchor.parentOffset === 0
+            ) {
+              const posBefore = selection.from - 1;
+              if (posBefore >= 0) {
+                const nodeBefore = doc.nodeAt(posBefore);
+                if (nodeBefore && nodeBefore.type.name === 'table') {
+                  event.preventDefault();
+                  const nodeSelection = NodeSelection.create(doc, posBefore);
+                  dispatch(state.tr.setSelection(nodeSelection));
+                  setTransientStatus(
+                    'Table selected. Press Backspace again to delete.',
+                  );
+                  return true;
+                }
+              }
+            }
+          }
+
           return false;
         },
       },
@@ -468,6 +615,195 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       editor.off('blur', update);
     };
   }, [editor]);
+
+  useEffect(() => {
+    if (!isFindPanelOpen) return;
+    const timeout = setTimeout(() => {
+      const target = isReplaceMode
+        ? replaceInputRef.current
+        : findInputRef.current;
+      target?.focus();
+      target?.select();
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [isFindPanelOpen, isReplaceMode]);
+
+  useEffect(() => {
+    if (!editor) return;
+    if (!isFindPanelOpen) return;
+
+    if (!findQuery) {
+      setFindMatches([]);
+      setActiveFindMatchIndex(-1);
+      return;
+    }
+
+    const nextMatches = collectFindTextMatches(editor, findQuery);
+    setFindMatches(nextMatches);
+    setActiveFindMatchIndex(
+      getActiveFindMatchIndex(
+        nextMatches,
+        editor.state.selection.from,
+        editor.state.selection.to,
+      ),
+    );
+  }, [editor, editorRevision, findQuery, isFindPanelOpen]);
+
+  const goToFindMatchIndex = useCallback(
+    (index: number) => {
+      if (!editor) return;
+      const match = findMatches[index];
+      if (!match) return;
+      editor
+        .chain()
+        .focus()
+        .setTextSelection({ from: match.from, to: match.to })
+        .run();
+      setActiveFindMatchIndex(index);
+    },
+    [editor, findMatches],
+  );
+
+  const goToNextFindMatch = useCallback(() => {
+    if (!findQuery) {
+      setTransientStatus('Enter text to find');
+      findInputRef.current?.focus();
+      findInputRef.current?.select();
+      return;
+    }
+    if (!findMatches.length) {
+      setTransientStatus('No matches');
+      return;
+    }
+    const nextIndex =
+      activeFindMatchIndex < 0
+        ? 0
+        : (activeFindMatchIndex + 1) % findMatches.length;
+    goToFindMatchIndex(nextIndex);
+  }, [
+    activeFindMatchIndex,
+    findMatches.length,
+    findQuery,
+    goToFindMatchIndex,
+    setTransientStatus,
+  ]);
+
+  const goToPrevFindMatch = useCallback(() => {
+    if (!findQuery) {
+      setTransientStatus('Enter text to find');
+      findInputRef.current?.focus();
+      findInputRef.current?.select();
+      return;
+    }
+    if (!findMatches.length) {
+      setTransientStatus('No matches');
+      return;
+    }
+    const nextIndex =
+      activeFindMatchIndex < 0
+        ? findMatches.length - 1
+        : (activeFindMatchIndex - 1 + findMatches.length) % findMatches.length;
+    goToFindMatchIndex(nextIndex);
+  }, [
+    activeFindMatchIndex,
+    findMatches.length,
+    findQuery,
+    goToFindMatchIndex,
+    setTransientStatus,
+  ]);
+
+  const replaceOneActiveMatch = useCallback(() => {
+    if (!editor) return;
+    if (!findQuery) {
+      setTransientStatus('Enter text to find');
+      findInputRef.current?.focus();
+      findInputRef.current?.select();
+      return;
+    }
+    if (!findMatches.length) {
+      setTransientStatus('No matches');
+      return;
+    }
+
+    const index = activeFindMatchIndex < 0 ? 0 : activeFindMatchIndex;
+    const match = findMatches[index];
+    if (!match) return;
+
+    editor
+      .chain()
+      .focus()
+      .insertContentAt({ from: match.from, to: match.to }, replaceQuery)
+      .run();
+
+    const nextMatches = collectFindTextMatches(editor, findQuery);
+    setFindMatches(nextMatches);
+    if (nextMatches.length === 0) {
+      setActiveFindMatchIndex(-1);
+      return;
+    }
+
+    const nextIndex = Math.min(index, nextMatches.length - 1);
+    const nextMatch = nextMatches[nextIndex];
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: nextMatch.from, to: nextMatch.to })
+      .run();
+    setActiveFindMatchIndex(nextIndex);
+  }, [
+    activeFindMatchIndex,
+    editor,
+    findMatches,
+    findQuery,
+    replaceQuery,
+    setTransientStatus,
+  ]);
+
+  const replaceAllActiveMatches = useCallback(() => {
+    if (!editor) return;
+    if (!findQuery) {
+      setTransientStatus('Enter text to find');
+      findInputRef.current?.focus();
+      findInputRef.current?.select();
+      return;
+    }
+
+    const matchesToReplace = collectFindTextMatches(editor, findQuery);
+    if (matchesToReplace.length === 0) {
+      setTransientStatus('No matches');
+      return;
+    }
+
+    editor
+      .chain()
+      .focus()
+      .command(({ tr, dispatch }) => {
+        for (let i = matchesToReplace.length - 1; i >= 0; i--) {
+          const match = matchesToReplace[i];
+          tr.insertText(replaceQuery, match.from, match.to);
+        }
+        if (dispatch) dispatch(tr);
+        return true;
+      })
+      .run();
+
+    const nextMatches = collectFindTextMatches(editor, findQuery);
+    setFindMatches(nextMatches);
+    setActiveFindMatchIndex(
+      getActiveFindMatchIndex(
+        nextMatches,
+        editor.state.selection.from,
+        editor.state.selection.to,
+      ),
+    );
+
+    const replacedCount = matchesToReplace.length;
+    setTransientStatus(
+      replacedCount === 1
+        ? 'Replaced 1 match'
+        : `Replaced ${replacedCount} matches`,
+    );
+  }, [editor, findQuery, replaceQuery, setTransientStatus]);
 
   useImperativeHandle(
     ref,
@@ -533,6 +869,16 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const toolbarStatus = !hasEditorWidgetFocus
     ? 'Click editor to enable'
     : statusText || 'Ready';
+
+  const findCountText = !findQuery
+    ? 'Enter find query'
+    : findMatches.length === 1
+      ? '1 match'
+      : `${findMatches.length} matches`;
+
+  const findProgressText = findMatches.length
+    ? `${Math.max(0, activeFindMatchIndex + 1)}/${findMatches.length}`
+    : '';
 
   return (
     <div
@@ -764,6 +1110,150 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
               </button>
             );
           })}
+        </div>
+
+        <div className="editor-toolbar__group" aria-label="Find and replace">
+          {isFindPanelOpen ? (
+            <div
+              className="flex flex-wrap items-center gap-2"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  closeFindPanel();
+                  return;
+                }
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (e.shiftKey) {
+                    goToPrevFindMatch();
+                  } else {
+                    goToNextFindMatch();
+                  }
+                }
+              }}
+            >
+              <input
+                ref={findInputRef}
+                type="text"
+                inputMode="search"
+                placeholder="Find"
+                aria-label="Find"
+                className="h-8 w-40 rounded border border-gray-200 px-2 text-sm"
+                value={findQuery}
+                onChange={(e) => setFindQuery(e.target.value)}
+              />
+
+              {isReplaceMode ? (
+                <input
+                  ref={replaceInputRef}
+                  type="text"
+                  placeholder="Replace"
+                  aria-label="Replace"
+                  className="h-8 w-40 rounded border border-gray-200 px-2 text-sm"
+                  value={replaceQuery}
+                  onChange={(e) => setReplaceQuery(e.target.value)}
+                />
+              ) : null}
+
+              <button
+                type="button"
+                className="editor-toolbar__button"
+                aria-label="Previous match"
+                title="Previous match (Shift+Enter)"
+                disabled={!findMatches.length}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={goToPrevFindMatch}
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                className="editor-toolbar__button"
+                aria-label="Next match"
+                title="Next match (Enter)"
+                disabled={!findMatches.length}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={goToNextFindMatch}
+              >
+                Next
+              </button>
+
+              {isReplaceMode ? (
+                <button
+                  type="button"
+                  className="editor-toolbar__button"
+                  aria-label="Replace match"
+                  title="Replace current match"
+                  disabled={!findMatches.length}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={replaceOneActiveMatch}
+                >
+                  Replace
+                </button>
+              ) : null}
+
+              {isReplaceMode ? (
+                <button
+                  type="button"
+                  className="editor-toolbar__button"
+                  aria-label="Replace all matches"
+                  title="Replace all matches"
+                  disabled={!findMatches.length}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={replaceAllActiveMatches}
+                >
+                  Replace all
+                </button>
+              ) : null}
+
+              <span className="text-xs text-gray-600" aria-label="Match count">
+                {findCountText}
+              </span>
+
+              {findProgressText ? (
+                <span
+                  className="min-w-10 text-xs tabular-nums text-gray-500"
+                  aria-label="Match progress"
+                >
+                  {findProgressText}
+                </span>
+              ) : null}
+
+              <button
+                type="button"
+                className="editor-toolbar__button"
+                aria-label="Close find"
+                title="Close (Esc)"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={closeFindPanel}
+              >
+                X
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="editor-toolbar__button"
+                aria-label="Find"
+                title="Find (Mod-f)"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => openFindPanel('find')}
+              >
+                Find
+              </button>
+              <button
+                type="button"
+                className="editor-toolbar__button"
+                aria-label="Replace"
+                title="Replace (Mod-h)"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => openFindPanel('replace')}
+              >
+                Replace
+              </button>
+            </>
+          )}
         </div>
 
         <div className="editor-toolbar__status" aria-live="polite">
