@@ -12,3 +12,6 @@ dist/
 
 # Local evidence scratch
 docs/archive/evidence/
+
+# Local throwaway workspace
+test-workspace/
