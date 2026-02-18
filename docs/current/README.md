@@ -14,6 +14,7 @@
 
 1. `docs/current/Sprint0执行包_V3.md`（合并任务拆分 + QA 清单）
 2. `docs/current/Sprint1执行包_V3.md`（核心稳定阶段执行清单）
+3. `docs/current/Sprint2执行包_V3.md`（功能完善阶段执行清单）
 
 ## 3) 已归档目录
 
