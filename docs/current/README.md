@@ -1,51 +1,56 @@
-# current 文档索引（归档后）
+# current 文档索引（V3 启动）
 
-本目录保留跨阶段基线文档，并在阶段执行期保留“当前 Sprint 执行包”；历史 Sprint 执行文档已归档。
+本目录保留跨阶段基线文档，并在阶段执行期保留“当前 Sprint 执行包”；历史阶段文档进入归档目录。
 
-## 1) 当前阶段基线（V2 启动）
+## 1) 当前阶段基线（V3 启动）
 
-1. `docs/current/V2启动看板.md`
-2. `docs/current/V2范围冻结.md`
-3. `docs/current/V2完成标准.md`
-4. `docs/current/V2全阶段路线图.md`
-5. `docs/current/产品需求文档_V2.md`
-6. `docs/current/V2技术基线.md`
-7. `docs/current/V2设计基线.md`
-8. `docs/current/V2工程蓝图.md`
-9. `docs/current/V2 需求追溯矩阵.md`
+1. `docs/current/V3启动看板.md`
+2. `docs/current/V3范围冻结.md`
+3. `docs/current/V3完成标准.md`
+4. `docs/current/V3全阶段路线图.md`
+5. `docs/current/产品需求文档_V3.md`
+6. `docs/current/V3技术基线.md`
+7. `docs/current/V3设计基线.md`
+8. `docs/current/V3工程蓝图.md`
+9. `docs/current/V3 需求追溯矩阵.md`
 
 ## 2) 当前 Sprint 执行包（待创建）
 
-1. 待进入下一阶段时创建。
+1. `docs/current/Sprint0任务拆分_V3.md`
+2. `docs/current/QA_CHECKLIST_SPRINT0_V3.md`
 
 ## 3) 已归档目录
 
-1. `docs/archive/2026-02-17_v2-sprint2-4-closeout/`
+1. `docs/archive/2026-02-18_v2-final-closeout/`
+   - V2 阶段总归档（V2 基线、执行、补测、设计草案与收尾计划）。
+
+2. `docs/archive/2026-02-17_v2-sprint2-4-closeout/`
    - Sprint2/3/4 任务拆分与 QA 验收清单（V2 阶段收尾）。
 
-2. `docs/archive/2026-02-17_sprint1-v2-closeout/`
+3. `docs/archive/2026-02-17_sprint1-v2-closeout/`
    - Sprint1 任务拆分与 QA 验收清单（V2 阶段）。
 
-3. `docs/archive/2026-02-17_sprint0-v2-closeout/`
+4. `docs/archive/2026-02-17_sprint0-v2-closeout/`
    - Sprint0 启动拆分与 QA 验收清单。
 
-4. `docs/archive/2026-02-17_v2-foundation-closeout/`
+5. `docs/archive/2026-02-17_v2-foundation-closeout/`
    - V2 底座稳定性评估与整改执行计划（已完成归档）。
 
-5. `docs/archive/2026-02-15_sprint1-sprint2-closeout/`
+6. `docs/archive/2026-02-15_sprint1-sprint2-closeout/`
    - Sprint1/Sprint2 清单、问题修复留档、台账与任务拆分。
 
-6. `docs/archive/2026-02-15_sprint2.5-closeout/`
+7. `docs/archive/2026-02-15_sprint2.5-closeout/`
    - Sprint2.5 任务拆分、交互规范、验收清单、修复方案与回归清单。
 
-7. `docs/archive/2026-02-15_sprint3-closeout/`
+8. `docs/archive/2026-02-15_sprint3-closeout/`
    - Sprint 3 任务拆分、图片与资源规范、验收清单、启动文档与技术沉淀。
 
-8. `docs/archive/2026-02-16_sprint4-closeout/`
+9. `docs/archive/2026-02-16_sprint4-closeout/`
    - Sprint 4 回归清单、平台矩阵、发布就绪清单与收尾结论（Windows 待补测）。
 
-9. `docs/archive/2026-02-16_v1-final-closeout/`
-   - V1 完成标准、全阶段路线、追溯矩阵与工程约束最终版。
+10. `docs/archive/2026-02-16_v1-final-closeout/`
+
+- V1 完成标准、全阶段路线、追溯矩阵与工程约束最终版。
 
 ## 4) 常态维护文档
 
