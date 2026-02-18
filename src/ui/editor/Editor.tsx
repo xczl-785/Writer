@@ -321,6 +321,13 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     }, 1500);
   }, []);
 
+  const setDestructiveStatus = useCallback(
+    (action: string) => {
+      setTransientStatus(`${action} deleted`);
+    },
+    [setTransientStatus],
+  );
+
   const clampTableDim = useCallback((value: string) => {
     const parsed = Number.parseInt(value, 10);
     const fallback = 3;
@@ -398,15 +405,40 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       }
 
       const ran = cmd.run(editor);
-      if (ran) setTransientStatus(cmd.ariaLabel);
+      if (ran) {
+        if (id.startsWith('delete')) {
+          setDestructiveStatus(cmd.ariaLabel.replace(/^Delete\s+/i, ''));
+        } else {
+          setTransientStatus(cmd.ariaLabel);
+        }
+      }
       return ran;
     },
     [
       hasEditorWidgetFocus,
       openInsertTablePopover,
+      setDestructiveStatus,
       setTransientStatus,
       toolbarCommandById,
     ],
+  );
+
+  const undo = useCallback(
+    (editor: TiptapEditor) => {
+      const ran = editor.chain().focus().undo().run();
+      if (ran) setTransientStatus('Undo');
+      return ran;
+    },
+    [setTransientStatus],
+  );
+
+  const redo = useCallback(
+    (editor: TiptapEditor) => {
+      const ran = editor.chain().focus().redo().run();
+      if (ran) setTransientStatus('Redo');
+      return ran;
+    },
+    [setTransientStatus],
   );
 
   useEffect(() => {
@@ -460,10 +492,22 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
               openFindPanel('replace');
               return true;
             },
+            'Mod-z': () => {
+              if (editorRef.current) return undo(editorRef.current);
+              return false;
+            },
+            'Mod-y': () => {
+              if (editorRef.current) return redo(editorRef.current);
+              return false;
+            },
+            'Mod-Shift-z': () => {
+              if (editorRef.current) return redo(editorRef.current);
+              return false;
+            },
           };
         },
       }),
-    [openFindPanel],
+    [openFindPanel, undo, redo],
   );
 
   const extensions = useMemo(() => {
@@ -535,7 +579,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
               event.preventDefault();
               if (editorRef.current) {
                 editorRef.current.commands.deleteTable();
-                setTransientStatus('Table deleted');
+                setDestructiveStatus('Table');
               }
               return true;
             }
@@ -549,13 +593,19 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
               if (posBefore >= 0) {
                 const nodeBefore = doc.nodeAt(posBefore);
                 if (nodeBefore && nodeBefore.type.name === 'table') {
-                  event.preventDefault();
-                  const nodeSelection = NodeSelection.create(doc, posBefore);
-                  dispatch(state.tr.setSelection(nodeSelection));
-                  setTransientStatus(
-                    'Table selected. Press Backspace again to delete.',
-                  );
-                  return true;
+                  const $anchor = selection.$anchor;
+                  const parent = $anchor.parent;
+                  const isAtStartOfDoc = selection.from === 1;
+
+                  if (parent.type.name === 'paragraph' && !isAtStartOfDoc) {
+                    event.preventDefault();
+                    const nodeSelection = NodeSelection.create(doc, posBefore);
+                    dispatch(state.tr.setSelection(nodeSelection));
+                    setTransientStatus(
+                      'Table selected. Press Backspace again to delete.',
+                    );
+                    return true;
+                  }
                 }
               }
             }

@@ -19,8 +19,17 @@ describe('Editor table backspace behavior', () => {
     expect(editorTsx).toContain(
       "'Table selected. Press Backspace again to delete.'",
     );
-    expect(editorTsx).toContain("'Table deleted'");
+    expect(editorTsx).toContain("setDestructiveStatus('Table')");
 
     expect(editorTsx).toContain('editorRef.current.commands.deleteTable()');
+  });
+
+  it('hardens boundary logic for table selection', () => {
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+
+    expect(editorTsx).toContain('const parent = $anchor.parent');
+    expect(editorTsx).toContain("parent.type.name === 'paragraph'");
+    expect(editorTsx).toContain('!isAtStartOfDoc');
   });
 });
