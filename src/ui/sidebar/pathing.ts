@@ -96,6 +96,11 @@ export const filterVisibleNodes = (nodes: FileNode[]): FileNode[] => {
       continue;
     }
 
+    const lowerName = node.name.toLowerCase();
+    if (lowerName === 'assets' || lowerName === '.assets') {
+      continue;
+    }
+
     const children = node.children ? filterVisibleNodes(node.children) : [];
     filtered.push({ ...node, children });
   }
@@ -118,4 +123,18 @@ export const findNodeByPath = (
     }
   }
   return null;
+};
+
+export const flattenFileNodes = (nodes: FileNode[]): FileNode[] => {
+  const files: FileNode[] = [];
+  for (const node of nodes) {
+    if (node.type === 'file') {
+      files.push(node);
+      continue;
+    }
+    if (node.children && node.children.length > 0) {
+      files.push(...flattenFileNodes(node.children));
+    }
+  }
+  return files;
 };

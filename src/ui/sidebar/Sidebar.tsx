@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { useEditorStore } from '../../state/slices/editorSlice';
@@ -10,6 +10,7 @@ import type { FileNode } from '../../state/types';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import {
   ensureMarkdownExtension,
+  flattenFileNodes,
   findNodeByPath,
   filterVisibleNodes,
   getDisplayName,
@@ -21,6 +22,7 @@ import {
 import { dispatchExplorerCommand, EXPLORER_COMMANDS } from './explorerCommands';
 import { matchExplorerShortcut } from './explorerKeybindings';
 import {
+  Search,
   Folder,
   FolderOpen,
   FileText,
@@ -28,6 +30,7 @@ import {
   FolderPlus,
   Pencil,
   Trash2,
+  X,
 } from 'lucide-react';
 
 type GhostNode = {
@@ -46,10 +49,73 @@ export function Sidebar() {
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameTrigger, setRenameTrigger] = useState(0);
   const [explorerFocus, setExplorerFocus] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchActiveIndex, setSearchActiveIndex] = useState(0);
 
   const selectedNode = selectedPath
     ? findNodeByPath(visibleNodes, selectedPath)
     : null;
+
+  useEffect(() => {
+    if (ghostNode || renamingPath) {
+      setSearchQuery('');
+    }
+  }, [ghostNode, renamingPath]);
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const searchMatches = useMemo(() => {
+    if (!currentPath || !normalizedQuery) {
+      return [] as FileNode[];
+    }
+
+    const workspacePrefix = currentPath.endsWith('/')
+      ? currentPath
+      : `${currentPath}/`;
+
+    const toRelativePath = (path: string): string =>
+      path.startsWith(workspacePrefix)
+        ? path.slice(workspacePrefix.length)
+        : path;
+
+    const allFiles = flattenFileNodes(visibleNodes);
+    return allFiles.filter((node) => {
+      const name = node.name.toLowerCase();
+      const fullPath = node.path.toLowerCase();
+      const relativePath = toRelativePath(node.path).toLowerCase();
+      return (
+        name.includes(normalizedQuery) ||
+        fullPath.includes(normalizedQuery) ||
+        relativePath.includes(normalizedQuery)
+      );
+    });
+  }, [currentPath, normalizedQuery, visibleNodes]);
+
+  const isSearchActive = Boolean(currentPath && normalizedQuery);
+
+  useEffect(() => {
+    if (!isSearchActive) {
+      setSearchActiveIndex(0);
+      return;
+    }
+
+    setSearchActiveIndex((idx) => {
+      if (searchMatches.length === 0) {
+        return 0;
+      }
+      if (idx < 0) return 0;
+      if (idx >= searchMatches.length) return searchMatches.length - 1;
+      return idx;
+    });
+  }, [isSearchActive, searchMatches.length]);
+
+  const openSearchMatch = (match: FileNode | undefined): void => {
+    if (!match) {
+      return;
+    }
+    setSelectedPath(match.path);
+    void openFile(match.path);
+  };
 
   const startCreate = (type: 'file' | 'directory') => {
     if (!currentPath) {
@@ -191,7 +257,10 @@ export function Sidebar() {
         }
       }}
     >
-      <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white">
+      <div
+        className="p-3 border-b border-gray-200 flex items-center justify-between bg-white"
+        onClick={(e) => e.stopPropagation()}
+      >
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Explorer
         </span>
@@ -229,8 +298,151 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-2">
-        {visibleNodes.length === 0 && !ghostNode ? (
+      <div
+        className="px-3 py-2 border-b border-gray-200 bg-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <label htmlFor="explorer-search" className="sr-only">
+          Search files
+        </label>
+        <div className="relative">
+          <Search
+            size={14}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
+            aria-hidden="true"
+          />
+          <input
+            id="explorer-search"
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (!isSearchActive) {
+                return;
+              }
+
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (searchMatches.length === 0) return;
+                setSearchActiveIndex((v) => (v + 1) % searchMatches.length);
+                return;
+              }
+
+              if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (searchMatches.length === 0) return;
+                setSearchActiveIndex(
+                  (v) => (v - 1 + searchMatches.length) % searchMatches.length,
+                );
+                return;
+              }
+
+              if (e.key === 'Enter') {
+                if (searchMatches.length === 0) return;
+                e.preventDefault();
+                openSearchMatch(searchMatches[searchActiveIndex]);
+              }
+            }}
+            disabled={!currentPath}
+            placeholder={
+              currentPath ? 'Search files…' : 'Open a folder to search'
+            }
+            className="w-full rounded-md border border-gray-200 bg-gray-50 px-7 pr-7 py-1.5 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+            aria-label="Search files"
+            aria-controls={
+              isSearchActive ? 'explorer-search-results' : undefined
+            }
+            aria-activedescendant={
+              isSearchActive && searchMatches.length > 0
+                ? `explorer-search-option-${searchActiveIndex}`
+                : undefined
+            }
+            aria-autocomplete="list"
+            autoComplete="off"
+          />
+          {searchQuery.trim().length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-700"
+              aria-label="Clear search"
+              title="Clear"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden p-2"
+        onClick={(e) => {
+          if (e.currentTarget === e.target) {
+            setSelectedPath(null);
+          }
+        }}
+      >
+        {isSearchActive ? (
+          <div>
+            {searchMatches.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
+                <Search size={24} className="mb-2 opacity-20" />
+                <span>No matches</span>
+                <span className="mt-1 text-xs text-gray-400">
+                  Try a different name or path
+                </span>
+              </div>
+            ) : (
+              <div
+                id="explorer-search-results"
+                role="listbox"
+                aria-label="Search results"
+                className="space-y-0.5"
+              >
+                {searchMatches.map((node, idx) => {
+                  const isActive = idx === searchActiveIndex;
+                  const workspacePrefix = currentPath
+                    ? currentPath.endsWith('/')
+                      ? currentPath
+                      : `${currentPath}/`
+                    : '';
+                  const relativePath =
+                    workspacePrefix && node.path.startsWith(workspacePrefix)
+                      ? node.path.slice(workspacePrefix.length)
+                      : node.path;
+                  return (
+                    <button
+                      key={node.path}
+                      id={`explorer-search-option-${idx}`}
+                      role="option"
+                      aria-selected={isActive}
+                      type="button"
+                      onMouseEnter={() => setSearchActiveIndex(idx)}
+                      onClick={() => openSearchMatch(node)}
+                      className={`w-full text-left group flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-sm text-gray-700 transition-colors duration-150 ease-in-out ${
+                        isActive ? 'bg-blue-100/80' : 'hover:bg-gray-200/60'
+                      }`}
+                      title={node.path}
+                    >
+                      <FileText
+                        size={16}
+                        className="text-gray-500 flex-shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate leading-none">
+                          {getDisplayName(node)}
+                        </div>
+                        <div className="truncate mt-0.5 text-[11px] text-gray-400">
+                          {relativePath}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : visibleNodes.length === 0 && !ghostNode ? (
           <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
             <Folder size={24} className="mb-2 opacity-20" />
             <span>

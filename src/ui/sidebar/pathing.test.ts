@@ -145,4 +145,44 @@ describe('sidebar pathing', () => {
       },
     ]);
   });
+
+  it('excludes assets and .assets directories', () => {
+    const filtered = filterVisibleNodes([
+      {
+        path: '/ws/notes',
+        name: 'notes',
+        type: 'directory',
+        children: [],
+      },
+      {
+        path: '/ws/assets',
+        name: 'assets',
+        type: 'directory',
+        children: [
+          { path: '/ws/assets/img.png', name: 'img.png', type: 'file' },
+        ],
+      },
+      {
+        path: '/ws/.assets',
+        name: '.assets',
+        type: 'directory',
+        children: [],
+      },
+      {
+        path: '/ws/ASSETS',
+        name: 'ASSETS',
+        type: 'directory',
+        children: [],
+      },
+    ]);
+
+    expect(filtered).toEqual([
+      {
+        path: '/ws/notes',
+        name: 'notes',
+        type: 'directory',
+        children: [],
+      },
+    ]);
+  });
 });
