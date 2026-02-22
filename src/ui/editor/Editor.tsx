@@ -1031,11 +1031,10 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         const json = await MarkdownService.parse(content);
         if (isMounted) {
           editor.commands.setContent(json, { emitUpdate: false });
-          // @ts-expect-error tiptap clearHistory command exists at runtime but is missing in typing.
-          editor.commands.clearHistory();
+          
         }
       } catch (error) {
-        console.error('Failed to parse markdown', error);
+        console.error('Failed to load editor content', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
