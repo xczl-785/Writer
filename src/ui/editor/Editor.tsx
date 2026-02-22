@@ -575,6 +575,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
             const { state, dispatch } = _view;
             const { selection, doc } = state;
 
+            // Case 1: Table is already node-selected → delete it.
             if (
               selection instanceof NodeSelection &&
               selection.node.type.name === 'table'
@@ -587,27 +588,75 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
               return true;
             }
 
+            // Case 2: Cursor is at the very start of a block right after a table.
+            // Use $pos.nodeBefore to correctly resolve the preceding block-level
+            // sibling. The old approach `doc.nodeAt(pos - 1)` pointed to the
+            // paragraph's own open-tag position, not the table before it.
             if (
               selection instanceof TextSelection &&
               selection.empty &&
               selection.$anchor.parentOffset === 0
             ) {
-              const posBefore = selection.from - 1;
-              if (posBefore >= 0) {
-                const nodeBefore = doc.nodeAt(posBefore);
-                if (nodeBefore && nodeBefore.type.name === 'table') {
-                  const $anchor = selection.$anchor;
-                  const parent = $anchor.parent;
-                  const isAtStartOfDoc = selection.from === 1;
-                  const isParentEmpty = parent.textContent.trim().length === 0;
+              // Resolve to the position just before the current block to find
+              // the previous sibling via nodeBefore.
+              const $anchor = selection.$anchor;
+              const depth = $anchor.depth;
+              const parentStartPos = $anchor.start(depth);
+              // The position *before* the current block's open tag is one
+              // position before its start, at the grandparent level.
+              const beforeBlockPos = parentStartPos - 1;
 
-                  if (
-                    parent.type.name === 'paragraph' &&
-                    !isAtStartOfDoc &&
-                    isParentEmpty
-                  ) {
+              if (beforeBlockPos >= 0) {
+                const $beforeBlock = doc.resolve(beforeBlockPos);
+                const nodeBefore = $beforeBlock.nodeBefore;
+
+                if (nodeBefore && nodeBefore.type.name === 'table') {
+                  const parent = $anchor.parent;
+                  const isParentEmpty =
+                    parent.textContent.trim().length === 0;
+
+                  // Calculate the absolute start position of the table node so
+                  // we can create a proper NodeSelection for it.
+                  const tableStartPos =
+                    beforeBlockPos - nodeBefore.nodeSize;
+
+                  if (isParentEmpty) {
+                    // Empty paragraph after table: select the table and delete
+                    // the now-redundant empty paragraph in one transaction.
                     event.preventDefault();
-                    const nodeSelection = NodeSelection.create(doc, posBefore);
+                    const tr = state.tr;
+                    // Delete the empty paragraph first (its range is
+                    // [parentStartPos - 1, parentStartPos + parent.nodeSize - 1]).
+                    const paragraphFrom = parentStartPos - 1;
+                    const paragraphTo =
+                      paragraphFrom + parent.nodeSize + 2;
+                    // Safety: only delete if range is valid.
+                    if (
+                      paragraphTo <= doc.content.size &&
+                      paragraphFrom >= 0
+                    ) {
+                      tr.delete(paragraphFrom, paragraphTo);
+                    }
+                    // After deletion the table position shifts; recalculate.
+                    const mappedTablePos = tr.mapping.map(tableStartPos);
+                    const nodeSelection = NodeSelection.create(
+                      tr.doc,
+                      mappedTablePos,
+                    );
+                    tr.setSelection(nodeSelection);
+                    dispatch(tr);
+                    setTransientStatus(
+                      'Table selected. Press Backspace again to delete.',
+                    );
+                    return true;
+                  } else {
+                    // Non-empty paragraph after table: select the table without
+                    // deleting, user can press Backspace again to confirm.
+                    event.preventDefault();
+                    const nodeSelection = NodeSelection.create(
+                      doc,
+                      tableStartPos,
+                    );
                     dispatch(state.tr.setSelection(nodeSelection));
                     setTransientStatus(
                       'Table selected. Press Backspace again to delete.',
@@ -629,7 +678,13 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
         const json = editor.getJSON();
         try {
-          const markdown = await MarkdownService.serialize(json);
+          let markdown = await MarkdownService.serialize(json);
+          // Sanitize non-breaking spaces (\xA0 / &nbsp;) that browsers inject
+          // during copy-paste operations, especially inside table cells.
+          // Without this, &nbsp; leaks into persisted Markdown and becomes
+          // visible as literal "&nbsp;" text on subsequent loads.
+          // eslint-disable-next-line no-control-regex
+          markdown = markdown.replace(/\xA0/g, ' ');
           updateFileContent(activeFile, markdown);
           setDirty(activeFile, true);
           AutosaveService.schedule(activeFile, markdown);
