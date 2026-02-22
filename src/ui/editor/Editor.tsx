@@ -90,6 +90,9 @@ type ToolbarCommandId =
   | 'heading1'
   | 'heading2'
   | 'heading3'
+  | 'heading4'
+  | 'heading5'
+  | 'heading6'
   | 'bulletList'
   | 'orderedList'
   | 'blockquote'
@@ -168,6 +171,36 @@ const TOOLBAR_COMMANDS: readonly ToolbarCommandSpec[] = [
     canRun: (editor) =>
       editor.can().chain().focus().toggleHeading({ level: 3 }).run(),
     run: (editor) => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+  },
+  {
+    id: 'heading4',
+    label: 'H4',
+    ariaLabel: 'Heading 4',
+    shortcut: 'Mod-Alt-4',
+    isActive: (editor) => editor.isActive('heading', { level: 4 }),
+    canRun: (editor) =>
+      editor.can().chain().focus().toggleHeading({ level: 4 }).run(),
+    run: (editor) => editor.chain().focus().toggleHeading({ level: 4 }).run(),
+  },
+  {
+    id: 'heading5',
+    label: 'H5',
+    ariaLabel: 'Heading 5',
+    shortcut: 'Mod-Alt-5',
+    isActive: (editor) => editor.isActive('heading', { level: 5 }),
+    canRun: (editor) =>
+      editor.can().chain().focus().toggleHeading({ level: 5 }).run(),
+    run: (editor) => editor.chain().focus().toggleHeading({ level: 5 }).run(),
+  },
+  {
+    id: 'heading6',
+    label: 'H6',
+    ariaLabel: 'Heading 6',
+    shortcut: 'Mod-Alt-6',
+    isActive: (editor) => editor.isActive('heading', { level: 6 }),
+    canRun: (editor) =>
+      editor.can().chain().focus().toggleHeading({ level: 6 }).run(),
+    run: (editor) => editor.chain().focus().toggleHeading({ level: 6 }).run(),
   },
   {
     id: 'bulletList',
@@ -464,6 +497,18 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
             shortcuts[cmd.shortcut] = () =>
               toolbarCommandRunnerRef.current(cmd.id);
           }
+          // BUG-02: Map Mod-[1-6] directly to headings programmatically
+          // to prevent regressions and cover the full Markdown H1-H6 range.
+          for (let i = 1; i <= 6; i++) {
+            shortcuts[`Mod-${i}`] = () => {
+              if (editorRef.current) {
+                // @ts-expect-error level is restricted but we configured 1-6
+                return editorRef.current.chain().focus().toggleHeading({ level: i }).run();
+              }
+              return false;
+            };
+          }
+          
           return shortcuts;
         },
       }),
@@ -519,11 +564,12 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       findReplaceShortcutExtension,
       StarterKit.configure({
         heading: {
-          levels: [1, 2, 3],
+          levels: [1, 2, 3, 4, 5, 6],
         },
       }),
       Table.configure({
         resizable: true,
+        allowTableNodeSelection: true,
       }),
       TableRow,
       TableHeader,
@@ -662,6 +708,47 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
             }
           }
 
+          if (
+            event.key === 'ArrowLeft' &&
+            !event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            !event.shiftKey
+          ) {
+            const { state, dispatch } = _view;
+            const { selection, doc } = state;
+            
+            if (selection instanceof TextSelection && selection.empty) {
+              const $anchor = selection.$anchor;
+              if ($anchor.parentOffset === 0) {
+                const depth = $anchor.depth;
+                const parentStartPos = $anchor.start(depth);
+                const beforeBlockPos = parentStartPos - 1;
+                
+                if (beforeBlockPos >= 0) {
+                  const $beforeBlock = doc.resolve(beforeBlockPos);
+                  const nodeBefore = $beforeBlock.nodeBefore;
+                  
+                  if (nodeBefore && nodeBefore.type.name === 'table') {
+                    // BUG-03 & BUG-04: Left arrow from below a table jumps to 
+                    // the first cell of the table instead of the last cell.
+                    // We intercept this and manually place the cursor at the 
+                    // closest valid backwards text position (the last cell).
+                    event.preventDefault();
+                    // TextSelection.near with bias -1 seeks backwards into the 
+                    // table to find the last valid cursor position.
+                    const targetSelection = TextSelection.near(
+                      doc.resolve(beforeBlockPos),
+                      -1
+                    );
+                    dispatch(state.tr.setSelection(targetSelection));
+                    return true;
+                  }
+                }
+              }
+            }
+          }
+
           return false;
         },
       },
@@ -673,12 +760,18 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         const json = editor.getJSON();
         try {
           let markdown = await MarkdownService.serialize(json);
-          // Sanitize non-breaking spaces (\xA0 / &nbsp;) that browsers inject
+          // Sanitize non-breaking spaces (\xA0) that browsers inject
           // during copy-paste operations, especially inside table cells.
-          // Without this, &nbsp; leaks into persisted Markdown and becomes
+          // Without this, \xA0 leaks into persisted Markdown and becomes
           // visible as literal "&nbsp;" text on subsequent loads.
-
+          // eslint-disable-next-line no-control-regex
           markdown = markdown.replace(/\xA0/g, ' ');
+          
+          // Similarly, Turndown serializes completely empty table cells as &nbsp;
+          // which is loaded back as literal text. We strip them out entirely to
+          // leave `|   |` cells instead of `| &nbsp; |`.
+          markdown = markdown.replace(/\|\s*&nbsp;\s*(?=\|)/g, '|   ');
+
           updateFileContent(activeFile, markdown);
           setDirty(activeFile, true);
           AutosaveService.schedule(activeFile, markdown);

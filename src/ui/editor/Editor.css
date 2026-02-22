@@ -32,6 +32,27 @@
   margin-bottom: 0.5em;
 }
 
+.ProseMirror h4 {
+  font-size: 1em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror h5 {
+  font-size: 0.83em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror h6 {
+  font-size: 0.67em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
 .ProseMirror strong {
   font-weight: bold;
 }
@@ -117,6 +138,19 @@
   border: 1px solid #dfe2e5;
   padding: 0.35rem 0.55rem;
   vertical-align: top;
+  text-align: left;
+  user-select: text;
+}
+
+/* BUG-01: Ensure dragging across the table Wrapper allows text selection */
+.ProseMirror .tableWrapper {
+  user-select: text;
+}
+
+.ProseMirror table.ProseMirror-selectednode,
+.ProseMirror .tableWrapper.ProseMirror-selectednode table {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
 }
 
 .ProseMirror th {
