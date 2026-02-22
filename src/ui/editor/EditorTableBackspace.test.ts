@@ -47,15 +47,11 @@ describe('Editor table backspace behavior', () => {
 
     // Empty-paragraph detection for auto-cleanup
     expect(editorTsx).toContain('const parent = $anchor.parent');
-    expect(editorTsx).toContain(
-      'const isParentEmpty =',
-    );
+    expect(editorTsx).toContain('const isParentEmpty =');
     expect(editorTsx).toContain('isParentEmpty');
 
     // Table position calculation for NodeSelection
-    expect(editorTsx).toContain(
-      'beforeBlockPos - nodeBefore.nodeSize',
-    );
+    expect(editorTsx).toContain('beforeBlockPos - nodeBefore.nodeSize');
 
     // Handles both empty-paragraph (delete + select) and non-empty-paragraph
     // (select only) cases.

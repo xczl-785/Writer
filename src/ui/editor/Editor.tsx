@@ -612,13 +612,11 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
                 if (nodeBefore && nodeBefore.type.name === 'table') {
                   const parent = $anchor.parent;
-                  const isParentEmpty =
-                    parent.textContent.trim().length === 0;
+                  const isParentEmpty = parent.textContent.trim().length === 0;
 
                   // Calculate the absolute start position of the table node so
                   // we can create a proper NodeSelection for it.
-                  const tableStartPos =
-                    beforeBlockPos - nodeBefore.nodeSize;
+                  const tableStartPos = beforeBlockPos - nodeBefore.nodeSize;
 
                   if (isParentEmpty) {
                     // Empty paragraph after table: select the table and delete
@@ -628,13 +626,9 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
                     // Delete the empty paragraph first (its range is
                     // [parentStartPos - 1, parentStartPos + parent.nodeSize - 1]).
                     const paragraphFrom = parentStartPos - 1;
-                    const paragraphTo =
-                      paragraphFrom + parent.nodeSize + 2;
+                    const paragraphTo = paragraphFrom + parent.nodeSize + 2;
                     // Safety: only delete if range is valid.
-                    if (
-                      paragraphTo <= doc.content.size &&
-                      paragraphFrom >= 0
-                    ) {
+                    if (paragraphTo <= doc.content.size && paragraphFrom >= 0) {
                       tr.delete(paragraphFrom, paragraphTo);
                     }
                     // After deletion the table position shifts; recalculate.
@@ -683,7 +677,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
           // during copy-paste operations, especially inside table cells.
           // Without this, &nbsp; leaks into persisted Markdown and becomes
           // visible as literal "&nbsp;" text on subsequent loads.
-          // eslint-disable-next-line no-control-regex
+
           markdown = markdown.replace(/\xA0/g, ' ');
           updateFileContent(activeFile, markdown);
           setDirty(activeFile, true);
