@@ -32,6 +32,12 @@ export const resolveCreateBasePath = ({
     }
   }
 
+  // S2-V3-02: If selectedPath is explicitly null (e.g. clicking blank area),
+  // resolve to workspace root (currentPath) instead of active file parent.
+  if (selectedPath === null) {
+    return currentPath;
+  }
+
   if (activeFile) {
     return getParentPath(activeFile) || currentPath;
   }

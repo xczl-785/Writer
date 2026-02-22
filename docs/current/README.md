@@ -1,8 +1,8 @@
-# current 文档索引（V3 启动）
+# current 文档索引（V3 进行中 / V4 规划中）
 
-本目录保留跨阶段基线文档，并在阶段执行期保留“当前 Sprint 执行包”；历史阶段文档进入归档目录。
+本目录保留跨阶段基线文档，并在阶段执行期保留"当前 Sprint 执行包"；历史阶段文档进入归档目录。
 
-## 1) 当前阶段基线（V3 启动）
+## 1) 当前阶段基线（V3 进行中）
 
 1. `docs/current/V3启动看板.md`
 2. `docs/current/V3需求主文档.md`（合并 PRD/范围冻结/完成标准/路线图/技术设计工程基线）
@@ -10,11 +10,39 @@
 4. `docs/current/V3开发需求提案.md`
 5. `docs/current/design-block-indicator-system.md`（结构感知方案，后续复用）
 
-## 2) 当前 Sprint 执行包
+## 2) V3 Sprint 执行包
 
 1. `docs/current/Sprint0执行包_V3.md`（合并任务拆分 + QA 清单）
 2. `docs/current/Sprint1执行包_V3.md`（核心稳定阶段执行清单）
 3. `docs/current/Sprint2执行包_V3.md`（功能完善阶段执行清单）
+
+## 3) V4 规划文档（重构计划）
+
+V4 是技术债务清理版本，聚焦"可维护性 + 可测试性 + 可扩展性"，不新增功能特性。
+
+### 3.1 V4 基线文档
+
+1. `docs/current/V4/V4启动看板.md` - 里程碑与入口
+2. `docs/current/V4/V4需求主文档.md` - PRD/范围/门禁/路线
+3. `docs/current/V4/V4需求追溯矩阵.md` - FR -> Task -> QA -> Evidence
+4. `docs/current/V4/V4开发需求提案.md` - 提案与评审
+
+### 3.2 V4 Sprint 执行包
+
+1. `docs/current/V4/Sprint0执行包_V4.md` - 启动规划
+2. `docs/current/V4/Sprint1执行包_V4.md` - Editor 组件拆分
+3. `docs/current/V4/Sprint2执行包_V4.md` - 状态管理重构
+4. `docs/current/V4/Sprint3执行包_V4.md` - 稳定性回归
+5. `docs/current/V4/Sprint4执行包_V4.md` - 收尾与发布审计
+
+### 3.3 V4 核心目标
+
+| FR       | 需求            | 目标                |
+| -------- | --------------- | ------------------- |
+| FR-V4-01 | Editor 组件拆分 | Editor.tsx < 300 行 |
+| FR-V4-02 | 状态管理统一    | 创建 actions 层     |
+| FR-V4-03 | 错误处理标准化  | ErrorService        |
+| FR-V4-04 | 常量提取        | 配置文件化          |
 
 ## 3) 已归档目录
 
