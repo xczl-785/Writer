@@ -31,5 +31,9 @@ describe('Editor table backspace behavior', () => {
     expect(editorTsx).toContain('const parent = $anchor.parent');
     expect(editorTsx).toContain("parent.type.name === 'paragraph'");
     expect(editorTsx).toContain('!isAtStartOfDoc');
+    expect(editorTsx).toContain(
+      'const isParentEmpty = parent.textContent.trim().length === 0',
+    );
+    expect(editorTsx).toContain('isParentEmpty');
   });
 });

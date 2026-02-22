@@ -32,5 +32,7 @@ describe('Editor find and replace', () => {
     expect(editorTsx).toContain("'Enter text to find'");
     expect(editorTsx).toContain('aria-label="Match count"');
     expect(editorTsx).toContain('aria-label="Match progress"');
+    expect(editorTsx).toContain('FIND_MATCH_LIMIT = 1000');
+    expect(editorTsx).toContain('`> ${FIND_MATCH_LIMIT - 1} matches`');
   });
 });

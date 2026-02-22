@@ -34,6 +34,8 @@ type FindTextMatch = {
   to: number;
 };
 
+const FIND_MATCH_LIMIT = 1000;
+
 function collectFindTextMatches(
   editor: TiptapEditor,
   query: string,
@@ -44,11 +46,12 @@ function collectFindTextMatches(
   const term = query;
 
   editor.state.doc.descendants((node, pos) => {
+    if (matches.length >= FIND_MATCH_LIMIT) return false;
     if (!node.isText || !node.text) return true;
 
     const text = node.text;
     let searchFrom = 0;
-    while (true) {
+    while (matches.length < FIND_MATCH_LIMIT) {
       const index = text.indexOf(term, searchFrom);
       if (index === -1) break;
       const from = pos + index;
@@ -596,8 +599,13 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
                   const $anchor = selection.$anchor;
                   const parent = $anchor.parent;
                   const isAtStartOfDoc = selection.from === 1;
+                  const isParentEmpty = parent.textContent.trim().length === 0;
 
-                  if (parent.type.name === 'paragraph' && !isAtStartOfDoc) {
+                  if (
+                    parent.type.name === 'paragraph' &&
+                    !isAtStartOfDoc &&
+                    isParentEmpty
+                  ) {
                     event.preventDefault();
                     const nodeSelection = NodeSelection.create(doc, posBefore);
                     dispatch(state.tr.setSelection(nodeSelection));
@@ -922,9 +930,11 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
   const findCountText = !findQuery
     ? 'Enter find query'
-    : findMatches.length === 1
-      ? '1 match'
-      : `${findMatches.length} matches`;
+    : findMatches.length >= FIND_MATCH_LIMIT
+      ? `> ${FIND_MATCH_LIMIT - 1} matches`
+      : findMatches.length === 1
+        ? '1 match'
+        : `${findMatches.length} matches`;
 
   const findProgressText = findMatches.length
     ? `${Math.max(0, activeFindMatchIndex + 1)}/${findMatches.length}`
