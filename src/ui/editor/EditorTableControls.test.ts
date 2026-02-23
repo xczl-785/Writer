@@ -25,8 +25,6 @@ describe('Editor table controls', () => {
     expect(editorTsx).toContain(
       "setDestructiveStatus(cmd.ariaLabel.replace(/^Delete\\s+/i, ''))",
     );
-
-    expect(editorTsx).toContain("setDestructiveStatus('Table')");
   });
 
   it('enforces undo/redo command path consistency', () => {

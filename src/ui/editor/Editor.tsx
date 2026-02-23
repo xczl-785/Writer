@@ -12,7 +12,8 @@ import {
   EditorContent,
   Editor as TiptapEditor,
 } from '@tiptap/react';
-import { NodeSelection, TextSelection } from '@tiptap/pm/state';
+import { TextSelection } from '@tiptap/pm/state';
+import { CellSelection, deleteCellSelection } from '@tiptap/pm/tables';
 import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -303,7 +304,7 @@ const TOOLBAR_COMMANDS: readonly ToolbarCommandSpec[] = [
     canRun: (editor) => editor.can().chain().focus().deleteTable().run(),
     run: (editor) => editor.chain().focus().deleteTable().run(),
   },
-] as const;
+];
 
 export type EditorHandle = {
   insertDefaultTable: () => void;
@@ -502,13 +503,16 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
           for (let i = 1; i <= 6; i++) {
             shortcuts[`Mod-${i}`] = () => {
               if (editorRef.current) {
-                // @ts-expect-error level is restricted but we configured 1-6
-                return editorRef.current.chain().focus().toggleHeading({ level: i }).run();
+                return editorRef.current
+                  .chain()
+                  .focus()
+                  .toggleHeading({ level: i as 1 | 2 | 3 | 4 | 5 | 6 })
+                  .run();
               }
               return false;
             };
           }
-          
+
           return shortcuts;
         },
       }),
@@ -569,7 +573,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       }),
       Table.configure({
         resizable: true,
-        allowTableNodeSelection: true,
+        allowTableNodeSelection: false,
       }),
       TableRow,
       TableHeader,
@@ -612,99 +616,16 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
           }
 
           if (
-            event.key === 'Backspace' &&
+            _view.state.selection instanceof CellSelection &&
+            (event.key === 'Backspace' || event.key === 'Delete') &&
             !event.metaKey &&
             !event.ctrlKey &&
-            !event.altKey &&
-            !event.shiftKey
+            !event.altKey
           ) {
-            const { state, dispatch } = _view;
-            const { selection, doc } = state;
-
-            // Case 1: Table is already node-selected → delete it.
-            if (
-              selection instanceof NodeSelection &&
-              selection.node.type.name === 'table'
-            ) {
+            const handled = deleteCellSelection(_view.state, _view.dispatch);
+            if (handled) {
               event.preventDefault();
-              if (editorRef.current) {
-                editorRef.current.commands.deleteTable();
-                setDestructiveStatus('Table');
-              }
               return true;
-            }
-
-            // Case 2: Cursor is at the very start of a block right after a table.
-            // Use $pos.nodeBefore to correctly resolve the preceding block-level
-            // sibling. The old approach `doc.nodeAt(pos - 1)` pointed to the
-            // paragraph's own open-tag position, not the table before it.
-            if (
-              selection instanceof TextSelection &&
-              selection.empty &&
-              selection.$anchor.parentOffset === 0
-            ) {
-              // Resolve to the position just before the current block to find
-              // the previous sibling via nodeBefore.
-              const $anchor = selection.$anchor;
-              const depth = $anchor.depth;
-              const parentStartPos = $anchor.start(depth);
-              // The position *before* the current block's open tag is one
-              // position before its start, at the grandparent level.
-              const beforeBlockPos = parentStartPos - 1;
-
-              if (beforeBlockPos >= 0) {
-                const $beforeBlock = doc.resolve(beforeBlockPos);
-                const nodeBefore = $beforeBlock.nodeBefore;
-
-                if (nodeBefore && nodeBefore.type.name === 'table') {
-                  const parent = $anchor.parent;
-                  const isParentEmpty = parent.textContent.trim().length === 0;
-
-                  // Calculate the absolute start position of the table node so
-                  // we can create a proper NodeSelection for it.
-                  const tableStartPos = beforeBlockPos - nodeBefore.nodeSize;
-
-                  if (isParentEmpty) {
-                    // Empty paragraph after table: select the table and delete
-                    // the now-redundant empty paragraph in one transaction.
-                    event.preventDefault();
-                    const tr = state.tr;
-                    // Delete the empty paragraph first (its range is
-                    // [parentStartPos - 1, parentStartPos + parent.nodeSize - 1]).
-                    const paragraphFrom = parentStartPos - 1;
-                    const paragraphTo = paragraphFrom + parent.nodeSize + 2;
-                    // Safety: only delete if range is valid.
-                    if (paragraphTo <= doc.content.size && paragraphFrom >= 0) {
-                      tr.delete(paragraphFrom, paragraphTo);
-                    }
-                    // After deletion the table position shifts; recalculate.
-                    const mappedTablePos = tr.mapping.map(tableStartPos);
-                    const nodeSelection = NodeSelection.create(
-                      tr.doc,
-                      mappedTablePos,
-                    );
-                    tr.setSelection(nodeSelection);
-                    dispatch(tr);
-                    setTransientStatus(
-                      'Table selected. Press Backspace again to delete.',
-                    );
-                    return true;
-                  } else {
-                    // Non-empty paragraph after table: select the table without
-                    // deleting, user can press Backspace again to confirm.
-                    event.preventDefault();
-                    const nodeSelection = NodeSelection.create(
-                      doc,
-                      tableStartPos,
-                    );
-                    dispatch(state.tr.setSelection(nodeSelection));
-                    setTransientStatus(
-                      'Table selected. Press Backspace again to delete.',
-                    );
-                    return true;
-                  }
-                }
-              }
             }
           }
 
@@ -717,29 +638,29 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
           ) {
             const { state, dispatch } = _view;
             const { selection, doc } = state;
-            
+
             if (selection instanceof TextSelection && selection.empty) {
               const $anchor = selection.$anchor;
               if ($anchor.parentOffset === 0) {
                 const depth = $anchor.depth;
                 const parentStartPos = $anchor.start(depth);
                 const beforeBlockPos = parentStartPos - 1;
-                
+
                 if (beforeBlockPos >= 0) {
                   const $beforeBlock = doc.resolve(beforeBlockPos);
                   const nodeBefore = $beforeBlock.nodeBefore;
-                  
+
                   if (nodeBefore && nodeBefore.type.name === 'table') {
-                    // BUG-03 & BUG-04: Left arrow from below a table jumps to 
+                    // BUG-03 & BUG-04: Left arrow from below a table jumps to
                     // the first cell of the table instead of the last cell.
-                    // We intercept this and manually place the cursor at the 
+                    // We intercept this and manually place the cursor at the
                     // closest valid backwards text position (the last cell).
                     event.preventDefault();
-                    // TextSelection.near with bias -1 seeks backwards into the 
+                    // TextSelection.near with bias -1 seeks backwards into the
                     // table to find the last valid cursor position.
                     const targetSelection = TextSelection.near(
                       doc.resolve(beforeBlockPos),
-                      -1
+                      -1,
                     );
                     dispatch(state.tr.setSelection(targetSelection));
                     return true;
@@ -766,7 +687,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
           // visible as literal "&nbsp;" text on subsequent loads.
           // eslint-disable-next-line no-control-regex
           markdown = markdown.replace(/\xA0/g, ' ');
-          
+
           // Similarly, Turndown serializes completely empty table cells as &nbsp;
           // which is loaded back as literal text. We strip them out entirely to
           // leave `|   |` cells instead of `| &nbsp; |`.
@@ -1031,7 +952,6 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         const json = await MarkdownService.parse(content);
         if (isMounted) {
           editor.commands.setContent(json, { emitUpdate: false });
-          
         }
       } catch (error) {
         console.error('Failed to load editor content', error);

@@ -3,60 +3,44 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-describe('Editor table backspace behavior', () => {
-  it('includes source markers for Backspace table selection and deletion logic', () => {
+describe('Editor table backspace behavior (Simplified)', () => {
+  it('does not include custom two-step Backspace table selection/deletion logic', () => {
     const currentDir = dirname(fileURLToPath(import.meta.url));
     const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
 
-    // Backspace key detection guard
-    expect(editorTsx).toContain("event.key === 'Backspace'");
-
-    // Case 1: NodeSelection-based table deletion
-    expect(editorTsx).toContain('selection instanceof NodeSelection');
-    expect(editorTsx).toContain("selection.node.type.name === 'table'");
-    expect(editorTsx).toContain('editorRef.current.commands.deleteTable()');
-    expect(editorTsx).toContain("setDestructiveStatus('Table')");
-
-    // Case 2: TextSelection at start-of-block, preceding sibling is table
-    expect(editorTsx).toContain('selection instanceof TextSelection');
-    expect(editorTsx).toContain('selection.empty');
-    expect(editorTsx).toContain('selection.$anchor.parentOffset === 0');
-
-    // Uses $pos.nodeBefore instead of the old doc.nodeAt(pos - 1) approach
-    expect(editorTsx).toContain('$beforeBlock.nodeBefore');
-    expect(editorTsx).toContain("nodeBefore.type.name === 'table'");
-
-    // Status feedback for two-step delete UX
-    expect(editorTsx).toContain(
+    expect(editorTsx).not.toContain('selection instanceof NodeSelection');
+    expect(editorTsx).not.toContain("selection.node.type.name === 'table'");
+    expect(editorTsx).not.toContain('NodeSelection.create(');
+    expect(editorTsx).not.toContain('editorRef.current.commands.deleteTable()');
+    expect(editorTsx).not.toContain("setDestructiveStatus('Table')");
+    expect(editorTsx).not.toContain(
       "'Table selected. Press Backspace again to delete.'",
     );
   });
 
-  it('hardens boundary logic for table selection using $pos.nodeBefore', () => {
+  it('clears CellSelection contents on Backspace/Delete without deleting the table node', () => {
     const currentDir = dirname(fileURLToPath(import.meta.url));
     const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
 
-    // Uses $anchor to resolve depth and start position, then resolves
-    // the position before the block to get nodeBefore.
-    expect(editorTsx).toContain('const $anchor = selection.$anchor');
-    expect(editorTsx).toContain('const depth = $anchor.depth');
-    expect(editorTsx).toContain('const parentStartPos = $anchor.start(depth)');
-    expect(editorTsx).toContain('const beforeBlockPos = parentStartPos - 1');
-    expect(editorTsx).toContain('doc.resolve(beforeBlockPos)');
-    expect(editorTsx).toContain('const nodeBefore = $beforeBlock.nodeBefore');
+    const keyDownStart = editorTsx.indexOf('handleKeyDown:');
+    const keyDownEnd = editorTsx.indexOf('onUpdate:', keyDownStart);
+    expect(keyDownStart).toBeGreaterThanOrEqual(0);
+    expect(keyDownEnd).toBeGreaterThan(keyDownStart);
+    const handleKeyDownSrc = editorTsx.slice(keyDownStart, keyDownEnd);
 
-    // Empty-paragraph detection for auto-cleanup
-    expect(editorTsx).toContain('const parent = $anchor.parent');
-    expect(editorTsx).toContain('const isParentEmpty =');
-    expect(editorTsx).toContain('isParentEmpty');
+    expect(handleKeyDownSrc).toContain('instanceof CellSelection');
+    expect(handleKeyDownSrc).toContain("event.key === 'Backspace'");
+    expect(handleKeyDownSrc).toContain("event.key === 'Delete'");
+    expect(handleKeyDownSrc).toContain('deleteCellSelection');
+    expect(handleKeyDownSrc).not.toContain('deleteTable');
+  });
 
-    // Table position calculation for NodeSelection
-    expect(editorTsx).toContain('beforeBlockPos - nodeBefore.nodeSize');
+  it('preserves the ArrowLeft boundary fix for navigating from below a table', () => {
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
 
-    // Handles both empty-paragraph (delete + select) and non-empty-paragraph
-    // (select only) cases.
-    expect(editorTsx).toContain('if (isParentEmpty)');
-    expect(editorTsx).toContain('} else {');
-    expect(editorTsx).toContain('NodeSelection.create(');
+    expect(editorTsx).toContain("event.key === 'ArrowLeft'");
+    expect(editorTsx).toContain('TextSelection.near');
+    expect(editorTsx).toContain("nodeBefore.type.name === 'table'");
   });
 });
