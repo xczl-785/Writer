@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
-import { useEditorStore } from '../../state/slices/editorSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { fileActions } from '../../state/actions/fileActions';
 import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
 import { FsService } from '../../services/fs/FsService';
 import { FsSafety } from '../../services/fs/FsSafety';
@@ -647,15 +647,7 @@ function FileTreeNode({
     const newPath = parentPath ? `${parentPath}/${newFileName}` : newFileName;
 
     try {
-      await FsService.renameNode(node.path, newPath);
-      useWorkspaceStore.getState().renameFile(node.path, newPath);
-      useEditorStore.getState().renameFile(node.path, newPath);
-
-      const { currentPath } = useWorkspaceStore.getState();
-      if (currentPath) {
-        const nodes = await FsService.listTree(currentPath);
-        useFileTreeStore.getState().setNodes(nodes);
-      }
+      await fileActions.renamePath(node.path, newPath);
 
       onSelect(newPath);
     } catch (error) {
@@ -792,24 +784,7 @@ function DeleteConfirmDialog({
     }
 
     try {
-      await FsService.deleteNode(node.path);
-
-      useWorkspaceStore.getState().removePath(node.path);
-      useEditorStore.getState().removePath(node.path);
-
-      const { currentPath } = useWorkspaceStore.getState();
-      if (currentPath) {
-        const nodes = await FsService.listTree(currentPath);
-        useFileTreeStore.getState().setNodes(nodes);
-      }
-
-      const selectedPath = useFileTreeStore.getState().selectedPath;
-      if (
-        selectedPath &&
-        (selectedPath === node.path || selectedPath.startsWith(`${node.path}/`))
-      ) {
-        useFileTreeStore.getState().setSelectedPath(null);
-      }
+      await fileActions.deletePath(node.path);
       onConfirm();
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

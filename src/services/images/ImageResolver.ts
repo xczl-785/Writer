@@ -1,4 +1,5 @@
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { ErrorService } from '../error/ErrorService';
 
 export const ImageResolver = {
   resolve(src: string, activeFilePath: string | null): string {
@@ -20,7 +21,7 @@ export const ImageResolver = {
       try {
         return convertFileSrc(src);
       } catch (e) {
-        console.error('Failed to convert absolute path to asset URL:', e);
+        ErrorService.log(e, 'Failed to convert absolute path to asset URL');
         return src;
       }
     }
@@ -42,7 +43,7 @@ export const ImageResolver = {
       const absolutePath = this.join(parentDir, src);
       return convertFileSrc(absolutePath);
     } catch (e) {
-      console.error('Failed to resolve relative path to asset URL:', e);
+      ErrorService.log(e, 'Failed to resolve relative path to asset URL');
       return src;
     }
   },

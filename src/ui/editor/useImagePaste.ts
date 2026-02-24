@@ -3,6 +3,8 @@ import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { FsService } from '../../services/fs/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { ImageResolver } from '../../services/images/ImageResolver';
+import { ErrorService } from '../../services/error/ErrorService';
+import { EDITOR_CONFIG } from '../../config/editor';
 
 const shouldShowImageRenderDiagnostic = (): boolean =>
   import.meta.env?.VITE_SHOW_IMAGE_DIAGNOSTIC === '1';
@@ -42,28 +44,31 @@ export const useImagePaste = (editor: Editor | null = null) => {
     const items = event.clipboardData?.items;
     if (!items) return false;
 
-    const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+    const allowedTypes = EDITOR_CONFIG.image.allowedMimeTypes;
     let handled = false;
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       if (item.type.startsWith('image/')) {
         handled = true;
-        if (!ALLOWED_TYPES.includes(item.type)) {
-          console.error(`Unsupported image format: ${item.type}`);
+        if (!allowedTypes.some((type) => type === item.type)) {
+          ErrorService.log(item.type, 'Unsupported image format');
           useStatusStore
             .getState()
-            .setStatus('error', 'Unsupported image format');
+            .setStatus('error', 'Failed to paste image: unsupported format');
           continue;
         }
         const file = item.getAsFile();
         if (!file) continue;
 
-        if (file.size > 10 * 1024 * 1024) {
-          console.error('Image too large (max 10MB)');
+        if (file.size > EDITOR_CONFIG.image.maxUploadBytes) {
+          ErrorService.log(file.size, 'Image too large (max 10MB)');
           useStatusStore
             .getState()
-            .setStatus('error', 'Image too large (max 10MB)');
+            .setStatus(
+              'error',
+              'Failed to paste image: image too large (max 10MB)',
+            );
           continue;
         }
 
@@ -107,8 +112,11 @@ export const useImagePaste = (editor: Editor | null = null) => {
               );
           }
         } catch (error) {
-          console.error('Failed to save image:', error);
-          useStatusStore.getState().setStatus('error', 'Failed to save image');
+          ErrorService.handle(
+            error,
+            'Failed to save image',
+            'Failed to save image',
+          );
         }
       }
     }
