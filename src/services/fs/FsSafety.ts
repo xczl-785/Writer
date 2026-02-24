@@ -1,5 +1,6 @@
 import { useEditorStore } from '../../state/slices/editorSlice';
 import { AutosaveService } from '../autosave/AutosaveService';
+import { ErrorService } from '../error/ErrorService';
 
 export const FsSafety = {
   getAffectedDirtyFiles(path: string): string[] {
@@ -22,7 +23,7 @@ export const FsSafety = {
       );
       return true;
     } catch (error) {
-      console.error('Failed to flush affected files:', error);
+      ErrorService.log(error, 'Failed to flush affected files');
       return false;
     }
   },

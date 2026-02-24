@@ -10,6 +10,7 @@ import { StatusBar } from '../ui/statusbar/StatusBar';
 import { AutosaveService } from '../services/autosave/AutosaveService';
 import { FsService } from '../services/fs/FsService';
 import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
+import { ErrorService } from '../services/error/ErrorService';
 import {
   filterSavableDirtyPaths,
   getCloseAction,
@@ -101,7 +102,7 @@ function App() {
             forceCloseRequestedRef.current = false;
             await appWindow.close();
           } catch (error) {
-            console.error('Failed to autosave on close:', error);
+            ErrorService.log(error, 'Failed to autosave on close');
             useStatusStore.getState().setStatus('error', getForceCloseHint());
             forceCloseRequestedRef.current = true;
             isProgrammaticCloseRef.current = false;

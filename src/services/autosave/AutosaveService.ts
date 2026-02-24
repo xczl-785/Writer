@@ -1,8 +1,10 @@
 import { FsService } from '../fs/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { useEditorStore } from '../../state/slices/editorSlice';
+import { EDITOR_CONFIG } from '../../config/editor';
+import { ErrorService } from '../error/ErrorService';
 
-const DEBOUNCE_MS = 800;
+const DEBOUNCE_MS = EDITOR_CONFIG.autosave.debounceMs;
 
 interface PendingSave {
   content: string;
@@ -41,8 +43,11 @@ export const AutosaveService = {
       useEditorStore.getState().setDirty(path, false);
       useStatusStore.getState().setStatus('idle', 'Saved');
     } catch (error) {
-      console.error(`Failed to autosave ${path}:`, error);
-      useStatusStore.getState().setStatus('error', `Failed to save ${path}`);
+      ErrorService.handle(
+        error,
+        `Failed to autosave ${path}`,
+        `Failed to save ${path}`,
+      );
       throw error;
     }
   },

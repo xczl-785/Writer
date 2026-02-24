@@ -123,11 +123,12 @@ describe('useImagePaste', () => {
     await handlePaste(mockEvent);
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      'Unsupported image format: image/gif',
+      '[Unsupported image format]',
+      'image/gif',
     );
     expect(setStatusMock).toHaveBeenCalledWith(
       'error',
-      'Unsupported image format',
+      'Failed to paste image: unsupported format',
     );
     expect(mockEditor.commands.setImage).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
@@ -158,10 +159,13 @@ describe('useImagePaste', () => {
 
     await handlePaste(mockEvent);
 
-    expect(consoleSpy).toHaveBeenCalledWith('Image too large (max 10MB)');
+    expect(consoleSpy).toHaveBeenCalledWith(
+      '[Image too large (max 10MB)]',
+      11 * 1024 * 1024,
+    );
     expect(setStatusMock).toHaveBeenCalledWith(
       'error',
-      'Image too large (max 10MB)',
+      'Failed to paste image: image too large (max 10MB)',
     );
     expect(mockEditor.commands.setImage).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
@@ -201,7 +205,7 @@ describe('useImagePaste', () => {
     await handlePaste(mockEvent);
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      'Failed to save image:',
+      '[Failed to save image]',
       expect.any(Error),
     );
     expect(setStatusMock).toHaveBeenCalledWith('error', 'Failed to save image');

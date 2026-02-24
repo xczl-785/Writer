@@ -1,10 +1,7 @@
 import { open } from '@tauri-apps/plugin-dialog';
-import { FsService } from '../services/fs/FsService';
-import { FsSafety } from '../services/fs/FsSafety';
-import { useWorkspaceStore } from '../state/slices/workspaceSlice';
-import { useFileTreeStore } from '../state/slices/filetreeSlice';
+import { workspaceActions } from '../state/actions/workspaceActions';
 import { useStatusStore } from '../state/slices/statusSlice';
-import { useEditorStore } from '../state/slices/editorSlice';
+import { ErrorService } from '../services/error/ErrorService';
 
 const normalizeDialogPath = (selected: unknown): string | null => {
   const pickPath = (value: unknown): string | null => {
@@ -50,37 +47,28 @@ const normalizeDialogPath = (selected: unknown): string | null => {
 
 export const openFile = async (path: string): Promise<void> => {
   try {
-    const { activeFile } = useWorkspaceStore.getState();
-
-    if (activeFile) {
-      const success = await FsSafety.flushAffectedFiles(activeFile);
-      if (!success) {
-        useStatusStore.getState().setStatus('error', 'Failed to save changes');
-        return;
-      }
-    }
-
-    if (path !== activeFile) {
-      const success = await FsSafety.flushAffectedFiles(path);
-      if (!success) {
-        useStatusStore
-          .getState()
-          .setStatus('error', 'Failed to save target file');
-        return;
-      }
-    }
-
     useStatusStore.getState().setStatus('loading', 'Opening file...');
 
-    const content = await FsService.readFile(path);
-
-    useEditorStore.getState().initializeFile(path, content);
-    useWorkspaceStore.getState().openFile(path);
+    const result = await workspaceActions.openFile(path);
+    if (!result.ok) {
+      useStatusStore
+        .getState()
+        .setStatus(
+          'error',
+          result.reason === 'active-flush-failed'
+            ? 'Failed to save changes'
+            : 'Failed to save target file',
+        );
+      return;
+    }
 
     useStatusStore.getState().setStatus('idle');
   } catch (error) {
-    console.error(`Failed to open file ${path}:`, error);
-    useStatusStore.getState().setStatus('error', 'Failed to open file');
+    ErrorService.handle(
+      error,
+      `Failed to open file ${path}`,
+      'Failed to open file',
+    );
   }
 };
 
@@ -103,31 +91,23 @@ export const openWorkspace = async (): Promise<void> => {
 
     useStatusStore.getState().setStatus('loading', 'Loading workspace...');
 
-    useWorkspaceStore.setState({
-      currentPath: path,
-      openFiles: [],
-      activeFile: null,
-    });
-    useEditorStore.setState({ fileStates: {} });
-
     try {
-      const nodes = await FsService.listTree(path);
-
-      useFileTreeStore.getState().setNodes(nodes);
-      useFileTreeStore.getState().setSelectedPath(null);
+      const nodeCount = await workspaceActions.loadWorkspace(path);
       useStatusStore
         .getState()
-        .setStatus('idle', `Workspace loaded: ${nodes.length} item(s)`);
+        .setStatus('idle', `Workspace loaded: ${nodeCount} item(s)`);
     } catch (error) {
-      console.error('Failed to load file tree:', error);
-      useStatusStore
-        .getState()
-        .setStatus('error', 'Failed to load workspace files');
+      ErrorService.handle(
+        error,
+        'Failed to load file tree',
+        'Failed to load workspace files',
+      );
     }
   } catch (error) {
-    console.error('Failed to open dialog:', error);
-    useStatusStore
-      .getState()
-      .setStatus('error', 'Failed to open directory dialog');
+    ErrorService.handle(
+      error,
+      'Failed to open dialog',
+      'Failed to open directory dialog',
+    );
   }
 };

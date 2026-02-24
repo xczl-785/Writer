@@ -1,6 +1,6 @@
 # current 文档索引（V4 进行中）
 
-本目录保留跨阶段基线文档，并在阶段执行期保留"当前 Sprint 执行包"；历史阶段文档进入归档目录。
+本目录保留跨阶段基线文档与当前执行文档。
 
 ## 1) 当前阶段基线（V4 启动预备）
 
@@ -10,13 +10,12 @@
 4. `docs/current/V4开发需求提案.md`
 5. `docs/current/V3遗留与V4待办.md`（汇总 V3 未决项与补测需求）
 
-## 2) V4 Sprint 执行包
+## 2) V4 工程执行文档（当前维护）
 
-1. `docs/current/Sprint0执行包_V4.md` - 启动规划
-2. `docs/current/Sprint1执行包_V4.md` - Editor 组件拆分
-3. `docs/current/Sprint2执行包_V4.md` - 状态管理重构
-4. `docs/current/Sprint3执行包_V4.md` - 稳定性回归
-5. `docs/current/Sprint4执行包_V4.md` - 收尾与发布审计
+1. `docs/current/V4重构实施计划.md` - Phase 计划与任务包
+2. `docs/current/V4执行与证据包.md` - 执行清单、QA、证据
+
+> 说明：V4 已取消 Sprint 执行包拆分，统一维护在执行计划与证据包中。
 
 ## 3) 长期保留方案
 

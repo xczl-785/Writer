@@ -13,9 +13,20 @@ describe('Editor list styles', () => {
 });
 
 describe('Editor toolbar MVP', () => {
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const readEditor = () =>
+    readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+  const readInsertPopover = () =>
+    readFileSync(
+      join(currentDir, 'components', 'InsertTablePopover.tsx'),
+      'utf-8',
+    );
+  const readConstants = () =>
+    readFileSync(join(currentDir, 'constants.ts'), 'utf-8');
+
   it('renders formatting toolbar controls with accessible labels', () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+    const editorTsx = readEditor();
+    const constantsTs = readConstants();
     expect(editorTsx).toContain('aria-label={cmd.ariaLabel}');
 
     const expectedAriaLabels = [
@@ -37,13 +48,12 @@ describe('Editor toolbar MVP', () => {
     ];
 
     for (const label of expectedAriaLabels) {
-      expect(editorTsx).toContain(`ariaLabel: '${label}'`);
+      expect(constantsTs).toContain(`ariaLabel: '${label}'`);
     }
   });
 
   it('registers keyboard shortcuts for the same toolbar commands', () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+    const constantsTs = readConstants();
 
     const expectedShortcuts = [
       'Mod-b',
@@ -60,25 +70,26 @@ describe('Editor toolbar MVP', () => {
     ];
 
     for (const shortcut of expectedShortcuts) {
-      expect(editorTsx).toContain(`'${shortcut}'`);
+      expect(constantsTs).toContain(`'${shortcut}'`);
     }
   });
 
-  it('uses the default table insert shape (3x3 with header row)', () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+  it('uses the default table insert shape from editor config', () => {
+    const constantsTs = readConstants();
 
-    expect(editorTsx).toContain(
-      'insertTable({ rows: 3, cols: 3, withHeaderRow: true })',
-    );
+    expect(constantsTs).toContain('const DEFAULT_TABLE_INSERT = {');
+    expect(constantsTs).toContain('rows: EDITOR_CONFIG.table.defaultRows');
+    expect(constantsTs).toContain('cols: EDITOR_CONFIG.table.defaultCols');
+    const editorTsx = readEditor();
+    expect(editorTsx).toContain('insertTable(DEFAULT_TABLE_INSERT)');
   });
 
   it('includes source markers for the insert-table popover inputs', () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+    const editorTsx = readEditor();
+    const popoverTsx = readInsertPopover();
 
-    expect(editorTsx).toContain('insert-table-rows');
-    expect(editorTsx).toContain('insert-table-cols');
+    expect(popoverTsx).toContain('insert-table-rows');
+    expect(popoverTsx).toContain('insert-table-cols');
     expect(editorTsx).toContain('aria-haspopup="dialog"');
   });
 

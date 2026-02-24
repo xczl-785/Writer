@@ -4,18 +4,22 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 describe('Editor table controls', () => {
-  it('includes source markers for delete-table command and label', () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const readEditor = () =>
+    readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+  const readConstants = () =>
+    readFileSync(join(currentDir, 'constants.ts'), 'utf-8');
 
-    expect(editorTsx).toContain("'deleteTable'");
-    expect(editorTsx).toContain("ariaLabel: 'Delete table'");
-    expect(editorTsx).toContain("label: 'Del Tbl'");
+  it('includes source markers for delete-table command and label', () => {
+    const constantsTs = readConstants();
+
+    expect(constantsTs).toContain("'deleteTable'");
+    expect(constantsTs).toContain("ariaLabel: 'Delete table'");
+    expect(constantsTs).toContain("label: 'Del Tbl'");
   });
 
   it('uses unified destructive status messaging', () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+    const editorTsx = readEditor();
 
     expect(editorTsx).toContain('const setDestructiveStatus =');
 
@@ -28,8 +32,7 @@ describe('Editor table controls', () => {
   });
 
   it('enforces undo/redo command path consistency', () => {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+    const editorTsx = readEditor();
 
     expect(editorTsx).toContain('const undo = useCallback');
     expect(editorTsx).toContain('editor.chain().focus().undo().run()');
