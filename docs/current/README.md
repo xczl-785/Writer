@@ -1,44 +1,38 @@
-# current 文档索引（V4 进行中）
+# current 文档索引（V4 已完成）
 
 本目录保留跨阶段基线文档与当前执行文档。
 
-## 1) 当前阶段基线（V4 启动预备）
+## 1) V4 归档说明
 
-1. `docs/current/V4启动看板.md`
-2. `docs/current/V4需求主文档.md`（PRD / 范围 / 门禁 / 路线）
-3. `docs/current/V4需求追溯矩阵.md`
-4. `docs/current/V4开发需求提案.md`
-5. `docs/current/V3遗留与V4待办.md`（汇总 V3 未决项与补测需求）
+V4 重构已完成并归档至 `docs/archive/2026-02-25_v4-final-closeout/`。
 
-## 2) V4 工程执行文档（当前维护）
+归档内容：
 
-1. `docs/current/V4重构实施计划.md` - Phase 计划与任务包
-2. `docs/current/V4执行与证据包.md` - 执行清单、QA、证据
+- V4需求主文档.md
+- V4重构实施计划.md
+- V4执行与证据包.md
+- V4需求追溯矩阵.md
+- V4启动看板.md
+- V4开发需求提案.md
 
-> 说明：V4 已取消 Sprint 执行包拆分，统一维护在执行计划与证据包中。
+## 2) 常态维护文档
 
-## 3) 长期保留方案
+1. `V3遗留与V4待办.md` - 跨版本遗留项跟踪
+2. `全流程需求跟踪台账.md` - 跨阶段需求状态
+3. `design-block-indicator-system.md` - 结构感知方案参考
 
-1. `docs/current/design-block-indicator-system.md`（结构感知方案，持续迭代参考）
+## 3) 已归档目录
 
-## 4) 已归档目录
+1. `docs/archive/2026-02-25_v4-final-closeout/`
+   - V4 重构阶段总归档（Editor 模块化、Actions 层、ErrorService、常量配置化）。
 
-1. `docs/archive/2026-02-24_v3-final-closeout/`
-   - V3 阶段总归档（核心稳定性、表格边界、文件树优化、回归证据标准化）。
+2. `docs/archive/2026-02-24_v3-final-closeout/`
+   - V3 阶段总归档。
 
-2. `docs/archive/2026-02-18_v2-final-closeout/`
+3. `docs/archive/2026-02-18_v2-final-closeout/`
    - V2 阶段总归档。
 
-... (后续历史归档详见 docs/archive)
+## 4) 使用建议
 
-## 5) 常态维护文档
-
-1. `docs/current/全流程需求跟踪台账.md`
-   - 跨阶段常态维护，持续标注已解决/当前阶段/未开始需求。
-2. `当前Bug统计.md` (根目录)
-   - 实时 Bug 跟踪与修复状态。
-
-## 6) 使用建议
-
-- 继续推进新阶段前，请先在 `docs/current` 新建/检查该阶段的“任务拆分 + 交互规范 + QA 清单”。
-- 若需回溯历史，优先从对应归档目录读取。
+- 启动新阶段前，新建该阶段的任务拆分文档。
+- 回溯历史时，从对应归档目录读取。
