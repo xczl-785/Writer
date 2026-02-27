@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writer V5 Prototype - Context Menus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    animation: {
+                        'float-up': 'floatUp 0.15s ease-out forwards',
+                        'bubble': 'bubblePop 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                    },
+                    keyframes: {
+                        floatUp: { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
+                        bubblePop: { '0%': { opacity: '0', transform: 'translateY(4px) scale(0.98)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            @apply antialiased text-zinc-800 bg-zinc-50 min-h-screen flex items-center justify-center;
+        }
+
+        .prototype-board {
+            @apply bg-white border border-zinc-200 shadow-sm rounded-lg p-12 relative w-[800px] h-[600px] overflow-hidden;
+        }
+
+        /* 跨平台中性菜单基座 */
+        .context-menu {
+            @apply absolute bg-white border border-zinc-200 shadow-xl rounded-md py-1.5 w-56 flex flex-col select-none;
+        }
+
+        .menu-item {
+            @apply px-3 py-1.5 flex items-center justify-between text-sm text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 cursor-default transition-colors mx-1 rounded;
+        }
+
+        .menu-divider {
+            @apply h-[1px] bg-zinc-100 my-1 mx-2;
+        }
+
+        .menu-shortcut {
+            @apply text-xs text-zinc-400 font-mono tracking-tighter;
+        }
+
+        /* 文本文本编辑器气泡菜单 (Bubble Menu) */
+        .bubble-menu {
+            @apply absolute bg-zinc-800 text-white shadow-lg rounded-md flex items-center p-1 select-none border border-zinc-700;
+        }
+
+        .bubble-btn {
+            @apply p-1.5 rounded hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors flex items-center justify-center;
+        }
+
+        .bubble-divider {
+            @apply w-[1px] h-4 bg-zinc-600 mx-1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="prototype-board">
+        <h2 class="text-zinc-400 text-sm font-semibold tracking-wider mb-8 uppercase">交互演示面板</h2>
+
+        <!-- [演示区域 A]: 选中文本呈现 Bubble Menu -->
+        <div class="mb-16 relative">
+            <h3 class="text-sm font-medium text-zinc-600 mb-4 inline-flex items-center">
+                <span
+                    class="w-6 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-xs mr-2 border border-blue-200">A</span>
+                编辑器选区: Bubble Menu (划词即现)
+            </h3>
+
+            <p class="text-lg leading-relaxed text-zinc-800 max-w-lg">
+                Writer 的设计哲学是无打断。当你<span
+                    class="bg-blue-100 text-blue-800 px-1 rounded selection:bg-transparent">选中一段文字</span>时，格式化工具应立即在指尖出现。
+            </p>
+
+            <!-- Bubble Menu 原型 (定位在 "选中一段文字" 上方) -->
+            <div class="bubble-menu animate-bubble" style="left: 170px; top: 10px;">
+                <button class="bubble-btn font-bold w-7" title="Bold (⌘B)">B</button>
+                <button class="bubble-btn italic w-7" title="Italic (⌘I)">I</button>
+                <button class="bubble-btn line-through w-7" title="Strikethrough (⇧⌘X)">S</button>
+                <div class="bubble-divider"></div>
+                <button class="bubble-btn w-7" title="Code (⌘E)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                </button>
+                <button class="bubble-btn w-7" title="Link (⌘K)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                </button>
+                <button class="bubble-btn w-7" title="Highlight">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                        <path d="M2 2l7.586 7.586"></path>
+                        <circle cx="11" cy="11" r="2"></circle>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- [演示区域 B]: 文件树右键 -->
+        <div class="relative">
+            <h3 class="text-sm font-medium text-zinc-600 mb-4 inline-flex items-center">
+                <span
+                    class="w-6 h-6 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs mr-2 border border-emerald-200">B</span>
+                文件树区: Context Menu (跨平台系统菜单元件)
+            </h3>
+
+            <div
+                class="flex items-center px-3 py-2 rounded-md bg-zinc-100/50 text-zinc-800 border border-zinc-200 w-64 select-none">
+                <svg class="mr-2 text-zinc-400" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <path d="M14 2v6h6"></path>
+                </svg>
+                <span class="text-sm">docs_architecture.md</span>
+            </div>
+
+            <!-- 右键菜单原型 -->
+            <div class="context-menu animate-float-up" style="left: 60px; top: 110px;">
+                <div class="menu-item group hover:bg-blue-500 hover:text-white">
+                    <span class="flex items-center">
+                        <svg class="mr-2 opacity-50 group-hover:opacity-100" width="14" height="14" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <path d="M14 2v6h6"></path>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                        新建文件
+                    </span>
+                    <span class="menu-shortcut group-hover:text-blue-100">⌘N</span>
+                </div>
+                <div class="menu-item group hover:bg-blue-500 hover:text-white">
+                    <span class="flex items-center">
+                        <svg class="mr-2 opacity-50 group-hover:opacity-100" width="14" height="14" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                            </path>
+                            <line x1="12" y1="11" x2="12" y2="17"></line>
+                            <line x1="9" y1="14" x2="15" y2="14"></line>
+                        </svg>
+                        新建文件夹
+                    </span>
+                    <span class="menu-shortcut group-hover:text-blue-100">⇧⌘N</span>
+                </div>
+
+                <div class="menu-divider"></div>
+
+                <div class="menu-item group hover:bg-blue-500 hover:text-white">
+                    <span>重命名</span>
+                    <span class="menu-shortcut group-hover:text-blue-100">Enter</span>
+                </div>
+                <!-- 强调 "跨平台", 词汇需对齐系统 -->
+                <div class="menu-item group hover:bg-blue-500 hover:text-white">
+                    <span>在 访达 中显示</span>
+                </div>
+                <div class="menu-item group hover:bg-blue-500 hover:text-white">
+                    <span>复制路径</span>
+                    <span class="menu-shortcut group-hover:text-blue-100">⌥⌘C</span>
+                </div>
+
+                <div class="menu-divider"></div>
+
+                <!-- 危险项悬浮样式调整为红色警示 -->
+                <div class="menu-item text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors">
+                    <span class="flex items-center">
+                        <svg class="mr-2 opacity-70" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                            </path>
+                        </svg>
+                        移至废纸篓
+                    </span>
+                    <span class="menu-shortcut text-red-300">⌘⌫</span>
+                </div>
+            </div>
+
+            <!-- 光标悬停 Tooltip 示例 (V5要求: 快捷键包含在400ms延迟显示的浮层中) -->
+            <div class="absolute bg-zinc-800 text-white text-[11px] px-2 py-1 rounded shadow-lg pointer-events-none"
+                style="left: 230px; top: 11%; transform: translateY(-50%);">
+                包含重命名等文件级操作菜单
+                <!-- 小三角形 -->
+                <div
+                    class="absolute top-1/2 -left-1 transform -translate-y-1/2 w-0 h-0 border-t-[4px] border-t-transparent border-r-[4px] border-r-zinc-800 border-b-[4px] border-b-transparent">
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+</html>
