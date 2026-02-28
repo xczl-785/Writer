@@ -52,6 +52,8 @@ import {
 } from '../components/Breadcrumb/useBreadcrumb';
 import { openFile } from '../../workspace/WorkspaceManager';
 import { Outline } from '../components/Outline';
+import { BlockBoundaryExtension } from '../components/BlockBoundary';
+import '../components/BlockBoundary/blockBoundary.css';
 import './Editor.css';
 
 export type EditorHandle = {
@@ -160,6 +162,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     () => [
       toolbarShortcutExtension,
       findReplaceShortcutExtension,
+      BlockBoundaryExtension,
       StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
       Table.configure({ resizable: true, allowTableNodeSelection: false }),
       TableRow,
