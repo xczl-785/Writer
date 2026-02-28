@@ -5,7 +5,6 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { ask } from '@tauri-apps/plugin-dialog';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
@@ -16,6 +15,7 @@ import { FsSafety } from '../../services/fs/FsSafety';
 import type { FileNode } from '../../state/types';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
+import { showDeleteConfirmDialog } from '../components/Dialog';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import {
   ensureMarkdownExtension,
@@ -239,19 +239,13 @@ export function Sidebar() {
 
   const confirmDeleteNode = async (node: FileNode): Promise<void> => {
     const displayName = getDisplayName(node);
-    const confirmed = await ask(
-      `确定要将 "${displayName}" ${node.type === 'directory' ? '及其内容' : ''}移至废纸篓吗？`,
-      {
-        title: '移至废纸篓',
-        kind: 'warning',
-        okLabel: '移至废纸篓',
-        cancelLabel: '取消',
-      },
+    const confirmed = await showDeleteConfirmDialog(
+      displayName,
+      node.type === 'directory',
     );
     if (!confirmed) {
       return;
     }
-
     const success = await FsSafety.flushAffectedFiles(node.path);
     if (!success) {
       useStatusStore

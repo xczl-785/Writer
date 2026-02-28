@@ -42,6 +42,7 @@ type Props = {
   };
   onEditorContextMenu: (event: MouseEvent) => void;
   bubbleMenu?: ReactNode;
+  breadcrumb?: ReactNode;
 };
 
 export function EditorShell({
@@ -54,6 +55,7 @@ export function EditorShell({
   findReplace,
   onEditorContextMenu,
   bubbleMenu,
+  breadcrumb,
 }: Props) {
   return (
     <div
@@ -66,6 +68,7 @@ export function EditorShell({
         }
       }}
     >
+      {breadcrumb}
       <Toolbar
         editor={editor}
         isToolbarEnabled={isToolbarEnabled}
