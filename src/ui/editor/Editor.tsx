@@ -16,6 +16,7 @@ import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
 import { useEditorStore } from '../../state/slices/editorSlice';
+import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { ErrorService } from '../../services/error/ErrorService';
@@ -44,6 +45,12 @@ import {
   getCodeBlockContextMenuItems,
   getEditorContextMenuItems,
 } from '../components/ContextMenu/editorMenu';
+import { Breadcrumb } from '../components/Breadcrumb/Breadcrumb';
+import {
+  buildBreadcrumb,
+  type BreadcrumbItem,
+} from '../components/Breadcrumb/useBreadcrumb';
+import { openFile } from '../../workspace/WorkspaceManager';
 import './Editor.css';
 
 export type EditorHandle = {
@@ -75,8 +82,9 @@ const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
   value;
 
 export const Editor = forwardRef<EditorHandle>((_props, ref) => {
-  const { activeFile } = useWorkspaceStore();
+  const { activeFile, currentPath } = useWorkspaceStore();
   const { setStatus } = useStatusStore();
+  const { setSelectedPath, expandNode } = useFileTreeStore();
   const { fileStates, updateFileContent, setDirty } = useEditorStore();
   const { handlePaste } = useImagePaste();
   const contextMenu = useContextMenu();
@@ -407,6 +415,18 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const toolbarStatus = !hasEditorWidgetFocus
     ? 'Click editor to enable'
     : statusText || 'Ready';
+  const breadcrumbItems = buildBreadcrumb(currentPath, activeFile);
+
+  const handleBreadcrumbClick = (item: BreadcrumbItem) => {
+    setSelectedPath(item.path);
+    if (item.type === 'file') {
+      void openFile(item.path);
+      return;
+    }
+    if (item.type === 'folder' || item.type === 'workspace') {
+      expandNode(item.path);
+    }
+  };
 
   return (
     <>
@@ -419,6 +439,12 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         insertTable={insertTable}
         findReplace={findReplace}
         onEditorContextMenu={openEditorContextMenu}
+        breadcrumb={
+          <Breadcrumb
+            items={breadcrumbItems}
+            onItemClick={handleBreadcrumbClick}
+          />
+        }
         bubbleMenu={
           <div
             className={`editor-bubble-menu ${bubbleMenuPosition.open ? 'is-open' : ''}`}

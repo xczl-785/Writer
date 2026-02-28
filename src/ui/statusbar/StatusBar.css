@@ -37,12 +37,53 @@
   text-overflow: ellipsis;
 }
 
+.status-indicator-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .status-indicator {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background-color: #10b981;
   transition: background-color 0.2s ease, opacity 0.5s ease;
+}
+
+.status-error-panel {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  width: 240px;
+  background: #111827;
+  color: #f9fafb;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 28%);
+  padding: 8px 10px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  z-index: 20;
+}
+
+.status-indicator-wrap:hover .status-error-panel {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.status-error-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.status-error-suggestion {
+  font-size: 11px;
+  color: #d1d5db;
+  margin: 4px 0 0;
 }
 
 .status-bar.saved .status-indicator {

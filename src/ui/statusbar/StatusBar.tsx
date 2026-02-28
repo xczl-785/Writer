@@ -67,7 +67,15 @@ export const StatusBar: React.FC = () => {
 
   return (
     <div className={`status-bar ${getStatusClass()} ${isFaded ? 'fade' : ''}`}>
-      <div className="status-indicator" />
+      <div className="status-indicator-wrap">
+        <div className="status-indicator" />
+        {saveStatus === 'error' && saveError ? (
+          <div className="status-error-panel" role="tooltip">
+            <p className="status-error-title">{saveError.reason}</p>
+            <p className="status-error-suggestion">{saveError.suggestion}</p>
+          </div>
+        ) : null}
+      </div>
       <span className="status-message">{getStatusText()}</span>
     </div>
   );
