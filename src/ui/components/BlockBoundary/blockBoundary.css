@@ -1,0 +1,14 @@
+.ProseMirror .block-boundary-code {
+  box-shadow: inset 4px 0 0 rgb(96 165 250 / 50%);
+  transition: box-shadow 50ms ease-out;
+}
+
+.ProseMirror .block-boundary-quote {
+  box-shadow: inset 2px 0 0 #a1a1aa;
+  transition: box-shadow 50ms ease-out;
+}
+
+.ProseMirror .block-boundary-list {
+  box-shadow: inset 2px 0 0 #d4d4d8;
+  transition: box-shadow 50ms ease-out;
+}
