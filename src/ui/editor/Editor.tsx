@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  type MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
   useImperativeHandle,
@@ -15,6 +16,7 @@ import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
 import { useEditorStore } from '../../state/slices/editorSlice';
+import { useStatusStore } from '../../state/slices/statusSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { ErrorService } from '../../services/error/ErrorService';
 import { MarkdownService } from '../../services/markdown/MarkdownService';
@@ -37,6 +39,11 @@ import { useTransientStatus } from './useTransientStatus';
 import { useInsertTable } from './useInsertTable';
 import { useFindReplace } from './useFindReplace';
 import { useToolbarCommands } from './useToolbarCommands';
+import { ContextMenu, useContextMenu } from '../components/ContextMenu';
+import {
+  getCodeBlockContextMenuItems,
+  getEditorContextMenuItems,
+} from '../components/ContextMenu/editorMenu';
 import './Editor.css';
 
 export type EditorHandle = {
@@ -69,8 +76,10 @@ const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
 
 export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const { activeFile } = useWorkspaceStore();
+  const { setStatus } = useStatusStore();
   const { fileStates, updateFileContent, setDirty } = useEditorStore();
   const { handlePaste } = useImagePaste();
+  const contextMenu = useContextMenu();
 
   const content = activeFile ? fileStates[activeFile]?.content || '' : '';
   const editorRef = useRef<TiptapEditor | null>(null);
@@ -80,6 +89,11 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasEditorWidgetFocus, setHasEditorWidgetFocus] = useState(false);
   const [editorRevision, forceRerender] = useState(0);
+  const [bubbleMenuPosition, setBubbleMenuPosition] = useState<{
+    open: boolean;
+    x: number;
+    y: number;
+  }>({ open: false, x: 0, y: 0 });
 
   const { statusText, setTransientStatus, setDestructiveStatus } =
     useTransientStatus();
@@ -228,6 +242,48 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   }, [editor]);
 
   useEffect(() => {
+    if (!editor) return;
+
+    const updateBubble = () => {
+      if (editor.state.selection.empty || !editor.isFocused) {
+        setBubbleMenuPosition({ open: false, x: 0, y: 0 });
+        return;
+      }
+
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        setBubbleMenuPosition({ open: false, x: 0, y: 0 });
+        return;
+      }
+
+      const rect = selection.getRangeAt(0).getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) {
+        setBubbleMenuPosition({ open: false, x: 0, y: 0 });
+        return;
+      }
+
+      setBubbleMenuPosition({
+        open: true,
+        x: rect.left + rect.width / 2,
+        y: rect.top - 8,
+      });
+    };
+
+    const hideBubble = () => {
+      setBubbleMenuPosition({ open: false, x: 0, y: 0 });
+    };
+
+    editor.on('selectionUpdate', updateBubble);
+    editor.on('focus', updateBubble);
+    editor.on('blur', hideBubble);
+    return () => {
+      editor.off('selectionUpdate', updateBubble);
+      editor.off('focus', updateBubble);
+      editor.off('blur', hideBubble);
+    };
+  }, [editor]);
+
+  useEffect(() => {
     if (!editor || !activeFile) return;
 
     let isMounted = true;
@@ -261,6 +317,84 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     [editor],
   );
 
+  const copyText = useCallback(
+    async (text: string, successMessage: string): Promise<void> => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus('idle', successMessage);
+      } catch {
+        setStatus('error', 'Clipboard access denied');
+      }
+    },
+    [setStatus],
+  );
+
+  const getActiveCodeBlockText = useCallback((instance: TiptapEditor) => {
+    const { $from } = instance.state.selection;
+    for (let depth = $from.depth; depth > 0; depth -= 1) {
+      const node = $from.node(depth);
+      if (node.type.name === 'codeBlock') {
+        return node.textContent;
+      }
+    }
+    return '';
+  }, []);
+
+  const openEditorContextMenu = useCallback(
+    (event: ReactMouseEvent) => {
+      if (!editor) {
+        return;
+      }
+      event.preventDefault();
+      const selection = editor.state.selection;
+      const hasSelection = !selection.empty;
+      if (hasSelection) {
+        return;
+      }
+
+      const inCodeBlock = editor.isActive('codeBlock');
+      const items = inCodeBlock
+        ? getCodeBlockContextMenuItems({
+            onCopyCodeBlock: () => {
+              void copyText(getActiveCodeBlockText(editor), 'Code copied');
+            },
+            onChangeLanguage: () => {
+              setStatus('idle', 'Language selector coming soon');
+            },
+            onFormatCode: () => {
+              setStatus('idle', 'Code formatter coming soon');
+            },
+          })
+        : getEditorContextMenuItems({
+            onPaste: () => {
+              void navigator.clipboard
+                .readText()
+                .then((text) => {
+                  editor.chain().focus().insertContent(text).run();
+                })
+                .catch(() => {
+                  setStatus('error', 'Paste requires clipboard permission');
+                });
+            },
+            onSelectAll: () => {
+              editor.chain().focus().selectAll().run();
+            },
+            onCopyFullText: () => {
+              void copyText(editor.getText(), 'Document copied');
+            },
+            onInsertTable: () => {
+              editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run();
+            },
+            onInsertQuote: () => {
+              editor.chain().focus().toggleBlockquote().run();
+            },
+          });
+
+      contextMenu.open(event.clientX, event.clientY, items);
+    },
+    [contextMenu, copyText, editor, getActiveCodeBlockText, setStatus],
+  );
+
   if (!activeFile)
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
@@ -275,15 +409,83 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     : statusText || 'Ready';
 
   return (
-    <EditorShell
-      editor={editor}
-      isToolbarEnabled={isToolbarEnabled}
-      runToolbarCommand={runToolbarCommand}
-      setHasEditorWidgetFocus={setHasEditorWidgetFocus}
-      toolbarStatus={toolbarStatus}
-      insertTable={insertTable}
-      findReplace={findReplace}
-    />
+    <>
+      <EditorShell
+        editor={editor}
+        isToolbarEnabled={isToolbarEnabled}
+        runToolbarCommand={runToolbarCommand}
+        setHasEditorWidgetFocus={setHasEditorWidgetFocus}
+        toolbarStatus={toolbarStatus}
+        insertTable={insertTable}
+        findReplace={findReplace}
+        onEditorContextMenu={openEditorContextMenu}
+        bubbleMenu={
+          <div
+            className={`editor-bubble-menu ${bubbleMenuPosition.open ? 'is-open' : ''}`}
+            style={{
+              left: bubbleMenuPosition.x,
+              top: bubbleMenuPosition.y,
+            }}
+          >
+            <button
+              type="button"
+              className="editor-bubble-menu__button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor.chain().focus().toggleBold().run()}
+            >
+              B
+            </button>
+            <button
+              type="button"
+              className="editor-bubble-menu__button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+            >
+              I
+            </button>
+            <button
+              type="button"
+              className="editor-bubble-menu__button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+            >
+              S
+            </button>
+            <button
+              type="button"
+              className="editor-bubble-menu__button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => editor.chain().focus().toggleCode().run()}
+            >
+              {'</>'}
+            </button>
+            <button
+              type="button"
+              className="editor-bubble-menu__button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setStatus('idle', 'Link editor coming soon')}
+            >
+              Link
+            </button>
+            <button
+              type="button"
+              className="editor-bubble-menu__button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setStatus('idle', 'Highlight coming soon')}
+            >
+              Highlight
+            </button>
+          </div>
+        }
+      />
+      <ContextMenu
+        isOpen={contextMenu.state.isOpen}
+        x={contextMenu.state.x}
+        y={contextMenu.state.y}
+        items={contextMenu.state.items}
+        onClose={contextMenu.close}
+      />
+    </>
   );
 });
 

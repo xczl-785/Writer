@@ -33,6 +33,19 @@ vi.mock('../../services/images/ImageResolver', () => ({
   },
 }));
 
+const createStatusState = (setStatus = vi.fn()) => ({
+  status: 'idle' as const,
+  message: null as string | null,
+  saveStatus: 'saved' as const,
+  lastSavedAt: null as number | null,
+  saveError: null as { reason: string; suggestion: string } | null,
+  setStatus,
+  markDirty: vi.fn(),
+  markSaving: vi.fn(),
+  markSaved: vi.fn(),
+  setSaveError: vi.fn(),
+});
+
 describe('getRelativePath', () => {
   it('should handle same directory', () => {
     const from = '/Users/user/project/docs/file.md';
@@ -85,11 +98,7 @@ describe('useImagePaste', () => {
       activeFile: '/project/docs/file.md',
       currentPath: '/project/docs',
     });
-    vi.mocked(useStatusStore.getState).mockReturnValue({
-      status: 'idle',
-      message: null,
-      setStatus: vi.fn(),
-    });
+    vi.mocked(useStatusStore.getState).mockReturnValue(createStatusState());
     vi.mocked(FsService.saveImage).mockResolvedValue(undefined);
     vi.mocked(FsService.checkExists).mockResolvedValue(false);
     vi.mocked(ImageResolver.resolve).mockReturnValue(
@@ -100,11 +109,9 @@ describe('useImagePaste', () => {
   it('should reject unsupported image formats and set status error', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const setStatusMock = vi.fn();
-    vi.mocked(useStatusStore.getState).mockReturnValue({
-      status: 'idle',
-      message: null,
-      setStatus: setStatusMock,
-    });
+    vi.mocked(useStatusStore.getState).mockReturnValue(
+      createStatusState(setStatusMock),
+    );
 
     const { handlePaste } = useImagePaste(mockEditor);
 
@@ -137,11 +144,9 @@ describe('useImagePaste', () => {
   it('should reject large images and set status error', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const setStatusMock = vi.fn();
-    vi.mocked(useStatusStore.getState).mockReturnValue({
-      status: 'idle',
-      message: null,
-      setStatus: setStatusMock,
-    });
+    vi.mocked(useStatusStore.getState).mockReturnValue(
+      createStatusState(setStatusMock),
+    );
 
     const { handlePaste } = useImagePaste(mockEditor);
 
@@ -174,11 +179,9 @@ describe('useImagePaste', () => {
   it('should set status error when save fails', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const setStatusMock = vi.fn();
-    vi.mocked(useStatusStore.getState).mockReturnValue({
-      status: 'idle',
-      message: null,
-      setStatus: setStatusMock,
-    });
+    vi.mocked(useStatusStore.getState).mockReturnValue(
+      createStatusState(setStatusMock),
+    );
 
     vi.mocked(FsService.saveImage).mockRejectedValue(new Error('Save failed'));
 
@@ -273,11 +276,9 @@ describe('useImagePaste', () => {
   it('should show raw to resolved image diagnostic when enabled', async () => {
     vi.stubEnv('VITE_SHOW_IMAGE_DIAGNOSTIC', '1');
     const setStatusMock = vi.fn();
-    vi.mocked(useStatusStore.getState).mockReturnValue({
-      status: 'idle',
-      message: null,
-      setStatus: setStatusMock,
-    });
+    vi.mocked(useStatusStore.getState).mockReturnValue(
+      createStatusState(setStatusMock),
+    );
 
     const { handlePaste } = useImagePaste(mockEditor);
 

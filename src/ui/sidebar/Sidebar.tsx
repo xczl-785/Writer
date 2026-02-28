@@ -1,4 +1,11 @@
+/**
+ * Sidebar Component with File Tree and Context Menu
+ *
+ * @see docs/current/PM/V5 功能清单.md - INT-010: 文件树右键菜单
+ */
+
 import { useEffect, useMemo, useState } from 'react';
+import { ask } from '@tauri-apps/plugin-dialog';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
@@ -7,6 +14,8 @@ import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
 import { FsService } from '../../services/fs/FsService';
 import { FsSafety } from '../../services/fs/FsSafety';
 import type { FileNode } from '../../state/types';
+import { ContextMenu, useContextMenu } from '../components/ContextMenu';
+import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import {
   ensureMarkdownExtension,
@@ -41,11 +50,9 @@ type GhostNode = {
 export function Sidebar() {
   const { nodes, selectedPath, setSelectedPath } = useFileTreeStore();
   const { currentPath, activeFile } = useWorkspaceStore();
+  const contextMenu = useContextMenu();
   const visibleNodes = filterVisibleNodes(nodes);
   const [ghostNode, setGhostNode] = useState<GhostNode | null>(null);
-  const [pendingDeleteNode, setPendingDeleteNode] = useState<FileNode | null>(
-    null,
-  );
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameTrigger, setRenameTrigger] = useState(0);
   const [explorerFocus, setExplorerFocus] = useState(false);
@@ -206,7 +213,97 @@ export function Sidebar() {
     if (!selectedNode) {
       return;
     }
-    setPendingDeleteNode(selectedNode);
+    void confirmDeleteNode(selectedNode);
+  };
+
+  const copyPathToClipboard = async (path: string): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(path);
+      useStatusStore.getState().setStatus('idle', 'Path copied');
+    } catch {
+      useStatusStore
+        .getState()
+        .setStatus('error', 'Failed to copy path to clipboard');
+    }
+  };
+
+  const revealInFileManager = async (path: string): Promise<void> => {
+    try {
+      await FsService.revealInFileManager(path);
+    } catch {
+      useStatusStore
+        .getState()
+        .setStatus('error', 'Failed to reveal path in file manager');
+    }
+  };
+
+  const confirmDeleteNode = async (node: FileNode): Promise<void> => {
+    const displayName = getDisplayName(node);
+    const confirmed = await ask(
+      `确定要将 "${displayName}" ${node.type === 'directory' ? '及其内容' : ''}移至废纸篓吗？`,
+      {
+        title: '移至废纸篓',
+        kind: 'warning',
+        okLabel: '移至废纸篓',
+        cancelLabel: '取消',
+      },
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    const success = await FsSafety.flushAffectedFiles(node.path);
+    if (!success) {
+      useStatusStore
+        .getState()
+        .setStatus('error', 'Failed to save changes before delete');
+      return;
+    }
+
+    try {
+      await fileActions.deletePath(node.path);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      useStatusStore
+        .getState()
+        .setStatus('error', `Failed to delete: ${message}`);
+    }
+  };
+
+  const openNodeContextMenu = (event: React.MouseEvent, node: FileNode) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedPath(node.path);
+
+    const isReservedPath = Boolean(currentPath && node.path === currentPath);
+    const items = getFileTreeMenuItems({
+      node,
+      isReservedPath,
+      onNewFile: () => {
+        setSelectedPath(node.path);
+        startCreate('file');
+      },
+      onNewFolder: () => {
+        setSelectedPath(node.path);
+        startCreate('directory');
+      },
+      onRename: () => {
+        setSelectedPath(node.path);
+        setRenamingPath(node.path);
+        setRenameTrigger((v) => v + 1);
+      },
+      onRevealInFinder: () => {
+        void revealInFileManager(node.path);
+      },
+      onCopyPath: () => {
+        void copyPathToClipboard(node.path);
+      },
+      onDelete: () => {
+        void confirmDeleteNode(node);
+      },
+    });
+
+    contextMenu.open(event.clientX, event.clientY, items);
   };
 
   const commandCtx = {
@@ -225,10 +322,9 @@ export function Sidebar() {
 
   useEffect(() => {
     const inputActive = ghostNode !== null || renamingPath !== null;
-    const modalOpen = pendingDeleteNode !== null;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!explorerFocus || inputActive || modalOpen) {
+      if (!explorerFocus || inputActive || contextMenu.state.isOpen) {
         return;
       }
 
@@ -244,7 +340,13 @@ export function Sidebar() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- commandCtx is an object literal recreated every render; adding it would cause listener re-subscription on every render. Actual reactive deps are already listed.
-  }, [explorerFocus, ghostNode, renamingPath, pendingDeleteNode, selectedNode]);
+  }, [
+    explorerFocus,
+    ghostNode,
+    renamingPath,
+    selectedNode,
+    contextMenu.state.isOpen,
+  ]);
 
   return (
     <div
@@ -479,7 +581,8 @@ export function Sidebar() {
                 ghostNode={ghostNode}
                 onGhostCommit={commitCreate}
                 onGhostCancel={cancelCreate}
-                onRequestDelete={(target) => setPendingDeleteNode(target)}
+                onRequestDelete={(target) => void confirmDeleteNode(target)}
+                onOpenContextMenu={openNodeContextMenu}
                 onRequestRenameStart={(path) => setRenamingPath(path)}
                 onRequestRenameEnd={() => setRenamingPath(null)}
                 onSelect={(path) => setSelectedPath(path)}
@@ -489,13 +592,13 @@ export function Sidebar() {
         )}
       </div>
 
-      {pendingDeleteNode && (
-        <DeleteConfirmDialog
-          node={pendingDeleteNode}
-          onCancel={() => setPendingDeleteNode(null)}
-          onConfirm={() => setPendingDeleteNode(null)}
-        />
-      )}
+      <ContextMenu
+        isOpen={contextMenu.state.isOpen}
+        x={contextMenu.state.x}
+        y={contextMenu.state.y}
+        items={contextMenu.state.items}
+        onClose={contextMenu.close}
+      />
     </div>
   );
 }
@@ -544,6 +647,7 @@ function FileTreeNode({
   onGhostCommit,
   onGhostCancel,
   onRequestDelete,
+  onOpenContextMenu,
   onRequestRenameStart,
   onRequestRenameEnd,
   onSelect,
@@ -557,6 +661,7 @@ function FileTreeNode({
   onGhostCommit: (name: string, trigger: InlineCommitTrigger) => Promise<void>;
   onGhostCancel: () => void;
   onRequestDelete: (node: FileNode) => void;
+  onOpenContextMenu: (event: React.MouseEvent, node: FileNode) => void;
   onRequestRenameStart: (path: string) => void;
   onRequestRenameEnd: () => void;
   onSelect: (path: string) => void;
@@ -677,6 +782,7 @@ function FileTreeNode({
         }`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
         onClick={handleClick}
+        onContextMenu={(event) => onOpenContextMenu(event, node)}
       >
         <span className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0">
           {isDirectory ? (
@@ -750,6 +856,7 @@ function FileTreeNode({
                 onGhostCommit={onGhostCommit}
                 onGhostCancel={onGhostCancel}
                 onRequestDelete={onRequestDelete}
+                onOpenContextMenu={onOpenContextMenu}
                 onRequestRenameStart={onRequestRenameStart}
                 onRequestRenameEnd={onRequestRenameEnd}
                 onSelect={onSelect}
@@ -757,79 +864,6 @@ function FileTreeNode({
             ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function DeleteConfirmDialog({
-  node,
-  onCancel,
-  onConfirm,
-}: {
-  node: FileNode;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleConfirm = async () => {
-    setIsDeleting(true);
-    const success = await FsSafety.flushAffectedFiles(node.path);
-    if (!success) {
-      setIsDeleting(false);
-      useStatusStore
-        .getState()
-        .setStatus('error', 'Failed to save changes before delete');
-      return;
-    }
-
-    try {
-      await fileActions.deletePath(node.path);
-      onConfirm();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      useStatusStore
-        .getState()
-        .setStatus('error', `Failed to delete: ${message}`);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-lg bg-white p-4 shadow-lg">
-        <h3 className="text-sm font-semibold text-gray-900">
-          Delete confirmation
-        </h3>
-        <p className="mt-2 text-sm text-gray-600">
-          Delete{' '}
-          <span className="font-medium text-gray-900">
-            {getDisplayName(node)}
-          </span>
-          {node.type === 'directory' ? ' and all its contents?' : '?'}
-        </p>
-        <label className="mt-3 flex items-center gap-2 text-xs text-gray-400">
-          <input type="checkbox" disabled />
-          Do not ask again (coming soon)
-        </label>
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            onClick={onCancel}
-            disabled={isDeleting}
-            className="rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => void handleConfirm()}
-            disabled={isDeleting}
-            className="rounded bg-red-500 px-3 py-1.5 text-xs text-white hover:bg-red-600 disabled:opacity-50"
-          >
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileNode {
@@ -173,6 +174,49 @@ pub fn delete_node(path: &str) -> Result<(), String> {
         fs::remove_file(path).map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+#[tauri::command]
+pub fn reveal_in_file_manager(path: &str) -> Result<(), String> {
+    let path_obj = Path::new(path);
+    if !path_obj.exists() {
+        return Err(format!("Path does not exist: {}", path));
+    }
+
+    #[cfg(target_os = "macos")]
+    let status = Command::new("open")
+        .arg("-R")
+        .arg(path)
+        .status()
+        .map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "windows")]
+    let status = Command::new("explorer")
+        .arg(format!("/select,{}", path.replace('/', "\\")))
+        .status()
+        .map_err(|e| e.to_string())?;
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let status = {
+        let target = if path_obj.is_dir() {
+            path_obj
+        } else {
+            path_obj.parent().ok_or("Invalid path")?
+        };
+        Command::new("xdg-open")
+            .arg(target)
+            .status()
+            .map_err(|e| e.to_string())?
+    };
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "Failed to open file manager for path: {}",
+            path
+        ))
+    }
 }
 
 #[tauri::command]

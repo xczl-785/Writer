@@ -30,6 +30,10 @@ export const FsService = {
     return invoke('delete_node', { path });
   },
 
+  async revealInFileManager(path: string): Promise<void> {
+    return invoke('reveal_in_file_manager', { path });
+  },
+
   async saveImage(path: string, data: Uint8Array): Promise<void> {
     return invoke('save_image', { path, data });
   },

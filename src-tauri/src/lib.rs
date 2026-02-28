@@ -18,6 +18,7 @@ pub fn run() {
             fs::create_dir,
             fs::rename_node,
             fs::delete_node,
+            fs::reveal_in_file_manager,
             fs::save_image,
             fs::check_exists
         ])
