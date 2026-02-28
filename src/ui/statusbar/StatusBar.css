@@ -12,6 +12,11 @@
   flex-shrink: 0;
 }
 
+.status-bar.fade .status-indicator,
+.status-bar.fade .status-message {
+  opacity: 0.3;
+}
+
 .status-bar.error {
   background-color: var(--error-bg);
   color: var(--error-text);
@@ -19,6 +24,10 @@
 
 .status-bar.saving {
   color: var(--accent-color);
+}
+
+.status-bar.dirty {
+  color: #d97706;
 }
 
 .status-message {
@@ -32,26 +41,25 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--text-tertiary);
-  transition: background-color 0.2s ease;
+  background-color: #10b981;
+  transition: background-color 0.2s ease, opacity 0.5s ease;
 }
 
-.status-bar.idle .status-indicator {
-  background-color: var(--success-color);
-  opacity: 0.5;
+.status-bar.saved .status-indicator {
+  background-color: #10b981;
 }
 
-.status-bar.loading .status-indicator {
-  background-color: var(--accent-color);
-  animation: pulse 1.5s infinite;
+.status-bar.dirty .status-indicator {
+  background-color: #f59e0b;
 }
 
 .status-bar.saving .status-indicator {
-  background-color: var(--accent-color);
+  background-color: #3b82f6;
+  animation: pulse 1.5s infinite;
 }
 
 .status-bar.error .status-indicator {
-  background-color: var(--error-color);
+  background-color: #ef4444;
 }
 
 @keyframes pulse {

@@ -13,12 +13,23 @@ vi.mock('../../state/slices/statusSlice', () => ({
   useStatusStore: {
     getState: vi.fn().mockReturnValue({
       setStatus: vi.fn(),
+      saveStatus: 'saved',
+      lastSavedAt: null,
+      saveError: null,
+      markDirty: vi.fn(),
+      markSaving: vi.fn(),
+      markSaved: vi.fn(),
+      setSaveError: vi.fn(),
     }),
   },
 }));
 
 describe('AutosaveService', () => {
   const setStatusMock = vi.fn();
+  const markDirtyMock = vi.fn();
+  const markSavingMock = vi.fn();
+  const markSavedMock = vi.fn();
+  const setSaveErrorMock = vi.fn();
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -27,7 +38,14 @@ describe('AutosaveService', () => {
     vi.mocked(useStatusStore.getState).mockReturnValue({
       status: 'idle',
       message: null,
+      saveStatus: 'saved',
+      lastSavedAt: null,
+      saveError: null,
       setStatus: setStatusMock,
+      markDirty: markDirtyMock,
+      markSaving: markSavingMock,
+      markSaved: markSavedMock,
+      setSaveError: setSaveErrorMock,
     });
   });
 
@@ -99,8 +117,9 @@ describe('AutosaveService', () => {
     AutosaveService.schedule('test.md', 'content');
     await AutosaveService.flush('test.md');
 
-    expect(setStatusMock).toHaveBeenCalledWith('saving', 'Saving test.md...');
-    expect(setStatusMock).toHaveBeenCalledWith('idle', 'Saved');
+    expect(markDirtyMock).toHaveBeenCalled();
+    expect(markSavingMock).toHaveBeenCalledWith('test.md');
+    expect(markSavedMock).toHaveBeenCalledWith('Saved');
   });
 
   it('should update status on error', async () => {
@@ -113,10 +132,10 @@ describe('AutosaveService', () => {
       'Save failed',
     );
 
-    expect(setStatusMock).toHaveBeenCalledWith('saving', 'Saving test.md...');
-    expect(setStatusMock).toHaveBeenCalledWith(
-      'error',
+    expect(markSavingMock).toHaveBeenCalledWith('test.md');
+    expect(setSaveErrorMock).toHaveBeenCalledWith(
       'Failed to save test.md',
+      'Please check permissions or try Save As.',
     );
   });
 });

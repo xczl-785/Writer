@@ -23,7 +23,13 @@ describe('WorkspaceManager - openFile', () => {
     vi.clearAllMocks();
     useWorkspaceStore.setState({ activeFile: null, openFiles: [] });
     useEditorStore.setState({ fileStates: {} });
-    useStatusStore.setState({ status: 'idle', message: null });
+    useStatusStore.setState({
+      status: 'idle',
+      message: null,
+      saveStatus: 'saved',
+      lastSavedAt: null,
+      saveError: null,
+    });
   });
 
   it('should open a file successfully', async () => {

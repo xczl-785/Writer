@@ -1,48 +1,72 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import './StatusBar.css';
 
 export const StatusBar: React.FC = () => {
-  const { status, message, setStatus } = useStatusStore();
+  const { saveStatus, message, saveError, lastSavedAt, setStatus } =
+    useStatusStore();
+  const [isFaded, setIsFaded] = useState(false);
 
   useEffect(() => {
-    if (status === 'idle' && message) {
+    if (saveStatus === 'saved' && message) {
       const timer = setTimeout(() => {
         setStatus('idle', null);
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [status, message, setStatus]);
+  }, [saveStatus, message, setStatus]);
+
+  useEffect(() => {
+    if (saveStatus !== 'saved' || lastSavedAt === null) {
+      const resetTimer = setTimeout(() => {
+        setIsFaded(false);
+      }, 0);
+      return () => clearTimeout(resetTimer);
+    }
+
+    const resetTimer = setTimeout(() => {
+      setIsFaded(false);
+    }, 0);
+
+    const remaining = Math.max(0, 5000 - (Date.now() - lastSavedAt));
+    const timer = setTimeout(() => {
+      setIsFaded(true);
+    }, remaining);
+    return () => {
+      clearTimeout(resetTimer);
+      clearTimeout(timer);
+    };
+  }, [lastSavedAt, saveStatus]);
 
   const getStatusClass = () => {
-    switch (status) {
-      case 'loading':
-        return 'loading';
+    switch (saveStatus) {
+      case 'dirty':
+        return 'dirty';
       case 'saving':
         return 'saving';
       case 'error':
         return 'error';
       default:
-        return 'idle';
+        return 'saved';
     }
   };
 
   const getStatusText = () => {
     if (message) return message;
-    switch (status) {
-      case 'loading':
-        return 'Loading...';
+    switch (saveStatus) {
+      case 'dirty':
+        return 'Unsaved';
       case 'saving':
         return 'Saving...';
       case 'error':
-        return 'Error';
+        return saveError?.reason ?? 'Save failed';
       default:
-        return 'Ready';
+        return 'Saved';
     }
   };
 
   return (
-    <div className={`status-bar ${getStatusClass()}`}>
+    <div className={`status-bar ${getStatusClass()} ${isFaded ? 'fade' : ''}`}>
       <div className="status-indicator" />
       <span className="status-message">{getStatusText()}</span>
     </div>

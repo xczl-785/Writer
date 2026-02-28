@@ -20,6 +20,8 @@ export const AutosaveService = {
       clearTimeout(existing.timer);
     }
 
+    useStatusStore.getState().markDirty();
+
     const timer = setTimeout(async () => {
       await this.flush(path);
     }, DEBOUNCE_MS);
@@ -38,11 +40,17 @@ export const AutosaveService = {
     pendingSaves.delete(path);
 
     try {
-      useStatusStore.getState().setStatus('saving', `Saving ${path}...`);
+      useStatusStore.getState().markSaving(path);
       await FsService.writeFileAtomic(path, content);
       useEditorStore.getState().setDirty(path, false);
-      useStatusStore.getState().setStatus('idle', 'Saved');
+      useStatusStore.getState().markSaved('Saved');
     } catch (error) {
+      useStatusStore
+        .getState()
+        .setSaveError(
+          `Failed to save ${path}`,
+          'Please check permissions or try Save As.',
+        );
       ErrorService.handle(
         error,
         `Failed to autosave ${path}`,

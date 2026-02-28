@@ -1,5 +1,6 @@
 import { EditorContent, type Editor as TiptapEditor } from '@tiptap/react';
 import type { RefObject } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import type { ToolbarCommandId } from '../constants';
 import { Toolbar } from './Toolbar';
 
@@ -39,6 +40,8 @@ type Props = {
     replaceOneActiveMatch: () => void;
     replaceAllActiveMatches: () => void;
   };
+  onEditorContextMenu: (event: MouseEvent) => void;
+  bubbleMenu?: ReactNode;
 };
 
 export function EditorShell({
@@ -49,6 +52,8 @@ export function EditorShell({
   toolbarStatus,
   insertTable,
   findReplace,
+  onEditorContextMenu,
+  bubbleMenu,
 }: Props) {
   return (
     <div
@@ -93,7 +98,12 @@ export function EditorShell({
         replaceAllActiveMatches={findReplace.replaceAllActiveMatches}
         toolbarStatus={toolbarStatus}
       />
-      <EditorContent editor={editor} className="flex-grow overflow-auto p-4" />
+      {bubbleMenu}
+      <EditorContent
+        editor={editor}
+        className="flex-grow overflow-auto p-4"
+        onContextMenu={onEditorContextMenu}
+      />
     </div>
   );
 }
