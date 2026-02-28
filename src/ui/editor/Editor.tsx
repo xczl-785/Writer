@@ -51,6 +51,7 @@ import {
   type BreadcrumbItem,
 } from '../components/Breadcrumb/useBreadcrumb';
 import { openFile } from '../../workspace/WorkspaceManager';
+import { Outline } from '../components/Outline';
 import './Editor.css';
 
 export type EditorHandle = {
@@ -97,6 +98,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasEditorWidgetFocus, setHasEditorWidgetFocus] = useState(false);
   const [editorRevision, forceRerender] = useState(0);
+  const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [bubbleMenuPosition, setBubbleMenuPosition] = useState<{
     open: boolean;
     x: number;
@@ -430,80 +432,95 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
   return (
     <>
-      <EditorShell
-        editor={editor}
-        isToolbarEnabled={isToolbarEnabled}
-        runToolbarCommand={runToolbarCommand}
-        setHasEditorWidgetFocus={setHasEditorWidgetFocus}
-        toolbarStatus={toolbarStatus}
-        insertTable={insertTable}
-        findReplace={findReplace}
-        onEditorContextMenu={openEditorContextMenu}
-        breadcrumb={
-          <Breadcrumb
-            items={breadcrumbItems}
-            onItemClick={handleBreadcrumbClick}
-          />
-        }
-        bubbleMenu={
-          <div
-            className={`editor-bubble-menu ${bubbleMenuPosition.open ? 'is-open' : ''}`}
-            style={{
-              left: bubbleMenuPosition.x,
-              top: bubbleMenuPosition.y,
-            }}
-          >
-            <button
-              type="button"
-              className="editor-bubble-menu__button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => editor.chain().focus().toggleBold().run()}
-            >
-              B
-            </button>
-            <button
-              type="button"
-              className="editor-bubble-menu__button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-            >
-              I
-            </button>
-            <button
-              type="button"
-              className="editor-bubble-menu__button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-            >
-              S
-            </button>
-            <button
-              type="button"
-              className="editor-bubble-menu__button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => editor.chain().focus().toggleCode().run()}
-            >
-              {'</>'}
-            </button>
-            <button
-              type="button"
-              className="editor-bubble-menu__button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => setStatus('idle', 'Link editor coming soon')}
-            >
-              Link
-            </button>
-            <button
-              type="button"
-              className="editor-bubble-menu__button"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => setStatus('idle', 'Highlight coming soon')}
-            >
-              Highlight
-            </button>
+      <div className="relative h-full w-full">
+        <button
+          type="button"
+          className="absolute right-3 top-10 z-30 rounded border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50"
+          onClick={() => setIsOutlineOpen((prev) => !prev)}
+        >
+          {isOutlineOpen ? 'Hide Outline' : 'Show Outline'}
+        </button>
+
+        <div className="h-full flex">
+          <div className="flex-1 min-w-0">
+            <EditorShell
+              editor={editor}
+              isToolbarEnabled={isToolbarEnabled}
+              runToolbarCommand={runToolbarCommand}
+              setHasEditorWidgetFocus={setHasEditorWidgetFocus}
+              toolbarStatus={toolbarStatus}
+              insertTable={insertTable}
+              findReplace={findReplace}
+              onEditorContextMenu={openEditorContextMenu}
+              breadcrumb={
+                <Breadcrumb
+                  items={breadcrumbItems}
+                  onItemClick={handleBreadcrumbClick}
+                />
+              }
+              bubbleMenu={
+                <div
+                  className={`editor-bubble-menu ${bubbleMenuPosition.open ? 'is-open' : ''}`}
+                  style={{
+                    left: bubbleMenuPosition.x,
+                    top: bubbleMenuPosition.y,
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="editor-bubble-menu__button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => editor.chain().focus().toggleBold().run()}
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-bubble-menu__button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => editor.chain().focus().toggleItalic().run()}
+                  >
+                    I
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-bubble-menu__button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => editor.chain().focus().toggleStrike().run()}
+                  >
+                    S
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-bubble-menu__button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => editor.chain().focus().toggleCode().run()}
+                  >
+                    {'</>'}
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-bubble-menu__button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setStatus('idle', 'Link editor coming soon')}
+                  >
+                    Link
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-bubble-menu__button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setStatus('idle', 'Highlight coming soon')}
+                  >
+                    Highlight
+                  </button>
+                </div>
+              }
+            />
           </div>
-        }
-      />
+          <Outline editor={editor} isOpen={isOutlineOpen} />
+        </div>
+      </div>
       <ContextMenu
         isOpen={contextMenu.state.isOpen}
         x={contextMenu.state.x}
