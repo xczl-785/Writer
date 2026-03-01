@@ -29,13 +29,23 @@ describe('statusSlice save state', () => {
   });
 
   it('stores save error details', () => {
+    const retry = () => {};
     useStatusStore
       .getState()
-      .setSaveError('No permission', 'Save as another file');
+      .setSaveError('No permission', 'Save as another file', {
+        category: 'permission',
+        action: {
+          label: 'Retry',
+          run: retry,
+        },
+      });
     const state = useStatusStore.getState();
     expect(state.saveStatus).toBe('error');
     expect(state.status).toBe('error');
+    expect(state.saveError?.category).toBe('permission');
     expect(state.saveError?.reason).toBe('No permission');
     expect(state.saveError?.suggestion).toBe('Save as another file');
+    expect(state.saveError?.action?.label).toBe('Retry');
+    expect(state.saveError?.action?.run).toBe(retry);
   });
 });

@@ -2,10 +2,18 @@ import { create } from 'zustand';
 
 export type AppStatus = 'idle' | 'loading' | 'saving' | 'error';
 export type SaveStatus = 'saved' | 'dirty' | 'saving' | 'error';
+export type SaveErrorCategory = 'user' | 'system' | 'network' | 'permission';
+
+export interface SaveErrorAction {
+  label: string;
+  run: () => void;
+}
 
 export interface SaveErrorDetails {
+  category?: SaveErrorCategory;
   reason: string;
   suggestion: string;
+  action?: SaveErrorAction;
 }
 
 export interface StatusState {
@@ -21,7 +29,14 @@ export interface StatusActions {
   markDirty: () => void;
   markSaving: (path: string) => void;
   markSaved: (message?: string) => void;
-  setSaveError: (reason: string, suggestion: string) => void;
+  setSaveError: (
+    reason: string,
+    suggestion: string,
+    options?: {
+      category?: SaveErrorCategory;
+      action?: SaveErrorAction;
+    },
+  ) => void;
 }
 
 export const useStatusStore = create<StatusState & StatusActions>((set) => ({
@@ -61,15 +76,17 @@ export const useStatusStore = create<StatusState & StatusActions>((set) => ({
       lastSavedAt: Date.now(),
     })),
 
-  setSaveError: (reason, suggestion) =>
+  setSaveError: (reason, suggestion, options) =>
     set((state) => ({
       ...state,
       status: 'error',
       message: reason,
       saveStatus: 'error',
       saveError: {
+        category: options?.category ?? 'system',
         reason,
         suggestion,
+        action: options?.action,
       },
     })),
 }));

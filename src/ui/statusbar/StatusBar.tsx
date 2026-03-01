@@ -73,6 +73,15 @@ export const StatusBar: React.FC = () => {
           <div className="status-error-panel" role="tooltip">
             <p className="status-error-title">{saveError.reason}</p>
             <p className="status-error-suggestion">{saveError.suggestion}</p>
+            {saveError.action ? (
+              <button
+                type="button"
+                className="status-error-action"
+                onClick={() => saveError.action?.run()}
+              >
+                {saveError.action.label}
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>

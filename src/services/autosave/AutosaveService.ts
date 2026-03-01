@@ -39,23 +39,42 @@ export const AutosaveService = {
     const content = pending.content;
     pendingSaves.delete(path);
 
+    const retrySave = async (): Promise<void> => {
+      try {
+        useStatusStore.getState().markSaving(path);
+        await FsService.writeFileAtomic(path, content);
+        useEditorStore.getState().setDirty(path, false);
+        useStatusStore.getState().markSaved('Saved');
+      } catch (retryError) {
+        ErrorService.handleWithInfo(retryError, `Failed to autosave ${path}`, {
+          reason: `Failed to save ${path}`,
+          suggestion: 'Please check permissions or retry save.',
+          action: {
+            label: 'Retry',
+            run: () => {
+              void retrySave();
+            },
+          },
+        });
+      }
+    };
+
     try {
       useStatusStore.getState().markSaving(path);
       await FsService.writeFileAtomic(path, content);
       useEditorStore.getState().setDirty(path, false);
       useStatusStore.getState().markSaved('Saved');
     } catch (error) {
-      useStatusStore
-        .getState()
-        .setSaveError(
-          `Failed to save ${path}`,
-          'Please check permissions or try Save As.',
-        );
-      ErrorService.handle(
-        error,
-        `Failed to autosave ${path}`,
-        `Failed to save ${path}`,
-      );
+      ErrorService.handleWithInfo(error, `Failed to autosave ${path}`, {
+        reason: `Failed to save ${path}`,
+        suggestion: 'Please check permissions or retry save.',
+        action: {
+          label: 'Retry',
+          run: () => {
+            void retrySave();
+          },
+        },
+      });
       throw error;
     }
   },

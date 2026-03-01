@@ -135,7 +135,12 @@ describe('AutosaveService', () => {
     expect(markSavingMock).toHaveBeenCalledWith('test.md');
     expect(setSaveErrorMock).toHaveBeenCalledWith(
       'Failed to save test.md',
-      'Please check permissions or try Save As.',
+      'Please check permissions or retry save.',
+      expect.objectContaining({
+        action: expect.objectContaining({
+          label: 'Retry',
+        }),
+      }),
     );
   });
 });
