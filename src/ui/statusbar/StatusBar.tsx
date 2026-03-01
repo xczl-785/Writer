@@ -2,7 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { useEditorStore } from '../../state/slices/editorSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
-import { FsService } from '../../services/fs/FsService';
+import { FsService, type GitSyncStatus } from '../../services/fs/FsService';
+import {
+  countCharacters,
+  deriveSyncState,
+  syncLabel,
+  syncTooltip,
+} from './statusBarUtils';
 import './StatusBar.css';
 
 export const StatusBar: React.FC = () => {
@@ -11,41 +17,68 @@ export const StatusBar: React.FC = () => {
   const { currentPath, activeFile } = useWorkspaceStore();
   const { fileStates } = useEditorStore();
   const [isFaded, setIsFaded] = useState(false);
-  const [isGitRepo, setIsGitRepo] = useState(false);
-
-  const countWords = (value: string): number => {
-    const latinWords = value.match(/[A-Za-z0-9_]+/g)?.length ?? 0;
-    const cjkChars = value.match(/[\u4e00-\u9fff]/g)?.length ?? 0;
-    return latinWords + cjkChars;
-  };
+  const [gitSync, setGitSync] = useState<GitSyncStatus | null>(null);
+  const [encodingLabel, setEncodingLabel] = useState('UTF-8');
 
   const activeContent = activeFile ? fileStates[activeFile]?.content ?? '' : '';
-  const wordsCount = countWords(activeContent);
+  const charactersCount = countCharacters(activeContent);
 
   useEffect(() => {
     let disposed = false;
 
     if (!currentPath) {
-      setIsGitRepo(false);
+      setGitSync(null);
       return;
     }
 
-    void FsService.checkExists(`${currentPath}/.git`)
-      .then((exists) => {
+    const loadSyncStatus = async () => {
+      try {
+        const status = await FsService.getGitSyncStatus(currentPath);
         if (!disposed) {
-          setIsGitRepo(Boolean(exists));
+          setGitSync(status);
+        }
+      } catch {
+        if (!disposed) {
+          setGitSync(null);
+        }
+      }
+    };
+
+    void loadSyncStatus();
+    const timer = window.setInterval(() => {
+      void loadSyncStatus();
+    }, 5000);
+
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+    };
+  }, [currentPath, saveStatus]);
+
+  useEffect(() => {
+    let disposed = false;
+
+    if (!activeFile) {
+      setEncodingLabel('UTF-8');
+      return;
+    }
+
+    void FsService.detectFileEncoding(activeFile)
+      .then((result) => {
+        if (!disposed) {
+          setEncodingLabel(result.label);
         }
       })
       .catch(() => {
         if (!disposed) {
-          setIsGitRepo(false);
+          setEncodingLabel('Unknown');
         }
       });
 
     return () => {
       disposed = true;
     };
-  }, [currentPath]);
+  }, [activeFile]);
 
   useEffect(() => {
     if (saveStatus === 'saved' && message) {
@@ -105,6 +138,8 @@ export const StatusBar: React.FC = () => {
     }
   };
 
+  const syncState = deriveSyncState(saveStatus, gitSync);
+
   return (
     <div className={`status-bar ${getStatusClass()} ${isFaded ? 'fade' : ''}`}>
       <div className="status-bar__left">
@@ -129,9 +164,21 @@ export const StatusBar: React.FC = () => {
         <span className="status-message">{getStatusText()}</span>
       </div>
       <div className="status-bar__right">
-        <span className="status-meta">{wordsCount} words</span>
-        <span className="status-meta">UTF-8</span>
-        <span className={`status-sync ${isGitRepo ? '' : 'is-muted'}`}>Sync</span>
+        <span className="status-meta">{charactersCount} chars</span>
+        <button
+          type="button"
+          className="status-meta status-meta-btn"
+          title={`Encoding: ${encodingLabel}`}
+          onClick={() => setStatus('idle', `Encoding: ${encodingLabel}`)}
+        >
+          {encodingLabel}
+        </button>
+        <span
+          className={`status-sync status-sync--${syncState}`}
+          title={syncTooltip(syncState, gitSync)}
+        >
+          {syncLabel(syncState)}
+        </span>
       </div>
     </div>
   );
