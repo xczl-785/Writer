@@ -77,7 +77,7 @@ Tauri Native Menu Click
 1. `Editor.tsx`
    - 在 mount 时注册编辑命令 handler（格式、段落、查找）
 2. `Sidebar.tsx` / workspace
-   - 注册文件类命令 handler（新建、打开、重命名、删除）
+   - 注册文件类命令 handler（新建、打开文件夹、关闭文件夹、重命名、删除）
 3. `App.tsx`
    - 初始化菜单桥接监听
 
@@ -93,10 +93,11 @@ Tauri Native Menu Click
 ### 5.1 File
 
 1. New (`Cmd+N`) - `ADAPT`（调用 Sidebar 创建文件）
-2. Open (`Cmd+O`) - `READY`（已有 `openWorkspace`）
-3. Save (`Cmd+S`) - `ADAPT`（触发当前文件 flush/write）
-4. Save As (`Shift+Cmd+S`) - `STUB`
-5. Export PDF / HTML / Image - `STUB`
+2. Open Folder (`Cmd+O`) - `READY`（已有 `openWorkspace`）
+3. Close Folder (`Shift+Cmd+W`) - `ADAPT`（清空 workspace 路径与打开文件状态）
+4. Save (`Cmd+S`) - `ADAPT`（触发当前文件 flush/write）
+5. Save As (`Shift+Cmd+S`) - `STUB`
+6. Export PDF / HTML / Image - `STUB`
 
 ### 5.2 Edit
 
@@ -151,7 +152,7 @@ Tauri Native Menu Click
 
 1. Rust Native Menu + id 定义
 2. 前端事件桥接 + Command Bus
-3. 接通 10 个核心命令（Open/Save/Undo/Redo/Find/Heading1/Bold/Italic/Outline/Sidebar）
+3. 接通 12 个核心命令（Open Folder/Close Folder/Save/Undo/Redo/Find/Heading1/Bold/Italic/Outline/Sidebar/New）
 
 ### 阶段 P0-2（完整映射）
 
