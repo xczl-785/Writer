@@ -1131,7 +1131,15 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       closeSlash();
     };
 
-    const dom = editor.view.dom;
+    let dom: HTMLElement | null = null;
+    try {
+      dom = editor.view.dom as HTMLElement;
+    } catch {
+      return;
+    }
+    if (!dom) {
+      return;
+    }
     dom.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('mousedown', onPointerDown);
     dom.addEventListener('beforeinput', onBeforeInput as EventListener);
