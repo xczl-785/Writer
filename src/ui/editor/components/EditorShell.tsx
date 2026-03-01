@@ -1,50 +1,50 @@
 import { EditorContent, type Editor as TiptapEditor } from '@tiptap/react';
-import type { RefObject } from 'react';
-import type { MouseEvent, ReactNode } from 'react';
-import type { ToolbarCommandId } from '../constants';
-import { Toolbar } from './Toolbar';
+import { useEffect, useRef, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 
 type Props = {
   editor: TiptapEditor;
-  isToolbarEnabled: boolean;
-  runToolbarCommand: (editor: TiptapEditor, id: ToolbarCommandId) => boolean;
   setHasEditorWidgetFocus: (focused: boolean) => void;
-  toolbarStatus: string;
-  findReplace: {
-    isFindPanelOpen: boolean;
-    isReplaceMode: boolean;
-    findQuery: string;
-    replaceQuery: string;
-    findMatches: Array<{ from: number; to: number }>;
-    findCountText: string;
-    findProgressText: string;
-    findInputRef: RefObject<HTMLInputElement | null>;
-    replaceInputRef: RefObject<HTMLInputElement | null>;
-    openFindPanel: (mode: 'find' | 'replace') => void;
-    closeFindPanel: () => void;
-    setFindQuery: (value: string) => void;
-    setReplaceQuery: (value: string) => void;
-    goToPrevFindMatch: () => void;
-    goToNextFindMatch: () => void;
-    replaceOneActiveMatch: () => void;
-    replaceAllActiveMatches: () => void;
-  };
-  onEditorContextMenu: (event: MouseEvent) => void;
+  onEditorContextMenu: (event: ReactMouseEvent) => void;
   bubbleMenu?: ReactNode;
-  breadcrumb?: ReactNode;
+  ghostHint?: ReactNode;
+  slashMenu?: ReactNode;
+  breadcrumb: ReactNode;
+  findReplacePanel?: ReactNode;
+  isOutlineOpen: boolean;
+  onToggleOutline: () => void;
+  onCloseOutline: () => void;
+  outlinePopover?: ReactNode;
 };
 
 export function EditorShell({
   editor,
-  isToolbarEnabled,
-  runToolbarCommand,
   setHasEditorWidgetFocus,
-  toolbarStatus,
-  findReplace,
   onEditorContextMenu,
   bubbleMenu,
+  ghostHint,
+  slashMenu,
   breadcrumb,
+  findReplacePanel,
+  isOutlineOpen,
+  onToggleOutline,
+  onCloseOutline,
+  outlinePopover,
 }: Props) {
+  const outlineAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOutlineOpen) return;
+
+    const onPointerDown = (event: globalThis.MouseEvent) => {
+      if (!outlineAreaRef.current?.contains(event.target as Node)) {
+        onCloseOutline();
+      }
+    };
+
+    window.addEventListener('mousedown', onPointerDown);
+    return () => window.removeEventListener('mousedown', onPointerDown);
+  }, [isOutlineOpen, onCloseOutline]);
+
   return (
     <div
       className="editor-container h-full w-full flex flex-col"
@@ -56,34 +56,28 @@ export function EditorShell({
         }
       }}
     >
-      {breadcrumb}
-      <Toolbar
-        editor={editor}
-        isToolbarEnabled={isToolbarEnabled}
-        runToolbarCommand={runToolbarCommand}
-        isFindPanelOpen={findReplace.isFindPanelOpen}
-        isReplaceMode={findReplace.isReplaceMode}
-        findQuery={findReplace.findQuery}
-        replaceQuery={findReplace.replaceQuery}
-        findMatchesCount={findReplace.findMatches.length}
-        findCountText={findReplace.findCountText}
-        findProgressText={findReplace.findProgressText}
-        findInputRef={findReplace.findInputRef}
-        replaceInputRef={findReplace.replaceInputRef}
-        openFindPanel={findReplace.openFindPanel}
-        closeFindPanel={findReplace.closeFindPanel}
-        setFindQuery={findReplace.setFindQuery}
-        setReplaceQuery={findReplace.setReplaceQuery}
-        goToPrevFindMatch={findReplace.goToPrevFindMatch}
-        goToNextFindMatch={findReplace.goToNextFindMatch}
-        replaceOneActiveMatch={findReplace.replaceOneActiveMatch}
-        replaceAllActiveMatches={findReplace.replaceAllActiveMatches}
-        toolbarStatus={toolbarStatus}
-      />
+      <header className="editor-header">
+        <div className="editor-header__breadcrumb">{breadcrumb}</div>
+        <div className="editor-header__actions" ref={outlineAreaRef}>
+          <button
+            type="button"
+            className="editor-header__outline-btn"
+            aria-label="Toggle outline"
+            title="Toggle Outline (Shift+Mod+O)"
+            onClick={onToggleOutline}
+          >
+            ☰
+          </button>
+          {outlinePopover}
+        </div>
+      </header>
+      {findReplacePanel}
       {bubbleMenu}
+      {ghostHint}
+      {slashMenu}
       <EditorContent
         editor={editor}
-        className="flex-grow overflow-auto p-4"
+        className="editor-content-area"
         onContextMenu={onEditorContextMenu}
       />
     </div>

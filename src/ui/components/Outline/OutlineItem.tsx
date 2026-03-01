@@ -25,15 +25,16 @@ export const OutlineItemComponent: React.FC<OutlineItemProps> = ({
 
   return (
     <button
+      type="button"
       onClick={onClick}
       style={{ paddingLeft: `${indentPx + 8}px` }}
       className={`
-        w-full text-left py-1 pr-2 text-sm truncate
+        w-full truncate rounded-md py-1.5 pr-2 text-left text-sm
         transition-colors duration-150 ease-out
         ${
           isActive
-            ? 'bg-blue-100/80 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'
-            : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'
+            ? 'border-l-2 border-blue-500 bg-blue-50/60 text-blue-700'
+            : 'text-zinc-600 hover:bg-zinc-100'
         }
       `}
       title={item.text}

@@ -29,6 +29,7 @@ import {
   type ToolbarCommandId,
 } from './constants';
 import { EditorShell } from './components/EditorShell';
+import { FindReplacePanel } from './components/FindReplacePanel';
 import { useImagePaste } from './useImagePaste';
 import { createHandleDOMEvents } from './pasteHandler';
 import {
@@ -83,6 +84,16 @@ export const EDITOR_SOURCE_MARKERS = [
 const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
   value;
 const BUBBLE_MENU_DEBOUNCE_MS = 80;
+const SLASH_MENU_MAX_ITEMS = 8;
+
+type SlashCommand = {
+  id: string;
+  group: 'Basic Blocks' | 'Advanced Components';
+  label: string;
+  hint: string;
+  keywords: string[];
+  run: (editor: TiptapEditor) => void;
+};
 
 export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const { activeFile, currentPath } = useWorkspaceStore();
@@ -100,16 +111,27 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasEditorWidgetFocus, setHasEditorWidgetFocus] = useState(false);
   const [editorRevision, forceRerender] = useState(0);
-  const [isOutlineOpen, setIsOutlineOpen] = useState(true);
+  const [isOutlineOpen, setIsOutlineOpen] = useState(false);
   const [bubbleMenuPosition, setBubbleMenuPosition] = useState<{
     open: boolean;
     x: number;
     y: number;
   }>({ open: false, x: 0, y: 0 });
   const bubbleMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [ghostHintPosition, setGhostHintPosition] = useState<{
+    open: boolean;
+    x: number;
+    y: number;
+  }>({ open: false, x: 0, y: 0 });
+  const [slashState, setSlashState] = useState<{
+    open: boolean;
+    query: string;
+    x: number;
+    y: number;
+  }>({ open: false, query: '', x: 0, y: 0 });
+  const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
 
-  const { statusText, setTransientStatus, setDestructiveStatus } =
-    useTransientStatus();
+  const { setTransientStatus, setDestructiveStatus } = useTransientStatus();
 
   const undo = useCallback(
     (editor: TiptapEditor) => {
@@ -292,6 +314,51 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       editor.off('blur', update);
     };
   }, [editor]);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const updateGhostHint = () => {
+      if (!editor.isFocused || slashState.open) {
+        setGhostHintPosition({ open: false, x: 0, y: 0 });
+        return;
+      }
+
+      const { selection } = editor.state;
+      if (!selection.empty) {
+        setGhostHintPosition({ open: false, x: 0, y: 0 });
+        return;
+      }
+
+      const parentText = selection.$from.parent.textContent.trim();
+      if (parentText.length > 0) {
+        setGhostHintPosition({ open: false, x: 0, y: 0 });
+        return;
+      }
+
+      const rect = editor.view.coordsAtPos(selection.from);
+      setGhostHintPosition({
+        open: true,
+        x: rect.left + 4,
+        y: rect.top + 2,
+      });
+    };
+
+    updateGhostHint();
+    const hideGhostHint = () => {
+      setGhostHintPosition({ open: false, x: 0, y: 0 });
+    };
+    editor.on('selectionUpdate', updateGhostHint);
+    editor.on('transaction', updateGhostHint);
+    editor.on('focus', updateGhostHint);
+    editor.on('blur', hideGhostHint);
+    return () => {
+      editor.off('selectionUpdate', updateGhostHint);
+      editor.off('transaction', updateGhostHint);
+      editor.off('focus', updateGhostHint);
+      editor.off('blur', hideGhostHint);
+    };
+  }, [editor, slashState.open]);
 
   useEffect(() => {
     if (!editor) return;
@@ -592,6 +659,203 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     ],
   );
 
+  const slashCommands = useMemo<SlashCommand[]>(
+    () => [
+      {
+        id: 'heading1',
+        group: 'Basic Blocks',
+        label: 'Heading 1',
+        hint: '⌘1',
+        keywords: ['h1', 'title', 'heading'],
+        run: (instance) => {
+          instance.chain().focus().toggleHeading({ level: 1 }).run();
+        },
+      },
+      {
+        id: 'unorderedList',
+        group: 'Basic Blocks',
+        label: 'Unordered List',
+        hint: '⌥⌘U',
+        keywords: ['list', 'bullet', 'ul'],
+        run: (instance) => {
+          instance.chain().focus().toggleBulletList().run();
+        },
+      },
+      {
+        id: 'orderedList',
+        group: 'Basic Blocks',
+        label: 'Ordered List',
+        hint: '⌥⌘O',
+        keywords: ['list', 'number', 'ol'],
+        run: (instance) => {
+          instance.chain().focus().toggleOrderedList().run();
+        },
+      },
+      {
+        id: 'table',
+        group: 'Advanced Components',
+        label: 'Table',
+        hint: '⌥⌘T',
+        keywords: ['table', 'grid'],
+        run: (instance) => {
+          instance.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run();
+        },
+      },
+      {
+        id: 'codeBlock',
+        group: 'Advanced Components',
+        label: 'Code Block',
+        hint: '⌥⌘C',
+        keywords: ['code', 'pre'],
+        run: (instance) => {
+          instance.chain().focus().toggleCodeBlock().run();
+        },
+      },
+      {
+        id: 'blockquote',
+        group: 'Advanced Components',
+        label: 'Blockquote',
+        hint: '⇧⌘Q',
+        keywords: ['quote', 'blockquote'],
+        run: (instance) => {
+          instance.chain().focus().toggleBlockquote().run();
+        },
+      },
+    ],
+    [],
+  );
+
+  const filteredSlashCommands = useMemo(() => {
+    const query = slashState.query.trim().toLowerCase();
+    const filtered = !query
+      ? slashCommands
+      : slashCommands.filter((cmd) => {
+          const haystack = `${cmd.label} ${cmd.keywords.join(' ')}`.toLowerCase();
+          return haystack.includes(query);
+        });
+    return filtered.slice(0, SLASH_MENU_MAX_ITEMS);
+  }, [slashCommands, slashState.query]);
+
+  useEffect(() => {
+    setSlashSelectedIndex(0);
+  }, [slashState.query, slashState.open]);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const closeSlash = () => {
+      setSlashState((prev) => ({ ...prev, open: false, query: '' }));
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!editor.isFocused) {
+        return;
+      }
+
+      if (!slashState.open) {
+        if (
+          event.key === '/' &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.altKey
+        ) {
+          const { selection } = editor.state;
+          if (!selection.empty) {
+            return;
+          }
+
+          const parentText = selection.$from.parent.textContent.trim();
+          if (parentText.length > 0) {
+            return;
+          }
+
+          event.preventDefault();
+          const rect = editor.view.coordsAtPos(selection.from);
+          setSlashState({
+            open: true,
+            query: '',
+            x: rect.left,
+            y: rect.bottom + 8,
+          });
+          return;
+        }
+        return;
+      }
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeSlash();
+        return;
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setSlashSelectedIndex((prev) => {
+          if (filteredSlashCommands.length === 0) return 0;
+          return (prev + 1) % filteredSlashCommands.length;
+        });
+        return;
+      }
+
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setSlashSelectedIndex((prev) => {
+          if (filteredSlashCommands.length === 0) return 0;
+          return (
+            (prev - 1 + filteredSlashCommands.length) %
+            filteredSlashCommands.length
+          );
+        });
+        return;
+      }
+
+      if (event.key === 'Backspace') {
+        event.preventDefault();
+        setSlashState((prev) => {
+          if (prev.query.length === 0) {
+            return { ...prev, open: false };
+          }
+          return { ...prev, query: prev.query.slice(0, -1) };
+        });
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const command = filteredSlashCommands[slashSelectedIndex];
+        if (command) {
+          command.run(editor);
+        }
+        closeSlash();
+        return;
+      }
+
+      if (
+        event.key.length === 1 &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey
+      ) {
+        event.preventDefault();
+        setSlashState((prev) => ({ ...prev, query: `${prev.query}${event.key}` }));
+      }
+    };
+
+    const onPointerDown = (event: MouseEvent) => {
+      if ((event.target as HTMLElement).closest('.editor-slash-menu')) {
+        return;
+      }
+      closeSlash();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('mousedown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('mousedown', onPointerDown);
+    };
+  }, [editor, filteredSlashCommands, slashSelectedIndex, slashState.open]);
+
   if (!activeFile)
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
@@ -600,10 +864,6 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     );
   if (!editor) return null;
 
-  const isToolbarEnabled = hasEditorWidgetFocus && editor.isEditable;
-  const toolbarStatus = !hasEditorWidgetFocus
-    ? 'Click editor to enable'
-    : statusText || 'Ready';
   const breadcrumbItems = buildBreadcrumb(currentPath, activeFile);
 
   const handleBreadcrumbClick = (item: BreadcrumbItem) => {
@@ -620,92 +880,170 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   return (
     <>
       <div className="relative h-full w-full">
-        <button
-          type="button"
-          className="absolute right-3 top-10 z-30 rounded border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50"
-          onClick={() => setIsOutlineOpen((prev) => !prev)}
-        >
-          {isOutlineOpen ? 'Hide Outline' : 'Show Outline'}
-        </button>
-
-        <div className="h-full flex">
-          <div className="flex-1 min-w-0">
-            <EditorShell
-              editor={editor}
-              isToolbarEnabled={isToolbarEnabled}
-              runToolbarCommand={runToolbarCommand}
-              setHasEditorWidgetFocus={setHasEditorWidgetFocus}
-              toolbarStatus={toolbarStatus}
-              findReplace={findReplace}
-              onEditorContextMenu={openEditorContextMenu}
-              breadcrumb={
-                <Breadcrumb
-                  items={breadcrumbItems}
-                  onItemClick={handleBreadcrumbClick}
-                />
-              }
-              bubbleMenu={
-                <div
-                  className={`editor-bubble-menu ${bubbleMenuPosition.open ? 'is-open' : ''}`}
-                  style={{
-                    left: bubbleMenuPosition.x,
-                    top: bubbleMenuPosition.y,
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="editor-bubble-menu__button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => editor.chain().focus().toggleBold().run()}
-                  >
-                    B
-                  </button>
-                  <button
-                    type="button"
-                    className="editor-bubble-menu__button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => editor.chain().focus().toggleItalic().run()}
-                  >
-                    I
-                  </button>
-                  <button
-                    type="button"
-                    className="editor-bubble-menu__button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => editor.chain().focus().toggleStrike().run()}
-                  >
-                    S
-                  </button>
-                  <button
-                    type="button"
-                    className="editor-bubble-menu__button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => editor.chain().focus().toggleCode().run()}
-                  >
-                    {'</>'}
-                  </button>
-                  <button
-                    type="button"
-                    className="editor-bubble-menu__button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setStatus('idle', 'Link editor coming soon')}
-                  >
-                    Link
-                  </button>
-                  <button
-                    type="button"
-                    className="editor-bubble-menu__button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => setStatus('idle', 'Highlight coming soon')}
-                  >
-                    Highlight
-                  </button>
-                </div>
-              }
+        <EditorShell
+          editor={editor}
+          setHasEditorWidgetFocus={setHasEditorWidgetFocus}
+          onEditorContextMenu={openEditorContextMenu}
+          isOutlineOpen={isOutlineOpen}
+          onToggleOutline={() => setIsOutlineOpen((prev) => !prev)}
+          onCloseOutline={() => setIsOutlineOpen(false)}
+          breadcrumb={
+            <Breadcrumb
+              items={breadcrumbItems}
+              onItemClick={handleBreadcrumbClick}
+              className="h-12 px-6"
             />
-          </div>
-          <Outline editor={editor} isOpen={isOutlineOpen} />
-        </div>
+          }
+          outlinePopover={
+            <Outline
+              editor={editor}
+              isOpen={isOutlineOpen}
+              onClose={() => setIsOutlineOpen(false)}
+            />
+          }
+          findReplacePanel={
+            <FindReplacePanel
+              isOpen={findReplace.isFindPanelOpen}
+              isReplaceMode={findReplace.isReplaceMode}
+              findQuery={findReplace.findQuery}
+              replaceQuery={findReplace.replaceQuery}
+              findMatchesCount={findReplace.findMatches.length}
+              findCountText={findReplace.findCountText}
+              findProgressText={findReplace.findProgressText}
+              findInputRef={findReplace.findInputRef}
+              replaceInputRef={findReplace.replaceInputRef}
+              onClose={findReplace.closeFindPanel}
+              onFindQueryChange={findReplace.setFindQuery}
+              onReplaceQueryChange={findReplace.setReplaceQuery}
+              onPrev={findReplace.goToPrevFindMatch}
+              onNext={findReplace.goToNextFindMatch}
+              onReplaceOne={findReplace.replaceOneActiveMatch}
+              onReplaceAll={findReplace.replaceAllActiveMatches}
+            />
+          }
+          bubbleMenu={
+            <div
+              className={`editor-bubble-menu ${bubbleMenuPosition.open ? 'is-open' : ''}`}
+              style={{
+                left: bubbleMenuPosition.x,
+                top: bubbleMenuPosition.y,
+              }}
+            >
+              <button
+                type="button"
+                className="editor-bubble-menu__button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => editor.chain().focus().toggleBold().run()}
+              >
+                B
+              </button>
+              <button
+                type="button"
+                className="editor-bubble-menu__button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+              >
+                I
+              </button>
+              <button
+                type="button"
+                className="editor-bubble-menu__button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => editor.chain().focus().toggleStrike().run()}
+              >
+                S
+              </button>
+              <button
+                type="button"
+                className="editor-bubble-menu__button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => editor.chain().focus().toggleCode().run()}
+              >
+                {'</>'}
+              </button>
+              <button
+                type="button"
+                className="editor-bubble-menu__button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setStatus('idle', 'Link editor coming soon')}
+              >
+                Link
+              </button>
+              <button
+                type="button"
+                className="editor-bubble-menu__button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setStatus('idle', 'Highlight coming soon')}
+              >
+                Highlight
+              </button>
+            </div>
+          }
+          ghostHint={
+            <div
+              className={`editor-ghost-slash ${ghostHintPosition.open ? 'is-open' : ''}`}
+              style={{
+                left: ghostHintPosition.x,
+                top: ghostHintPosition.y,
+              }}
+            >
+              / 输入以唤出菜单...
+            </div>
+          }
+          slashMenu={
+            <div
+              className={`editor-slash-menu ${slashState.open ? 'is-open' : ''}`}
+              style={{ left: slashState.x, top: slashState.y }}
+            >
+              {slashState.query ? (
+                <div className="editor-slash-menu__fragment">{slashState.query}</div>
+              ) : null}
+              {filteredSlashCommands.length === 0 ? (
+                <div className="editor-slash-menu__empty">No matching commands</div>
+              ) : (
+                ['Basic Blocks', 'Advanced Components'].map((group) => {
+                  const groupItems = filteredSlashCommands.filter(
+                    (cmd) => cmd.group === group,
+                  );
+                  if (groupItems.length === 0) return null;
+                  return (
+                    <div key={group}>
+                      <div className="editor-slash-menu__group">{group}</div>
+                      {groupItems.map((cmd) => {
+                        const absoluteIndex =
+                          filteredSlashCommands.findIndex(
+                            (item) => item.id === cmd.id,
+                          );
+                        return (
+                          <button
+                            key={cmd.id}
+                            type="button"
+                            className={`editor-slash-menu__item ${
+                              slashSelectedIndex === absoluteIndex ? 'is-active' : ''
+                            }`}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onMouseEnter={() => setSlashSelectedIndex(absoluteIndex)}
+                            onClick={() => {
+                              cmd.run(editor);
+                              setSlashState((prev) => ({
+                                ...prev,
+                                open: false,
+                                query: '',
+                              }));
+                            }}
+                          >
+                            <span>{cmd.label}</span>
+                            <span className="editor-slash-menu__hint">{cmd.hint}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          }
+        />
       </div>
       <ContextMenu
         isOpen={contextMenu.state.isOpen}
