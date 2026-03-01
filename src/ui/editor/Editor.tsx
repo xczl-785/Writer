@@ -62,6 +62,11 @@ export type EditorHandle = {
   insertDefaultTable: () => void;
 };
 
+type EditorProps = {
+  isSidebarVisible?: boolean;
+  onToggleSidebar?: () => void;
+};
+
 export const EDITOR_SOURCE_MARKERS = [
   'Mod-f',
   'Mod-h',
@@ -98,7 +103,8 @@ type SlashCommand = {
   run: (editor: TiptapEditor) => void;
 };
 
-export const Editor = forwardRef<EditorHandle>((_props, ref) => {
+export const Editor = forwardRef<EditorHandle, EditorProps>(
+  ({ isSidebarVisible = true, onToggleSidebar }, ref) => {
   const { activeFile, currentPath } = useWorkspaceStore();
   const { setStatus } = useStatusStore();
   const { setSelectedPath, expandNode } = useFileTreeStore();
@@ -1184,23 +1190,49 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     }
   };
 
-  return (
-    <>
-      <div className="relative h-full w-full">
-        <EditorShell
+    return (
+      <>
+        <div className="relative h-full w-full">
+          <EditorShell
           editor={editor}
           setHasEditorWidgetFocus={setHasEditorWidgetFocus}
           onEditorContextMenu={openEditorContextMenu}
           isOutlineOpen={isOutlineOpen}
           onToggleOutline={() => setIsOutlineOpen((prev) => !prev)}
           onCloseOutline={() => setIsOutlineOpen(false)}
-          breadcrumb={
-            <Breadcrumb
-              items={breadcrumbItems}
-              onItemClick={handleBreadcrumbClick}
-              className="h-12 px-6"
-            />
-          }
+            breadcrumb={
+              <div className="editor-header__breadcrumb-inner">
+                {!isSidebarVisible ? (
+                  <button
+                    type="button"
+                    className="editor-header__sidebar-btn"
+                    onClick={onToggleSidebar}
+                    aria-label="Expand sidebar"
+                    title="Expand Sidebar"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="3.5" y="4" width="17" height="16" rx="2" />
+                      <line x1="9.2" y1="4" x2="9.2" y2="20" />
+                    </svg>
+                  </button>
+                ) : null}
+                <Breadcrumb
+                  items={breadcrumbItems}
+                  onItemClick={handleBreadcrumbClick}
+                  className="h-12 px-6"
+                />
+              </div>
+            }
           outlinePopover={
             <Outline
               editor={editor}
@@ -1361,16 +1393,17 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
             <span className="editor-slash-inline__query">{slashState.query}</span>
           ) : null}
         </div>
-      </div>
-      <ContextMenu
+        </div>
+        <ContextMenu
         isOpen={contextMenu.state.isOpen}
         x={contextMenu.state.x}
         y={contextMenu.state.y}
         items={contextMenu.state.items}
         onClose={contextMenu.close}
-      />
-    </>
-  );
-});
+        />
+      </>
+    );
+  },
+);
 
 Editor.displayName = 'Editor';

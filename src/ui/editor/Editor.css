@@ -177,6 +177,34 @@
   flex: 1;
 }
 
+.editor-header__breadcrumb-inner {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.editor-header__sidebar-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  width: 28px;
+  height: 28px;
+  margin-left: 10px;
+  margin-right: 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.editor-header__sidebar-btn:hover {
+  background: #f4f4f5;
+  color: var(--text-primary);
+}
+
 .editor-header__actions {
   position: relative;
   padding-right: 1rem;

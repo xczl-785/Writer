@@ -269,7 +269,10 @@ function App() {
 
         {/* Main Editor Area */}
         <main className="flex-1 flex flex-col relative min-w-0 h-full">
-          <Editor />
+          <Editor
+            isSidebarVisible={isSidebarVisible}
+            onToggleSidebar={toggleSidebar}
+          />
         </main>
 
         {/* Debug Sidebar (opt-in): set VITE_SHOW_STATE_DEBUG=1 */}
