@@ -13,8 +13,8 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
-import TableHeader from '@tiptap/extension-table-header';
-import TableCell from '@tiptap/extension-table-cell';
+import BaseTableHeader from '@tiptap/extension-table-header';
+import BaseTableCell from '@tiptap/extension-table-cell';
 import { useEditorStore } from '../../state/slices/editorSlice';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
@@ -167,8 +167,48 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
       Table.configure({ resizable: true, allowTableNodeSelection: false }),
       TableRow,
-      TableHeader,
-      TableCell,
+      BaseTableHeader.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            textAlign: {
+              default: 'left',
+              renderHTML: (attributes) =>
+                attributes.textAlign
+                  ? { style: `text-align: ${attributes.textAlign}` }
+                  : {},
+            },
+            borderHidden: {
+              default: false,
+              renderHTML: (attributes) =>
+                attributes.borderHidden
+                  ? { style: 'border-style: none' }
+                  : {},
+            },
+          };
+        },
+      }),
+      BaseTableCell.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            textAlign: {
+              default: 'left',
+              renderHTML: (attributes) =>
+                attributes.textAlign
+                  ? { style: `text-align: ${attributes.textAlign}` }
+                  : {},
+            },
+            borderHidden: {
+              default: false,
+              renderHTML: (attributes) =>
+                attributes.borderHidden
+                  ? { style: 'border-style: none' }
+                  : {},
+            },
+          };
+        },
+      }),
       Image.extend({
         addAttributes() {
           return {
@@ -354,6 +394,17 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     return '';
   }, []);
 
+  const getCurrentCellBorderHidden = useCallback((instance: TiptapEditor) => {
+    const { $from } = instance.state.selection;
+    for (let depth = $from.depth; depth > 0; depth -= 1) {
+      const node = $from.node(depth);
+      if (node.type.name === 'tableCell' || node.type.name === 'tableHeader') {
+        return Boolean(node.attrs.borderHidden);
+      }
+    }
+    return false;
+  }, []);
+
   const openEditorContextMenu = useCallback(
     (event: ReactMouseEvent) => {
       if (!editor) {
@@ -405,6 +456,31 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
             onToggleHeaderColumn: () => {
               editor.chain().focus().toggleHeaderColumn().run();
             },
+            onAlignLeft: () => {
+              editor.chain().focus().setCellAttribute('textAlign', 'left').run();
+            },
+            onAlignCenter: () => {
+              editor
+                .chain()
+                .focus()
+                .setCellAttribute('textAlign', 'center')
+                .run();
+            },
+            onAlignRight: () => {
+              editor
+                .chain()
+                .focus()
+                .setCellAttribute('textAlign', 'right')
+                .run();
+            },
+            onToggleCellBorder: () => {
+              const hidden = getCurrentCellBorderHidden(editor);
+              editor
+                .chain()
+                .focus()
+                .setCellAttribute('borderHidden', !hidden)
+                .run();
+            },
             onDeleteTable: () => {
               editor.chain().focus().deleteTable().run();
             },
@@ -426,6 +502,34 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
               editor.can().chain().focus().toggleHeaderRow().run(),
             canToggleHeaderColumn: () =>
               editor.can().chain().focus().toggleHeaderColumn().run(),
+            canAlignLeft: () =>
+              editor
+                .can()
+                .chain()
+                .focus()
+                .setCellAttribute('textAlign', 'left')
+                .run(),
+            canAlignCenter: () =>
+              editor
+                .can()
+                .chain()
+                .focus()
+                .setCellAttribute('textAlign', 'center')
+                .run(),
+            canAlignRight: () =>
+              editor
+                .can()
+                .chain()
+                .focus()
+                .setCellAttribute('textAlign', 'right')
+                .run(),
+            canToggleCellBorder: () =>
+              editor
+                .can()
+                .chain()
+                .focus()
+                .setCellAttribute('borderHidden', true)
+                .run(),
             canDeleteTable: () =>
               editor.can().chain().focus().deleteTable().run(),
           })
@@ -468,7 +572,14 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
       contextMenu.open(event.clientX, event.clientY, items);
     },
-    [contextMenu, copyText, editor, getActiveCodeBlockText, setStatus],
+    [
+      contextMenu,
+      copyText,
+      editor,
+      getActiveCodeBlockText,
+      getCurrentCellBorderHidden,
+      setStatus,
+    ],
   );
 
   if (!activeFile)

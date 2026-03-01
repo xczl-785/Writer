@@ -51,6 +51,10 @@ describe('editorMenu', () => {
       onSplitCell: noop,
       onToggleHeaderRow: noop,
       onToggleHeaderColumn: noop,
+      onAlignLeft: noop,
+      onAlignCenter: noop,
+      onAlignRight: noop,
+      onToggleCellBorder: noop,
       onDeleteTable: noop,
       canInsertRowAbove: () => true,
       canInsertRowBelow: () => true,
@@ -62,6 +66,10 @@ describe('editorMenu', () => {
       canSplitCell: () => true,
       canToggleHeaderRow: () => true,
       canToggleHeaderColumn: () => true,
+      canAlignLeft: () => true,
+      canAlignCenter: () => true,
+      canAlignRight: () => true,
+      canToggleCellBorder: () => true,
       canDeleteTable: () => true,
     });
     const ids = items.filter(isMenuItem).map((item) => item.id);
@@ -77,6 +85,10 @@ describe('editorMenu', () => {
       'split-cell',
       'toggle-header-row',
       'toggle-header-column',
+      'align-left',
+      'align-center',
+      'align-right',
+      'toggle-cell-border',
       'delete-table',
     ]);
   });
