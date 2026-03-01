@@ -55,6 +55,18 @@
   font-size: 11px;
 }
 
+.status-meta-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.status-meta-btn:hover {
+  color: var(--text-primary);
+}
+
 .status-sync {
   color: rgb(34 197 94 / 60%);
   background: transparent;
@@ -67,8 +79,36 @@
   text-transform: uppercase;
 }
 
-.status-sync.is-muted {
+.status-sync.status-sync--no-git {
   color: rgb(161 161 170 / 75%);
+}
+
+.status-sync.status-sync--local-only {
+  color: rgb(161 161 170 / 85%);
+}
+
+.status-sync.status-sync--syncing {
+  color: rgb(59 130 246 / 85%);
+}
+
+.status-sync.status-sync--dirty {
+  color: rgb(245 158 11 / 85%);
+}
+
+.status-sync.status-sync--ahead {
+  color: rgb(34 197 94 / 75%);
+}
+
+.status-sync.status-sync--behind {
+  color: rgb(244 63 94 / 80%);
+}
+
+.status-sync.status-sync--diverged {
+  color: rgb(249 115 22 / 85%);
+}
+
+.status-sync.status-sync--synced {
+  color: rgb(34 197 94 / 60%);
 }
 
 .status-indicator-wrap {

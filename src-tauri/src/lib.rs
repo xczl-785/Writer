@@ -20,7 +20,9 @@ pub fn run() {
             fs::delete_node,
             fs::reveal_in_file_manager,
             fs::save_image,
-            fs::check_exists
+            fs::check_exists,
+            fs::get_git_sync_status,
+            fs::detect_file_encoding
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

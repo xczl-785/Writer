@@ -12,6 +12,22 @@ pub struct FileNode {
     children: Option<Vec<FileNode>>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitSyncStatus {
+    is_repo: bool,
+    has_remote: bool,
+    dirty: bool,
+    ahead: u32,
+    behind: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EncodingStatus {
+    label: String,
+}
+
 #[tauri::command]
 pub fn list_tree(path: &str) -> Result<Vec<FileNode>, String> {
     let path_obj = Path::new(path);
@@ -250,4 +266,99 @@ pub fn save_image(path: &str, data: Vec<u8>) -> Result<(), String> {
 #[tauri::command]
 pub fn check_exists(path: &str) -> Result<bool, String> {
     Ok(Path::new(path).exists())
+}
+
+fn run_git(path: &str, args: &[&str]) -> Result<String, String> {
+    let output = Command::new("git")
+        .args(["-C", path])
+        .args(args)
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+#[tauri::command]
+pub fn get_git_sync_status(path: &str) -> Result<GitSyncStatus, String> {
+    if !Path::new(path).exists() {
+        return Err(format!("Path does not exist: {}", path));
+    }
+
+    let repo_check = run_git(path, &["rev-parse", "--is-inside-work-tree"]);
+    if repo_check.is_err() || repo_check.as_deref().ok() != Some("true") {
+        return Ok(GitSyncStatus {
+            is_repo: false,
+            has_remote: false,
+            dirty: false,
+            ahead: 0,
+            behind: 0,
+        });
+    }
+
+    let dirty = run_git(path, &["status", "--porcelain"])
+        .map(|v| !v.is_empty())
+        .unwrap_or(false);
+
+    let has_remote = run_git(path, &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"])
+        .map(|v| !v.is_empty())
+        .unwrap_or(false);
+
+    if !has_remote {
+        return Ok(GitSyncStatus {
+            is_repo: true,
+            has_remote: false,
+            dirty,
+            ahead: 0,
+            behind: 0,
+        });
+    }
+
+    let (ahead, behind) = match run_git(path, &["rev-list", "--left-right", "--count", "HEAD...@{upstream}"]) {
+        Ok(counts) => {
+            let mut parts = counts.split_whitespace();
+            let ahead = parts
+                .next()
+                .and_then(|v| v.parse::<u32>().ok())
+                .unwrap_or(0);
+            let behind = parts
+                .next()
+                .and_then(|v| v.parse::<u32>().ok())
+                .unwrap_or(0);
+            (ahead, behind)
+        }
+        Err(_) => (0, 0),
+    };
+
+    Ok(GitSyncStatus {
+        is_repo: true,
+        has_remote: true,
+        dirty,
+        ahead,
+        behind,
+    })
+}
+
+#[tauri::command]
+pub fn detect_file_encoding(path: &str) -> Result<EncodingStatus, String> {
+    let bytes = fs::read(path).map_err(|e| e.to_string())?;
+
+    let label = if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        "UTF-8 BOM"
+    } else if bytes.starts_with(&[0xFF, 0xFE]) {
+        "UTF-16 LE"
+    } else if bytes.starts_with(&[0xFE, 0xFF]) {
+        "UTF-16 BE"
+    } else if std::str::from_utf8(&bytes).is_ok() {
+        "UTF-8"
+    } else {
+        "Unknown"
+    };
+
+    Ok(EncodingStatus {
+        label: label.to_string(),
+    })
 }
