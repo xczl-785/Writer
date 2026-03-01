@@ -44,6 +44,7 @@ import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import {
   getCodeBlockContextMenuItems,
   getEditorContextMenuItems,
+  getTableContextMenuItems,
 } from '../components/ContextMenu/editorMenu';
 import { Breadcrumb } from '../components/Breadcrumb/Breadcrumb';
 import {
@@ -361,12 +362,74 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       event.preventDefault();
       const selection = editor.state.selection;
       const hasSelection = !selection.empty;
-      if (hasSelection) {
+      const inTable =
+        editor.isActive('table') ||
+        editor.isActive('tableRow') ||
+        editor.isActive('tableCell') ||
+        editor.isActive('tableHeader');
+
+      if (hasSelection && !inTable) {
         return;
       }
 
       const inCodeBlock = editor.isActive('codeBlock');
-      const items = inCodeBlock
+      const items = inTable
+        ? getTableContextMenuItems({
+            onInsertRowAbove: () => {
+              editor.chain().focus().addRowBefore().run();
+            },
+            onInsertRowBelow: () => {
+              editor.chain().focus().addRowAfter().run();
+            },
+            onDeleteRow: () => {
+              editor.chain().focus().deleteRow().run();
+            },
+            onInsertColumnLeft: () => {
+              editor.chain().focus().addColumnBefore().run();
+            },
+            onInsertColumnRight: () => {
+              editor.chain().focus().addColumnAfter().run();
+            },
+            onDeleteColumn: () => {
+              editor.chain().focus().deleteColumn().run();
+            },
+            onMergeCells: () => {
+              editor.chain().focus().mergeCells().run();
+            },
+            onSplitCell: () => {
+              editor.chain().focus().splitCell().run();
+            },
+            onToggleHeaderRow: () => {
+              editor.chain().focus().toggleHeaderRow().run();
+            },
+            onToggleHeaderColumn: () => {
+              editor.chain().focus().toggleHeaderColumn().run();
+            },
+            onDeleteTable: () => {
+              editor.chain().focus().deleteTable().run();
+            },
+            canInsertRowAbove: () =>
+              editor.can().chain().focus().addRowBefore().run(),
+            canInsertRowBelow: () =>
+              editor.can().chain().focus().addRowAfter().run(),
+            canDeleteRow: () => editor.can().chain().focus().deleteRow().run(),
+            canInsertColumnLeft: () =>
+              editor.can().chain().focus().addColumnBefore().run(),
+            canInsertColumnRight: () =>
+              editor.can().chain().focus().addColumnAfter().run(),
+            canDeleteColumn: () =>
+              editor.can().chain().focus().deleteColumn().run(),
+            canMergeCells: () =>
+              editor.can().chain().focus().mergeCells().run(),
+            canSplitCell: () => editor.can().chain().focus().splitCell().run(),
+            canToggleHeaderRow: () =>
+              editor.can().chain().focus().toggleHeaderRow().run(),
+            canToggleHeaderColumn: () =>
+              editor.can().chain().focus().toggleHeaderColumn().run(),
+            canDeleteTable: () =>
+              editor.can().chain().focus().deleteTable().run(),
+          })
+        : inCodeBlock
         ? getCodeBlockContextMenuItems({
             onCopyCodeBlock: () => {
               void copyText(getActiveCodeBlockText(editor), 'Code copied');
