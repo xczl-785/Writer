@@ -34,6 +34,7 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
+  File,
   FilePlus,
   FolderPlus,
   X,
@@ -43,26 +44,6 @@ type GhostNode = {
   parentPath: string | null;
   type: 'file' | 'directory';
 };
-
-type FileIconProps = {
-  className?: string;
-};
-
-function DocIcon({ className }: FileIconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden="true"
-    >
-      <path d="M14 3H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9z" />
-      <path d="M14 3v6h6" />
-    </svg>
-  );
-}
 
 type FolderIconProps = {
   className?: string;
@@ -587,7 +568,7 @@ export function Sidebar() {
                       }`}
                       title={node.path}
                     >
-                      <DocIcon className="h-4 w-4 text-zinc-500 flex-shrink-0" />
+                      <File size={16} className="text-zinc-500 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="truncate leading-none">
                           {getDisplayName(node)}
@@ -682,7 +663,7 @@ function GhostRow({
         {type === 'directory' ? (
           <FolderIcon className="h-4 w-4 text-blue-500" />
         ) : (
-          <DocIcon className="h-4 w-4 text-zinc-500" />
+          <File size={16} className="text-zinc-500" />
         )}
       </span>
       <InlineInput
@@ -889,7 +870,7 @@ function FileTreeNode({
               filled={isFocused || isActiveParent}
             />
           ) : (
-            <DocIcon className="h-4 w-4" />
+            <File size={16} />
           )}
         </span>
 
