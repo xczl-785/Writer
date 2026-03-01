@@ -467,6 +467,10 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFile, editor]);
 
+  useEffect(() => {
+    setIsOutlineOpen(false);
+  }, [activeFile]);
+
   useImperativeHandle(
     ref,
     () => ({
@@ -1044,6 +1048,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
             <Outline
               editor={editor}
               isOpen={isOutlineOpen}
+              refreshToken={activeFile}
               onClose={() => setIsOutlineOpen(false)}
             />
           }
