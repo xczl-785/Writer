@@ -1121,12 +1121,6 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
               className={`editor-slash-menu ${slashState.phase !== 'idle' ? 'is-open' : ''}`}
               style={{ left: slashState.menuX, top: slashState.menuY }}
             >
-              <div className="editor-slash-menu__fragment">
-                <span className="editor-slash-menu__fragment-trigger">/</span>
-                <span className="editor-slash-menu__fragment-query">
-                  {slashState.query || '输入以唤出菜单...'}
-                </span>
-              </div>
               {filteredSlashCommands.length === 0 ? (
                 <div className="editor-slash-menu__empty">No matching commands</div>
               ) : (
@@ -1181,9 +1175,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
           <span className="editor-slash-inline__trigger">/</span>
           {slashState.query ? (
             <span className="editor-slash-inline__query">{slashState.query}</span>
-          ) : (
-            <span className="editor-slash-inline__placeholder">输入以唤出菜单...</span>
-          )}
+          ) : null}
         </div>
       </div>
       <ContextMenu

@@ -329,26 +329,6 @@
   display: block;
 }
 
-.editor-slash-menu__fragment {
-  margin: 4px 6px;
-  color: #a1a1aa;
-  background: rgb(63 63 70 / 35%);
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.editor-slash-menu__fragment-trigger {
-  color: #a1a1aa;
-}
-
-.editor-slash-menu__fragment-query {
-  color: #a1a1aa;
-}
-
 .editor-slash-menu__group {
   font-size: 10px;
   font-weight: 700;
@@ -409,7 +389,6 @@
 }
 
 .editor-slash-inline__trigger,
-.editor-slash-inline__query,
-.editor-slash-inline__placeholder {
+.editor-slash-inline__query {
   color: var(--text-tertiary);
 }

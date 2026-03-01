@@ -30,9 +30,10 @@ describe('Editor slash menu behavior', () => {
     expect(editorTsx).toContain('const rect = getSafeCoordsAtPos(editor, selection.from);');
   });
 
-  it('renders slash session fragment in editor area with placeholder', () => {
+  it('renders slash session fragment in editor area without menu input field', () => {
     expect(editorTsx).toContain('className={`editor-slash-inline');
-    expect(editorTsx).toContain('输入以唤出菜单...');
+    expect(editorTsx).toContain('editor-slash-inline__trigger');
     expect(editorTsx).toContain('editor-slash-inline__query');
+    expect(editorTsx).not.toContain('editor-slash-menu__fragment');
   });
 });
