@@ -443,7 +443,7 @@ export function Sidebar() {
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
             title="Open Folder"
           >
-            <FolderOpen size={16} />
+            <FolderIcon className="h-4 w-4" filled={true} />
           </button>
         </div>
       </div>
