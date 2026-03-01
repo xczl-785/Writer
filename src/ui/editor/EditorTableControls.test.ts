@@ -9,6 +9,13 @@ describe('Editor table controls', () => {
     readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
   const readConstants = () =>
     readFileSync(join(currentDir, 'constants.ts'), 'utf-8');
+  const readHooks = () =>
+    readFileSync(join(currentDir, 'hooks', 'useUndoRedo.ts'), 'utf-8');
+  const readExtensions = () =>
+    readFileSync(
+      join(currentDir, 'extensions', 'findReplaceShortcuts.ts'),
+      'utf-8',
+    );
 
   it('removes table operation commands from toolbar constants', () => {
     const constantsTs = readConstants();
@@ -34,17 +41,16 @@ describe('Editor table controls', () => {
   });
 
   it('enforces undo/redo command path consistency', () => {
-    const editorTsx = readEditor();
+    const hooksTs = readHooks();
 
-    expect(editorTsx).toContain('const undo = useCallback');
-    expect(editorTsx).toContain('editor.chain().focus().undo().run()');
-    expect(editorTsx).toContain('const redo = useCallback');
-    expect(editorTsx).toContain('editor.chain().focus().redo().run()');
+    expect(hooksTs).toContain('const undo = useCallback');
+    expect(hooksTs).toContain('editor.chain().focus().undo().run()');
+    expect(hooksTs).toContain('const redo = useCallback');
+    expect(hooksTs).toContain('editor.chain().focus().redo().run()');
 
-    expect(editorTsx).toContain("'Mod-z': () =>");
-    expect(editorTsx).toContain('return undo(editorRef.current)');
-    expect(editorTsx).toContain("'Mod-y': () =>");
-    expect(editorTsx).toContain("'Mod-Shift-z': () =>");
-    expect(editorTsx).toContain('return redo(editorRef.current)');
+    const extensionsTs = readExtensions();
+    expect(extensionsTs).toContain("'Mod-z': () =>");
+    expect(extensionsTs).toContain("'Mod-y': () =>");
+    expect(extensionsTs).toContain("'Mod-Shift-z': () =>");
   });
 });

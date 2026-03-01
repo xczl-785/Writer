@@ -37,16 +37,11 @@ import {
   createEditorKeyDownHandler,
   createFindReplaceShortcutExtension,
   createToolbarShortcutExtension,
-} from './editorExtensions';
+} from './extensions';
 import { useTransientStatus } from './useTransientStatus';
 import { useFindReplace } from './useFindReplace';
 import { useToolbarCommands } from './useToolbarCommands';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
-import {
-  getCodeBlockContextMenuItems,
-  getEditorContextMenuItems,
-  getTableContextMenuItems,
-} from '../components/ContextMenu/editorMenu';
 import { Breadcrumb } from '../components/Breadcrumb/Breadcrumb';
 import {
   buildBreadcrumb,
@@ -55,6 +50,16 @@ import {
 import { openFile } from '../../workspace/WorkspaceManager';
 import { Outline } from '../components/Outline';
 import { BlockBoundaryExtension } from '../components/BlockBoundary';
+import {
+  useSlashMenu,
+  SlashMenu,
+  SlashInline,
+  useBubbleMenu,
+  BubbleMenu,
+  GhostHint,
+} from './menus';
+import { useSafeCoords, useGhostHint, useUndoRedo } from './hooks';
+import { createMenuCommandHandler, createContextMenuOpener } from './handlers';
 import '../components/BlockBoundary/blockBoundary.css';
 import './Editor.css';
 
@@ -89,1150 +94,370 @@ export const EDITOR_SOURCE_MARKERS = [
 
 const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
   value;
-const BUBBLE_MENU_DEBOUNCE_MS = 80;
-const SLASH_MENU_MAX_ITEMS = 8;
-
-type SlashPhase = 'idle' | 'open' | 'searching' | 'executing';
-
-type SlashCommand = {
-  id: string;
-  group: 'Basic Blocks' | 'Advanced Components';
-  label: string;
-  hint: string;
-  keywords: string[];
-  run: (editor: TiptapEditor) => void;
-};
 
 export const Editor = forwardRef<EditorHandle, EditorProps>(
   ({ isSidebarVisible = true, onToggleSidebar }, ref) => {
-  const { activeFile, currentPath } = useWorkspaceStore();
-  const { setStatus } = useStatusStore();
-  const { setSelectedPath, expandNode } = useFileTreeStore();
-  const { fileStates, updateFileContent, setDirty } = useEditorStore();
-  const { handlePaste } = useImagePaste();
-  const contextMenu = useContextMenu();
+    const { activeFile, currentPath } = useWorkspaceStore();
+    const { setStatus } = useStatusStore();
+    const { setSelectedPath, expandNode } = useFileTreeStore();
+    const { fileStates, updateFileContent, setDirty } = useEditorStore();
+    const { handlePaste } = useImagePaste();
+    const contextMenu = useContextMenu();
 
-  const content = activeFile ? fileStates[activeFile]?.content || '' : '';
-  const editorRef = useRef<TiptapEditor | null>(null);
-  const toolbarCommandRunnerRef = useRef<(id: ToolbarCommandId) => boolean>(
-    () => false,
-  );
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasEditorWidgetFocus, setHasEditorWidgetFocus] = useState(false);
-  const [editorRevision, forceRerender] = useState(0);
-  const [isOutlineOpen, setIsOutlineOpen] = useState(false);
-  const [bubbleMenuPosition, setBubbleMenuPosition] = useState<{
-    open: boolean;
-    x: number;
-    y: number;
-    placement: 'above' | 'below';
-  }>({ open: false, x: 0, y: 0, placement: 'above' });
-  const bubbleMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [ghostHintPosition, setGhostHintPosition] = useState<{
-    open: boolean;
-    x: number;
-    y: number;
-  }>({ open: false, x: 0, y: 0 });
-  const [slashState, setSlashState] = useState<{
-    phase: SlashPhase;
-    query: string;
-    menuX: number;
-    menuY: number;
-    inlineX: number;
-    inlineY: number;
-  }>({
-    phase: 'idle',
-    query: '',
-    menuX: 0,
-    menuY: 0,
-    inlineX: 0,
-    inlineY: 0,
-  });
-  const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
-  const composingRef = useRef(false);
+    const content = activeFile ? fileStates[activeFile]?.content || '' : '';
+    const editorRef = useRef<TiptapEditor | null>(null);
+    const toolbarCommandRunnerRef = useRef<(id: ToolbarCommandId) => boolean>(
+      () => false,
+    );
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasEditorWidgetFocus, setHasEditorWidgetFocus] = useState(false);
+    const [editorRevision, forceRerender] = useState(0);
+    const [isOutlineOpen, setIsOutlineOpen] = useState(false);
 
-  const getSafeCoordsAtPos = useCallback(
-    (instance: TiptapEditor, pos: number) => {
-      try {
-        return instance.view.coordsAtPos(pos);
-      } catch {
-        return null;
-      }
-    },
-    [],
-  );
+    // Custom hooks
+    const { getSafeCoordsAtPos } = useSafeCoords();
+    const { setTransientStatus, setDestructiveStatus } = useTransientStatus();
+    const { undo, redo } = useUndoRedo(setTransientStatus);
 
-  const { setTransientStatus, setDestructiveStatus } = useTransientStatus();
+    // Slash menu
+    const {
+      slashState,
+      slashCommands,
+      slashSelectedIndex,
+      setSlashSelectedIndex,
+      executeCommand,
+    } = useSlashMenu({
+      editor: editorRef.current,
+      defaultTableInsert: DEFAULT_TABLE_INSERT,
+      getSafeCoordsAtPos,
+    });
 
-  const undo = useCallback(
-    (editor: TiptapEditor) => {
-      const ran = editor.chain().focus().undo().run();
-      if (ran) setTransientStatus('Undo');
-      return ran;
-    },
-    [setTransientStatus],
-  );
+    // Ghost hint & bubble menu
+    const ghostHintPosition = useGhostHint(
+      editorRef.current,
+      slashState.phase,
+      getSafeCoordsAtPos,
+    );
+    const bubbleMenuPosition = useBubbleMenu(editorRef.current);
 
-  const redo = useCallback(
-    (editor: TiptapEditor) => {
-      const ran = editor.chain().focus().redo().run();
-      if (ran) setTransientStatus('Redo');
-      return ran;
-    },
-    [setTransientStatus],
-  );
+    // Find replace & toolbar
+    const findReplace = useFindReplace({
+      editor: editorRef.current,
+      editorRevision,
+      setTransientStatus,
+    });
+    const { runToolbarCommand } = useToolbarCommands({
+      hasEditorWidgetFocus,
+      setTransientStatus,
+      setDestructiveStatus,
+    });
 
-  const findReplace = useFindReplace({
-    editor: editorRef.current,
-    editorRevision,
-    setTransientStatus,
-  });
+    // Extensions
+    const toolbarShortcutExtension = useMemo(
+      () => createToolbarShortcutExtension(toolbarCommandRunnerRef, editorRef),
+      [],
+    );
+    const findReplaceShortcutExtension = useMemo(
+      () =>
+        createFindReplaceShortcutExtension({
+          openFindPanel: findReplace.openFindPanel,
+          undo,
+          redo,
+          editorRef,
+        }),
+      [findReplace.openFindPanel, redo, undo],
+    );
 
-  const { runToolbarCommand } = useToolbarCommands({
-    hasEditorWidgetFocus,
-    setTransientStatus,
-    setDestructiveStatus,
-  });
+    const extensions = useMemo(
+      () => [
+        toolbarShortcutExtension,
+        findReplaceShortcutExtension,
+        BlockBoundaryExtension,
+        StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
+        Table.configure({ resizable: true, allowTableNodeSelection: false }),
+        TableRow,
+        BaseTableHeader.extend({
+          addAttributes() {
+            return {
+              ...this.parent?.(),
+              textAlign: {
+                default: 'left',
+                renderHTML: (attributes) =>
+                  attributes.textAlign
+                    ? { style: `text-align: ${attributes.textAlign}` }
+                    : {},
+              },
+              borderHidden: {
+                default: false,
+                renderHTML: (attributes) =>
+                  attributes.borderHidden
+                    ? { style: 'border-style: none' }
+                    : {},
+              },
+            };
+          },
+        }),
+        BaseTableCell.extend({
+          addAttributes() {
+            return {
+              ...this.parent?.(),
+              textAlign: {
+                default: 'left',
+                renderHTML: (attributes) =>
+                  attributes.textAlign
+                    ? { style: `text-align: ${attributes.textAlign}` }
+                    : {},
+              },
+              borderHidden: {
+                default: false,
+                renderHTML: (attributes) =>
+                  attributes.borderHidden
+                    ? { style: 'border-style: none' }
+                    : {},
+              },
+            };
+          },
+        }),
+        Image.extend({
+          addAttributes() {
+            return {
+              ...this.parent?.(),
+              src: {
+                default: null,
+                renderHTML: (attributes) => ({
+                  src: ImageResolver.resolve(attributes.src, activeFile),
+                }),
+              },
+            };
+          },
+        }),
+      ],
+      [activeFile, findReplaceShortcutExtension, toolbarShortcutExtension],
+    );
 
-  const toolbarShortcutExtension = useMemo(
-    () => createToolbarShortcutExtension(toolbarCommandRunnerRef, editorRef),
-    [],
-  );
-
-  const findReplaceShortcutExtension = useMemo(
-    () =>
-      createFindReplaceShortcutExtension({
-        openFindPanel: findReplace.openFindPanel,
-        undo,
-        redo,
-        editorRef,
-      }),
-    [findReplace.openFindPanel, redo, undo],
-  );
-
-  const extensions = useMemo(
-    () => [
-      toolbarShortcutExtension,
-      findReplaceShortcutExtension,
-      BlockBoundaryExtension,
-      StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
-      Table.configure({ resizable: true, allowTableNodeSelection: false }),
-      TableRow,
-      BaseTableHeader.extend({
-        addAttributes() {
-          return {
-            ...this.parent?.(),
-            textAlign: {
-              default: 'left',
-              renderHTML: (attributes) =>
-                attributes.textAlign
-                  ? { style: `text-align: ${attributes.textAlign}` }
-                  : {},
-            },
-            borderHidden: {
-              default: false,
-              renderHTML: (attributes) =>
-                attributes.borderHidden
-                  ? { style: 'border-style: none' }
-                  : {},
-            },
-          };
+    const editor = useEditor(
+      {
+        extensions,
+        content: '',
+        editorProps: {
+          attributes: { class: 'editor-content h-full focus:outline-none' },
+          handleDOMEvents: createHandleDOMEvents((event) =>
+            handlePaste(event, editorRef.current),
+          ),
+          handleKeyDown: withSourceMarkers(
+            [
+              'instanceof CellSelection',
+              "event.key === 'Backspace'",
+              "event.key === 'Delete'",
+              'deleteCellSelection',
+              "event.key === 'ArrowLeft'",
+              'TextSelection.near',
+              "nodeBefore.type.name === 'table'",
+            ],
+            createEditorKeyDownHandler(),
+          ),
         },
-      }),
-      BaseTableCell.extend({
-        addAttributes() {
-          return {
-            ...this.parent?.(),
-            textAlign: {
-              default: 'left',
-              renderHTML: (attributes) =>
-                attributes.textAlign
-                  ? { style: `text-align: ${attributes.textAlign}` }
-                  : {},
-            },
-            borderHidden: {
-              default: false,
-              renderHTML: (attributes) =>
-                attributes.borderHidden
-                  ? { style: 'border-style: none' }
-                  : {},
-            },
-          };
+        onUpdate: async ({ editor }: { editor: TiptapEditor }) => {
+          if (isLoading || !activeFile) return;
+          try {
+            let markdown = await MarkdownService.serialize(editor.getJSON());
+            markdown = markdown.replace(/\xA0/g, ' ');
+            markdown = markdown.replace(/\|\s*&nbsp;\s*(?=\|)/g, '|   ');
+            updateFileContent(activeFile, markdown);
+            setDirty(activeFile, true);
+            AutosaveService.schedule(activeFile, markdown);
+          } catch (error) {
+            ErrorService.handle(error, 'Failed to serialize editor content');
+          }
         },
-      }),
-      Image.extend({
-        addAttributes() {
-          return {
-            ...this.parent?.(),
-            src: {
-              default: null,
-              renderHTML: (attributes) => ({
-                src: ImageResolver.resolve(attributes.src, activeFile),
-              }),
-            },
-          };
+        onBlur: () => {
+          if (activeFile) AutosaveService.flush(activeFile);
         },
-      }),
-    ],
-    [activeFile, findReplaceShortcutExtension, toolbarShortcutExtension],
-  );
-
-  const editor = useEditor(
-    {
-      extensions,
-      content: '',
-      editorProps: {
-        attributes: { class: 'editor-content h-full focus:outline-none' },
-        handleDOMEvents: createHandleDOMEvents((event) =>
-          handlePaste(event, editorRef.current),
-        ),
-        handleKeyDown: withSourceMarkers(
-          [
-            'instanceof CellSelection',
-            "event.key === 'Backspace'",
-            "event.key === 'Delete'",
-            'deleteCellSelection',
-            "event.key === 'ArrowLeft'",
-            'TextSelection.near',
-            "nodeBefore.type.name === 'table'",
-          ],
-          createEditorKeyDownHandler(),
-        ),
+        onCreate: ({ editor }: { editor: TiptapEditor }) => {
+          editorRef.current = editor;
+        },
+        onDestroy: () => {
+          editorRef.current = null;
+        },
       },
-      onUpdate: async ({ editor }: { editor: TiptapEditor }) => {
-        if (isLoading || !activeFile) return;
+      [activeFile],
+    );
 
+    // Update toolbar command runner
+    useEffect(() => {
+      if (!editor) return;
+      toolbarCommandRunnerRef.current = (id) => runToolbarCommand(editor, id);
+    }, [editor, runToolbarCommand]);
+
+    // Force rerender on editor events
+    useEffect(() => {
+      if (!editor) return;
+      const update = () => forceRerender((t) => t + 1);
+      editor.on('selectionUpdate', update);
+      editor.on('transaction', update);
+      editor.on('focus', update);
+      editor.on('blur', update);
+      return () => {
+        editor.off('selectionUpdate', update);
+        editor.off('transaction', update);
+        editor.off('focus', update);
+        editor.off('blur', update);
+      };
+    }, [editor]);
+
+    // Load content when activeFile changes
+    useEffect(() => {
+      if (!editor || !activeFile) return;
+      let isMounted = true;
+      const loadContent = async () => {
+        setIsLoading(true);
         try {
-          let markdown = await MarkdownService.serialize(editor.getJSON());
-          markdown = markdown.replace(/\xA0/g, ' ');
-          markdown = markdown.replace(/\|\s*&nbsp;\s*(?=\|)/g, '|   ');
-          updateFileContent(activeFile, markdown);
-          setDirty(activeFile, true);
-          AutosaveService.schedule(activeFile, markdown);
+          const json = await MarkdownService.parse(content);
+          if (isMounted)
+            editor.commands.setContent(json, { emitUpdate: false });
         } catch (error) {
-          ErrorService.handle(error, 'Failed to serialize editor content');
+          ErrorService.handle(error, 'Failed to load editor content');
+        } finally {
+          if (isMounted) setIsLoading(false);
+        }
+      };
+      loadContent();
+      return () => {
+        isMounted = false;
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeFile, editor]);
+
+    // Close outline when file changes
+    useEffect(() => {
+      setIsOutlineOpen(false);
+    }, [activeFile]);
+
+    // Clipboard helper
+    const copyText = useCallback(
+      async (text: string, successMessage: string): Promise<void> => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setStatus('idle', successMessage);
+        } catch {
+          setStatus('error', t('status.menu.clipboardDenied'));
         }
       },
-      onBlur: () => {
-        if (activeFile) AutosaveService.flush(activeFile);
-      },
-      onCreate: ({ editor }: { editor: TiptapEditor }) => {
-        editorRef.current = editor;
-      },
-      onDestroy: () => {
-        editorRef.current = null;
-      },
-    },
-    [activeFile],
-  );
+      [setStatus],
+    );
 
-  useEffect(() => {
-    if (!editor) return;
-    toolbarCommandRunnerRef.current = (id) => runToolbarCommand(editor, id);
-  }, [editor, runToolbarCommand]);
-
-  useEffect(() => {
-    if (!editor) return;
-    const update = () => forceRerender((t) => t + 1);
-    editor.on('selectionUpdate', update);
-    editor.on('transaction', update);
-    editor.on('focus', update);
-    editor.on('blur', update);
-    return () => {
-      editor.off('selectionUpdate', update);
-      editor.off('transaction', update);
-      editor.off('focus', update);
-      editor.off('blur', update);
-    };
-  }, [editor]);
-
-  useEffect(() => {
-    if (!editor) return;
-
-    const updateGhostHint = () => {
-      if (!editor.isFocused || slashState.phase !== 'idle') {
-        setGhostHintPosition({ open: false, x: 0, y: 0 });
-        return;
-      }
-
-      const { selection } = editor.state;
-      if (!selection.empty) {
-        setGhostHintPosition({ open: false, x: 0, y: 0 });
-        return;
-      }
-
-      const parentText = selection.$from.parent.textContent.trim();
-      if (parentText.length > 0) {
-        setGhostHintPosition({ open: false, x: 0, y: 0 });
-        return;
-      }
-
-      const rect = getSafeCoordsAtPos(editor, selection.from);
-      if (!rect) {
-        setGhostHintPosition({ open: false, x: 0, y: 0 });
-        return;
-      }
-      setGhostHintPosition({
-        open: true,
-        x: rect.left + 4,
-        y: rect.top + 2,
-      });
-    };
-
-    updateGhostHint();
-    const hideGhostHint = () => {
-      setGhostHintPosition({ open: false, x: 0, y: 0 });
-    };
-    editor.on('selectionUpdate', updateGhostHint);
-    editor.on('transaction', updateGhostHint);
-    editor.on('focus', updateGhostHint);
-    editor.on('blur', hideGhostHint);
-    return () => {
-      editor.off('selectionUpdate', updateGhostHint);
-      editor.off('transaction', updateGhostHint);
-      editor.off('focus', updateGhostHint);
-      editor.off('blur', hideGhostHint);
-    };
-  }, [editor, getSafeCoordsAtPos, slashState.phase]);
-
-  useEffect(() => {
-    if (!editor) return;
-
-    const clearBubbleTimer = () => {
-      if (bubbleMenuTimerRef.current) {
-        clearTimeout(bubbleMenuTimerRef.current);
-        bubbleMenuTimerRef.current = null;
-      }
-    };
-
-    const updateBubble = () => {
-      clearBubbleTimer();
-      if (editor.state.selection.empty || !editor.isFocused) {
-        setBubbleMenuPosition({ open: false, x: 0, y: 0, placement: 'above' });
-        return;
-      }
-
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
-        setBubbleMenuPosition({ open: false, x: 0, y: 0, placement: 'above' });
-        return;
-      }
-
-      const rect = selection.getRangeAt(0).getBoundingClientRect();
-      if (rect.width === 0 && rect.height === 0) {
-        setBubbleMenuPosition({ open: false, x: 0, y: 0, placement: 'above' });
-        return;
-      }
-
-      bubbleMenuTimerRef.current = setTimeout(() => {
-        const placeBelow = rect.top < 80;
-        setBubbleMenuPosition({
-          open: true,
-          x: rect.left + rect.width / 2,
-          y: placeBelow ? rect.bottom + 8 : rect.top - 8,
-          placement: placeBelow ? 'below' : 'above',
-        });
-      }, BUBBLE_MENU_DEBOUNCE_MS);
-    };
-
-    const hideBubble = () => {
-      clearBubbleTimer();
-      setBubbleMenuPosition({ open: false, x: 0, y: 0, placement: 'above' });
-    };
-
-    editor.on('selectionUpdate', updateBubble);
-    editor.on('focus', updateBubble);
-    editor.on('blur', hideBubble);
-    return () => {
-      clearBubbleTimer();
-      editor.off('selectionUpdate', updateBubble);
-      editor.off('focus', updateBubble);
-      editor.off('blur', hideBubble);
-    };
-  }, [editor]);
-
-  useEffect(() => {
-    if (!editor || !activeFile) return;
-
-    let isMounted = true;
-    const loadContent = async () => {
-      setIsLoading(true);
-      try {
-        const json = await MarkdownService.parse(content);
-        if (isMounted) editor.commands.setContent(json, { emitUpdate: false });
-      } catch (error) {
-        ErrorService.handle(error, 'Failed to load editor content');
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    loadContent();
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFile, editor]);
-
-  useEffect(() => {
-    setIsOutlineOpen(false);
-  }, [activeFile]);
-
-  useEffect(() => {
-    if (!editor) return;
-
-    const runEditorCommand = (execute: () => boolean): void => {
-      const ran = execute();
-      if (!ran) {
-        setStatus('error', t('status.menu.unavailable'));
-      }
-    };
-
-    const execClipboardCommand = async (
-      command: 'cut' | 'copy' | 'paste',
-    ): Promise<void> => {
-      editor.chain().focus().run();
-
-      if (document.execCommand(command)) {
-        return;
-      }
-
-      if (command !== 'paste') {
-        setStatus('error', t('status.menu.clipboardDenied'));
-        return;
-      }
-
-      try {
-        const text = await navigator.clipboard.readText();
-        if (!text) return;
-        runEditorCommand(() => editor.chain().focus().insertContent(text).run());
-      } catch {
-        setStatus('error', t('status.menu.clipboardDenied'));
-      }
-    };
-
-    const onMenuCommand = (event: Event) => {
-      const detail = (event as CustomEvent<{ id?: string }>).detail;
-      const id = detail?.id;
-      if (!id) return;
-
-      switch (id) {
-        case 'edit.undo':
-          runEditorCommand(() => editor.chain().focus().undo().run());
-          return;
-        case 'edit.redo':
-          runEditorCommand(() => editor.chain().focus().redo().run());
-          return;
-        case 'edit.cut':
-          void execClipboardCommand('cut');
-          return;
-        case 'edit.copy':
-          void execClipboardCommand('copy');
-          return;
-        case 'edit.paste':
-          void execClipboardCommand('paste');
-          return;
-        case 'edit.select_all':
-          runEditorCommand(() => editor.chain().focus().selectAll().run());
-          return;
-        case 'edit.find':
-          findReplace.openFindPanel('find');
-          return;
-        case 'edit.replace':
-          findReplace.openFindPanel('replace');
-          return;
-        case 'format.bold':
-          runEditorCommand(() => editor.chain().focus().toggleBold().run());
-          return;
-        case 'format.italic':
-          runEditorCommand(() => editor.chain().focus().toggleItalic().run());
-          return;
-        case 'format.inline_code':
-          runEditorCommand(() => editor.chain().focus().toggleCode().run());
-          return;
-        case 'format.strike':
-          runEditorCommand(() => editor.chain().focus().toggleStrike().run());
-          return;
-        case 'format.link':
-        case 'format.image':
-          setStatus('idle', t('status.menu.todo'));
-          return;
-        case 'paragraph.heading_1':
-          runEditorCommand(() =>
-            editor.chain().focus().toggleHeading({ level: 1 }).run(),
-          );
-          return;
-        case 'paragraph.heading_2':
-          runEditorCommand(() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run(),
-          );
-          return;
-        case 'paragraph.heading_3':
-          runEditorCommand(() =>
-            editor.chain().focus().toggleHeading({ level: 3 }).run(),
-          );
-          return;
-        case 'paragraph.heading_4':
-          runEditorCommand(() =>
-            editor.chain().focus().toggleHeading({ level: 4 }).run(),
-          );
-          return;
-        case 'paragraph.heading_5':
-          runEditorCommand(() =>
-            editor.chain().focus().toggleHeading({ level: 5 }).run(),
-          );
-          return;
-        case 'paragraph.heading_6':
-          runEditorCommand(() =>
-            editor.chain().focus().toggleHeading({ level: 6 }).run(),
-          );
-          return;
-        case 'paragraph.blockquote':
-          runEditorCommand(() => editor.chain().focus().toggleBlockquote().run());
-          return;
-        case 'paragraph.code_block':
-          runEditorCommand(() => editor.chain().focus().toggleCodeBlock().run());
-          return;
-        case 'paragraph.unordered_list':
-          runEditorCommand(() => editor.chain().focus().toggleBulletList().run());
-          return;
-        case 'paragraph.ordered_list':
-          runEditorCommand(() => editor.chain().focus().toggleOrderedList().run());
-          return;
-        case 'paragraph.task_list':
-          runEditorCommand(() => editor.chain().focus().toggleTaskList().run());
-          return;
-        case 'paragraph.horizontal_rule':
-          runEditorCommand(() => editor.chain().focus().setHorizontalRule().run());
-          return;
-        case 'paragraph.table':
-          runEditorCommand(() =>
-            editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run(),
-          );
-          return;
-        case 'view.outline':
-          setIsOutlineOpen((prev) => !prev);
-          return;
-        default:
-          return;
-      }
-    };
-
-    window.addEventListener('writer:editor-command', onMenuCommand as EventListener);
-    return () =>
-      window.removeEventListener(
+    // Menu command handler
+    useEffect(() => {
+      if (!editor) return;
+      const onMenuCommand = createMenuCommandHandler(
+        editor,
+        findReplace,
+        setStatus,
+        setIsOutlineOpen,
+      );
+      window.addEventListener(
         'writer:editor-command',
         onMenuCommand as EventListener,
       );
-  }, [editor, findReplace, setStatus]);
+      return () =>
+        window.removeEventListener(
+          'writer:editor-command',
+          onMenuCommand as EventListener,
+        );
+    }, [editor, findReplace, setStatus]);
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      insertDefaultTable: () => {
+    // Context menu handler
+    const openEditorContextMenu = useCallback(
+      (event: ReactMouseEvent) => {
         if (!editor) return;
-        editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run();
+        const opener = createContextMenuOpener(
+          editor,
+          contextMenu,
+          copyText,
+          setStatus,
+        );
+        opener(event);
       },
-    }),
-    [editor],
-  );
-
-  const copyText = useCallback(
-    async (text: string, successMessage: string): Promise<void> => {
-      try {
-        await navigator.clipboard.writeText(text);
-        setStatus('idle', successMessage);
-      } catch {
-        setStatus('error', t('status.menu.clipboardDenied'));
-      }
-    },
-    [setStatus],
-  );
-
-  const getActiveCodeBlockText = useCallback((instance: TiptapEditor) => {
-    const { $from } = instance.state.selection;
-    for (let depth = $from.depth; depth > 0; depth -= 1) {
-      const node = $from.node(depth);
-      if (node.type.name === 'codeBlock') {
-        return node.textContent;
-      }
-    }
-    return '';
-  }, []);
-
-  const getCurrentCellBorderHidden = useCallback((instance: TiptapEditor) => {
-    const { $from } = instance.state.selection;
-    for (let depth = $from.depth; depth > 0; depth -= 1) {
-      const node = $from.node(depth);
-      if (node.type.name === 'tableCell' || node.type.name === 'tableHeader') {
-        return Boolean(node.attrs.borderHidden);
-      }
-    }
-    return false;
-  }, []);
-
-  const openEditorContextMenu = useCallback(
-    (event: ReactMouseEvent) => {
-      if (!editor) {
-        return;
-      }
-      event.preventDefault();
-      const selection = editor.state.selection;
-      const hasSelection = !selection.empty;
-      const inTable =
-        editor.isActive('table') ||
-        editor.isActive('tableRow') ||
-        editor.isActive('tableCell') ||
-        editor.isActive('tableHeader');
-
-      if (hasSelection && !inTable) {
-        return;
-      }
-
-      const inCodeBlock = editor.isActive('codeBlock');
-      const items = inTable
-        ? getTableContextMenuItems({
-            onInsertRowAbove: () => {
-              editor.chain().focus().addRowBefore().run();
-            },
-            onInsertRowBelow: () => {
-              editor.chain().focus().addRowAfter().run();
-            },
-            onDeleteRow: () => {
-              editor.chain().focus().deleteRow().run();
-            },
-            onInsertColumnLeft: () => {
-              editor.chain().focus().addColumnBefore().run();
-            },
-            onInsertColumnRight: () => {
-              editor.chain().focus().addColumnAfter().run();
-            },
-            onDeleteColumn: () => {
-              editor.chain().focus().deleteColumn().run();
-            },
-            onMergeCells: () => {
-              editor.chain().focus().mergeCells().run();
-            },
-            onSplitCell: () => {
-              editor.chain().focus().splitCell().run();
-            },
-            onToggleHeaderRow: () => {
-              editor.chain().focus().toggleHeaderRow().run();
-            },
-            onToggleHeaderColumn: () => {
-              editor.chain().focus().toggleHeaderColumn().run();
-            },
-            onAlignLeft: () => {
-              editor.chain().focus().setCellAttribute('textAlign', 'left').run();
-            },
-            onAlignCenter: () => {
-              editor
-                .chain()
-                .focus()
-                .setCellAttribute('textAlign', 'center')
-                .run();
-            },
-            onAlignRight: () => {
-              editor
-                .chain()
-                .focus()
-                .setCellAttribute('textAlign', 'right')
-                .run();
-            },
-            onToggleCellBorder: () => {
-              const hidden = getCurrentCellBorderHidden(editor);
-              editor
-                .chain()
-                .focus()
-                .setCellAttribute('borderHidden', !hidden)
-                .run();
-            },
-            onDeleteTable: () => {
-              editor.chain().focus().deleteTable().run();
-            },
-            canInsertRowAbove: () =>
-              editor.can().chain().focus().addRowBefore().run(),
-            canInsertRowBelow: () =>
-              editor.can().chain().focus().addRowAfter().run(),
-            canDeleteRow: () => editor.can().chain().focus().deleteRow().run(),
-            canInsertColumnLeft: () =>
-              editor.can().chain().focus().addColumnBefore().run(),
-            canInsertColumnRight: () =>
-              editor.can().chain().focus().addColumnAfter().run(),
-            canDeleteColumn: () =>
-              editor.can().chain().focus().deleteColumn().run(),
-            canMergeCells: () =>
-              editor.can().chain().focus().mergeCells().run(),
-            canSplitCell: () => editor.can().chain().focus().splitCell().run(),
-            canToggleHeaderRow: () =>
-              editor.can().chain().focus().toggleHeaderRow().run(),
-            canToggleHeaderColumn: () =>
-              editor.can().chain().focus().toggleHeaderColumn().run(),
-            canAlignLeft: () =>
-              editor
-                .can()
-                .chain()
-                .focus()
-                .setCellAttribute('textAlign', 'left')
-                .run(),
-            canAlignCenter: () =>
-              editor
-                .can()
-                .chain()
-                .focus()
-                .setCellAttribute('textAlign', 'center')
-                .run(),
-            canAlignRight: () =>
-              editor
-                .can()
-                .chain()
-                .focus()
-                .setCellAttribute('textAlign', 'right')
-                .run(),
-            canToggleCellBorder: () =>
-              editor
-                .can()
-                .chain()
-                .focus()
-                .setCellAttribute('borderHidden', true)
-                .run(),
-            canDeleteTable: () =>
-              editor.can().chain().focus().deleteTable().run(),
-          })
-        : inCodeBlock
-        ? getCodeBlockContextMenuItems({
-            onCopyCodeBlock: () => {
-              void copyText(getActiveCodeBlockText(editor), 'Code copied');
-            },
-            onChangeLanguage: () => {
-              setStatus('idle', 'Language selector coming soon');
-            },
-            onFormatCode: () => {
-              setStatus('idle', 'Code formatter coming soon');
-            },
-          })
-        : getEditorContextMenuItems({
-            onPaste: () => {
-              void navigator.clipboard
-                .readText()
-                .then((text) => {
-                  editor.chain().focus().insertContent(text).run();
-                })
-                .catch(() => {
-                  setStatus('error', 'Paste requires clipboard permission');
-                });
-            },
-            onSelectAll: () => {
-              editor.chain().focus().selectAll().run();
-            },
-            onCopyFullText: () => {
-              void copyText(editor.getText(), 'Document copied');
-            },
-            onInsertTable: () => {
-              editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run();
-            },
-            onInsertQuote: () => {
-              editor.chain().focus().toggleBlockquote().run();
-            },
-          });
-
-      contextMenu.open(event.clientX, event.clientY, items);
-    },
-    [
-      contextMenu,
-      copyText,
-      editor,
-      getActiveCodeBlockText,
-      getCurrentCellBorderHidden,
-      setStatus,
-    ],
-  );
-
-  const slashCommands = useMemo<SlashCommand[]>(
-    () => [
-      {
-        id: 'heading1',
-        group: 'Basic Blocks',
-        label: 'Heading 1',
-        hint: '⌘1',
-        keywords: ['h1', 'title', 'heading'],
-        run: (instance) => {
-          instance.chain().focus().toggleHeading({ level: 1 }).run();
-        },
-      },
-      {
-        id: 'unorderedList',
-        group: 'Basic Blocks',
-        label: 'Unordered List',
-        hint: '⌥⌘U',
-        keywords: ['list', 'bullet', 'ul'],
-        run: (instance) => {
-          instance.chain().focus().toggleBulletList().run();
-        },
-      },
-      {
-        id: 'orderedList',
-        group: 'Basic Blocks',
-        label: 'Ordered List',
-        hint: '⌥⌘O',
-        keywords: ['list', 'number', 'ol'],
-        run: (instance) => {
-          instance.chain().focus().toggleOrderedList().run();
-        },
-      },
-      {
-        id: 'table',
-        group: 'Advanced Components',
-        label: 'Table',
-        hint: '⌥⌘T',
-        keywords: ['table', 'grid'],
-        run: (instance) => {
-          instance.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run();
-        },
-      },
-      {
-        id: 'codeBlock',
-        group: 'Advanced Components',
-        label: 'Code Block',
-        hint: '⌥⌘C',
-        keywords: ['code', 'pre'],
-        run: (instance) => {
-          instance.chain().focus().toggleCodeBlock().run();
-        },
-      },
-      {
-        id: 'blockquote',
-        group: 'Advanced Components',
-        label: 'Blockquote',
-        hint: '⇧⌘Q',
-        keywords: ['quote', 'blockquote'],
-        run: (instance) => {
-          instance.chain().focus().toggleBlockquote().run();
-        },
-      },
-    ],
-    [],
-  );
-
-  const filteredSlashCommands = useMemo(() => {
-    const query = slashState.query.trim().toLowerCase();
-    const filtered = !query
-      ? slashCommands
-      : slashCommands.filter((cmd) => {
-          const haystack = `${cmd.label} ${cmd.keywords.join(' ')}`.toLowerCase();
-          return haystack.includes(query);
-        });
-    return filtered.slice(0, SLASH_MENU_MAX_ITEMS);
-  }, [slashCommands, slashState.query]);
-
-  useEffect(() => {
-    setSlashSelectedIndex(0);
-  }, [slashState.query, slashState.phase]);
-
-  useEffect(() => {
-    if (!editor) return;
-
-    const isSlashTriggerChar = (value: string | null | undefined) =>
-      value === '/' || value === '／';
-
-    const isInsertTextLikeInput = (inputType: string) =>
-      inputType === 'insertText' ||
-      inputType === 'insertFromComposition';
-
-    const isSlashTriggerEligible = () => {
-      if (!editor.isFocused) return false;
-      if (editor.isActive('codeBlock')) return false;
-      const { selection } = editor.state;
-      if (!selection.empty) return false;
-      const parentText = selection.$from.parent.textContent.trim();
-      return parentText.length === 0;
-    };
-
-    const openSlash = () => {
-      const { selection } = editor.state;
-      const rect = getSafeCoordsAtPos(editor, selection.from);
-      if (!rect) {
-        return;
-      }
-      setSlashState({
-        phase: 'open',
-        query: '',
-        menuX: rect.left,
-        menuY: rect.bottom + 8,
-        inlineX: rect.left + 4,
-        inlineY: rect.top + 2,
-      });
-    };
-
-    const closeSlash = () => {
-      setSlashState((prev) => ({ ...prev, phase: 'idle', query: '' }));
-    };
-
-    const appendSlashQuery = (text: string) => {
-      setSlashState((prev) => ({
-        ...prev,
-        phase: 'searching',
-        query: `${prev.query}${text}`,
-      }));
-    };
-
-    const deleteSlashQuery = () => {
-      setSlashState((prev) => {
-        if (prev.query.length === 0) {
-          return { ...prev, phase: 'idle' };
-        }
-        const nextQuery = prev.query.slice(0, -1);
-        return {
-          ...prev,
-          query: nextQuery,
-          phase: nextQuery.length > 0 ? 'searching' : 'open',
-        };
-      });
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!editor.isFocused) {
-        return;
-      }
-
-      if (event.isComposing || composingRef.current) {
-        return;
-      }
-
-      if (slashState.phase === 'idle') {
-        return;
-      }
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        closeSlash();
-        return;
-      }
-
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        event.stopPropagation();
-        setSlashSelectedIndex((prev) => {
-          if (filteredSlashCommands.length === 0) return 0;
-          return (prev + 1) % filteredSlashCommands.length;
-        });
-        return;
-      }
-
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        event.stopPropagation();
-        setSlashSelectedIndex((prev) => {
-          if (filteredSlashCommands.length === 0) return 0;
-          return (
-            (prev - 1 + filteredSlashCommands.length) %
-            filteredSlashCommands.length
-          );
-        });
-        return;
-      }
-
-      if (event.key === 'Backspace') {
-        event.preventDefault();
-        event.stopPropagation();
-        deleteSlashQuery();
-        return;
-      }
-
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        event.stopPropagation();
-        const command = filteredSlashCommands[slashSelectedIndex];
-        if (command) {
-          setSlashState((prev) => ({ ...prev, phase: 'executing' }));
-          command.run(editor);
-        }
-        closeSlash();
-        return;
-      }
-      if (event.key === 'Tab') {
-        event.preventDefault();
-        event.stopPropagation();
-        setSlashSelectedIndex((prev) => {
-          if (filteredSlashCommands.length === 0) return 0;
-          return (prev + 1) % filteredSlashCommands.length;
-        });
-      }
-    };
-
-    const onBeforeInput = (event: InputEvent) => {
-      if (!editor.isFocused) return;
-
-      if (slashState.phase === 'idle') {
-        if (
-          isInsertTextLikeInput(event.inputType) &&
-          isSlashTriggerChar(event.data)
-        ) {
-          if (!isSlashTriggerEligible()) {
-            return;
-          }
-          event.preventDefault();
-          openSlash();
-        }
-        return;
-      }
-
-      if (event.inputType === 'insertFromComposition' && event.data) {
-        event.preventDefault();
-        appendSlashQuery(event.data);
-        return;
-      }
-
-      if (event.isComposing || composingRef.current) {
-        return;
-      }
-
-      if (event.inputType === 'deleteContentBackward') {
-        event.preventDefault();
-        deleteSlashQuery();
-        return;
-      }
-
-      if (isInsertTextLikeInput(event.inputType) && event.data) {
-        event.preventDefault();
-        appendSlashQuery(event.data);
-      }
-    };
-
-    const onCompositionStart = () => {
-      composingRef.current = true;
-    };
-
-    const onCompositionEnd = (event: CompositionEvent) => {
-      composingRef.current = false;
-      if (!editor.isFocused) return;
-      const data = event.data ?? '';
-
-      if (slashState.phase === 'idle' && isSlashTriggerChar(data)) {
-        const { selection } = editor.state;
-        const parentText = selection.$from.parent.textContent.trim();
-        const triggeredByCommittedChar = parentText === data;
-
-        if (!isSlashTriggerEligible() && !triggeredByCommittedChar) {
-          return;
-        }
-
-        if (triggeredByCommittedChar && selection.from > 0) {
-          editor
-            .chain()
-            .focus()
-            .deleteRange({ from: selection.from - 1, to: selection.from })
-            .run();
-        }
-
-        openSlash();
-      }
-    };
-
-    const onPointerDown = (event: MouseEvent) => {
-      if ((event.target as HTMLElement).closest('.editor-slash-menu')) {
-        return;
-      }
-      closeSlash();
-    };
-
-    let dom: HTMLElement | null = null;
-    try {
-      dom = editor.view.dom as HTMLElement;
-    } catch {
-      return;
-    }
-    if (!dom) {
-      return;
-    }
-    dom.addEventListener('keydown', onKeyDown, true);
-    window.addEventListener('mousedown', onPointerDown);
-    dom.addEventListener('beforeinput', onBeforeInput as EventListener);
-    dom.addEventListener('compositionstart', onCompositionStart);
-    dom.addEventListener('compositionend', onCompositionEnd as EventListener);
-    return () => {
-      dom.removeEventListener('keydown', onKeyDown, true);
-      window.removeEventListener('mousedown', onPointerDown);
-      dom.removeEventListener('beforeinput', onBeforeInput as EventListener);
-      dom.removeEventListener('compositionstart', onCompositionStart);
-      dom.removeEventListener(
-        'compositionend',
-        onCompositionEnd as EventListener,
-      );
-    };
-  }, [
-    editor,
-    filteredSlashCommands,
-    getSafeCoordsAtPos,
-    slashSelectedIndex,
-    slashState.phase,
-  ]);
-
-  if (!activeFile)
-    return (
-      <div className="h-full w-full flex flex-col">
-        {isSidebarVisible ? null : (
-          <header className="editor-header">
-            <div className="editor-header__breadcrumb">
-              <div className="editor-header__breadcrumb-inner">
-                <button
-                  type="button"
-                  className="editor-header__sidebar-btn"
-                  onClick={onToggleSidebar}
-                  aria-label="Expand sidebar"
-                  title="Expand Sidebar"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <rect x="3.5" y="4" width="17" height="16" rx="2" />
-                    <line x1="9.2" y1="4" x2="9.2" y2="20" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="editor-header__actions" />
-          </header>
-        )}
-        <div className="flex items-center justify-center h-full text-gray-400">
-          No file open
-        </div>
-      </div>
+      [editor, contextMenu, copyText, setStatus],
     );
-  if (!editor) return null;
 
-  const breadcrumbItems = buildBreadcrumb(currentPath, activeFile);
+    // Imperative handle
+    useImperativeHandle(
+      ref,
+      () => ({
+        insertDefaultTable: () => {
+          if (!editor) return;
+          editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run();
+        },
+      }),
+      [editor],
+    );
 
-  const handleBreadcrumbClick = (item: BreadcrumbItem) => {
-    setSelectedPath(item.path);
-    if (item.type === 'file') {
-      void openFile(item.path);
-      return;
-    }
-    if (item.type === 'folder' || item.type === 'workspace') {
-      expandNode(item.path);
-    }
-  };
+    // Empty state
+    if (!activeFile)
+      return (
+        <div className="h-full w-full flex flex-col">
+          {isSidebarVisible ? null : (
+            <header className="editor-header">
+              <div className="editor-header__breadcrumb">
+                <div className="editor-header__breadcrumb-inner">
+                  <button
+                    type="button"
+                    className="editor-header__sidebar-btn"
+                    onClick={onToggleSidebar}
+                    aria-label="Expand sidebar"
+                    title="Expand Sidebar"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="3.5" y="4" width="17" height="16" rx="2" />
+                      <line x1="9.2" y1="4" x2="9.2" y2="20" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="editor-header__actions" />
+            </header>
+          )}
+          <div className="flex items-center justify-center h-full text-gray-400">
+            No file open
+          </div>
+        </div>
+      );
+    if (!editor) return null;
+
+    const breadcrumbItems = buildBreadcrumb(currentPath, activeFile);
+
+    const handleBreadcrumbClick = (item: BreadcrumbItem) => {
+      setSelectedPath(item.path);
+      if (item.type === 'file') {
+        void openFile(item.path);
+        return;
+      }
+      if (item.type === 'folder' || item.type === 'workspace') {
+        expandNode(item.path);
+      }
+    };
 
     return (
       <>
         <div className="relative h-full w-full">
           <EditorShell
-          editor={editor}
-          setHasEditorWidgetFocus={setHasEditorWidgetFocus}
-          onEditorContextMenu={openEditorContextMenu}
-          isOutlineOpen={isOutlineOpen}
-          onToggleOutline={() => setIsOutlineOpen((prev) => !prev)}
-          onCloseOutline={() => setIsOutlineOpen(false)}
+            editor={editor}
+            setHasEditorWidgetFocus={setHasEditorWidgetFocus}
+            onEditorContextMenu={openEditorContextMenu}
+            isOutlineOpen={isOutlineOpen}
+            onToggleOutline={() => setIsOutlineOpen((prev) => !prev)}
+            onCloseOutline={() => setIsOutlineOpen(false)}
             breadcrumb={
               <div className="editor-header__breadcrumb-inner">
                 {!isSidebarVisible ? (
@@ -1266,173 +491,67 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
                 />
               </div>
             }
-          outlinePopover={
-            <Outline
-              editor={editor}
-              isOpen={isOutlineOpen}
-              refreshToken={activeFile}
-              onClose={() => setIsOutlineOpen(false)}
-            />
-          }
-          findReplacePanel={
-            <FindReplacePanel
-              isOpen={findReplace.isFindPanelOpen}
-              isReplaceMode={findReplace.isReplaceMode}
-              findQuery={findReplace.findQuery}
-              replaceQuery={findReplace.replaceQuery}
-              findMatchesCount={findReplace.findMatches.length}
-              findCountText={findReplace.findCountText}
-              findProgressText={findReplace.findProgressText}
-              findInputRef={findReplace.findInputRef}
-              replaceInputRef={findReplace.replaceInputRef}
-              onClose={findReplace.closeFindPanel}
-              onFindQueryChange={findReplace.setFindQuery}
-              onReplaceQueryChange={findReplace.setReplaceQuery}
-              onPrev={findReplace.goToPrevFindMatch}
-              onNext={findReplace.goToNextFindMatch}
-              onReplaceOne={findReplace.replaceOneActiveMatch}
-              onReplaceAll={findReplace.replaceAllActiveMatches}
-            />
-          }
-          bubbleMenu={
-            <div
-              className={`editor-bubble-menu ${bubbleMenuPosition.open ? 'is-open' : ''} ${
-                bubbleMenuPosition.placement === 'below' ? 'is-below' : ''
-              }`}
-              style={{
-                left: bubbleMenuPosition.x,
-                top: bubbleMenuPosition.y,
-              }}
-            >
-              <button
-                type="button"
-                className="editor-bubble-menu__button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => editor.chain().focus().toggleBold().run()}
-              >
-                B
-              </button>
-              <button
-                type="button"
-                className="editor-bubble-menu__button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => editor.chain().focus().toggleItalic().run()}
-              >
-                I
-              </button>
-              <button
-                type="button"
-                className="editor-bubble-menu__button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => editor.chain().focus().toggleStrike().run()}
-              >
-                S
-              </button>
-              <button
-                type="button"
-                className="editor-bubble-menu__button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => editor.chain().focus().toggleCode().run()}
-              >
-                {'</>'}
-              </button>
-              <button
-                type="button"
-                className="editor-bubble-menu__button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setStatus('idle', 'Link editor coming soon')}
-              >
-                Link
-              </button>
-              <button
-                type="button"
-                className="editor-bubble-menu__button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setStatus('idle', 'Highlight coming soon')}
-              >
-                Highlight
-              </button>
-            </div>
-          }
-          ghostHint={
-            <div
-              className={`editor-ghost-slash ${ghostHintPosition.open ? 'is-open' : ''}`}
-              style={{
-                left: ghostHintPosition.x,
-                top: ghostHintPosition.y,
-              }}
-            >
-              / 输入以唤出菜单...
-            </div>
-          }
-          slashMenu={
-            <div
-              className={`editor-slash-menu ${slashState.phase !== 'idle' ? 'is-open' : ''}`}
-              style={{ left: slashState.menuX, top: slashState.menuY }}
-            >
-              {filteredSlashCommands.length === 0 ? (
-                <div className="editor-slash-menu__empty">No matching commands</div>
-              ) : (
-                ['Basic Blocks', 'Advanced Components'].map((group) => {
-                  const groupItems = filteredSlashCommands.filter(
-                    (cmd) => cmd.group === group,
-                  );
-                  if (groupItems.length === 0) return null;
-                  return (
-                    <div key={group}>
-                      <div className="editor-slash-menu__group">{group}</div>
-                      {groupItems.map((cmd) => {
-                        const absoluteIndex =
-                          filteredSlashCommands.findIndex(
-                            (item) => item.id === cmd.id,
-                          );
-                        return (
-                          <button
-                            key={cmd.id}
-                            type="button"
-                            className={`editor-slash-menu__item ${
-                              slashSelectedIndex === absoluteIndex ? 'is-active' : ''
-                            }`}
-                            onMouseDown={(event) => event.preventDefault()}
-                            onMouseEnter={() => setSlashSelectedIndex(absoluteIndex)}
-                            onClick={() => {
-                              cmd.run(editor);
-                              setSlashState((prev) => ({
-                                ...prev,
-                                phase: 'idle',
-                                query: '',
-                              }));
-                            }}
-                          >
-                            <span>{cmd.label}</span>
-                            <span className="editor-slash-menu__hint">{cmd.hint}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          }
-        />
-        <div
-          className={`editor-slash-inline ${slashState.phase !== 'idle' ? 'is-open' : ''}`}
-          style={{ left: slashState.inlineX, top: slashState.inlineY }}
-          aria-hidden="true"
-        >
-          <span className="editor-slash-inline__trigger">/</span>
-          {slashState.query ? (
-            <span className="editor-slash-inline__query">{slashState.query}</span>
-          ) : null}
-        </div>
+            outlinePopover={
+              <Outline
+                editor={editor}
+                isOpen={isOutlineOpen}
+                refreshToken={activeFile}
+                onClose={() => setIsOutlineOpen(false)}
+              />
+            }
+            findReplacePanel={
+              <FindReplacePanel
+                isOpen={findReplace.isFindPanelOpen}
+                isReplaceMode={findReplace.isReplaceMode}
+                findQuery={findReplace.findQuery}
+                replaceQuery={findReplace.replaceQuery}
+                findMatchesCount={findReplace.findMatches.length}
+                findCountText={findReplace.findCountText}
+                findProgressText={findReplace.findProgressText}
+                findInputRef={findReplace.findInputRef}
+                replaceInputRef={findReplace.replaceInputRef}
+                onClose={findReplace.closeFindPanel}
+                onFindQueryChange={findReplace.setFindQuery}
+                onReplaceQueryChange={findReplace.setReplaceQuery}
+                onPrev={findReplace.goToPrevFindMatch}
+                onNext={findReplace.goToNextFindMatch}
+                onReplaceOne={findReplace.replaceOneActiveMatch}
+                onReplaceAll={findReplace.replaceAllActiveMatches}
+              />
+            }
+            bubbleMenu={
+              <BubbleMenu
+                position={bubbleMenuPosition}
+                editor={editor}
+                onShowStatus={(msg) => setStatus('idle', msg)}
+              />
+            }
+            ghostHint={<GhostHint position={ghostHintPosition} />}
+            slashMenu={
+              <SlashMenu
+                isOpen={slashState.phase !== 'idle'}
+                x={slashState.menuX}
+                y={slashState.menuY}
+                commands={slashCommands}
+                selectedIndex={slashSelectedIndex}
+                onSelect={executeCommand}
+                onHover={setSlashSelectedIndex}
+              />
+            }
+          />
+          <SlashInline
+            isOpen={slashState.phase !== 'idle'}
+            x={slashState.inlineX}
+            y={slashState.inlineY}
+            query={slashState.query}
+          />
         </div>
         <ContextMenu
-        isOpen={contextMenu.state.isOpen}
-        x={contextMenu.state.x}
-        y={contextMenu.state.y}
-        items={contextMenu.state.items}
-        onClose={contextMenu.close}
+          isOpen={contextMenu.state.isOpen}
+          x={contextMenu.state.x}
+          y={contextMenu.state.y}
+          items={contextMenu.state.items}
+          onClose={contextMenu.close}
         />
       </>
     );
