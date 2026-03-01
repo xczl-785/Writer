@@ -36,7 +36,7 @@ import {
   ChevronRight,
   Folder,
   FolderOpen,
-  FileText,
+  File,
   FilePlus,
   FolderPlus,
   X,
@@ -520,7 +520,7 @@ export function Sidebar() {
                       }`}
                       title={node.path}
                     >
-                      <FileText
+                      <File
                         size={16}
                         className="text-zinc-500 flex-shrink-0"
                       />
@@ -618,7 +618,7 @@ function GhostRow({
         {type === 'directory' ? (
           <Folder size={16} className="text-blue-500" />
         ) : (
-          <FileText size={16} className="text-zinc-500" />
+          <File size={16} className="text-zinc-500" />
         )}
       </span>
       <InlineInput
@@ -826,7 +826,7 @@ function FileTreeNode({
               <Folder size={16} />
             )
           ) : (
-            <FileText size={16} />
+            <File size={16} />
           )}
         </span>
 
