@@ -19,7 +19,7 @@ V5 专项文档已统一归档到：
 ```
 docs/current/
 ├── README.md
-└── TRACKING/
+└── 跟踪/
     ├── 全流程需求跟踪台账.md
     └── design-block-indicator-system.md
 ```
@@ -30,8 +30,8 @@ docs/current/
 
 | 文档 | 用途 | 状态 |
 | --- | --- | --- |
-| `TRACKING/全流程需求跟踪台账.md` | 跨版本需求状态跟踪台账 | 持续维护 |
-| `TRACKING/design-block-indicator-system.md` | 下一版本延续设计专题 | 持续维护 |
+| `跟踪/全流程需求跟踪台账.md` | 跨版本需求状态跟踪台账 | 持续维护 |
+| `跟踪/design-block-indicator-system.md` | 下一版本延续设计专题 | 持续维护 |
 
 ---
 

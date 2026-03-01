@@ -7,7 +7,7 @@
 
 ## 🚀 快速入口
 
-- **需求跟踪**：[docs/current/全流程需求跟踪台账.md](docs/current/全流程需求跟踪台账.md)
+- **需求跟踪**：[docs/current/跟踪/全流程需求跟踪台账.md](docs/current/跟踪/全流程需求跟踪台账.md)
 - **遗留待办**：[docs/current/V3遗留与V4待办.md](docs/current/V3遗留与V4待办.md)
 - **工程蓝图**：[docs/frozen/工程蓝图.md](docs/frozen/工程蓝图.md)
 - **评审记录**：[docs/archive/工程蓝图评审记录.md](docs/archive/工程蓝图评审记录.md)
@@ -30,9 +30,9 @@
 
 > 当前开发阶段工作文档
 
-- [全流程需求跟踪台账](docs/current/全流程需求跟踪台账.md)
+- [全流程需求跟踪台账](docs/current/跟踪/全流程需求跟踪台账.md)
 - [V3遗留与V4待办](docs/current/V3遗留与V4待办.md)
-- [结构感知方案参考](docs/current/design-block-indicator-system.md)
+- [结构感知方案参考](docs/current/跟踪/design-block-indicator-system.md)
 
 ### 02. 归档历史 (Archive)
 
