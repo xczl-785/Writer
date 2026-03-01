@@ -39,8 +39,6 @@ import {
   FileText,
   FilePlus,
   FolderPlus,
-  Pencil,
-  Trash2,
   X,
 } from 'lucide-react';
 
@@ -572,12 +570,12 @@ export function Sidebar() {
                 node={node}
                 level={0}
                 selectedPath={selectedPath}
+                activeFile={activeFile}
                 renamingPath={renamingPath}
                 renameTrigger={renameTrigger}
                 ghostNode={ghostNode}
                 onGhostCommit={commitCreate}
                 onGhostCancel={cancelCreate}
-                onRequestDelete={(target) => void confirmDeleteNode(target)}
                 onOpenContextMenu={openNodeContextMenu}
                 onRequestRenameStart={(path) => setRenamingPath(path)}
                 onRequestRenameEnd={() => setRenamingPath(null)}
@@ -638,12 +636,12 @@ function FileTreeNode({
   node,
   level,
   selectedPath,
+  activeFile,
   renamingPath,
   renameTrigger,
   ghostNode,
   onGhostCommit,
   onGhostCancel,
-  onRequestDelete,
   onOpenContextMenu,
   onRequestRenameStart,
   onRequestRenameEnd,
@@ -652,12 +650,12 @@ function FileTreeNode({
   node: FileNode;
   level: number;
   selectedPath: string | null;
+  activeFile: string | null;
   renamingPath: string | null;
   renameTrigger: number;
   ghostNode: GhostNode | null;
   onGhostCommit: (name: string, trigger: InlineCommitTrigger) => Promise<void>;
   onGhostCancel: () => void;
-  onRequestDelete: (node: FileNode) => void;
   onOpenContextMenu: (event: React.MouseEvent, node: FileNode) => void;
   onRequestRenameStart: (path: string) => void;
   onRequestRenameEnd: () => void;
@@ -668,7 +666,12 @@ function FileTreeNode({
   const [renameDraft, setRenameDraft] = useState(getDisplayName(node));
   const isDirectory = node.type === 'directory';
   const hasChildren = node.children && node.children.length > 0;
-  const isSelected = selectedPath === node.path;
+  const isFocused = selectedPath === node.path;
+  const isActiveFile = node.type === 'file' && activeFile === node.path;
+  const isActiveParent =
+    isDirectory &&
+    Boolean(activeFile) &&
+    getParentPath(activeFile as string) === node.path;
 
   useEffect(() => {
     if (renamingPath === node.path) {
@@ -696,13 +699,6 @@ function FileTreeNode({
     } else {
       void openFile(node.path);
     }
-  };
-
-  const startRename = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onRequestRenameStart(node.path);
-    setRenameDraft(getDisplayName(node));
-    setIsRenaming(true);
   };
 
   const commitRename = async (
@@ -766,22 +762,27 @@ function FileTreeNode({
     }
   };
 
-  const requestDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onRequestDelete(node);
-  };
-
   return (
     <div>
       <div
-        className={`group relative flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer text-sm text-zinc-700 transition-colors duration-150 ease-in-out ${
-          isSelected ? 'bg-blue-50/50' : 'hover:bg-zinc-200/50'
+        className={`group relative flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer text-sm transition-colors duration-150 ease-in-out ${
+          isDirectory
+            ? isFocused
+              ? 'bg-zinc-200 text-zinc-800'
+              : isActiveParent
+                ? 'text-zinc-500'
+                : 'text-zinc-300 hover:bg-zinc-200/40'
+            : isActiveFile && isFocused
+              ? 'bg-blue-50 text-zinc-900'
+              : isFocused
+                ? 'bg-zinc-200 text-zinc-800'
+                : 'text-zinc-700 hover:bg-zinc-200/50'
         }`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
         onClick={handleClick}
         onContextMenu={(event) => onOpenContextMenu(event, node)}
       >
-        {isSelected ? (
+        {isActiveFile ? (
           <span
             className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-blue-500"
             aria-hidden="true"
@@ -789,7 +790,13 @@ function FileTreeNode({
         ) : null}
         {isDirectory ? (
           <span
-            className="text-zinc-400 group-hover:text-zinc-600 transition-colors flex-shrink-0"
+            className={`transition-colors flex-shrink-0 ${
+              isFocused
+                ? 'text-zinc-800'
+                : isActiveParent
+                  ? 'text-zinc-500'
+                  : 'text-zinc-300 group-hover:text-zinc-500'
+            }`}
             aria-hidden="true"
           >
             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -797,15 +804,29 @@ function FileTreeNode({
         ) : (
           <span className="w-3.5" aria-hidden="true" />
         )}
-        <span className="text-zinc-400 group-hover:text-zinc-600 transition-colors flex-shrink-0">
+        <span
+          className={`transition-colors flex-shrink-0 ${
+            isDirectory
+              ? isFocused
+                ? 'text-zinc-800'
+                : isActiveParent
+                  ? 'text-zinc-500'
+                  : 'text-zinc-300 group-hover:text-zinc-500'
+              : isActiveFile
+                ? 'text-blue-500'
+                : isFocused
+                  ? 'text-zinc-700'
+                  : 'text-zinc-500'
+          }`}
+        >
           {isDirectory ? (
             isExpanded ? (
-              <FolderOpen size={16} className="text-blue-500" />
+              <FolderOpen size={16} />
             ) : (
-              <Folder size={16} className="text-blue-500" />
+              <Folder size={16} />
             )
           ) : (
-            <FileText size={16} className="text-zinc-500" />
+            <FileText size={16} />
           )}
         </span>
 
@@ -823,30 +844,23 @@ function FileTreeNode({
         ) : (
           <span
             className={`truncate flex-1 leading-none py-0.5 ${
-              isSelected ? 'font-medium text-zinc-900' : ''
+              isDirectory
+                ? isFocused
+                  ? 'font-semibold text-zinc-800'
+                  : isActiveParent
+                    ? 'font-medium text-zinc-500'
+                    : 'text-zinc-500'
+                : isActiveFile
+                  ? isFocused
+                    ? 'font-semibold text-zinc-900'
+                    : 'font-medium text-zinc-900'
+                  : isFocused
+                    ? 'font-medium text-zinc-800'
+                    : ''
             }`}
           >
             {getDisplayName(node)}
           </span>
-        )}
-
-        {!isRenaming && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-            <button
-              onClick={startRename}
-              className="p-0.5 hover:bg-zinc-300 rounded text-zinc-500 hover:text-zinc-700"
-              title="Rename"
-            >
-              <Pencil size={14} />
-            </button>
-            <button
-              onClick={requestDelete}
-              className="p-0.5 hover:bg-zinc-300 rounded text-red-400 hover:text-red-600"
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
         )}
       </div>
 
@@ -867,12 +881,12 @@ function FileTreeNode({
                 node={child}
                 level={level + 1}
                 selectedPath={selectedPath}
+                activeFile={activeFile}
                 renamingPath={renamingPath}
                 renameTrigger={renameTrigger}
                 ghostNode={ghostNode}
                 onGhostCommit={onGhostCommit}
                 onGhostCancel={onGhostCancel}
-                onRequestDelete={onRequestDelete}
                 onOpenContextMenu={onOpenContextMenu}
                 onRequestRenameStart={onRequestRenameStart}
                 onRequestRenameEnd={onRequestRenameEnd}
