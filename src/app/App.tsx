@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Editor } from '../ui/editor/Editor';
 import { StateDebug } from '../ui/StateDebug';
@@ -25,6 +25,7 @@ import './App.css';
 
 function App() {
   const { currentPath } = useWorkspaceStore();
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const isClosingRef = useRef(false);
   const isProgrammaticCloseRef = useRef(false);
   const forceCloseRequestedRef = useRef(false);
@@ -35,6 +36,10 @@ function App() {
   useNativeMenuBridge(() => {
     useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
   });
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarVisible((prev) => !prev);
+  }, []);
 
   useEffect(() => {
     currentPathRef.current = currentPath;
@@ -87,26 +92,69 @@ function App() {
         }
       }),
       menuCommandBus.register('menu.file.new', () => {
+        if (!isSidebarVisible) {
+          setIsSidebarVisible(true);
+        }
         window.dispatchEvent(new CustomEvent('writer:sidebar-command', { detail: { id: 'new-file' } }));
+      }),
+      menuCommandBus.register('menu.file.save_as', () => {
+        useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+      }),
+      menuCommandBus.register('menu.file.export_pdf', () => {
+        useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+      }),
+      menuCommandBus.register('menu.file.export_html', () => {
+        useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+      }),
+      menuCommandBus.register('menu.file.export_image', () => {
+        useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
       }),
       menuCommandBus.register('menu.edit.undo', () => emitEditorCommand('edit.undo')),
       menuCommandBus.register('menu.edit.redo', () => emitEditorCommand('edit.redo')),
+      menuCommandBus.register('menu.edit.cut', () => emitEditorCommand('edit.cut')),
+      menuCommandBus.register('menu.edit.copy', () => emitEditorCommand('edit.copy')),
+      menuCommandBus.register('menu.edit.paste', () => emitEditorCommand('edit.paste')),
       menuCommandBus.register('menu.edit.select_all', () => emitEditorCommand('edit.select_all')),
       menuCommandBus.register('menu.edit.find', () => emitEditorCommand('edit.find')),
       menuCommandBus.register('menu.edit.replace', () => emitEditorCommand('edit.replace')),
       menuCommandBus.register('menu.format.bold', () => emitEditorCommand('format.bold')),
       menuCommandBus.register('menu.format.italic', () => emitEditorCommand('format.italic')),
       menuCommandBus.register('menu.format.inline_code', () => emitEditorCommand('format.inline_code')),
+      menuCommandBus.register('menu.format.strike', () => emitEditorCommand('format.strike')),
+      menuCommandBus.register('menu.format.image', () => emitEditorCommand('format.image')),
+      menuCommandBus.register('menu.format.link', () => emitEditorCommand('format.link')),
+      menuCommandBus.register('menu.format.underline', () => {
+        useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+      }),
+      menuCommandBus.register('menu.format.highlight', () => {
+        useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+      }),
       menuCommandBus.register('menu.paragraph.heading_1', () => emitEditorCommand('paragraph.heading_1')),
       menuCommandBus.register('menu.paragraph.heading_2', () => emitEditorCommand('paragraph.heading_2')),
       menuCommandBus.register('menu.paragraph.heading_3', () => emitEditorCommand('paragraph.heading_3')),
+      menuCommandBus.register('menu.paragraph.heading_4', () => emitEditorCommand('paragraph.heading_4')),
+      menuCommandBus.register('menu.paragraph.heading_5', () => emitEditorCommand('paragraph.heading_5')),
+      menuCommandBus.register('menu.paragraph.heading_6', () => emitEditorCommand('paragraph.heading_6')),
       menuCommandBus.register('menu.paragraph.blockquote', () => emitEditorCommand('paragraph.blockquote')),
       menuCommandBus.register('menu.paragraph.code_block', () => emitEditorCommand('paragraph.code_block')),
       menuCommandBus.register('menu.paragraph.unordered_list', () => emitEditorCommand('paragraph.unordered_list')),
       menuCommandBus.register('menu.paragraph.ordered_list', () => emitEditorCommand('paragraph.ordered_list')),
       menuCommandBus.register('menu.paragraph.table', () => emitEditorCommand('paragraph.table')),
+      menuCommandBus.register('menu.paragraph.task_list', () => emitEditorCommand('paragraph.task_list')),
+      menuCommandBus.register('menu.paragraph.horizontal_rule', () =>
+        emitEditorCommand('paragraph.horizontal_rule'),
+      ),
+      menuCommandBus.register('menu.paragraph.math_block', () => {
+        useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+      }),
       menuCommandBus.register('menu.view.outline', () => emitEditorCommand('view.outline')),
       menuCommandBus.register('menu.view.toggle_sidebar', () => {
+        toggleSidebar();
+      }),
+      menuCommandBus.register('menu.view.focus_mode', () => {
+        useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+      }),
+      menuCommandBus.register('menu.view.source_mode', () => {
         useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
       }),
     ];
@@ -114,7 +162,7 @@ function App() {
     return () => {
       unregister.forEach((fn) => fn());
     };
-  }, []);
+  }, [isSidebarVisible, toggleSidebar]);
 
   // Handle window close requests (Tauri)
   useEffect(() => {
@@ -217,7 +265,7 @@ function App() {
   return (
     <div className="app-container h-screen flex flex-col">
       <div className="flex-grow flex overflow-hidden">
-        <Sidebar />
+        {isSidebarVisible ? <Sidebar onToggleVisibility={toggleSidebar} /> : null}
 
         {/* Main Editor Area */}
         <main className="flex-1 flex flex-col relative min-w-0 h-full">

@@ -98,7 +98,11 @@ function FolderIcon({ className, filled = false }: FolderIconProps) {
   );
 }
 
-export function Sidebar() {
+type SidebarProps = {
+  onToggleVisibility?: () => void;
+};
+
+export function Sidebar({ onToggleVisibility }: SidebarProps) {
   const { nodes, selectedPath, setSelectedPath } = useFileTreeStore();
   const { currentPath, activeFile } = useWorkspaceStore();
   const contextMenu = useContextMenu();
@@ -449,7 +453,7 @@ export function Sidebar() {
           </button>
           <button
             onClick={() => {
-              // Placeholder: collapse sidebar behavior will be wired later.
+              onToggleVisibility?.();
             }}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
             title="Collapse Sidebar"

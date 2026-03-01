@@ -23,6 +23,7 @@ import { ErrorService } from '../../services/error/ErrorService';
 import { MarkdownService } from '../../services/markdown/MarkdownService';
 import { AutosaveService } from '../../services/autosave/AutosaveService';
 import { ImageResolver } from '../../services/images/ImageResolver';
+import { t } from '../../i18n';
 import {
   DEFAULT_TABLE_INSERT,
   FIND_MATCH_LIMIT,
@@ -474,6 +475,36 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   useEffect(() => {
     if (!editor) return;
 
+    const runEditorCommand = (execute: () => boolean): void => {
+      const ran = execute();
+      if (!ran) {
+        setStatus('error', t('status.menu.unavailable'));
+      }
+    };
+
+    const execClipboardCommand = async (
+      command: 'cut' | 'copy' | 'paste',
+    ): Promise<void> => {
+      editor.chain().focus().run();
+
+      if (document.execCommand(command)) {
+        return;
+      }
+
+      if (command !== 'paste') {
+        setStatus('error', t('status.menu.clipboardDenied'));
+        return;
+      }
+
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) return;
+        runEditorCommand(() => editor.chain().focus().insertContent(text).run());
+      } catch {
+        setStatus('error', t('status.menu.clipboardDenied'));
+      }
+    };
+
     const onMenuCommand = (event: Event) => {
       const detail = (event as CustomEvent<{ id?: string }>).detail;
       const id = detail?.id;
@@ -481,13 +512,22 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
       switch (id) {
         case 'edit.undo':
-          editor.chain().focus().undo().run();
+          runEditorCommand(() => editor.chain().focus().undo().run());
           return;
         case 'edit.redo':
-          editor.chain().focus().redo().run();
+          runEditorCommand(() => editor.chain().focus().redo().run());
+          return;
+        case 'edit.cut':
+          void execClipboardCommand('cut');
+          return;
+        case 'edit.copy':
+          void execClipboardCommand('copy');
+          return;
+        case 'edit.paste':
+          void execClipboardCommand('paste');
           return;
         case 'edit.select_all':
-          editor.chain().focus().selectAll().run();
+          runEditorCommand(() => editor.chain().focus().selectAll().run());
           return;
         case 'edit.find':
           findReplace.openFindPanel('find');
@@ -496,37 +536,73 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
           findReplace.openFindPanel('replace');
           return;
         case 'format.bold':
-          editor.chain().focus().toggleBold().run();
+          runEditorCommand(() => editor.chain().focus().toggleBold().run());
           return;
         case 'format.italic':
-          editor.chain().focus().toggleItalic().run();
+          runEditorCommand(() => editor.chain().focus().toggleItalic().run());
           return;
         case 'format.inline_code':
-          editor.chain().focus().toggleCode().run();
+          runEditorCommand(() => editor.chain().focus().toggleCode().run());
+          return;
+        case 'format.strike':
+          runEditorCommand(() => editor.chain().focus().toggleStrike().run());
+          return;
+        case 'format.link':
+        case 'format.image':
+          setStatus('idle', t('status.menu.todo'));
           return;
         case 'paragraph.heading_1':
-          editor.chain().focus().toggleHeading({ level: 1 }).run();
+          runEditorCommand(() =>
+            editor.chain().focus().toggleHeading({ level: 1 }).run(),
+          );
           return;
         case 'paragraph.heading_2':
-          editor.chain().focus().toggleHeading({ level: 2 }).run();
+          runEditorCommand(() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run(),
+          );
           return;
         case 'paragraph.heading_3':
-          editor.chain().focus().toggleHeading({ level: 3 }).run();
+          runEditorCommand(() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run(),
+          );
+          return;
+        case 'paragraph.heading_4':
+          runEditorCommand(() =>
+            editor.chain().focus().toggleHeading({ level: 4 }).run(),
+          );
+          return;
+        case 'paragraph.heading_5':
+          runEditorCommand(() =>
+            editor.chain().focus().toggleHeading({ level: 5 }).run(),
+          );
+          return;
+        case 'paragraph.heading_6':
+          runEditorCommand(() =>
+            editor.chain().focus().toggleHeading({ level: 6 }).run(),
+          );
           return;
         case 'paragraph.blockquote':
-          editor.chain().focus().toggleBlockquote().run();
+          runEditorCommand(() => editor.chain().focus().toggleBlockquote().run());
           return;
         case 'paragraph.code_block':
-          editor.chain().focus().toggleCodeBlock().run();
+          runEditorCommand(() => editor.chain().focus().toggleCodeBlock().run());
           return;
         case 'paragraph.unordered_list':
-          editor.chain().focus().toggleBulletList().run();
+          runEditorCommand(() => editor.chain().focus().toggleBulletList().run());
           return;
         case 'paragraph.ordered_list':
-          editor.chain().focus().toggleOrderedList().run();
+          runEditorCommand(() => editor.chain().focus().toggleOrderedList().run());
+          return;
+        case 'paragraph.task_list':
+          runEditorCommand(() => editor.chain().focus().toggleTaskList().run());
+          return;
+        case 'paragraph.horizontal_rule':
+          runEditorCommand(() => editor.chain().focus().setHorizontalRule().run());
           return;
         case 'paragraph.table':
-          editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run();
+          runEditorCommand(() =>
+            editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run(),
+          );
           return;
         case 'view.outline':
           setIsOutlineOpen((prev) => !prev);
@@ -542,7 +618,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         'writer:editor-command',
         onMenuCommand as EventListener,
       );
-  }, [editor, findReplace]);
+  }, [editor, findReplace, setStatus]);
 
   useImperativeHandle(
     ref,
@@ -561,7 +637,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         await navigator.clipboard.writeText(text);
         setStatus('idle', successMessage);
       } catch {
-        setStatus('error', 'Clipboard access denied');
+        setStatus('error', t('status.menu.clipboardDenied'));
       }
     },
     [setStatus],
