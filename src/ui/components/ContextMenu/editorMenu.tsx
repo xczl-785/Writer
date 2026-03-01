@@ -27,6 +27,10 @@ export interface TableContextMenuActions {
   onSplitCell: () => void;
   onToggleHeaderRow: () => void;
   onToggleHeaderColumn: () => void;
+  onAlignLeft: () => void;
+  onAlignCenter: () => void;
+  onAlignRight: () => void;
+  onToggleCellBorder: () => void;
   onDeleteTable: () => void;
   canInsertRowAbove: () => boolean;
   canInsertRowBelow: () => boolean;
@@ -38,6 +42,10 @@ export interface TableContextMenuActions {
   canSplitCell: () => boolean;
   canToggleHeaderRow: () => boolean;
   canToggleHeaderColumn: () => boolean;
+  canAlignLeft: () => boolean;
+  canAlignCenter: () => boolean;
+  canAlignRight: () => boolean;
+  canToggleCellBorder: () => boolean;
   canDeleteTable: () => boolean;
 }
 
@@ -182,6 +190,35 @@ export function getTableContextMenuItems(
       icon: <Type size={14} />,
       action: actions.onToggleHeaderColumn,
       disabled: () => !actions.canToggleHeaderColumn(),
+    },
+    divider(),
+    {
+      id: 'align-left',
+      label: 'Align Left',
+      icon: <Type size={14} />,
+      action: actions.onAlignLeft,
+      disabled: () => !actions.canAlignLeft(),
+    },
+    {
+      id: 'align-center',
+      label: 'Align Center',
+      icon: <Type size={14} />,
+      action: actions.onAlignCenter,
+      disabled: () => !actions.canAlignCenter(),
+    },
+    {
+      id: 'align-right',
+      label: 'Align Right',
+      icon: <Type size={14} />,
+      action: actions.onAlignRight,
+      disabled: () => !actions.canAlignRight(),
+    },
+    {
+      id: 'toggle-cell-border',
+      label: 'Toggle Cell Border',
+      icon: <Table2 size={14} />,
+      action: actions.onToggleCellBorder,
+      disabled: () => !actions.canToggleCellBorder(),
     },
     divider(),
     {
