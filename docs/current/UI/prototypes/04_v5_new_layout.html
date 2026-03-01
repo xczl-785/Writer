@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writer V5 Prototype - New Layout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- 仅为原型引入的基础样式 -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col h-screen antialiased text-zinc-800 bg-white">
+
+    <!-- 主体内容区 (左右分栏) -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- 侧边栏 (Sidebar) - 文件树 -->
+        <aside class="w-64 bg-zinc-50 border-r border-zinc-200 flex flex-col shrink-0">
+            <!-- Explorer Header -->
+            <div class="h-10 flex items-center justify-between px-3 border-b border-transparent">
+                <span class="text-[11px] font-bold text-zinc-400 tracking-widest">FILES</span>
+                <div class="flex space-x-1">
+                    <!-- 放大了图标和热区 -->
+                    <button
+                        class="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
+                        title="New File">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <path d="M14 2v6h6"></path>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                    </button>
+                    <button
+                        class="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
+                        title="New Folder">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                            </path>
+                            <line x1="12" y1="11" x2="12" y2="17"></line>
+                            <line x1="9" y1="14" x2="15" y2="14"></line>
+                        </svg>
+                    </button>
+                    <button
+                        class="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
+                        title="Collapse All">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 搜索框 -->
+            <div class="px-3 py-2 border-b border-zinc-200">
+                <div class="relative">
+                    <svg class="absolute left-2 top-2 text-zinc-400" width="14" height="14" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" placeholder="Search files..."
+                        class="w-full bg-white border border-zinc-200 rounded-md py-1.5 pl-8 pr-3 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-zinc-400">
+                </div>
+            </div>
+
+            <!-- 文件列表 -->
+            <div class="flex-1 overflow-y-auto py-2">
+                <!-- 文件夹 (展开状态) -->
+                <div
+                    class="flex items-center px-3 py-1.5 cursor-pointer select-none group text-zinc-500 hover:text-zinc-900 transition-colors">
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"></path>
+                    </svg>
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z">
+                        </path>
+                    </svg>
+                    <span class="text-sm font-medium">projects</span>
+                </div>
+
+                <!-- 子文件 (缩进) -->
+                <div
+                    class="flex items-center px-3 py-1.5 ml-6 mt-0.5 cursor-pointer select-none group relative bg-blue-50/50">
+                    <div class="absolute left-[-24px] top-1 bottom-1 w-[3px] bg-blue-500 rounded-r-full"></div>
+                    <svg class="w-4 h-4 text-blue-500 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    </svg>
+                    <span class="text-sm font-medium text-zinc-900 truncate">11111.md</span>
+                </div>
+
+                <!-- 文件夹 (收起状态) -->
+                <div
+                    class="flex items-center px-3 py-1.5 mt-2 cursor-pointer select-none group text-zinc-400 hover:text-zinc-600">
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6"></path>
+                    </svg>
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="text-sm">archive</span>
+                </div>
+
+                <div class="flex items-center px-3 py-1.5 cursor-pointer hover:bg-zinc-100/50 select-none group mt-1">
+                    <svg class="w-4 h-4 text-zinc-400 mr-2 ml-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    </svg>
+                    <span class="text-sm text-zinc-500 group-hover:text-zinc-900 truncate">Design_System.md</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 编辑器主区域 -->
+        <main class="flex-1 flex flex-col bg-white overflow-hidden relative">
+
+            <!-- 新版顶栏：容纳面包屑与大纲按钮 -->
+            <header
+                class="h-12 flex items-center px-6 justify-between shrink-0 select-none group hover:bg-white transition-colors z-10">
+                <!-- Mac红绿灯占位 (如果此处非全屏，可适当留白) + 面包屑 -->
+                <div class="flex items-center text-sm text-zinc-400">
+                    <span class="hover:text-zinc-600 cursor-pointer">untitled folder</span>
+                    <span class="mx-2 text-zinc-300">/</span>
+                    <span class="font-medium text-zinc-800">11111.md</span>
+                </div>
+
+                <!-- 右侧操作组 (仅大纲按钮，插入命令已下沉至编辑器内) -->
+                <div class="flex items-center relative">
+                    <!-- 大纲触发按钮 (Outline) -->
+                    <button id="outline-toggle"
+                        class="p-1.5 rounded-md text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 transition-colors"
+                        title="Toggle Outline (⇧⌘O)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                    </button>
+
+                    <!-- 大纲弹出层 (Popover) -->
+                    <div id="outline-popover"
+                        class="hidden absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-zinc-200 z-50 flex flex-col overflow-hidden cursor-default transition-all"
+                        style="max-height: 480px;">
+                        <div
+                            class="px-4 py-3 border-b border-zinc-100 bg-zinc-50/50 flex justify-between items-center shrink-0">
+                            <span class="text-[11px] font-bold text-zinc-500 tracking-widest uppercase">Document
+                                Outline</span>
+                            <span class="text-[10px] text-zinc-400">4 Headings</span>
+                        </div>
+                        <div class="overflow-y-auto p-2 flex-1 scrollbar-hide">
+                            <div
+                                class="px-2 py-1.5 text-sm text-zinc-800 hover:bg-zinc-100 rounded-md cursor-pointer font-bold transition-colors">
+                                第一部分：核心方案</div>
+                            <div
+                                class="px-2 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100 rounded-md cursor-pointer ml-3 border-l-2 border-zinc-100 pl-3 transition-colors">
+                                1.1 幽灵斜杠设计</div>
+                            <div
+                                class="px-2 py-1.5 text-sm text-blue-700 bg-blue-50/50 rounded-md cursor-pointer ml-3 border-l-2 border-blue-500 pl-3 font-medium transition-colors">
+                                1.2 用户认知模型</div>
+                            <div
+                                class="px-2 py-1.5 text-sm text-zinc-500 hover:bg-zinc-100 rounded-md cursor-pointer ml-6 border-l-2 border-zinc-100 pl-3 transition-colors">
+                                焦点不抢夺规则</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 纯净文本输入区 -->
+            <div class="flex-1 overflow-y-auto px-[10%] py-12 relative cursor-text">
+                <div class="max-w-3xl mx-auto relative editor-content">
+                    <h1 class="text-4xl font-bold text-zinc-900 mb-6">11111</h1>
+                    <p class="text-base text-zinc-800 mb-4 leading-relaxed">
+                        测<span class="bg-blue-100 text-blue-900 px-0.5">试文</span>本
+                    </p>
+
+                    <!-- 空行状态：实现 Ghost Slash 提示 -->
+                    <div class="relative group mt-8">
+                        <div class="flex items-center">
+                            <span class="h-6 w-[2.5px] bg-blue-500 animate-pulse mr-1"></span>
+                            <span id="ghost-hint" class="text-zinc-300 pointer-events-none select-none italic">/
+                                输入以唤出菜单...</span>
+                        </div>
+
+                        <!-- 模拟弹出 Slash 菜单 (Popover) -->
+                        <div id="slash-menu"
+                            class="hidden absolute top-full left-0 mt-2 w-64 bg-zinc-900 text-white rounded-lg shadow-2xl z-50 border border-zinc-800 overflow-hidden flex flex-col p-1">
+
+                            <div class="px-2 py-1 max-h-80 overflow-y-auto flex flex-col">
+                                <span
+                                    class="px-2 py-1.5 text-[10px] text-zinc-500 font-bold tracking-widest uppercase">Basic
+                                    Blocks</span>
+                                <div
+                                    class="px-2 py-1.5 rounded-md bg-zinc-800 flex items-center justify-between cursor-pointer">
+                                    <div class="flex items-center text-sm"><span
+                                            class="mr-2 text-zinc-500 font-mono">#</span> Heading 1</div>
+                                    <span class="text-[10px] opacity-40">⌘1</span>
+                                </div>
+                                <div
+                                    class="px-2 py-1.5 rounded-md hover:bg-zinc-800/80 flex items-center justify-between cursor-pointer mt-0.5">
+                                    <div class="flex items-center text-sm text-zinc-300"><span
+                                            class="mr-2 text-zinc-500 font-mono">-</span> Unordered List</div>
+                                    <span class="text-[10px] opacity-40">⌥⌘U</span>
+                                </div>
+
+                                <span
+                                    class="px-2 py-1.5 mt-2 text-[10px] text-zinc-500 font-bold tracking-widest uppercase">Advanced
+                                    Components</span>
+                                <div
+                                    class="px-2 py-1.5 rounded-md hover:bg-zinc-800/80 flex items-center justify-between cursor-pointer mt-0.5">
+                                    <div class="flex items-center text-sm text-zinc-300"><svg
+                                            class="w-3.5 h-3.5 mr-2 opacity-60" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                                            <line x1="3" y1="15" x2="21" y2="15"></line>
+                                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                                        </svg> Table</div>
+                                    <span class="text-[10px] opacity-40">⌥⌘T</span>
+                                </div>
+                                <div
+                                    class="px-2 py-1.5 rounded-md hover:bg-zinc-800/80 flex items-center justify-between cursor-pointer mt-0.5">
+                                    <div class="flex items-center text-sm text-zinc-300"><svg
+                                            class="w-3.5 h-3.5 mr-2 opacity-60" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <polyline points="16 18 22 12 16 6"></polyline>
+                                            <polyline points="8 6 2 12 8 18"></polyline>
+                                        </svg> Code Block</div>
+                                    <span class="text-[10px] opacity-40">⌥⌘C</span>
+                                </div>
+                                <div
+                                    class="px-2 py-1.5 rounded-md hover:bg-zinc-800/80 flex items-center justify-between cursor-pointer mt-0.5">
+                                    <div class="flex items-center text-sm text-zinc-300"><svg
+                                            class="w-3.5 h-3.5 mr-2 opacity-60" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z">
+                                            </path>
+                                        </svg> Blockquote</div>
+                                    <span class="text-[10px] opacity-40">⇧⌘Q</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 预设的 Bubble Menu (模拟划词态) -->
+                    <div class="absolute bg-zinc-900 text-white shadow-2xl rounded-lg flex items-center p-1 border border-zinc-800 z-50 select-none animate-in fade-in zoom-in-95 duration-200"
+                        style="left: 40px; top: 40px;">
+                        <button class="p-1 px-2.5 rounded hover:bg-zinc-800 text-white font-bold text-sm"
+                            title="加粗 (⌘B)">B</button>
+                        <button class="p-1 px-2.5 rounded hover:bg-zinc-800 text-zinc-400 font-serif italic text-sm"
+                            title="斜体 (⌘I)">I</button>
+                        <button class="p-1 px-2.5 rounded hover:bg-zinc-800 text-zinc-400 line-through text-sm"
+                            title="删除线 (⇧⌘X)">S</button>
+                        <div class="w-[1px] h-4 bg-zinc-800 mx-1"></div>
+                        <button
+                            class="p-1 px-1.5 rounded hover:bg-zinc-800 text-zinc-400 text-[10px] font-mono border border-zinc-800"
+                            title="行内代码 (⌘`)">&lt;/&gt;</button>
+                        <button class="p-1 px-1.5 rounded hover:bg-zinc-800 text-zinc-400" title="高亮标记 (⇧⌘H)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                            </svg>
+                        </button>
+                        <div class="w-[1px] h-4 bg-zinc-800 mx-1"></div>
+                        <button class="p-1 px-2 rounded hover:bg-zinc-800 text-blue-400 text-xs font-semibold"
+                            title="超链接 (⌘K)">Link</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 新版独立全局状态底条 -->
+    <footer
+        class="h-7 border-t border-zinc-200 bg-white flex items-center justify-between px-3 shrink-0 text-xs text-zinc-400 select-none z-50 relative">
+        <div class="flex items-center space-x-2">
+            <!-- 指示灯 (当前为静默的已保存状态) -->
+            <div class="w-1.5 h-1.5 rounded-full bg-green-500 opacity-30"></div>
+            <span class="truncate max-w-[200px]">11111.md</span>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div class="hidden sm:flex items-center space-x-4">
+                <span class="hover:text-zinc-600 cursor-pointer transition-colors">150 words</span>
+                <span class="hover:text-zinc-600 cursor-pointer transition-colors">UTF-8</span>
+            </div>
+            <span
+                class="text-green-500/50 bg-green-50/50 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Sync</span>
+        </div>
+    </footer>
+
+    <!-- 模拟 V5 核心交互脚本 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('outline-toggle');
+            const popover = document.getElementById('outline-popover');
+            const slashMenu = document.getElementById('slash-menu');
+            const ghostHint = document.getElementById('ghost-hint');
+
+            // 1. 大纲开关逻辑
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                popover.classList.toggle('hidden');
+                popover.classList.toggle('flex');
+            });
+
+            // 2. 模拟键盘输入 Slash 唤出菜单
+            window.addEventListener('keydown', (e) => {
+                if (e.key === '/') {
+                    // 模拟输入了 /
+                    ghostHint.innerText = '/';
+                    ghostHint.classList.remove('text-zinc-300');
+                    ghostHint.classList.add('text-blue-500');
+                    slashMenu.classList.remove('hidden');
+                    slashMenu.classList.add('flex'); // Ensure it's flex for display
+                }
+                if (e.key === 'Escape') {
+                    slashMenu.classList.add('hidden');
+                    slashMenu.classList.remove('flex');
+                    ghostHint.innerText = '/ 输入以唤出菜单...';
+                    ghostHint.classList.add('text-zinc-300');
+                    ghostHint.classList.remove('text-blue-500');
+                    popover.classList.add('hidden');
+                    popover.classList.remove('flex');
+                }
+            });
+
+            // 点击外部任意区域收起
+            document.addEventListener('click', () => {
+                popover.classList.add('hidden');
+                popover.classList.remove('flex');
+                slashMenu.classList.add('hidden');
+                slashMenu.classList.remove('flex');
+                ghostHint.innerText = '/ 输入以唤出菜单...';
+                ghostHint.classList.add('text-zinc-300');
+                ghostHint.classList.remove('text-blue-500');
+            });
+
+            [popover, slashMenu].forEach(el => {
+                el.addEventListener('click', e => e.stopPropagation());
+            });
+        });
+    </script>
+</body>
+
+</html>
