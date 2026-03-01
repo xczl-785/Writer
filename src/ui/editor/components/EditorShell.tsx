@@ -35,14 +35,14 @@ export function EditorShell({
   useEffect(() => {
     if (!isOutlineOpen) return;
 
-    const onPointerDown = (event: globalThis.MouseEvent) => {
+    const onPointerDown = (event: PointerEvent) => {
       if (!outlineAreaRef.current?.contains(event.target as Node)) {
         onCloseOutline();
       }
     };
 
-    window.addEventListener('mousedown', onPointerDown);
-    return () => window.removeEventListener('mousedown', onPointerDown);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, [isOutlineOpen, onCloseOutline]);
 
   return (

@@ -14,6 +14,10 @@ describe('Outline behavior', () => {
     join(currentDir, '..', '..', 'editor', 'Editor.tsx'),
     'utf-8',
   );
+  const editorShellTsx = readFileSync(
+    join(currentDir, '..', '..', 'editor', 'components', 'EditorShell.tsx'),
+    'utf-8',
+  );
 
   it('refreshes outline on transaction and file refresh token', () => {
     expect(extractorTs).toContain("editor.on('transaction', scheduleUpdate)");
@@ -32,5 +36,14 @@ describe('Outline behavior', () => {
     expect(editorTsx).toContain('setIsOutlineOpen(false);');
     expect(editorTsx).toContain('}, [activeFile]);');
     expect(editorTsx).toContain('refreshToken={activeFile}');
+  });
+
+  it('uses pointerdown capture for robust outside-click close', () => {
+    expect(editorShellTsx).toContain(
+      "document.addEventListener('pointerdown', onPointerDown, true)",
+    );
+    expect(editorShellTsx).toContain(
+      "document.removeEventListener('pointerdown', onPointerDown, true)",
+    );
   });
 });
