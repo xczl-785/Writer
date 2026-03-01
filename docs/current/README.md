@@ -38,4 +38,4 @@ docs/current/
 ## 归档入口
 
 - V5 归档：`docs/archive/2026-03-01_v5-closeout/README.md`
-
+- 全局资产：`docs/全局资产/README.md`
