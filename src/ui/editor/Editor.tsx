@@ -84,6 +84,7 @@ export const EDITOR_SOURCE_MARKERS = [
 
 const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
   value;
+const BUBBLE_MENU_DEBOUNCE_MS = 80;
 
 export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const { activeFile, currentPath } = useWorkspaceStore();
@@ -107,6 +108,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     x: number;
     y: number;
   }>({ open: false, x: 0, y: 0 });
+  const bubbleMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { statusText, setTransientStatus, setDestructiveStatus } =
     useTransientStatus();
@@ -298,7 +300,15 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   useEffect(() => {
     if (!editor) return;
 
+    const clearBubbleTimer = () => {
+      if (bubbleMenuTimerRef.current) {
+        clearTimeout(bubbleMenuTimerRef.current);
+        bubbleMenuTimerRef.current = null;
+      }
+    };
+
     const updateBubble = () => {
+      clearBubbleTimer();
       if (editor.state.selection.empty || !editor.isFocused) {
         setBubbleMenuPosition({ open: false, x: 0, y: 0 });
         return;
@@ -316,14 +326,17 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         return;
       }
 
-      setBubbleMenuPosition({
-        open: true,
-        x: rect.left + rect.width / 2,
-        y: rect.top - 8,
-      });
+      bubbleMenuTimerRef.current = setTimeout(() => {
+        setBubbleMenuPosition({
+          open: true,
+          x: rect.left + rect.width / 2,
+          y: rect.top - 8,
+        });
+      }, BUBBLE_MENU_DEBOUNCE_MS);
     };
 
     const hideBubble = () => {
+      clearBubbleTimer();
       setBubbleMenuPosition({ open: false, x: 0, y: 0 });
     };
 
@@ -331,6 +344,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     editor.on('focus', updateBubble);
     editor.on('blur', hideBubble);
     return () => {
+      clearBubbleTimer();
       editor.off('selectionUpdate', updateBubble);
       editor.off('focus', updateBubble);
       editor.off('blur', hideBubble);
