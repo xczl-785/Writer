@@ -169,7 +169,6 @@
   align-items: center;
   justify-content: space-between;
   height: 3rem;
-  border-bottom: 1px solid var(--border-main);
   background: var(--bg-primary);
 }
 
@@ -185,14 +184,17 @@
 
 .editor-header__outline-btn {
   appearance: none;
-  border: 1px solid var(--border-main);
-  background: var(--bg-primary);
+  border: none;
+  background: transparent;
   color: var(--text-secondary);
-  border-radius: 6px;
-  width: 30px;
-  height: 30px;
+  border-radius: var(--radius-control);
+  width: 28px;
+  height: 28px;
   line-height: 1;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .editor-header__outline-btn:hover {

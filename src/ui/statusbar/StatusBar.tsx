@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { useEditorStore } from '../../state/slices/editorSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { FsService } from '../../services/fs/FsService';
 import './StatusBar.css';
@@ -7,9 +8,19 @@ import './StatusBar.css';
 export const StatusBar: React.FC = () => {
   const { saveStatus, message, saveError, lastSavedAt, setStatus } =
     useStatusStore();
-  const { currentPath } = useWorkspaceStore();
+  const { currentPath, activeFile } = useWorkspaceStore();
+  const { fileStates } = useEditorStore();
   const [isFaded, setIsFaded] = useState(false);
   const [isGitRepo, setIsGitRepo] = useState(false);
+
+  const countWords = (value: string): number => {
+    const latinWords = value.match(/[A-Za-z0-9_]+/g)?.length ?? 0;
+    const cjkChars = value.match(/[\u4e00-\u9fff]/g)?.length ?? 0;
+    return latinWords + cjkChars;
+  };
+
+  const activeContent = activeFile ? fileStates[activeFile]?.content ?? '' : '';
+  const wordsCount = countWords(activeContent);
 
   useEffect(() => {
     let disposed = false;
@@ -118,8 +129,9 @@ export const StatusBar: React.FC = () => {
         <span className="status-message">{getStatusText()}</span>
       </div>
       <div className="status-bar__right">
+        <span className="status-meta">{wordsCount} words</span>
         <span className="status-meta">UTF-8</span>
-        {isGitRepo ? <span className="status-sync">Sync</span> : null}
+        <span className={`status-sync ${isGitRepo ? '' : 'is-muted'}`}>Sync</span>
       </div>
     </div>
   );

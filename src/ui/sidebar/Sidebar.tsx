@@ -55,9 +55,7 @@ function DocIcon({ className }: FileIconProps) {
       fill="none"
       className={className}
       stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeWidth="2"
       aria-hidden="true"
     >
       <path d="M14 3H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9z" />
@@ -70,6 +68,24 @@ type FolderIconProps = {
   className?: string;
   filled?: boolean;
 };
+
+function CollapseSidebarIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <line x1="9" y1="3" x2="9" y2="21" />
+    </svg>
+  );
+}
 
 function FolderIcon({ className, filled = false }: FolderIconProps) {
   if (filled) {
@@ -412,7 +428,7 @@ export function Sidebar() {
         onClick={(e) => e.stopPropagation()}
       >
         <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
-          Explorer
+          Files
         </span>
         <div className="flex items-center gap-1">
           <button
@@ -434,16 +450,13 @@ export function Sidebar() {
             <FolderPlus size={16} />
           </button>
           <button
-            onClick={() =>
-              dispatchExplorerCommand(
-                EXPLORER_COMMANDS.OPEN_WORKSPACE,
-                commandCtx,
-              )
-            }
+            onClick={() => {
+              // Placeholder: collapse sidebar behavior will be wired later.
+            }}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
-            title="Open Folder"
+            title="Collapse Sidebar"
           >
-            <FolderIcon className="h-4 w-4" filled={true} />
+            <CollapseSidebarIcon className="h-4 w-4" />
           </button>
         </div>
       </div>
