@@ -169,8 +169,8 @@
   align-items: center;
   justify-content: space-between;
   height: 3rem;
-  border-bottom: 1px solid #e4e4e7;
-  background: #fff;
+  border-bottom: 1px solid var(--border-main);
+  background: var(--bg-primary);
 }
 
 .editor-header__breadcrumb {
@@ -185,9 +185,9 @@
 
 .editor-header__outline-btn {
   appearance: none;
-  border: 1px solid #e4e4e7;
-  background: #fff;
-  color: #71717a;
+  border: 1px solid var(--border-main);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
   border-radius: 6px;
   width: 30px;
   height: 30px;
@@ -197,7 +197,7 @@
 
 .editor-header__outline-btn:hover {
   background: #f4f4f5;
-  color: #18181b;
+  color: var(--text-primary);
 }
 
 .editor-content-area {
@@ -212,14 +212,14 @@
   flex-wrap: wrap;
   gap: 0.4rem;
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #e4e4e7;
-  background: #fafafa;
+  border-bottom: 1px solid var(--border-main);
+  background: var(--bg-secondary);
 }
 
 .editor-find-panel__input {
   height: 30px;
   border-radius: 6px;
-  border: 1px solid #d4d4d8;
+  border: 1px solid var(--border-main);
   padding: 0 0.5rem;
   font-size: 12px;
   min-width: 120px;
@@ -227,9 +227,9 @@
 
 .editor-find-panel__button {
   height: 28px;
-  border: 1px solid #d4d4d8;
-  background: #fff;
-  color: #27272a;
+  border: 1px solid var(--border-main);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   border-radius: 6px;
   padding: 0 0.45rem;
   font-size: 12px;
@@ -246,7 +246,7 @@
 }
 
 .editor-find-panel__meta {
-  color: #71717a;
+  color: var(--text-secondary);
   font-size: 11px;
 }
 
@@ -259,8 +259,8 @@
   padding: 0.25rem;
   border-radius: 0.375rem;
   border: 1px solid #3f3f46;
-  background: #27272a;
-  box-shadow: 0 10px 25px -10px rgb(0 0 0 / 50%);
+  background: var(--bg-popover);
+  box-shadow: var(--shadow-bubble);
   transform: translate(-50%, -100%);
   opacity: 0;
   pointer-events: none;
@@ -302,7 +302,7 @@
   opacity: 0;
   font-size: 0.875rem;
   font-style: italic;
-  color: #d4d4d8;
+  color: var(--text-tertiary);
   transition: opacity 0.08s ease-out;
 }
 
@@ -314,11 +314,11 @@
   position: fixed;
   z-index: 50;
   width: 260px;
-  border-radius: 12px;
+  border-radius: var(--radius-dialog);
   border: 1px solid #3f3f46;
-  background: #18181b;
+  background: var(--bg-popover);
   color: #f4f4f5;
-  box-shadow: 0 12px 30px rgb(0 0 0 / 35%);
+  box-shadow: var(--shadow-slash);
   padding: 4px;
   display: none;
 }
@@ -329,7 +329,7 @@
 
 .editor-slash-menu__fragment {
   margin: 4px 6px;
-  color: #3b82f6;
+  color: var(--color-action);
   background: rgb(59 130 246 / 12%);
   border-radius: 4px;
   padding: 2px 6px;
