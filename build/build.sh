@@ -69,14 +69,14 @@ check_node() {
     fi
 }
 
-# 检查 npm
-check_npm() {
-    print_info "检查 npm..."
-    if ! check_command npm; then
-        print_error "未安装 npm"
+# 检查 pnpm
+check_pnpm() {
+    print_info "检查 pnpm..."
+    if ! check_command pnpm; then
+        print_error "未安装 pnpm"
         exit 1
     fi
-    print_success "npm $(npm -v)"
+    print_success "pnpm $(pnpm -v)"
 }
 
 # 检查 Rust
@@ -137,24 +137,29 @@ check_dependencies() {
     print_info "检查依赖..."
     
     check_node
-    check_npm
+    check_pnpm
     check_rust
     check_cargo
     
     print_success "所有依赖已就绪"
 }
 
-# 安装 npm 依赖
-install_npm_deps() {
-    print_info "安装 npm 依赖..."
+# 安装 pnpm 依赖
+install_pnpm_deps() {
+    print_info "安装 pnpm 依赖..."
     
     if [ ! -d "node_modules" ]; then
-        npm install
+        if [ -f "pnpm-lock.yaml" ]; then
+            pnpm install --frozen-lockfile
+        else
+            print_warning "未找到 pnpm-lock.yaml，使用非冻结安装"
+            pnpm install
+        fi
     else
         print_info "node_modules 已存在，跳过安装"
     fi
     
-    print_success "npm 依赖安装完成"
+    print_success "pnpm 依赖安装完成"
 }
 
 # 检查 Linux 系统依赖
@@ -255,7 +260,7 @@ run_build() {
     print_info "打包目标: $targets"
     
     # 构建命令
-    local build_cmd="npx tauri build"
+    local build_cmd="pnpm tauri build"
     
     if [ -n "$targets" ]; then
         build_cmd="$build_cmd -b $targets"
@@ -342,7 +347,7 @@ show_help() {
     echo "  -h, --help          显示帮助信息"
     echo "  -c, --clean         清理构建产物后重新构建"
     echo "  -d, --debug         调试模式构建"
-    echo "  --no-install        跳过 npm 依赖安装"
+    echo "  --no-install        跳过 pnpm 依赖安装"
     echo ""
     echo "macOS 架构选项:"
     echo "  --arch <arch>       指定目标架构"
@@ -417,9 +422,9 @@ main() {
     # 检查 Linux 系统依赖
     check_linux_deps
     
-    # 安装 npm 依赖
+    # 安装 pnpm 依赖
     if [ $install_deps -eq 1 ]; then
-        install_npm_deps
+        install_pnpm_deps
     fi
     
     # 清理
@@ -432,7 +437,7 @@ main() {
     print_info "开始构建..."
     
     if [ $debug -eq 1 ]; then
-        npx tauri build --debug -v
+        pnpm tauri build --debug -v
     else
         run_build "$target_arch"
     fi
