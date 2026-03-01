@@ -14,9 +14,11 @@ describe('Editor slash menu behavior', () => {
 
   it('handles beforeinput and compositionend for IME-safe slash flow', () => {
     expect(editorTsx).toContain("addEventListener('beforeinput'");
+    expect(editorTsx).toContain("addEventListener('compositionstart'");
     expect(editorTsx).toContain("addEventListener('compositionend'");
     expect(editorTsx).toContain('const onCompositionEnd');
     expect(editorTsx).toContain("inputType === 'insertFromComposition'");
+    expect(editorTsx).toContain('if (event.isComposing || composingRef.current)');
   });
 
   it('cleans committed slash char before opening menu in IME path', () => {
@@ -35,5 +37,9 @@ describe('Editor slash menu behavior', () => {
     expect(editorTsx).toContain('editor-slash-inline__trigger');
     expect(editorTsx).toContain('editor-slash-inline__query');
     expect(editorTsx).not.toContain('editor-slash-menu__fragment');
+  });
+
+  it('does not append query from compositionend to avoid IME duplicate text', () => {
+    expect(editorTsx).not.toContain('if (slashState.phase !== \'idle\' && data)');
   });
 });

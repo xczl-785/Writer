@@ -142,6 +142,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     inlineY: 0,
   });
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
+  const composingRef = useRef(false);
 
   const getSafeCoordsAtPos = useCallback(
     (instance: TiptapEditor, pos: number) => {
@@ -777,7 +778,6 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
     const isInsertTextLikeInput = (inputType: string) =>
       inputType === 'insertText' ||
-      inputType === 'insertCompositionText' ||
       inputType === 'insertFromComposition';
 
     const isSlashTriggerEligible = () => {
@@ -833,6 +833,10 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (!editor.isFocused) {
+        return;
+      }
+
+      if (event.isComposing || composingRef.current) {
         return;
       }
 
@@ -915,13 +919,34 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         return;
       }
 
+      if (event.inputType === 'insertFromComposition' && event.data) {
+        event.preventDefault();
+        appendSlashQuery(event.data);
+        return;
+      }
+
+      if (event.isComposing || composingRef.current) {
+        return;
+      }
+
+      if (event.inputType === 'deleteContentBackward') {
+        event.preventDefault();
+        deleteSlashQuery();
+        return;
+      }
+
       if (isInsertTextLikeInput(event.inputType) && event.data) {
         event.preventDefault();
         appendSlashQuery(event.data);
       }
     };
 
+    const onCompositionStart = () => {
+      composingRef.current = true;
+    };
+
     const onCompositionEnd = (event: CompositionEvent) => {
+      composingRef.current = false;
       if (!editor.isFocused) return;
       const data = event.data ?? '';
 
@@ -943,11 +968,6 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         }
 
         openSlash();
-        return;
-      }
-
-      if (slashState.phase !== 'idle' && data) {
-        appendSlashQuery(data);
       }
     };
 
@@ -962,11 +982,13 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     dom.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('mousedown', onPointerDown);
     dom.addEventListener('beforeinput', onBeforeInput as EventListener);
+    dom.addEventListener('compositionstart', onCompositionStart);
     dom.addEventListener('compositionend', onCompositionEnd as EventListener);
     return () => {
       dom.removeEventListener('keydown', onKeyDown, true);
       window.removeEventListener('mousedown', onPointerDown);
       dom.removeEventListener('beforeinput', onBeforeInput as EventListener);
+      dom.removeEventListener('compositionstart', onCompositionStart);
       dom.removeEventListener(
         'compositionend',
         onCompositionEnd as EventListener,
