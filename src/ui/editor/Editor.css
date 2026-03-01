@@ -164,58 +164,90 @@
   font-weight: 600;
 }
 
-.editor-toolbar {
+.editor-header {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
-  background: #ffffff;
+  justify-content: space-between;
+  height: 3rem;
+  border-bottom: 1px solid #e4e4e7;
+  background: #fff;
 }
 
-.editor-toolbar__group {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.editor-header__breadcrumb {
+  min-width: 0;
+  flex: 1;
 }
 
-.editor-toolbar__button {
+.editor-header__actions {
+  position: relative;
+  padding-right: 1rem;
+}
+
+.editor-header__outline-btn {
   appearance: none;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #0f172a;
+  border: 1px solid #e4e4e7;
+  background: #fff;
+  color: #71717a;
   border-radius: 6px;
-  padding: 0.25rem 0.45rem;
-  font-size: 0.85rem;
-  line-height: 1.1;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
   cursor: pointer;
 }
 
-.editor-toolbar__button:hover {
-  background: #f1f5f9;
+.editor-header__outline-btn:hover {
+  background: #f4f4f5;
+  color: #18181b;
 }
 
-.editor-toolbar__button:focus-visible {
-  outline: 2px solid #94a3b8;
-  outline-offset: 2px;
+.editor-content-area {
+  flex: 1;
+  overflow: auto;
+  padding: 2rem 12%;
 }
 
-.editor-toolbar__button.is-active {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
+.editor-find-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e4e4e7;
+  background: #fafafa;
 }
 
-.editor-toolbar__button[disabled] {
-  opacity: 0.45;
+.editor-find-panel__input {
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid #d4d4d8;
+  padding: 0 0.5rem;
+  font-size: 12px;
+  min-width: 120px;
+}
+
+.editor-find-panel__button {
+  height: 28px;
+  border: 1px solid #d4d4d8;
+  background: #fff;
+  color: #27272a;
+  border-radius: 6px;
+  padding: 0 0.45rem;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.editor-find-panel__button:hover {
+  background: #f4f4f5;
+}
+
+.editor-find-panel__button[disabled] {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.editor-toolbar__status {
-  margin-left: auto;
-  font-size: 0.85rem;
-  color: #64748b;
-  padding-left: 0.25rem;
+.editor-find-panel__meta {
+  color: #71717a;
+  font-size: 11px;
 }
 
 .editor-bubble-menu {
@@ -256,4 +288,86 @@
 .editor-bubble-menu__button:hover {
   background: #3f3f46;
   color: #fafafa;
+}
+
+.editor-ghost-slash {
+  position: fixed;
+  z-index: 25;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: #d4d4d8;
+  transition: opacity 0.08s ease-out;
+}
+
+.editor-ghost-slash.is-open {
+  opacity: 1;
+}
+
+.editor-slash-menu {
+  position: fixed;
+  z-index: 50;
+  width: 260px;
+  border-radius: 12px;
+  border: 1px solid #3f3f46;
+  background: #18181b;
+  color: #f4f4f5;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 35%);
+  padding: 4px;
+  display: none;
+}
+
+.editor-slash-menu.is-open {
+  display: block;
+}
+
+.editor-slash-menu__fragment {
+  margin: 4px 6px;
+  color: #3b82f6;
+  background: rgb(59 130 246 / 12%);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.editor-slash-menu__group {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #71717a;
+  text-transform: uppercase;
+  padding: 6px 8px 4px;
+}
+
+.editor-slash-menu__item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #e4e4e7;
+  padding: 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.editor-slash-menu__item:hover,
+.editor-slash-menu__item.is-active {
+  background: #27272a;
+}
+
+.editor-slash-menu__hint {
+  font-size: 10px;
+  color: #71717a;
+}
+
+.editor-slash-menu__empty {
+  color: #a1a1aa;
+  font-size: 12px;
+  padding: 8px;
 }

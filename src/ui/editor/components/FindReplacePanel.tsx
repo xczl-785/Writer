@@ -8,8 +8,8 @@ type Props = {
   findProgressText: string;
   findInputRef: React.RefObject<HTMLInputElement | null>;
   replaceInputRef: React.RefObject<HTMLInputElement | null>;
-  onOpenFind: () => void;
-  onOpenReplace: () => void;
+  onOpenFind?: () => void;
+  onOpenReplace?: () => void;
   onClose: () => void;
   onFindQueryChange: (value: string) => void;
   onReplaceQueryChange: (value: string) => void;
@@ -39,149 +39,148 @@ export function FindReplacePanel({
   onReplaceOne,
   onReplaceAll,
 }: Props) {
-  return (
-    <div className="editor-toolbar__group" aria-label="Find and replace">
-      {isOpen ? (
-        <div
-          className="flex flex-wrap items-center gap-2"
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.preventDefault();
-              onClose();
-              return;
-            }
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              if (e.shiftKey) {
-                onPrev();
-              } else {
-                onNext();
-              }
-            }
-          }}
+  if (!isOpen) {
+    if (!onOpenFind || !onOpenReplace) return null;
+    return (
+      <div className="editor-toolbar__group" aria-label="Find and replace">
+        <button
+          type="button"
+          className="editor-toolbar__button"
+          aria-label="Find"
+          title="Find (Mod-f)"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onOpenFind}
         >
-          <input
-            ref={findInputRef}
-            type="text"
-            inputMode="search"
-            placeholder="Find"
-            aria-label="Find"
-            className="h-8 w-40 rounded border border-gray-200 px-2 text-sm"
-            value={findQuery}
-            onChange={(e) => onFindQueryChange(e.target.value)}
-          />
+          Find
+        </button>
+        <button
+          type="button"
+          className="editor-toolbar__button"
+          aria-label="Replace"
+          title="Replace (Mod-h)"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onOpenReplace}
+        >
+          Replace
+        </button>
+      </div>
+    );
+  }
 
-          {isReplaceMode ? (
-            <input
-              ref={replaceInputRef}
-              type="text"
-              placeholder="Replace"
-              aria-label="Replace"
-              className="h-8 w-40 rounded border border-gray-200 px-2 text-sm"
-              value={replaceQuery}
-              onChange={(e) => onReplaceQueryChange(e.target.value)}
-            />
-          ) : null}
+  return (
+    <div
+      className="editor-find-panel"
+      aria-label="Find and replace"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          onClose();
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            onPrev();
+          } else {
+            onNext();
+          }
+        }
+      }}
+    >
+      <input
+        ref={findInputRef}
+        type="text"
+        inputMode="search"
+        placeholder="Find"
+        aria-label="Find"
+        className="editor-find-panel__input"
+        value={findQuery}
+        onChange={(e) => onFindQueryChange(e.target.value)}
+      />
 
-          <button
-            type="button"
-            className="editor-toolbar__button"
-            aria-label="Previous match"
-            title="Previous match (Shift+Enter)"
-            disabled={!findMatchesCount}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={onPrev}
-          >
-            Prev
-          </button>
-          <button
-            type="button"
-            className="editor-toolbar__button"
-            aria-label="Next match"
-            title="Next match (Enter)"
-            disabled={!findMatchesCount}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={onNext}
-          >
-            Next
-          </button>
+      {isReplaceMode ? (
+        <input
+          ref={replaceInputRef}
+          type="text"
+          placeholder="Replace"
+          aria-label="Replace"
+          className="editor-find-panel__input"
+          value={replaceQuery}
+          onChange={(e) => onReplaceQueryChange(e.target.value)}
+        />
+      ) : null}
 
-          {isReplaceMode ? (
-            <button
-              type="button"
-              className="editor-toolbar__button"
-              aria-label="Replace match"
-              title="Replace current match"
-              disabled={!findMatchesCount}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={onReplaceOne}
-            >
-              Replace
-            </button>
-          ) : null}
+      <button
+        type="button"
+        className="editor-find-panel__button"
+        aria-label="Previous match"
+        title="Previous match (Shift+Enter)"
+        disabled={!findMatchesCount}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onPrev}
+      >
+        Prev
+      </button>
+      <button
+        type="button"
+        className="editor-find-panel__button"
+        aria-label="Next match"
+        title="Next match (Enter)"
+        disabled={!findMatchesCount}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onNext}
+      >
+        Next
+      </button>
 
-          {isReplaceMode ? (
-            <button
-              type="button"
-              className="editor-toolbar__button"
-              aria-label="Replace all matches"
-              title="Replace all matches"
-              disabled={!findMatchesCount}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={onReplaceAll}
-            >
-              Replace all
-            </button>
-          ) : null}
+      {isReplaceMode ? (
+        <button
+          type="button"
+          className="editor-find-panel__button"
+          aria-label="Replace match"
+          title="Replace current match"
+          disabled={!findMatchesCount}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onReplaceOne}
+        >
+          Replace
+        </button>
+      ) : null}
 
-          <span className="text-xs text-gray-600" aria-label="Match count">
-            {findCountText}
-          </span>
+      {isReplaceMode ? (
+        <button
+          type="button"
+          className="editor-find-panel__button"
+          aria-label="Replace all matches"
+          title="Replace all matches"
+          disabled={!findMatchesCount}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onReplaceAll}
+        >
+          Replace all
+        </button>
+      ) : null}
 
-          {findProgressText ? (
-            <span
-              className="min-w-10 text-xs tabular-nums text-gray-500"
-              aria-label="Match progress"
-            >
-              {findProgressText}
-            </span>
-          ) : null}
+      <span className="editor-find-panel__meta" aria-label="Match count">
+        {findCountText}
+      </span>
 
-          <button
-            type="button"
-            className="editor-toolbar__button"
-            aria-label="Close find"
-            title="Close (Esc)"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={onClose}
-          >
-            X
-          </button>
-        </div>
-      ) : (
-        <>
-          <button
-            type="button"
-            className="editor-toolbar__button"
-            aria-label="Find"
-            title="Find (Mod-f)"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={onOpenFind}
-          >
-            Find
-          </button>
-          <button
-            type="button"
-            className="editor-toolbar__button"
-            aria-label="Replace"
-            title="Replace (Mod-h)"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={onOpenReplace}
-          >
-            Replace
-          </button>
-        </>
-      )}
+      {findProgressText ? (
+        <span className="editor-find-panel__meta" aria-label="Match progress">
+          {findProgressText}
+        </span>
+      ) : null}
+
+      <button
+        type="button"
+        className="editor-find-panel__button"
+        aria-label="Close find"
+        title="Close (Esc)"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onClose}
+      >
+        X
+      </button>
     </div>
   );
 }

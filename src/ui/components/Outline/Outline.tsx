@@ -77,6 +77,7 @@ export const Outline: React.FC<OutlineProps> = ({
 
   const handleClick = (item: OutlineItem) => {
     scrollToItem(item);
+    onClose?.();
   };
 
   if (!isOpen) return null;
@@ -102,22 +103,22 @@ export const Outline: React.FC<OutlineProps> = ({
 
   return (
     <div
-      className="w-56 h-full bg-zinc-50 dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden transition-all duration-150 ease-out"
+      className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.15)]"
+      role="dialog"
+      aria-label="Document outline"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800">
-        <h3 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
-          Outline
+      <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/50 px-4 py-3">
+        <h3 className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">
+          Document Outline
         </h3>
-        <span className="text-xs text-zinc-400 dark:text-zinc-500">
+        <span className="text-[10px] text-zinc-400">
           {items.length} {items.length === 1 ? 'heading' : 'headings'}
         </span>
       </div>
 
-      {/* Outline List */}
       <div
         ref={listRef}
-        className="flex-1 overflow-y-auto py-1"
+        className="max-h-[28rem] overflow-y-auto p-2"
         onScroll={(event) => {
           if (!isVirtualized) {
             return;
@@ -126,7 +127,7 @@ export const Outline: React.FC<OutlineProps> = ({
         }}
       >
         {items.length === 0 ? (
-          <div className="px-3 py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">
+          <div className="px-3 py-8 text-center text-sm text-zinc-400">
             No headings in document
           </div>
         ) : (

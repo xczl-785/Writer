@@ -344,7 +344,7 @@ export function Sidebar() {
 
   return (
     <div
-      className="h-full flex flex-col bg-gray-50/50 border-r border-gray-200 w-64 flex-shrink-0 select-none"
+      className="h-full w-64 flex-shrink-0 select-none border-r border-zinc-200 bg-zinc-50 flex flex-col"
       tabIndex={0}
       onFocusCapture={() => setExplorerFocus(true)}
       onBlurCapture={(e) => {
@@ -354,10 +354,10 @@ export function Sidebar() {
       }}
     >
       <div
-        className="p-3 border-b border-gray-200 flex items-center justify-between bg-white"
+        className="h-10 px-3 flex items-center justify-between border-b border-transparent"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
           Explorer
         </span>
         <div className="flex items-center gap-1">
@@ -365,7 +365,7 @@ export function Sidebar() {
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx)
             }
-            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
             title="New File"
           >
             <FilePlus size={16} />
@@ -374,7 +374,7 @@ export function Sidebar() {
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx)
             }
-            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
             title="New Folder"
           >
             <FolderPlus size={16} />
@@ -386,7 +386,7 @@ export function Sidebar() {
                 commandCtx,
               )
             }
-            className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
             title="Open Folder"
           >
             <FolderOpen size={16} />
@@ -395,7 +395,7 @@ export function Sidebar() {
       </div>
 
       <div
-        className="px-3 py-2 border-b border-gray-200 bg-white"
+        className="px-3 py-2 border-b border-zinc-200"
         onClick={(e) => e.stopPropagation()}
       >
         <label htmlFor="explorer-search" className="sr-only">
@@ -404,7 +404,7 @@ export function Sidebar() {
         <div className="relative">
           <Search
             size={14}
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-400"
             aria-hidden="true"
           />
           <input
@@ -443,7 +443,7 @@ export function Sidebar() {
             placeholder={
               currentPath ? 'Search files…' : 'Open a folder to search'
             }
-            className="w-full rounded-md border border-gray-200 bg-gray-50 px-7 pr-7 py-1.5 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:opacity-60"
+            className="w-full bg-white border border-zinc-200 rounded-md py-1.5 pl-8 pr-7 text-xs text-zinc-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-zinc-400 disabled:opacity-60"
             aria-label="Search files"
             aria-controls={
               isSearchActive ? 'explorer-search-results' : undefined
@@ -460,7 +460,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-700"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700"
               aria-label="Clear search"
               title="Clear"
             >
@@ -471,7 +471,7 @@ export function Sidebar() {
       </div>
 
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden p-2"
+        className="flex-1 overflow-y-auto overflow-x-hidden py-2"
         onClick={(e) => {
           if (e.currentTarget === e.target) {
             setSelectedPath(null);
@@ -481,10 +481,10 @@ export function Sidebar() {
         {isSearchActive ? (
           <div>
             {searchMatches.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
+              <div className="flex flex-col items-center justify-center h-32 text-zinc-400 text-sm">
                 <Search size={24} className="mb-2 opacity-20" />
                 <span>No matches</span>
-                <span className="mt-1 text-xs text-gray-400">
+                <span className="mt-1 text-xs text-zinc-400">
                   Try a different name or path
                 </span>
               </div>
@@ -493,7 +493,7 @@ export function Sidebar() {
                 id="explorer-search-results"
                 role="listbox"
                 aria-label="Search results"
-                className="space-y-0.5"
+                className="space-y-0.5 px-2"
               >
                 {searchMatches.map((node, idx) => {
                   const isActive = idx === searchActiveIndex;
@@ -515,20 +515,20 @@ export function Sidebar() {
                       type="button"
                       onMouseEnter={() => setSearchActiveIndex(idx)}
                       onClick={() => openSearchMatch(node)}
-                      className={`w-full text-left group flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-sm text-gray-700 transition-colors duration-150 ease-in-out ${
-                        isActive ? 'bg-blue-100/80' : 'hover:bg-gray-200/60'
+                      className={`w-full text-left group flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-sm text-zinc-700 transition-colors duration-150 ease-in-out ${
+                        isActive ? 'bg-blue-100/80' : 'hover:bg-zinc-200/60'
                       }`}
                       title={node.path}
                     >
                       <FileText
                         size={16}
-                        className="text-gray-500 flex-shrink-0"
+                        className="text-zinc-500 flex-shrink-0"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="truncate leading-none">
                           {getDisplayName(node)}
                         </div>
-                        <div className="truncate mt-0.5 text-[11px] text-gray-400">
+                        <div className="truncate mt-0.5 text-[11px] text-zinc-400">
                           {relativePath}
                         </div>
                       </div>
@@ -539,7 +539,7 @@ export function Sidebar() {
             )}
           </div>
         ) : visibleNodes.length === 0 && !ghostNode ? (
-          <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm">
+          <div className="flex flex-col items-center justify-center h-32 text-zinc-400 text-sm">
             <Folder size={24} className="mb-2 opacity-20" />
             <span>
               {currentPath ? 'No markdown files' : 'No folder opened'}
@@ -554,7 +554,7 @@ export function Sidebar() {
             )}
           </div>
         ) : (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 px-2">
             {ghostNode && ghostNode.parentPath === null && (
               <GhostRow
                 level={0}
@@ -610,14 +610,14 @@ function GhostRow({
 }) {
   return (
     <div
-      className="flex items-center gap-1.5 py-1 px-2 rounded-md text-sm text-gray-700"
+      className="flex items-center gap-1.5 py-1.5 px-2 rounded-md text-sm text-zinc-700"
       style={{ paddingLeft: `${level * 12 + 8}px` }}
     >
-      <span className="text-gray-400 flex-shrink-0">
+      <span className="text-zinc-400 flex-shrink-0">
         {type === 'directory' ? (
           <Folder size={16} className="text-blue-500" />
         ) : (
-          <FileText size={16} className="text-gray-500" />
+          <FileText size={16} className="text-zinc-500" />
         )}
       </span>
       <InlineInput
@@ -771,14 +771,20 @@ function FileTreeNode({
   return (
     <div>
       <div
-        className={`group flex items-center gap-1.5 py-1 px-2 rounded-md cursor-pointer text-sm text-gray-700 transition-colors duration-150 ease-in-out ${
-          isSelected ? 'bg-blue-100/80' : 'hover:bg-gray-200/60'
+        className={`group relative flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer text-sm text-zinc-700 transition-colors duration-150 ease-in-out ${
+          isSelected ? 'bg-blue-50/50' : 'hover:bg-zinc-200/50'
         }`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
         onClick={handleClick}
         onContextMenu={(event) => onOpenContextMenu(event, node)}
       >
-        <span className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0">
+        {isSelected ? (
+          <span
+            className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-blue-500"
+            aria-hidden="true"
+          />
+        ) : null}
+        <span className="text-zinc-400 group-hover:text-zinc-600 transition-colors flex-shrink-0">
           {isDirectory ? (
             isExpanded ? (
               <FolderOpen size={16} className="text-blue-500" />
@@ -802,7 +808,11 @@ function FileTreeNode({
             autoFocus={true}
           />
         ) : (
-          <span className="truncate flex-1 leading-none py-0.5">
+          <span
+            className={`truncate flex-1 leading-none py-0.5 ${
+              isSelected ? 'font-medium text-zinc-900' : ''
+            }`}
+          >
             {getDisplayName(node)}
           </span>
         )}
@@ -811,14 +821,14 @@ function FileTreeNode({
           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
             <button
               onClick={startRename}
-              className="p-0.5 hover:bg-gray-300 rounded text-gray-500 hover:text-gray-700"
+              className="p-0.5 hover:bg-zinc-300 rounded text-zinc-500 hover:text-zinc-700"
               title="Rename"
             >
               <Pencil size={14} />
             </button>
             <button
               onClick={requestDelete}
-              className="p-0.5 hover:bg-gray-300 rounded text-red-400 hover:text-red-600"
+              className="p-0.5 hover:bg-zinc-300 rounded text-red-400 hover:text-red-600"
               title="Delete"
             >
               <Trash2 size={14} />

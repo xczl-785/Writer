@@ -4,15 +4,16 @@ import { truncateBreadcrumb } from './useBreadcrumb';
 interface BreadcrumbProps {
   items: BreadcrumbItem[];
   onItemClick: (item: BreadcrumbItem) => void;
+  className?: string;
 }
 
-export function Breadcrumb({ items, onItemClick }: BreadcrumbProps) {
+export function Breadcrumb({ items, onItemClick, className }: BreadcrumbProps) {
   const segments = truncateBreadcrumb(items, 4);
   const fullPath = items.map((item) => item.name).join(' / ');
 
   return (
     <nav
-      className="h-7 bg-zinc-50 px-4 py-1 text-sm text-zinc-600 border-b border-zinc-200 flex items-center"
+      className={`flex items-center text-sm text-zinc-600 ${className ?? ''}`}
       aria-label="File path"
       title={fullPath}
     >

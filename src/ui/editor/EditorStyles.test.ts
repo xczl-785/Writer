@@ -19,10 +19,8 @@ describe('Editor toolbar MVP', () => {
   const readConstants = () =>
     readFileSync(join(currentDir, 'constants.ts'), 'utf-8');
 
-  it('renders formatting toolbar controls with accessible labels', () => {
-    const editorTsx = readEditor();
+  it('keeps formatting command descriptors and accessible labels', () => {
     const constantsTs = readConstants();
-    expect(editorTsx).toContain('aria-label={cmd.ariaLabel}');
 
     const expectedAriaLabels = [
       'Bold',
@@ -73,13 +71,13 @@ describe('Editor toolbar MVP', () => {
     expect(editorTsx).toContain('insertTable(DEFAULT_TABLE_INSERT)');
   });
 
-  it('defines minimal toolbar styling hooks', () => {
+  it('defines layout styling hooks for header/slash/find panel', () => {
     const currentDir = dirname(fileURLToPath(import.meta.url));
     const css = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');
 
-    expect(css).toMatch(/\.editor-toolbar\s*\{/i);
-    expect(css).toMatch(/\.editor-toolbar__button\s*\{/i);
-    expect(css).toMatch(/\.editor-toolbar__button\[disabled\]/i);
-    expect(css).toMatch(/\.editor-toolbar__button\.is-active/i);
+    expect(css).toMatch(/\.editor-header\s*\{/i);
+    expect(css).toMatch(/\.editor-find-panel\s*\{/i);
+    expect(css).toMatch(/\.editor-ghost-slash\s*\{/i);
+    expect(css).toMatch(/\.editor-slash-menu\s*\{/i);
   });
 });

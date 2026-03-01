@@ -19,7 +19,7 @@ import {
 import './App.css';
 
 function App() {
-  const { activeFile, currentPath } = useWorkspaceStore();
+  const { currentPath } = useWorkspaceStore();
   const isClosingRef = useRef(false);
   const isProgrammaticCloseRef = useRef(false);
   const forceCloseRequestedRef = useRef(false);
@@ -136,13 +136,6 @@ function App() {
 
   return (
     <div className="app-container h-screen flex flex-col">
-      <header className="p-4 border-b bg-gray-50 flex justify-between items-center">
-        <h1 className="text-xl font-bold">Writer</h1>
-        <div className="text-sm text-gray-500">
-          Active: {activeFile || 'None'}
-        </div>
-      </header>
-
       <div className="flex-grow flex overflow-hidden">
         <Sidebar />
 
