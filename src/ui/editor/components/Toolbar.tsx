@@ -1,22 +1,12 @@
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import type { RefObject } from 'react';
 import { TOOLBAR_COMMANDS, type ToolbarCommandId } from '../constants';
-import { InsertTablePopover } from './InsertTablePopover';
 import { FindReplacePanel } from './FindReplacePanel';
 
 type Props = {
   editor: TiptapEditor;
   isToolbarEnabled: boolean;
   runToolbarCommand: (editor: TiptapEditor, id: ToolbarCommandId) => boolean;
-  isInsertTablePopoverOpen: boolean;
-  insertTableRows: string;
-  insertTableCols: string;
-  insertTableRowsInputRef: RefObject<HTMLInputElement | null>;
-  setInsertTableRows: (value: string) => void;
-  setInsertTableCols: (value: string) => void;
-  clampTableDim: (value: string) => number;
-  confirmInsertTable: (editor: TiptapEditor) => void;
-  closeInsertTablePopover: () => void;
   isFindPanelOpen: boolean;
   isReplaceMode: boolean;
   findQuery: string;
@@ -41,15 +31,6 @@ export function Toolbar({
   editor,
   isToolbarEnabled,
   runToolbarCommand,
-  isInsertTablePopoverOpen,
-  insertTableRows,
-  insertTableCols,
-  insertTableRowsInputRef,
-  setInsertTableRows,
-  setInsertTableCols,
-  clampTableDim,
-  confirmInsertTable,
-  closeInsertTablePopover,
   isFindPanelOpen,
   isReplaceMode,
   findQuery,
@@ -153,43 +134,6 @@ export function Toolbar({
           const title = cmd.shortcut
             ? `${cmd.ariaLabel} (${cmd.shortcut})`
             : cmd.ariaLabel;
-
-          if (cmd.id === 'insertTable') {
-            return (
-              <div key={cmd.id} className="relative">
-                <button
-                  type="button"
-                  className={`editor-toolbar__button${isActive ? ' is-active' : ''}`}
-                  aria-label={cmd.ariaLabel}
-                  aria-haspopup="dialog"
-                  aria-expanded={isInsertTablePopoverOpen}
-                  title={title}
-                  disabled={isDisabled}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => runToolbarCommand(editor, cmd.id)}
-                >
-                  {cmd.label}
-                </button>
-
-                <InsertTablePopover
-                  isOpen={isInsertTablePopoverOpen}
-                  rows={insertTableRows}
-                  cols={insertTableCols}
-                  rowsInputRef={insertTableRowsInputRef}
-                  onRowsChange={setInsertTableRows}
-                  onColsChange={setInsertTableCols}
-                  onRowsBlur={() =>
-                    setInsertTableRows(String(clampTableDim(insertTableRows)))
-                  }
-                  onColsBlur={() =>
-                    setInsertTableCols(String(clampTableDim(insertTableCols)))
-                  }
-                  onConfirm={() => confirmInsertTable(editor)}
-                  onClose={closeInsertTablePopover}
-                />
-              </div>
-            );
-          }
 
           return (
             <button

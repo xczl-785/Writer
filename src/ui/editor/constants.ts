@@ -22,13 +22,7 @@ export type ToolbarCommandId =
   | 'bulletList'
   | 'orderedList'
   | 'blockquote'
-  | 'codeBlock'
-  | 'insertTable'
-  | 'addTableRow'
-  | 'deleteTableRow'
-  | 'addTableColumn'
-  | 'deleteTableColumn'
-  | 'deleteTable';
+  | 'codeBlock';
 
 export type ToolbarCommandSpec = {
   id: ToolbarCommandId;
@@ -163,61 +157,5 @@ export const TOOLBAR_COMMANDS: readonly ToolbarCommandSpec[] = [
     isActive: (editor) => editor.isActive('codeBlock'),
     canRun: (editor) => editor.can().chain().focus().toggleCodeBlock().run(),
     run: (editor) => editor.chain().focus().toggleCodeBlock().run(),
-  },
-  {
-    id: 'insertTable',
-    label: 'Tbl',
-    ariaLabel: 'Insert table',
-    shortcut: 'Mod-t',
-    isActive: (editor) => editor.isActive('table'),
-    canRun: (editor) =>
-      editor.can().chain().focus().insertTable(DEFAULT_TABLE_INSERT).run(),
-    run: (editor) =>
-      editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run(),
-  },
-  {
-    id: 'addTableRow',
-    label: '+R',
-    ariaLabel: 'Add row',
-    shortcut: '',
-    isActive: () => false,
-    canRun: (editor) => editor.can().chain().focus().addRowAfter().run(),
-    run: (editor) => editor.chain().focus().addRowAfter().run(),
-  },
-  {
-    id: 'deleteTableRow',
-    label: '-R',
-    ariaLabel: 'Delete row',
-    shortcut: '',
-    isActive: () => false,
-    canRun: (editor) => editor.can().chain().focus().deleteRow().run(),
-    run: (editor) => editor.chain().focus().deleteRow().run(),
-  },
-  {
-    id: 'addTableColumn',
-    label: '+C',
-    ariaLabel: 'Add column',
-    shortcut: '',
-    isActive: () => false,
-    canRun: (editor) => editor.can().chain().focus().addColumnAfter().run(),
-    run: (editor) => editor.chain().focus().addColumnAfter().run(),
-  },
-  {
-    id: 'deleteTableColumn',
-    label: '-C',
-    ariaLabel: 'Delete column',
-    shortcut: '',
-    isActive: () => false,
-    canRun: (editor) => editor.can().chain().focus().deleteColumn().run(),
-    run: (editor) => editor.chain().focus().deleteColumn().run(),
-  },
-  {
-    id: 'deleteTable',
-    label: 'Del Tbl',
-    ariaLabel: 'Delete table',
-    shortcut: '',
-    isActive: () => false,
-    canRun: (editor) => editor.can().chain().focus().deleteTable().run(),
-    run: (editor) => editor.chain().focus().deleteTable().run(),
   },
 ];

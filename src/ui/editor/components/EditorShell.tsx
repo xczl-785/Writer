@@ -10,17 +10,6 @@ type Props = {
   runToolbarCommand: (editor: TiptapEditor, id: ToolbarCommandId) => boolean;
   setHasEditorWidgetFocus: (focused: boolean) => void;
   toolbarStatus: string;
-  insertTable: {
-    isInsertTablePopoverOpen: boolean;
-    insertTableRows: string;
-    insertTableCols: string;
-    insertTableRowsInputRef: RefObject<HTMLInputElement | null>;
-    setInsertTableRows: (value: string) => void;
-    setInsertTableCols: (value: string) => void;
-    clampTableDim: (value: string) => number;
-    confirmInsertTable: (editor: TiptapEditor) => void;
-    closeInsertTablePopover: () => void;
-  };
   findReplace: {
     isFindPanelOpen: boolean;
     isReplaceMode: boolean;
@@ -51,7 +40,6 @@ export function EditorShell({
   runToolbarCommand,
   setHasEditorWidgetFocus,
   toolbarStatus,
-  insertTable,
   findReplace,
   onEditorContextMenu,
   bubbleMenu,
@@ -73,15 +61,6 @@ export function EditorShell({
         editor={editor}
         isToolbarEnabled={isToolbarEnabled}
         runToolbarCommand={runToolbarCommand}
-        isInsertTablePopoverOpen={insertTable.isInsertTablePopoverOpen}
-        insertTableRows={insertTable.insertTableRows}
-        insertTableCols={insertTable.insertTableCols}
-        insertTableRowsInputRef={insertTable.insertTableRowsInputRef}
-        setInsertTableRows={insertTable.setInsertTableRows}
-        setInsertTableCols={insertTable.setInsertTableCols}
-        clampTableDim={insertTable.clampTableDim}
-        confirmInsertTable={insertTable.confirmInsertTable}
-        closeInsertTablePopover={insertTable.closeInsertTablePopover}
         isFindPanelOpen={findReplace.isFindPanelOpen}
         isReplaceMode={findReplace.isReplaceMode}
         findQuery={findReplace.findQuery}
