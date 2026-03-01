@@ -25,35 +25,45 @@ export const StatusBar: React.FC = () => {
 
   useEffect(() => {
     let disposed = false;
+    let timer: number | null = null;
 
     if (!currentPath) {
       setGitSync(null);
       return;
     }
 
-    const loadSyncStatus = async () => {
+    const loadSyncStatus = async (): Promise<GitSyncStatus | null> => {
       try {
         const status = await FsService.getGitSyncStatus(currentPath);
         if (!disposed) {
           setGitSync(status);
         }
+        return status;
       } catch {
         if (!disposed) {
           setGitSync(null);
         }
+        return null;
       }
     };
 
-    void loadSyncStatus();
-    const timer = window.setInterval(() => {
-      void loadSyncStatus();
-    }, 5000);
+    void (async () => {
+      const initial = await loadSyncStatus();
+      if (disposed || !initial?.isRepo) {
+        return;
+      }
+      timer = window.setInterval(() => {
+        void loadSyncStatus();
+      }, 15000);
+    })();
 
     return () => {
       disposed = true;
-      window.clearInterval(timer);
+      if (timer !== null) {
+        window.clearInterval(timer);
+      }
     };
-  }, [currentPath, saveStatus]);
+  }, [currentPath]);
 
   useEffect(() => {
     let disposed = false;

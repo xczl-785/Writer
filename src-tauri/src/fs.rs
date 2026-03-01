@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::Read;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::process::Command;
 
@@ -28,6 +31,90 @@ pub struct EncodingStatus {
     label: String,
 }
 
+fn is_markdown_name(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    lower.ends_with(".md") || lower.ends_with(".markdown") || lower.ends_with(".mdx")
+}
+
+fn is_skipped_dir(name: &str) -> bool {
+    matches!(
+        name.to_ascii_lowercase().as_str(),
+        ".git"
+            | "node_modules"
+            | "target"
+            | "dist"
+            | "build"
+            | "coverage"
+            | ".idea"
+            | ".vscode"
+            | ".cache"
+            | ".pnpm-store"
+            | ".next"
+            | ".nuxt"
+            | ".svelte-kit"
+            | "assets"
+            | ".assets"
+    )
+}
+
+fn build_tree(path: &Path) -> Option<FileNode> {
+    let name = path
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
+    let path_str = path.to_string_lossy().to_string();
+
+    if path.is_file() {
+        if !is_markdown_name(&name) {
+            return None;
+        }
+        return Some(FileNode {
+            path: path_str,
+            name,
+            node_type: "file".to_string(),
+            children: None,
+        });
+    }
+
+    if path.is_dir() {
+        if is_skipped_dir(&name) {
+            return None;
+        }
+        let mut children = fs::read_dir(path)
+            .ok()?
+            .filter_map(|res| res.ok())
+            .filter_map(|entry| build_tree(&entry.path()))
+            .collect::<Vec<FileNode>>();
+
+        children.sort_by(|a, b| {
+            let a_is_dir = a.node_type == "directory";
+            let b_is_dir = b.node_type == "directory";
+
+            if a_is_dir && !b_is_dir {
+                std::cmp::Ordering::Less
+            } else if !a_is_dir && b_is_dir {
+                std::cmp::Ordering::Greater
+            } else {
+                a.name.cmp(&b.name)
+            }
+        });
+
+        if children.is_empty() {
+            return None;
+        }
+
+        return Some(FileNode {
+            path: path_str,
+            name,
+            node_type: "directory".to_string(),
+            children: Some(children),
+        });
+    }
+
+    None
+}
+
 #[tauri::command]
 pub fn list_tree(path: &str) -> Result<Vec<FileNode>, String> {
     let path_obj = Path::new(path);
@@ -41,34 +128,7 @@ pub fn list_tree(path: &str) -> Result<Vec<FileNode>, String> {
     let mut entries = fs::read_dir(path)
         .map_err(|e| e.to_string())?
         .filter_map(|res| res.ok())
-        .map(|entry| {
-            let path = entry.path();
-            let name = path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .to_string();
-            let path_str = path.to_string_lossy().to_string();
-            let is_dir = path.is_dir();
-            let node_type = if is_dir {
-                "directory".to_string()
-            } else {
-                "file".to_string()
-            };
-
-            let children = if is_dir {
-                list_tree(&path_str).ok()
-            } else {
-                None
-            };
-
-            FileNode {
-                path: path_str,
-                name,
-                node_type,
-                children,
-            }
-        })
+        .filter_map(|entry| build_tree(&entry.path()))
         .collect::<Vec<FileNode>>();
 
     entries.sort_by(|a, b| {
@@ -269,11 +329,14 @@ pub fn check_exists(path: &str) -> Result<bool, String> {
 }
 
 fn run_git(path: &str, args: &[&str]) -> Result<String, String> {
-    let output = Command::new("git")
-        .args(["-C", path])
-        .args(args)
-        .output()
-        .map_err(|e| e.to_string())?;
+    let mut command = Command::new("git");
+    command.args(["-C", path]).args(args);
+    #[cfg(target_os = "windows")]
+    {
+        // Prevent flashing a console window for each git poll in release GUI builds.
+        command.creation_flags(0x08000000);
+    }
+    let output = command.output().map_err(|e| e.to_string())?;
 
     if !output.status.success() {
         return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
@@ -344,7 +407,10 @@ pub fn get_git_sync_status(path: &str) -> Result<GitSyncStatus, String> {
 
 #[tauri::command]
 pub fn detect_file_encoding(path: &str) -> Result<EncodingStatus, String> {
-    let bytes = fs::read(path).map_err(|e| e.to_string())?;
+    let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
+    let mut bytes = vec![0_u8; 4096];
+    let read_len = file.read(&mut bytes).map_err(|e| e.to_string())?;
+    bytes.truncate(read_len);
 
     let label = if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
         "UTF-8 BOM"
@@ -361,4 +427,68 @@ pub fn detect_file_encoding(path: &str) -> Result<EncodingStatus, String> {
     Ok(EncodingStatus {
         label: label.to_string(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::list_tree;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_case_dir(case: &str) -> PathBuf {
+        let ts = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after unix epoch")
+            .as_nanos();
+        let mut path = std::env::temp_dir();
+        path.push(format!("writer_fs_{case}_{ts}"));
+        path
+    }
+
+    #[test]
+    fn list_tree_only_keeps_markdown_files() {
+        let root = temp_case_dir("markdown_only");
+        fs::create_dir_all(root.join("docs")).expect("create root fixture");
+        fs::write(root.join("docs").join("a.md"), "# a").expect("write a.md");
+        fs::write(root.join("docs").join("b.txt"), "b").expect("write b.txt");
+        fs::write(root.join("readme.markdown"), "# readme").expect("write readme");
+        fs::write(root.join("notes.mdx"), "# notes").expect("write notes");
+
+        let nodes = list_tree(root.to_string_lossy().as_ref()).expect("list tree");
+
+        fn has_txt(nodes: &[super::FileNode]) -> bool {
+            nodes.iter().any(|node| {
+                if node.name.ends_with(".txt") {
+                    return true;
+                }
+                node.children
+                    .as_ref()
+                    .map(|children| has_txt(children))
+                    .unwrap_or(false)
+            })
+        }
+
+        assert!(!has_txt(&nodes));
+
+        fs::remove_dir_all(root).expect("cleanup");
+    }
+
+    #[test]
+    fn list_tree_skips_heavy_directories() {
+        let root = temp_case_dir("skip_heavy_dirs");
+        fs::create_dir_all(root.join("node_modules").join("pkg")).expect("create node_modules");
+        fs::create_dir_all(root.join(".git")).expect("create .git");
+        fs::create_dir_all(root.join("workspace")).expect("create workspace");
+        fs::write(root.join("workspace").join("ok.md"), "ok").expect("write ok.md");
+        fs::write(root.join("node_modules").join("pkg").join("x.md"), "x")
+            .expect("write x.md");
+
+        let nodes = list_tree(root.to_string_lossy().as_ref()).expect("list tree");
+        let names: Vec<String> = nodes.iter().map(|n| n.name.clone()).collect();
+
+        assert!(names.iter().all(|name| name != "node_modules" && name != ".git"));
+
+        fs::remove_dir_all(root).expect("cleanup");
+    }
 }

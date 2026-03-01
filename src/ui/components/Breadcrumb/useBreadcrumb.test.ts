@@ -28,4 +28,15 @@ describe('useBreadcrumb', () => {
     expect(segments[2].item?.name).toBe('v5');
     expect(segments[3].item?.name).toBe('a.md');
   });
+
+  it('builds breadcrumb items from windows style paths', () => {
+    const items = buildBreadcrumb(
+      'E:\\Project\\Producer_Workstation\\项目余烬',
+      'E:\\Project\\Producer_Workstation\\项目余烬\\快速对齐.md',
+    );
+    expect(items.map((item) => item.name)).toEqual(['项目余烬', '快速对齐.md']);
+    expect(items.at(-1)?.path).toBe(
+      'E:\\Project\\Producer_Workstation\\项目余烬\\快速对齐.md',
+    );
+  });
 });
