@@ -71,14 +71,25 @@ export function useOutlineExtractor(editor: Editor | null): {
       return () => clearTimeout(timer);
     }
 
-    const initialTimer = setTimeout(() => {
-      updateOutline();
-    }, 0);
-    editor.on('update', updateOutline);
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    updateOutline();
+
+    const scheduleUpdate = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        updateOutline();
+      }, 150);
+    };
+
+    editor.on('update', scheduleUpdate);
 
     return () => {
-      clearTimeout(initialTimer);
-      editor.off('update', updateOutline);
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      editor.off('update', scheduleUpdate);
     };
   }, [editor, updateOutline]);
 

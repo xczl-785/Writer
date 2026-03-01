@@ -11,6 +11,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useOutlineExtractor, type OutlineItem } from './useOutlineExtractor';
 import { OutlineItemComponent } from './OutlineItem';
+import { computeOutlineWindow, findActiveOutlineIndex } from './outlineUtils';
 
 export interface OutlineProps {
   /** TipTap editor instance */
@@ -31,28 +32,30 @@ export const Outline: React.FC<OutlineProps> = ({
 }) => {
   const { items, scrollToItem } = useOutlineExtractor(editor);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [scrollTop, setScrollTop] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Track active heading based on scroll position
   useEffect(() => {
     if (!editor || items.length === 0) return;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
     const updateActiveHeading = () => {
-      const { from } = editor.state.selection;
-
-      // Find the heading that contains the current cursor position
-      let activeFound = -1;
-      for (let i = items.length - 1; i >= 0; i--) {
-        if (items[i].position <= from) {
-          activeFound = i;
-          break;
-        }
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
       }
-      setActiveIndex(activeFound);
+      debounceTimer = setTimeout(() => {
+        const { from } = editor.state.selection;
+        setActiveIndex(findActiveOutlineIndex(items, from));
+      }, 150);
     };
 
+    updateActiveHeading();
     editor.on('selectionUpdate', updateActiveHeading);
     return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
       editor.off('selectionUpdate', updateActiveHeading);
     };
   }, [editor, items]);
@@ -78,6 +81,25 @@ export const Outline: React.FC<OutlineProps> = ({
 
   if (!isOpen) return null;
 
+  const rowHeight = 30;
+  const overscan = 6;
+  const maxVisible = 200;
+  const isVirtualized = items.length > 500;
+  const windowRange = computeOutlineWindow({
+    total: items.length,
+    scrollTop,
+    rowHeight,
+    overscan,
+    maxVisible,
+  });
+  const visibleItems = isVirtualized
+    ? items.slice(windowRange.start, windowRange.end)
+    : items;
+  const paddingTop = isVirtualized ? windowRange.start * rowHeight : 0;
+  const paddingBottom = isVirtualized
+    ? (items.length - windowRange.end) * rowHeight
+    : 0;
+
   return (
     <div
       className="w-56 h-full bg-zinc-50 dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden transition-all duration-150 ease-out"
@@ -93,20 +115,36 @@ export const Outline: React.FC<OutlineProps> = ({
       </div>
 
       {/* Outline List */}
-      <div ref={listRef} className="flex-1 overflow-y-auto py-1">
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto py-1"
+        onScroll={(event) => {
+          if (!isVirtualized) {
+            return;
+          }
+          setScrollTop(event.currentTarget.scrollTop);
+        }}
+      >
         {items.length === 0 ? (
           <div className="px-3 py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">
             No headings in document
           </div>
         ) : (
-          items.map((item, index) => (
-            <OutlineItemComponent
-              key={item.id}
-              item={item}
-              isActive={index === activeIndex}
-              onClick={() => handleClick(item)}
-            />
-          ))
+          <div style={{ paddingTop, paddingBottom }}>
+            {visibleItems.map((item, index) => {
+              const absoluteIndex = isVirtualized
+                ? windowRange.start + index
+                : index;
+              return (
+                <OutlineItemComponent
+                  key={item.id}
+                  item={item}
+                  isActive={absoluteIndex === activeIndex}
+                  onClick={() => handleClick(item)}
+                />
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
