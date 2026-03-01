@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getCodeBlockContextMenuItems,
   getEditorContextMenuItems,
+  getTableContextMenuItems,
 } from './editorMenu';
 import { isMenuItem } from './contextMenuRegistry';
 
@@ -36,5 +37,47 @@ describe('editorMenu', () => {
     const ids = items.filter(isMenuItem).map((item) => item.id);
 
     expect(ids).toEqual(['copy-code-block', 'change-language', 'format-code']);
+  });
+
+  it('returns table specific items', () => {
+    const items = getTableContextMenuItems({
+      onInsertRowAbove: noop,
+      onInsertRowBelow: noop,
+      onDeleteRow: noop,
+      onInsertColumnLeft: noop,
+      onInsertColumnRight: noop,
+      onDeleteColumn: noop,
+      onMergeCells: noop,
+      onSplitCell: noop,
+      onToggleHeaderRow: noop,
+      onToggleHeaderColumn: noop,
+      onDeleteTable: noop,
+      canInsertRowAbove: () => true,
+      canInsertRowBelow: () => true,
+      canDeleteRow: () => true,
+      canInsertColumnLeft: () => true,
+      canInsertColumnRight: () => true,
+      canDeleteColumn: () => true,
+      canMergeCells: () => true,
+      canSplitCell: () => true,
+      canToggleHeaderRow: () => true,
+      canToggleHeaderColumn: () => true,
+      canDeleteTable: () => true,
+    });
+    const ids = items.filter(isMenuItem).map((item) => item.id);
+
+    expect(ids).toEqual([
+      'insert-row-above',
+      'insert-row-below',
+      'delete-row',
+      'insert-column-left',
+      'insert-column-right',
+      'delete-column',
+      'merge-cells',
+      'split-cell',
+      'toggle-header-row',
+      'toggle-header-column',
+      'delete-table',
+    ]);
   });
 });
