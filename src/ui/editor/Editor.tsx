@@ -116,7 +116,8 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     open: boolean;
     x: number;
     y: number;
-  }>({ open: false, x: 0, y: 0 });
+    placement: 'above' | 'below';
+  }>({ open: false, x: 0, y: 0, placement: 'above' });
   const bubbleMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [ghostHintPosition, setGhostHintPosition] = useState<{
     open: boolean;
@@ -373,34 +374,36 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     const updateBubble = () => {
       clearBubbleTimer();
       if (editor.state.selection.empty || !editor.isFocused) {
-        setBubbleMenuPosition({ open: false, x: 0, y: 0 });
+        setBubbleMenuPosition({ open: false, x: 0, y: 0, placement: 'above' });
         return;
       }
 
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) {
-        setBubbleMenuPosition({ open: false, x: 0, y: 0 });
+        setBubbleMenuPosition({ open: false, x: 0, y: 0, placement: 'above' });
         return;
       }
 
       const rect = selection.getRangeAt(0).getBoundingClientRect();
       if (rect.width === 0 && rect.height === 0) {
-        setBubbleMenuPosition({ open: false, x: 0, y: 0 });
+        setBubbleMenuPosition({ open: false, x: 0, y: 0, placement: 'above' });
         return;
       }
 
       bubbleMenuTimerRef.current = setTimeout(() => {
+        const placeBelow = rect.top < 80;
         setBubbleMenuPosition({
           open: true,
           x: rect.left + rect.width / 2,
-          y: rect.top - 8,
+          y: placeBelow ? rect.bottom + 8 : rect.top - 8,
+          placement: placeBelow ? 'below' : 'above',
         });
       }, BUBBLE_MENU_DEBOUNCE_MS);
     };
 
     const hideBubble = () => {
       clearBubbleTimer();
-      setBubbleMenuPosition({ open: false, x: 0, y: 0 });
+      setBubbleMenuPosition({ open: false, x: 0, y: 0, placement: 'above' });
     };
 
     editor.on('selectionUpdate', updateBubble);
@@ -923,7 +926,9 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
           }
           bubbleMenu={
             <div
-              className={`editor-bubble-menu ${bubbleMenuPosition.open ? 'is-open' : ''}`}
+              className={`editor-bubble-menu ${bubbleMenuPosition.open ? 'is-open' : ''} ${
+                bubbleMenuPosition.placement === 'below' ? 'is-below' : ''
+              }`}
               style={{
                 left: bubbleMenuPosition.x,
                 top: bubbleMenuPosition.y,

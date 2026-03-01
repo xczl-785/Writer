@@ -267,6 +267,10 @@
   transition: opacity 0.15s ease-out;
 }
 
+.editor-bubble-menu.is-below {
+  transform: translate(-50%, 0);
+}
+
 .editor-bubble-menu.is-open {
   opacity: 1;
   pointer-events: auto;
