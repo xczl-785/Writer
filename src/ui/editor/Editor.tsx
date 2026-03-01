@@ -134,6 +134,17 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   }>({ phase: 'idle', query: '', x: 0, y: 0 });
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
 
+  const getSafeCoordsAtPos = useCallback(
+    (instance: TiptapEditor, pos: number) => {
+      try {
+        return instance.view.coordsAtPos(pos);
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
+
   const { setTransientStatus, setDestructiveStatus } = useTransientStatus();
 
   const undo = useCallback(
@@ -339,7 +350,11 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         return;
       }
 
-      const rect = editor.view.coordsAtPos(selection.from);
+      const rect = getSafeCoordsAtPos(editor, selection.from);
+      if (!rect) {
+        setGhostHintPosition({ open: false, x: 0, y: 0 });
+        return;
+      }
       setGhostHintPosition({
         open: true,
         x: rect.left + 4,
@@ -361,7 +376,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       editor.off('focus', updateGhostHint);
       editor.off('blur', hideGhostHint);
     };
-  }, [editor, slashState.phase]);
+  }, [editor, getSafeCoordsAtPos, slashState.phase]);
 
   useEffect(() => {
     if (!editor) return;
@@ -762,7 +777,10 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
     const openSlash = () => {
       const { selection } = editor.state;
-      const rect = editor.view.coordsAtPos(selection.from);
+      const rect = getSafeCoordsAtPos(editor, selection.from);
+      if (!rect) {
+        return;
+      }
       setSlashState({
         phase: 'open',
         query: '',
@@ -942,7 +960,13 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         onCompositionEnd as EventListener,
       );
     };
-  }, [editor, filteredSlashCommands, slashSelectedIndex, slashState.phase]);
+  }, [
+    editor,
+    filteredSlashCommands,
+    getSafeCoordsAtPos,
+    slashSelectedIndex,
+    slashState.phase,
+  ]);
 
   if (!activeFile)
     return (
