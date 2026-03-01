@@ -49,7 +49,10 @@ function extractOutline(editor: Editor): OutlineItem[] {
 /**
  * Hook to extract and track outline items from editor
  */
-export function useOutlineExtractor(editor: Editor | null): {
+export function useOutlineExtractor(
+  editor: Editor | null,
+  refreshToken?: string | null,
+): {
   items: OutlineItem[];
   scrollToItem: (item: OutlineItem) => void;
 } {
@@ -84,21 +87,25 @@ export function useOutlineExtractor(editor: Editor | null): {
     };
 
     editor.on('update', scheduleUpdate);
+    editor.on('transaction', scheduleUpdate);
 
     return () => {
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }
       editor.off('update', scheduleUpdate);
+      editor.off('transaction', scheduleUpdate);
     };
-  }, [editor, updateOutline]);
+  }, [editor, refreshToken, updateOutline]);
 
   // Scroll to heading position
   const scrollToItem = useCallback(
     (item: OutlineItem) => {
       if (!editor) return;
 
-      editor.chain().focus().setTextSelection(item.position).scrollIntoView().run();
+      const maxPos = editor.state.doc.content.size;
+      const safePos = Math.min(Math.max(item.position, 1), Math.max(1, maxPos));
+      editor.chain().focus().setTextSelection(safePos).scrollIntoView().run();
     },
     [editor],
   );

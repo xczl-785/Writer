@@ -18,6 +18,8 @@ export interface OutlineProps {
   editor: Editor | null;
   /** Whether the panel is visible */
   isOpen: boolean;
+  /** Force refresh token when file switches */
+  refreshToken?: string | null;
   /** Callback when panel closes */
   onClose?: () => void;
 }
@@ -28,14 +30,20 @@ export interface OutlineProps {
 export const Outline: React.FC<OutlineProps> = ({
   editor,
   isOpen,
+  refreshToken,
   onClose,
 }) => {
-  const { items, scrollToItem } = useOutlineExtractor(editor);
+  const { items, scrollToItem } = useOutlineExtractor(editor, refreshToken);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [scrollTop, setScrollTop] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Track active heading based on scroll position
+  useEffect(() => {
+    setActiveIndex(-1);
+    setScrollTop(0);
+  }, [refreshToken]);
+
   useEffect(() => {
     if (!editor || items.length === 0) return;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
