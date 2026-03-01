@@ -34,9 +34,6 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
-  Folder,
-  FolderOpen,
-  File,
   FilePlus,
   FolderPlus,
   X,
@@ -46,6 +43,63 @@ type GhostNode = {
   parentPath: string | null;
   type: 'file' | 'directory';
 };
+
+type FileIconProps = {
+  className?: string;
+};
+
+function DocIcon({ className }: FileIconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M14 3H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9z" />
+      <path d="M14 3v6h6" />
+    </svg>
+  );
+}
+
+type FolderIconProps = {
+  className?: string;
+  filled?: boolean;
+};
+
+function FolderIcon({ className, filled = false }: FolderIconProps) {
+  if (filled) {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path d="M10 4H4.8A2.8 2.8 0 0 0 2 6.8v10.4A2.8 2.8 0 0 0 4.8 20h14.4A2.8 2.8 0 0 0 22 17.2V8.8A2.8 2.8 0 0 0 19.2 6H12z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 7.8A2.8 2.8 0 0 1 5.8 5H10l2 2h6.2A2.8 2.8 0 0 1 21 9.8v8.4A2.8 2.8 0 0 1 18.2 21H5.8A2.8 2.8 0 0 1 3 18.2z" />
+    </svg>
+  );
+}
 
 export function Sidebar() {
   const { nodes, selectedPath, setSelectedPath } = useFileTreeStore();
@@ -520,10 +574,7 @@ export function Sidebar() {
                       }`}
                       title={node.path}
                     >
-                      <File
-                        size={16}
-                        className="text-zinc-500 flex-shrink-0"
-                      />
+                      <DocIcon className="h-4 w-4 text-zinc-500 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="truncate leading-none">
                           {getDisplayName(node)}
@@ -540,7 +591,7 @@ export function Sidebar() {
           </div>
         ) : visibleNodes.length === 0 && !ghostNode ? (
           <div className="flex flex-col items-center justify-center h-32 text-zinc-400 text-sm">
-            <Folder size={24} className="mb-2 opacity-20" />
+            <FolderIcon className="mb-2 h-6 w-6 opacity-20 text-zinc-500" />
             <span>
               {currentPath ? 'No markdown files' : 'No folder opened'}
             </span>
@@ -616,9 +667,9 @@ function GhostRow({
       <span className="w-4" aria-hidden="true" />
       <span className="text-zinc-400 flex-shrink-0">
         {type === 'directory' ? (
-          <Folder size={16} className="text-blue-500" />
+          <FolderIcon className="h-4 w-4 text-blue-500" />
         ) : (
-          <File size={16} className="text-zinc-500" />
+          <DocIcon className="h-4 w-4 text-zinc-500" />
         )}
       </span>
       <InlineInput
@@ -820,13 +871,12 @@ function FileTreeNode({
           }`}
         >
           {isDirectory ? (
-            isExpanded ? (
-              <FolderOpen size={16} />
-            ) : (
-              <Folder size={16} />
-            )
+            <FolderIcon
+              className="h-4 w-4"
+              filled={isFocused || isActiveParent}
+            />
           ) : (
-            <File size={16} />
+            <DocIcon className="h-4 w-4" />
           )}
         </span>
 

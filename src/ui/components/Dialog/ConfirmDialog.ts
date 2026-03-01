@@ -44,7 +44,7 @@ export async function showConfirmDialog(
 
     const panel = document.createElement('div');
     panel.className =
-      'w-full max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-2xl';
+      'w-full max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-2xl transition-all duration-150 ease-out';
     panel.setAttribute('role', 'alertdialog');
     panel.setAttribute('aria-modal', 'true');
     panel.setAttribute('aria-label', title);
@@ -71,15 +71,15 @@ export async function showConfirmDialog(
     const cancelButton = document.createElement('button');
     cancelButton.type = 'button';
     cancelButton.className =
-      'rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-300';
+      'rounded-md border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-300';
     cancelButton.textContent = cancelLabel;
 
     const okButton = document.createElement('button');
     okButton.type = 'button';
     okButton.className =
       kind === 'error' || kind === 'warning'
-        ? 'rounded-xl bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300'
-        : 'rounded-xl bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300';
+        ? 'rounded-md bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300'
+        : 'rounded-md bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300';
     okButton.textContent = okLabel;
 
     actions.append(cancelButton, okButton);
