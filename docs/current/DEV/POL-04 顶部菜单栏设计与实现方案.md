@@ -154,17 +154,87 @@ Tauri Native Menu Click
 2. 前端事件桥接 + Command Bus
 3. 接通 12 个核心命令（Open Folder/Close Folder/Save/Undo/Redo/Find/Heading1/Bold/Italic/Outline/Sidebar/New）
 
+> 进度：✅ 已完成（提交：`7a69e7c`）
+
 ### 阶段 P0-2（完整映射）
 
 1. File/Edit/Paragraph/Format/View 全部菜单项接入
 2. READY / ADAPT 项全部可用
 3. STUB 项统一 `coming soon`
 
+> 进度：✅ 已完成（提交：`b672c28`）  
+> 当前实现：  
+> - 已可用：Open/Close Folder、Save、Undo/Redo、Cut/Copy/Paste、Find/Replace、Heading1~6、List、Blockquote、Code Block、Table、Horizontal Rule、Strikethrough、Outline、Toggle Sidebar  
+> - 暂时占位（STUB）：Save As、Export、Math Block、Underline、Highlight、Link、Image、Focus Mode、Source Mode
+
 ### 阶段 P0-3（回归）
 
 1. 快捷键一致性检查
 2. 平台差异记录（macOS/Windows）
 3. 更新进度板与留档
+
+> 进度：🚧 进行中
+
+---
+
+## 10. 菜单 ID 清单（当前实现）
+
+### File
+
+- `menu.file.new`
+- `menu.file.open_folder`
+- `menu.file.close_folder`
+- `menu.file.save`
+- `menu.file.save_as`
+- `menu.file.export_pdf`
+- `menu.file.export_html`
+- `menu.file.export_image`
+
+### Edit
+
+- `menu.edit.undo`
+- `menu.edit.redo`
+- `menu.edit.cut`
+- `menu.edit.copy`
+- `menu.edit.paste`
+- `menu.edit.select_all`
+- `menu.edit.find`
+- `menu.edit.replace`
+
+### Paragraph
+
+- `menu.paragraph.heading_1`
+- `menu.paragraph.heading_2`
+- `menu.paragraph.heading_3`
+- `menu.paragraph.heading_4`
+- `menu.paragraph.heading_5`
+- `menu.paragraph.heading_6`
+- `menu.paragraph.blockquote`
+- `menu.paragraph.code_block`
+- `menu.paragraph.table`
+- `menu.paragraph.unordered_list`
+- `menu.paragraph.ordered_list`
+- `menu.paragraph.task_list`
+- `menu.paragraph.horizontal_rule`
+- `menu.paragraph.math_block`
+
+### Format
+
+- `menu.format.bold`
+- `menu.format.italic`
+- `menu.format.inline_code`
+- `menu.format.strike`
+- `menu.format.underline`
+- `menu.format.highlight`
+- `menu.format.link`
+- `menu.format.image`
+
+### View
+
+- `menu.view.outline`
+- `menu.view.toggle_sidebar`
+- `menu.view.focus_mode`
+- `menu.view.source_mode`
 
 ---
 
