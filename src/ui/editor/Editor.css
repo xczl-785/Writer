@@ -331,11 +331,22 @@
 
 .editor-slash-menu__fragment {
   margin: 4px 6px;
-  color: var(--color-action);
-  background: rgb(59 130 246 / 12%);
+  color: #a1a1aa;
+  background: rgb(63 63 70 / 35%);
   border-radius: 4px;
   padding: 2px 6px;
   font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editor-slash-menu__fragment-trigger {
+  color: #a1a1aa;
+}
+
+.editor-slash-menu__fragment-query {
+  color: #a1a1aa;
 }
 
 .editor-slash-menu__group {
@@ -376,4 +387,29 @@
   color: #a1a1aa;
   font-size: 12px;
   padding: 8px;
+}
+
+.editor-slash-inline {
+  position: fixed;
+  z-index: 24;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--text-tertiary);
+  transition: opacity 0.08s ease-out;
+}
+
+.editor-slash-inline.is-open {
+  opacity: 1;
+}
+
+.editor-slash-inline__trigger,
+.editor-slash-inline__query,
+.editor-slash-inline__placeholder {
+  color: var(--text-tertiary);
 }

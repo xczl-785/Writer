@@ -16,6 +16,7 @@ describe('Editor slash menu behavior', () => {
     expect(editorTsx).toContain("addEventListener('beforeinput'");
     expect(editorTsx).toContain("addEventListener('compositionend'");
     expect(editorTsx).toContain('const onCompositionEnd');
+    expect(editorTsx).toContain("inputType === 'insertFromComposition'");
   });
 
   it('cleans committed slash char before opening menu in IME path', () => {
@@ -27,5 +28,11 @@ describe('Editor slash menu behavior', () => {
     expect(editorTsx).toContain('const getSafeCoordsAtPos');
     expect(editorTsx).toContain('return instance.view.coordsAtPos(pos);');
     expect(editorTsx).toContain('const rect = getSafeCoordsAtPos(editor, selection.from);');
+  });
+
+  it('renders slash session fragment in editor area with placeholder', () => {
+    expect(editorTsx).toContain('className={`editor-slash-inline');
+    expect(editorTsx).toContain('输入以唤出菜单...');
+    expect(editorTsx).toContain('editor-slash-inline__query');
   });
 });
