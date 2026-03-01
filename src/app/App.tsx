@@ -11,6 +11,11 @@ import { AutosaveService } from '../services/autosave/AutosaveService';
 import { FsService } from '../services/fs/FsService';
 import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
 import { ErrorService } from '../services/error/ErrorService';
+import { workspaceActions } from '../state/actions/workspaceActions';
+import { openWorkspace } from '../workspace/WorkspaceManager';
+import { menuCommandBus } from '../ui/commands/menuCommandBus';
+import { useNativeMenuBridge } from './useNativeMenuBridge';
+import { t } from '../i18n';
 import {
   filterSavableDirtyPaths,
   getCloseAction,
@@ -27,6 +32,10 @@ function App() {
   const showStateDebug =
     import.meta.env.DEV && import.meta.env.VITE_SHOW_STATE_DEBUG === '1';
 
+  useNativeMenuBridge(() => {
+    useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+  });
+
   useEffect(() => {
     currentPathRef.current = currentPath;
   }, [currentPath]);
@@ -34,6 +43,77 @@ function App() {
   // Warm up Tauri IPC on idle time to reduce first native dialog latency.
   useEffect(() => {
     scheduleTauriBridgeWarmup();
+  }, []);
+
+  useEffect(() => {
+    const emitEditorCommand = (id: string) => {
+      window.dispatchEvent(new CustomEvent('writer:editor-command', { detail: { id } }));
+    };
+
+    const unregister = [
+      menuCommandBus.register('menu.file.open_folder', async () => {
+        await openWorkspace();
+      }),
+      menuCommandBus.register('menu.file.close_folder', () => {
+        workspaceActions.closeWorkspace();
+        useStatusStore.getState().setStatus('idle', t('menu.file.closeFolder'));
+      }),
+      menuCommandBus.register('menu.file.save', async () => {
+        const workspace = useWorkspaceStore.getState();
+        const status = useStatusStore.getState();
+        if (!workspace.activeFile) {
+          status.setStatus('error', t('status.menu.noWorkspace'));
+          return;
+        }
+
+        const path = workspace.activeFile;
+        const fileState = useEditorStore.getState().fileStates[path];
+        if (!fileState) {
+          status.setStatus('error', t('status.menu.unavailable'));
+          return;
+        }
+
+        try {
+          status.markSaving(path);
+          if (AutosaveService.isPending(path)) {
+            await AutosaveService.flush(path);
+          } else {
+            await FsService.writeFileAtomic(path, fileState.content);
+            useEditorStore.getState().setDirty(path, false);
+            status.markSaved(t('status.menu.saved'));
+          }
+        } catch {
+          status.setStatus('error', t('status.menu.saveFailed'));
+        }
+      }),
+      menuCommandBus.register('menu.file.new', () => {
+        window.dispatchEvent(new CustomEvent('writer:sidebar-command', { detail: { id: 'new-file' } }));
+      }),
+      menuCommandBus.register('menu.edit.undo', () => emitEditorCommand('edit.undo')),
+      menuCommandBus.register('menu.edit.redo', () => emitEditorCommand('edit.redo')),
+      menuCommandBus.register('menu.edit.select_all', () => emitEditorCommand('edit.select_all')),
+      menuCommandBus.register('menu.edit.find', () => emitEditorCommand('edit.find')),
+      menuCommandBus.register('menu.edit.replace', () => emitEditorCommand('edit.replace')),
+      menuCommandBus.register('menu.format.bold', () => emitEditorCommand('format.bold')),
+      menuCommandBus.register('menu.format.italic', () => emitEditorCommand('format.italic')),
+      menuCommandBus.register('menu.format.inline_code', () => emitEditorCommand('format.inline_code')),
+      menuCommandBus.register('menu.paragraph.heading_1', () => emitEditorCommand('paragraph.heading_1')),
+      menuCommandBus.register('menu.paragraph.heading_2', () => emitEditorCommand('paragraph.heading_2')),
+      menuCommandBus.register('menu.paragraph.heading_3', () => emitEditorCommand('paragraph.heading_3')),
+      menuCommandBus.register('menu.paragraph.blockquote', () => emitEditorCommand('paragraph.blockquote')),
+      menuCommandBus.register('menu.paragraph.code_block', () => emitEditorCommand('paragraph.code_block')),
+      menuCommandBus.register('menu.paragraph.unordered_list', () => emitEditorCommand('paragraph.unordered_list')),
+      menuCommandBus.register('menu.paragraph.ordered_list', () => emitEditorCommand('paragraph.ordered_list')),
+      menuCommandBus.register('menu.paragraph.table', () => emitEditorCommand('paragraph.table')),
+      menuCommandBus.register('menu.view.outline', () => emitEditorCommand('view.outline')),
+      menuCommandBus.register('menu.view.toggle_sidebar', () => {
+        useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+      }),
+    ];
+
+    return () => {
+      unregister.forEach((fn) => fn());
+    };
   }, []);
 
   // Handle window close requests (Tauri)

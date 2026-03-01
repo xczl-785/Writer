@@ -393,6 +393,23 @@ export function Sidebar() {
     contextMenu.state.isOpen,
   ]);
 
+  useEffect(() => {
+    const onMenuCommand = (event: Event) => {
+      const detail = (event as CustomEvent<{ id?: string }>).detail;
+      if (detail?.id === 'new-file') {
+        dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx);
+      }
+    };
+
+    window.addEventListener('writer:sidebar-command', onMenuCommand as EventListener);
+    return () =>
+      window.removeEventListener(
+        'writer:sidebar-command',
+        onMenuCommand as EventListener,
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPath, selectedNode, ghostNode, renamingPath]);
+
   return (
     <div
       className="h-full w-64 flex-shrink-0 select-none border-r border-zinc-200 bg-zinc-50 flex flex-col"

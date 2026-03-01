@@ -41,4 +41,18 @@ export const workspaceActions = {
     useFileTreeStore.getState().setSelectedPath(null);
     return nodes.length;
   },
+
+  closeWorkspace(): void {
+    useWorkspaceStore.setState({
+      currentPath: null,
+      openFiles: [],
+      activeFile: null,
+    });
+    useEditorStore.setState({ fileStates: {} });
+    useFileTreeStore.setState({
+      nodes: [],
+      expandedPaths: new Set(),
+      selectedPath: null,
+    });
+  },
 };

@@ -1,4 +1,5 @@
 pub mod fs;
+pub mod menu;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -7,8 +8,13 @@ fn greet(name: &str) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
+    let mut builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
+
+    builder = builder.on_menu_event(|app, event| {
+        menu::emit_menu_command(app, event.id().as_ref());
+    });
+
+    builder
         .invoke_handler(tauri::generate_handler![
             greet,
             fs::list_tree,
@@ -25,6 +31,8 @@ pub fn run() {
             fs::detect_file_encoding
         ])
         .setup(|app| {
+            let native_menu = menu::build_native_menu(&app.handle())?;
+            app.set_menu(native_menu)?;
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
