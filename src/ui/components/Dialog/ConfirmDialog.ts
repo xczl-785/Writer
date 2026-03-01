@@ -1,14 +1,9 @@
 /**
  * Confirm Dialog Component
  *
- * A reusable confirmation dialog component following V5 UI/UX specification.
- * Uses Tauri native dialog for file operations.
- *
- * @see docs/current/UI/UI_UX规范.md - 3.4 破坏性操作与容错
- * @see docs/current/PM/V5 功能清单.md - INT-013: 删除确认对话框
+ * A reusable custom Web dialog following V5 UI/UX specification.
+ * This implementation guarantees safe default focus behavior for destructive actions.
  */
-
-import { ask } from '@tauri-apps/plugin-dialog';
 
 export interface ConfirmDialogOptions {
   /** Dialog title */
@@ -25,12 +20,6 @@ export interface ConfirmDialogOptions {
   kind?: 'warning' | 'error' | 'info';
 }
 
-/**
- * Show a native confirmation dialog using Tauri
- *
- * @param options Dialog options
- * @returns Promise resolving to true if confirmed, false otherwise
- */
 export async function showConfirmDialog(
   options: ConfirmDialogOptions,
 ): Promise<boolean> {
@@ -43,22 +32,131 @@ export async function showConfirmDialog(
     kind = 'info',
   } = options;
 
-  const fullMessage = description ? `${message}\n\n${description}` : message;
-
-  try {
-    const confirmed = await ask(fullMessage, {
-      title,
-      kind,
-      okLabel,
-      cancelLabel,
-    });
-
-    return confirmed;
-  } catch (error) {
-    console.error('Failed to show native dialog:', error);
-    // Fallback to browser confirm if Tauri dialog fails
+  if (typeof document === 'undefined') {
+    const fullMessage = description ? `${message}\n\n${description}` : message;
     return window.confirm(`${title}\n\n${fullMessage}`);
   }
+
+  return new Promise<boolean>((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className =
+      'fixed inset-0 z-[999] flex items-center justify-center bg-black/20 backdrop-blur-sm px-4';
+
+    const panel = document.createElement('div');
+    panel.className =
+      'w-full max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-2xl';
+    panel.setAttribute('role', 'alertdialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-label', title);
+
+    const titleElement = document.createElement('h3');
+    titleElement.className = 'text-base font-semibold text-zinc-900';
+    titleElement.textContent = title;
+
+    const messageElement = document.createElement('p');
+    messageElement.className = 'mt-2 text-sm text-zinc-700';
+    messageElement.textContent = message;
+
+    const descriptionElement = description
+      ? document.createElement('p')
+      : null;
+    if (descriptionElement) {
+      descriptionElement.className = 'mt-1 text-sm text-zinc-500';
+      descriptionElement.textContent = description ?? null;
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'mt-5 flex items-center justify-end gap-2';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className =
+      'rounded-xl border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-300';
+    cancelButton.textContent = cancelLabel;
+
+    const okButton = document.createElement('button');
+    okButton.type = 'button';
+    okButton.className =
+      kind === 'error' || kind === 'warning'
+        ? 'rounded-xl bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300'
+        : 'rounded-xl bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300';
+    okButton.textContent = okLabel;
+
+    actions.append(cancelButton, okButton);
+    panel.append(titleElement, messageElement);
+    if (descriptionElement) {
+      panel.append(descriptionElement);
+    }
+    panel.append(actions);
+    overlay.append(panel);
+
+    let settled = false;
+    const focusable = [cancelButton, okButton];
+
+    const cleanup = () => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      overlay.removeEventListener('click', onOverlayClick);
+      cancelButton.removeEventListener('click', onCancel);
+      okButton.removeEventListener('click', onConfirm);
+      overlay.remove();
+    };
+
+    const close = (confirmed: boolean) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(confirmed);
+    };
+
+    const onCancel = () => close(false);
+    const onConfirm = () => close(true);
+
+    const onOverlayClick = (event: MouseEvent) => {
+      if (event.target === overlay) {
+        close(false);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        close(false);
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const active = document.activeElement;
+        if (active === okButton) {
+          close(true);
+        } else {
+          close(false);
+        }
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const currentIndex = focusable.indexOf(
+          document.activeElement as HTMLButtonElement,
+        );
+        const nextIndex = event.shiftKey
+          ? (currentIndex + focusable.length - 1) % focusable.length
+          : (currentIndex + 1) % focusable.length;
+        event.preventDefault();
+        focusable[nextIndex].focus();
+      }
+    };
+
+    cancelButton.addEventListener('click', onCancel);
+    okButton.addEventListener('click', onConfirm);
+    overlay.addEventListener('click', onOverlayClick);
+    document.addEventListener('keydown', onKeyDown, true);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+      cancelButton.focus();
+    });
+  });
 }
 
 /**
