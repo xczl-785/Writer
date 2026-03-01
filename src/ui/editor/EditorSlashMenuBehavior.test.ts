@@ -22,5 +22,10 @@ describe('Editor slash menu behavior', () => {
     expect(editorTsx).toContain('triggeredByCommittedChar');
     expect(editorTsx).toContain('.deleteRange({ from: selection.from - 1');
   });
-});
 
+  it('guards coordsAtPos access when editor view is not mounted yet', () => {
+    expect(editorTsx).toContain('const getSafeCoordsAtPos');
+    expect(editorTsx).toContain('return instance.view.coordsAtPos(pos);');
+    expect(editorTsx).toContain('const rect = getSafeCoordsAtPos(editor, selection.from);');
+  });
+});
