@@ -3,7 +3,7 @@
  *
  * A floating toolbar that appears when text is selected.
  */
-import { useMemo, useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 
 const BUBBLE_MENU_DEBOUNCE_MS = 80;

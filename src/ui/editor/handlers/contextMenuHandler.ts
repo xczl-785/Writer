@@ -5,6 +5,7 @@
  */
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { Editor } from '@tiptap/react';
+import type { MenuItem } from '../../components/ContextMenu/contextMenuRegistry';
 import {
   getCodeBlockContextMenuItems,
   getEditorContextMenuItems,
@@ -17,7 +18,7 @@ export type ContextMenuOpener = (event: ReactMouseEvent) => void;
 export function createContextMenuOpener(
   editor: Editor,
   contextMenu: {
-    open: (x: number, y: number, items: unknown[]) => void;
+    open: (x: number, y: number, items: MenuItem[]) => void;
   },
   copyText: (text: string, successMessage: string) => Promise<void>,
   setStatus: (status: 'idle' | 'error', message: string) => void,
@@ -200,6 +201,6 @@ export function createContextMenuOpener(
             },
           });
 
-    contextMenu.open(event.clientX, event.clientY, items as unknown[]);
+    contextMenu.open(event.clientX, event.clientY, items);
   };
 }
