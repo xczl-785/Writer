@@ -10,12 +10,14 @@ describe('Editor table controls', () => {
   const readConstants = () =>
     readFileSync(join(currentDir, 'constants.ts'), 'utf-8');
 
-  it('includes source markers for delete-table command and label', () => {
+  it('removes table operation commands from toolbar constants', () => {
     const constantsTs = readConstants();
 
-    expect(constantsTs).toContain("'deleteTable'");
-    expect(constantsTs).toContain("ariaLabel: 'Delete table'");
-    expect(constantsTs).toContain("label: 'Del Tbl'");
+    expect(constantsTs).not.toContain("'deleteTable'");
+    expect(constantsTs).not.toContain("ariaLabel: 'Delete table'");
+    expect(constantsTs).not.toContain("label: 'Del Tbl'");
+    expect(constantsTs).not.toContain("'insertTable'");
+    expect(constantsTs).not.toContain("ariaLabel: 'Insert table'");
   });
 
   it('uses unified destructive status messaging', () => {

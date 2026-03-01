@@ -16,11 +16,6 @@ describe('Editor toolbar MVP', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const readEditor = () =>
     readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
-  const readInsertPopover = () =>
-    readFileSync(
-      join(currentDir, 'components', 'InsertTablePopover.tsx'),
-      'utf-8',
-    );
   const readConstants = () =>
     readFileSync(join(currentDir, 'constants.ts'), 'utf-8');
 
@@ -40,11 +35,6 @@ describe('Editor toolbar MVP', () => {
       'Ordered list',
       'Blockquote',
       'Code block',
-      'Insert table',
-      'Add row',
-      'Delete row',
-      'Add column',
-      'Delete column',
     ];
 
     for (const label of expectedAriaLabels) {
@@ -66,7 +56,6 @@ describe('Editor toolbar MVP', () => {
       'Mod-Alt-o',
       'Mod-Alt-q',
       'Mod-Alt-c',
-      'Mod-t',
     ];
 
     for (const shortcut of expectedShortcuts) {
@@ -82,15 +71,6 @@ describe('Editor toolbar MVP', () => {
     expect(constantsTs).toContain('cols: EDITOR_CONFIG.table.defaultCols');
     const editorTsx = readEditor();
     expect(editorTsx).toContain('insertTable(DEFAULT_TABLE_INSERT)');
-  });
-
-  it('includes source markers for the insert-table popover inputs', () => {
-    const editorTsx = readEditor();
-    const popoverTsx = readInsertPopover();
-
-    expect(popoverTsx).toContain('insert-table-rows');
-    expect(popoverTsx).toContain('insert-table-cols');
-    expect(editorTsx).toContain('aria-haspopup="dialog"');
   });
 
   it('defines minimal toolbar styling hooks', () => {

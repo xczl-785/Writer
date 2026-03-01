@@ -37,7 +37,6 @@ import {
   createToolbarShortcutExtension,
 } from './editorExtensions';
 import { useTransientStatus } from './useTransientStatus';
-import { useInsertTable } from './useInsertTable';
 import { useFindReplace } from './useFindReplace';
 import { useToolbarCommands } from './useToolbarCommands';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
@@ -68,7 +67,6 @@ export const EDITOR_SOURCE_MARKERS = [
   'Enter text to find',
   `> ${FIND_MATCH_LIMIT - 1} matches`,
   'aria-label={cmd.ariaLabel}',
-  'aria-haspopup="dialog"',
   'const setDestructiveStatus =',
   'setTransientStatus(`${action} deleted`)',
   "if (id.startsWith('delete'))",
@@ -112,7 +110,6 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
   const { statusText, setTransientStatus, setDestructiveStatus } =
     useTransientStatus();
-  const insertTable = useInsertTable({ setTransientStatus });
 
   const undo = useCallback(
     (editor: TiptapEditor) => {
@@ -142,7 +139,6 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     hasEditorWidgetFocus,
     setTransientStatus,
     setDestructiveStatus,
-    openInsertTablePopover: insertTable.openInsertTablePopover,
   });
 
   const toolbarShortcutExtension = useMemo(
@@ -640,7 +636,6 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
               runToolbarCommand={runToolbarCommand}
               setHasEditorWidgetFocus={setHasEditorWidgetFocus}
               toolbarStatus={toolbarStatus}
-              insertTable={insertTable}
               findReplace={findReplace}
               onEditorContextMenu={openEditorContextMenu}
               breadcrumb={

@@ -10,14 +10,12 @@ type UseToolbarCommandsArgs = {
   hasEditorWidgetFocus: boolean;
   setTransientStatus: (message: string) => void;
   setDestructiveStatus: (action: string) => void;
-  openInsertTablePopover: () => void;
 };
 
 export function useToolbarCommands({
   hasEditorWidgetFocus,
   setTransientStatus,
   setDestructiveStatus,
-  openInsertTablePopover,
 }: UseToolbarCommandsArgs) {
   const toolbarCommandById = useMemo(() => {
     const map = new Map<ToolbarCommandId, ToolbarCommandSpec>();
@@ -40,11 +38,6 @@ export function useToolbarCommands({
         return false;
       }
 
-      if (id === 'insertTable') {
-        openInsertTablePopover();
-        return true;
-      }
-
       const ran = cmd.run(editor);
       if (ran) {
         if (id.startsWith('delete')) {
@@ -57,7 +50,6 @@ export function useToolbarCommands({
     },
     [
       hasEditorWidgetFocus,
-      openInsertTablePopover,
       setDestructiveStatus,
       setTransientStatus,
       toolbarCommandById,
