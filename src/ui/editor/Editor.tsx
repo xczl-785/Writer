@@ -1171,8 +1171,41 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
 
   if (!activeFile)
     return (
-      <div className="flex items-center justify-center h-full text-gray-400">
-        No file open
+      <div className="h-full w-full flex flex-col">
+        {isSidebarVisible ? null : (
+          <header className="editor-header">
+            <div className="editor-header__breadcrumb">
+              <div className="editor-header__breadcrumb-inner">
+                <button
+                  type="button"
+                  className="editor-header__sidebar-btn"
+                  onClick={onToggleSidebar}
+                  aria-label="Expand sidebar"
+                  title="Expand Sidebar"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="3.5" y="4" width="17" height="16" rx="2" />
+                    <line x1="9.2" y1="4" x2="9.2" y2="20" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="editor-header__actions" />
+          </header>
+        )}
+        <div className="flex items-center justify-center h-full text-gray-400">
+          No file open
+        </div>
       </div>
     );
   if (!editor) return null;
