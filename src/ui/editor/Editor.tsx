@@ -471,6 +471,79 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     setIsOutlineOpen(false);
   }, [activeFile]);
 
+  useEffect(() => {
+    if (!editor) return;
+
+    const onMenuCommand = (event: Event) => {
+      const detail = (event as CustomEvent<{ id?: string }>).detail;
+      const id = detail?.id;
+      if (!id) return;
+
+      switch (id) {
+        case 'edit.undo':
+          editor.chain().focus().undo().run();
+          return;
+        case 'edit.redo':
+          editor.chain().focus().redo().run();
+          return;
+        case 'edit.select_all':
+          editor.chain().focus().selectAll().run();
+          return;
+        case 'edit.find':
+          findReplace.openFindPanel('find');
+          return;
+        case 'edit.replace':
+          findReplace.openFindPanel('replace');
+          return;
+        case 'format.bold':
+          editor.chain().focus().toggleBold().run();
+          return;
+        case 'format.italic':
+          editor.chain().focus().toggleItalic().run();
+          return;
+        case 'format.inline_code':
+          editor.chain().focus().toggleCode().run();
+          return;
+        case 'paragraph.heading_1':
+          editor.chain().focus().toggleHeading({ level: 1 }).run();
+          return;
+        case 'paragraph.heading_2':
+          editor.chain().focus().toggleHeading({ level: 2 }).run();
+          return;
+        case 'paragraph.heading_3':
+          editor.chain().focus().toggleHeading({ level: 3 }).run();
+          return;
+        case 'paragraph.blockquote':
+          editor.chain().focus().toggleBlockquote().run();
+          return;
+        case 'paragraph.code_block':
+          editor.chain().focus().toggleCodeBlock().run();
+          return;
+        case 'paragraph.unordered_list':
+          editor.chain().focus().toggleBulletList().run();
+          return;
+        case 'paragraph.ordered_list':
+          editor.chain().focus().toggleOrderedList().run();
+          return;
+        case 'paragraph.table':
+          editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run();
+          return;
+        case 'view.outline':
+          setIsOutlineOpen((prev) => !prev);
+          return;
+        default:
+          return;
+      }
+    };
+
+    window.addEventListener('writer:editor-command', onMenuCommand as EventListener);
+    return () =>
+      window.removeEventListener(
+        'writer:editor-command',
+        onMenuCommand as EventListener,
+      );
+  }, [editor, findReplace]);
+
   useImperativeHandle(
     ref,
     () => ({
