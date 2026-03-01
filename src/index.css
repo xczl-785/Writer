@@ -10,16 +10,27 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* StatusBar 及全局 UI 语义色 — 与现有 #f5f5f5/#333 浅色主题一致 */
-  --bg-secondary: #f3f4f6;
-  --border-color: #e5e7eb;
-  --text-secondary: #6b7280;
-  --text-tertiary: #9ca3af;
-  --accent-color: #3b82f6;
-  --success-color: #22c55e;
-  --error-color: #ef4444;
+  /* V5 UI tokens */
+  --bg-primary: #ffffff;
+  --bg-sidebar: #f9fafb;
+  --bg-secondary: #fafafa;
+  --bg-popover: #18181b;
+  --border-main: #e4e4e7;
+  --border-color: #e4e4e7;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-tertiary: #a1a1aa;
+  --color-action: #3b82f6;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
   --error-bg: #fef2f2;
   --error-text: #dc2626;
+  --radius-dialog: 12px;
+  --radius-control: 6px;
+  --shadow-floating: 0 12px 40px rgb(0 0 0 / 15%);
+  --shadow-bubble: 0 4px 6px -1px rgb(0 0 0 / 20%);
+  --shadow-slash: 0 12px 30px rgb(0 0 0 / 35%);
 }
 
 body {
