@@ -1,7 +1,7 @@
 /**
  * Editor hooks - ghost hint visibility logic
  */
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { SlashPhase } from '../menus/SlashMenu';
 

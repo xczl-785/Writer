@@ -5,8 +5,6 @@ import { fileURLToPath } from 'node:url';
 
 describe('Editor slash menu behavior', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const readEditor = () =>
-    readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
   const readSlashMenu = () =>
     readFileSync(join(currentDir, 'menus', 'SlashMenu.tsx'), 'utf-8');
   const readSafeCoords = () =>
