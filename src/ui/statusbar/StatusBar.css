@@ -67,6 +67,12 @@
   text-transform: uppercase;
 }
 
+.status-sync.is-muted {
+  color: rgb(161 161 170 / 75%);
+  background: rgb(161 161 170 / 8%);
+  border-color: rgb(161 161 170 / 14%);
+}
+
 .status-indicator-wrap {
   position: relative;
   display: inline-flex;

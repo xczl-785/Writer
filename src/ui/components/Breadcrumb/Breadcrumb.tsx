@@ -41,8 +41,8 @@ export function Breadcrumb({ items, onItemClick, className }: BreadcrumbProps) {
               </button>
             )}
             {!isLast && (
-              <span className="text-zinc-300 mx-1.5" aria-hidden="true">
-                ›
+              <span className="text-zinc-300 mx-2" aria-hidden="true">
+                /
               </span>
             )}
           </div>
