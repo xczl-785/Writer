@@ -32,6 +32,8 @@ import { dispatchExplorerCommand, EXPLORER_COMMANDS } from './explorerCommands';
 import { matchExplorerShortcut } from './explorerKeybindings';
 import {
   Search,
+  ChevronDown,
+  ChevronRight,
   Folder,
   FolderOpen,
   FileText,
@@ -354,7 +356,7 @@ export function Sidebar() {
       }}
     >
       <div
-        className="h-10 px-3 flex items-center justify-between border-b border-transparent"
+        className="h-10 px-3 flex items-center justify-between border-b border-zinc-200/70"
         onClick={(e) => e.stopPropagation()}
       >
         <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
@@ -471,7 +473,7 @@ export function Sidebar() {
       </div>
 
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden py-2"
+        className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-1.5"
         onClick={(e) => {
           if (e.currentTarget === e.target) {
             setSelectedPath(null);
@@ -493,7 +495,7 @@ export function Sidebar() {
                 id="explorer-search-results"
                 role="listbox"
                 aria-label="Search results"
-                className="space-y-0.5 px-2"
+                className="space-y-0.5"
               >
                 {searchMatches.map((node, idx) => {
                   const isActive = idx === searchActiveIndex;
@@ -554,7 +556,7 @@ export function Sidebar() {
             )}
           </div>
         ) : (
-          <div className="space-y-0.5 px-2">
+          <div className="space-y-0.5">
             {ghostNode && ghostNode.parentPath === null && (
               <GhostRow
                 level={0}
@@ -613,6 +615,7 @@ function GhostRow({
       className="flex items-center gap-1.5 py-1.5 px-2 rounded-md text-sm text-zinc-700"
       style={{ paddingLeft: `${level * 12 + 8}px` }}
     >
+      <span className="w-4" aria-hidden="true" />
       <span className="text-zinc-400 flex-shrink-0">
         {type === 'directory' ? (
           <Folder size={16} className="text-blue-500" />
@@ -784,6 +787,16 @@ function FileTreeNode({
             aria-hidden="true"
           />
         ) : null}
+        {isDirectory ? (
+          <span
+            className="text-zinc-400 group-hover:text-zinc-600 transition-colors flex-shrink-0"
+            aria-hidden="true"
+          >
+            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </span>
+        ) : (
+          <span className="w-3.5" aria-hidden="true" />
+        )}
         <span className="text-zinc-400 group-hover:text-zinc-600 transition-colors flex-shrink-0">
           {isDirectory ? (
             isExpanded ? (
@@ -792,7 +805,7 @@ function FileTreeNode({
               <Folder size={16} className="text-blue-500" />
             )
           ) : (
-            <FileText size={16} className="text-gray-500" />
+            <FileText size={16} className="text-zinc-500" />
           )}
         </span>
 
