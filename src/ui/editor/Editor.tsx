@@ -129,9 +129,18 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
   const [slashState, setSlashState] = useState<{
     phase: SlashPhase;
     query: string;
-    x: number;
-    y: number;
-  }>({ phase: 'idle', query: '', x: 0, y: 0 });
+    menuX: number;
+    menuY: number;
+    inlineX: number;
+    inlineY: number;
+  }>({
+    phase: 'idle',
+    query: '',
+    menuX: 0,
+    menuY: 0,
+    inlineX: 0,
+    inlineY: 0,
+  });
   const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
 
   const getSafeCoordsAtPos = useCallback(
@@ -766,6 +775,11 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     const isSlashTriggerChar = (value: string | null | undefined) =>
       value === '/' || value === '／';
 
+    const isInsertTextLikeInput = (inputType: string) =>
+      inputType === 'insertText' ||
+      inputType === 'insertCompositionText' ||
+      inputType === 'insertFromComposition';
+
     const isSlashTriggerEligible = () => {
       if (!editor.isFocused) return false;
       if (editor.isActive('codeBlock')) return false;
@@ -784,8 +798,10 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       setSlashState({
         phase: 'open',
         query: '',
-        x: rect.left,
-        y: rect.bottom + 8,
+        menuX: rect.left,
+        menuY: rect.bottom + 8,
+        inlineX: rect.left + 4,
+        inlineY: rect.top + 2,
       });
     };
 
@@ -821,28 +837,19 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
       }
 
       if (slashState.phase === 'idle') {
-        if (
-          event.key === '/' &&
-          !event.metaKey &&
-          !event.ctrlKey &&
-          !event.altKey &&
-          !event.isComposing &&
-          isSlashTriggerEligible()
-        ) {
-          event.preventDefault();
-          openSlash();
-        }
         return;
       }
 
       if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopPropagation();
         closeSlash();
         return;
       }
 
       if (event.key === 'ArrowDown') {
         event.preventDefault();
+        event.stopPropagation();
         setSlashSelectedIndex((prev) => {
           if (filteredSlashCommands.length === 0) return 0;
           return (prev + 1) % filteredSlashCommands.length;
@@ -852,6 +859,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
       if (event.key === 'ArrowUp') {
         event.preventDefault();
+        event.stopPropagation();
         setSlashSelectedIndex((prev) => {
           if (filteredSlashCommands.length === 0) return 0;
           return (
@@ -864,12 +872,14 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
 
       if (event.key === 'Backspace') {
         event.preventDefault();
+        event.stopPropagation();
         deleteSlashQuery();
         return;
       }
 
       if (event.key === 'Enter') {
         event.preventDefault();
+        event.stopPropagation();
         const command = filteredSlashCommands[slashSelectedIndex];
         if (command) {
           setSlashState((prev) => ({ ...prev, phase: 'executing' }));
@@ -878,13 +888,24 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         closeSlash();
         return;
       }
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        event.stopPropagation();
+        setSlashSelectedIndex((prev) => {
+          if (filteredSlashCommands.length === 0) return 0;
+          return (prev + 1) % filteredSlashCommands.length;
+        });
+      }
     };
 
     const onBeforeInput = (event: InputEvent) => {
       if (!editor.isFocused) return;
 
       if (slashState.phase === 'idle') {
-        if (event.inputType === 'insertText' && isSlashTriggerChar(event.data)) {
+        if (
+          isInsertTextLikeInput(event.inputType) &&
+          isSlashTriggerChar(event.data)
+        ) {
           if (!isSlashTriggerEligible()) {
             return;
           }
@@ -894,16 +915,7 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
         return;
       }
 
-      if (event.inputType === 'deleteContentBackward') {
-        event.preventDefault();
-        deleteSlashQuery();
-        return;
-      }
-
-      if (
-        event.inputType === 'insertText' &&
-        event.data
-      ) {
+      if (isInsertTextLikeInput(event.inputType) && event.data) {
         event.preventDefault();
         appendSlashQuery(event.data);
       }
@@ -947,12 +959,12 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
     };
 
     const dom = editor.view.dom;
-    window.addEventListener('keydown', onKeyDown);
+    dom.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('mousedown', onPointerDown);
     dom.addEventListener('beforeinput', onBeforeInput as EventListener);
     dom.addEventListener('compositionend', onCompositionEnd as EventListener);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
+      dom.removeEventListener('keydown', onKeyDown, true);
       window.removeEventListener('mousedown', onPointerDown);
       dom.removeEventListener('beforeinput', onBeforeInput as EventListener);
       dom.removeEventListener(
@@ -1107,11 +1119,14 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
           slashMenu={
             <div
               className={`editor-slash-menu ${slashState.phase !== 'idle' ? 'is-open' : ''}`}
-              style={{ left: slashState.x, top: slashState.y }}
+              style={{ left: slashState.menuX, top: slashState.menuY }}
             >
-              {slashState.query ? (
-                <div className="editor-slash-menu__fragment">{slashState.query}</div>
-              ) : null}
+              <div className="editor-slash-menu__fragment">
+                <span className="editor-slash-menu__fragment-trigger">/</span>
+                <span className="editor-slash-menu__fragment-query">
+                  {slashState.query || '输入以唤出菜单...'}
+                </span>
+              </div>
               {filteredSlashCommands.length === 0 ? (
                 <div className="editor-slash-menu__empty">No matching commands</div>
               ) : (
@@ -1158,6 +1173,18 @@ export const Editor = forwardRef<EditorHandle>((_props, ref) => {
             </div>
           }
         />
+        <div
+          className={`editor-slash-inline ${slashState.phase !== 'idle' ? 'is-open' : ''}`}
+          style={{ left: slashState.inlineX, top: slashState.inlineY }}
+          aria-hidden="true"
+        >
+          <span className="editor-slash-inline__trigger">/</span>
+          {slashState.query ? (
+            <span className="editor-slash-inline__query">{slashState.query}</span>
+          ) : (
+            <span className="editor-slash-inline__placeholder">输入以唤出菜单...</span>
+          )}
+        </div>
       </div>
       <ContextMenu
         isOpen={contextMenu.state.isOpen}
