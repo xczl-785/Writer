@@ -48,22 +48,22 @@ Slash Menu 是通过 `/` 触发的命令面板，用于快速插入块级 Markdo
 
 ### 3.1 纳入 Slash Menu（块级/插入型）
 
-| 命令            | 语法类型  | 分类                | 快捷键 | 实现状态  |
-| --------------- | --------- | ------------------- | ------ | --------- |
-| Heading 1       | 基础      | Basic Blocks        | ⌘1     | ✅ 已实现 |
-| Heading 2       | 基础      | Basic Blocks        | ⌘2     | ❌ 未实现 |
-| Heading 3       | 基础      | Basic Blocks        | ⌘3     | ❌ 未实现 |
-| Heading 4       | 基础      | Basic Blocks        | ⌘4     | ❌ 未实现 |
-| Heading 5       | 基础      | Basic Blocks        | ⌘5     | ❌ 未实现 |
-| Heading 6       | 基础      | Basic Blocks        | ⌘6     | ❌ 未实现 |
-| Unordered List  | 基础      | Basic Blocks        | ⌥⌘U    | ✅ 已实现 |
-| Ordered List    | 基础      | Basic Blocks        | ⌥⌘O    | ✅ 已实现 |
-| Task List       | 扩展(GFM) | Basic Blocks        | -      | ❌ 未实现 |
-| Blockquote      | 基础      | Advanced Components | ⇧⌘Q    | ✅ 已实现 |
-| Code Block      | 基础      | Advanced Components | ⌥⌘C    | ✅ 已实现 |
-| Table           | 扩展(GFM) | Advanced Components | ⌥⌘T    | ✅ 已实现 |
-| Horizontal Rule | 基础      | Advanced Components | -      | ❌ 未实现 |
-| Image           | 基础      | Advanced Components | -      | ❌ 未实现 |
+| 命令              | 语法类型    | 分类                  | 快捷键 |
+| --------------- | ------- | ------------------- | --- |
+| Heading 1       | 基础      | Basic Blocks        | ⌘1  |
+| Heading 2       | 基础      | Basic Blocks        | ⌘2  |
+| Heading 3       | 基础      | Basic Blocks        | ⌘3  |
+| Heading 4       | 基础      | Basic Blocks        | ⌘4  |
+| Heading 5       | 基础      | Basic Blocks        | ⌘5  |
+| Heading 6       | 基础      | Basic Blocks        | ⌘6  |
+| Unordered List  | 基础      | Basic Blocks        | ⌥⌘U |
+| Ordered List    | 基础      | Basic Blocks        | ⌥⌘O |
+| Task List       | 扩展(GFM) | Basic Blocks        | -   |
+| Blockquote      | 基础      | Advanced Components | ⇧⌘Q |
+| Code Block      | 基础      | Advanced Components | ⌥⌘C |
+| Table           | 扩展(GFM) | Advanced Components | ⌥⌘T |
+| Horizontal Rule | 基础      | Advanced Components | -   |
+| Image           | 基础      | Advanced Components | -   |
 
 ### 3.2 不纳入 Slash Menu（行内范围型）
 
@@ -155,9 +155,22 @@ SEARCHING
 
 ### 5.3 搜索过滤
 
-- 最大显示项数：8
+- 最大显示项数：14
 - 匹配字段：`label` + `keywords`
 - 无匹配时显示：`No matching commands`
+
+#### 5.3.1 中文语言增强匹配
+
+中文语言环境下，使用 `pinyin-pro` 库支持拼音搜索：
+
+| 匹配方式   | 示例（标题 1）      | 说明               |
+| ---------- | ------------------- | ------------------ |
+| 中文汉字   | `标题`、`题1`       | 原文包含匹配       |
+| 拼音全拼   | `biaoti`、`biaoti1` | 支持多音字自动识别 |
+| 拼音首字母 | `bt`、`bt1`         | 首字母缩写匹配     |
+| 英文关键词 | `h1`、`heading`     | keywords 字段匹配  |
+
+英文语言环境仅支持原文包含匹配和关键词匹配。
 
 ### 5.4 Ghost Hint
 

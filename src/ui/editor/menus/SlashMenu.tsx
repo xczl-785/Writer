@@ -5,8 +5,9 @@
  */
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
+import { match } from 'pinyin-pro';
 import { isStrictSlashTriggerEligible } from './slashEligibility';
-import { t } from '../../../i18n';
+import { t, getLocale } from '../../../i18n';
 
 const SLASH_MENU_MAX_ITEMS = 14;
 
@@ -216,14 +217,27 @@ export function useSlashMenu({
   );
 
   const filteredSlashCommands = useMemo(() => {
-    const query = slashState.query.trim().toLowerCase();
-    const filtered = !query
-      ? slashCommands
-      : slashCommands.filter((cmd) => {
-          const haystack =
-            `${cmd.label} ${cmd.keywords.join(' ')}`.toLowerCase();
-          return haystack.includes(query);
-        });
+    const query = slashState.query.trim();
+    if (!query) return slashCommands.slice(0, SLASH_MENU_MAX_ITEMS);
+
+    const queryLower = query.toLowerCase();
+    const isZhCN = getLocale() === 'zh-CN';
+
+    const filtered = slashCommands.filter((cmd) => {
+      const labelLower = cmd.label.toLowerCase();
+      const keywordsLower = cmd.keywords.join(' ').toLowerCase();
+
+      if (labelLower.includes(queryLower)) return true;
+      if (keywordsLower.includes(queryLower)) return true;
+
+      if (isZhCN) {
+        const matchResult = match(cmd.label, query, { precision: 'start' });
+        if (matchResult && matchResult.length > 0) return true;
+      }
+
+      return false;
+    });
+
     return filtered.slice(0, SLASH_MENU_MAX_ITEMS);
   }, [slashCommands, slashState.query]);
 
