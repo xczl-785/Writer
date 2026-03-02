@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isChildPath, isPathMatch } from '../../utils/pathUtils';
 
 export interface WorkspaceState {
   currentPath: string | null;
@@ -56,7 +57,7 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
       set((state) => {
         const replacePath = (f: string) => {
           if (f === oldPath) return newPath;
-          if (f.startsWith(`${oldPath}/`)) {
+          if (isChildPath(oldPath, f)) {
             return f.replace(oldPath, newPath);
           }
           return f;
@@ -70,7 +71,7 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
 
     removePath: (path) =>
       set((state) => {
-        const isMatch = (f: string) => f === path || f.startsWith(`${path}/`);
+        const isMatch = (f: string) => isPathMatch(path, f);
         const newOpenFiles = state.openFiles.filter((f) => !isMatch(f));
         let newActiveFile = state.activeFile;
         if (state.activeFile && isMatch(state.activeFile)) {

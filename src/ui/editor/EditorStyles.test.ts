@@ -80,4 +80,11 @@ describe('Editor toolbar MVP', () => {
     expect(css).toMatch(/\.editor-ghost-slash\s*\{/i);
     expect(css).toMatch(/\.editor-slash-menu\s*\{/i);
   });
+
+  it('disables code block boundary indicator in editor composition', () => {
+    const editorTsx = readEditor();
+    expect(editorTsx).toContain(
+      'BlockBoundaryExtension.configure({ showCodeBlock: false })',
+    );
+  });
 });

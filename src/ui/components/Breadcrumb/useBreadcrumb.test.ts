@@ -36,7 +36,7 @@ describe('useBreadcrumb', () => {
     );
     expect(items.map((item) => item.name)).toEqual(['项目余烬', '快速对齐.md']);
     expect(items.at(-1)?.path).toBe(
-      'E:\\Project\\Producer_Workstation\\项目余烬\\快速对齐.md',
+      'E:/Project/Producer_Workstation/项目余烬/快速对齐.md',
     );
   });
 });

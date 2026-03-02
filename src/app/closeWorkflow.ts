@@ -1,3 +1,5 @@
+import { isPathMatch } from '../utils/pathUtils';
+
 export type CloseAction = 'save_then_close' | 'close_now';
 
 export interface CloseActionInput {
@@ -23,10 +25,5 @@ export const filterSavableDirtyPaths = (
   workspacePath: string | null,
 ): string[] => {
   if (!workspacePath) return [];
-  return dirtyPaths.filter(
-    (path) =>
-      path === workspacePath ||
-      path.startsWith(`${workspacePath}/`) ||
-      path.startsWith(`${workspacePath}\\`),
-  );
+  return dirtyPaths.filter((path) => isPathMatch(workspacePath, path));
 };

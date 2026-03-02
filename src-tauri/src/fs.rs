@@ -63,7 +63,7 @@ fn build_tree(path: &Path) -> Option<FileNode> {
         .unwrap_or_default()
         .to_string_lossy()
         .to_string();
-    let path_str = path.to_string_lossy().to_string();
+    let path_str = path.to_string_lossy().replace('\\', "/");
 
     if path.is_file() {
         if !is_markdown_name(&name) {
@@ -288,10 +288,7 @@ pub fn reveal_in_file_manager(path: &str) -> Result<(), String> {
     if status.success() {
         Ok(())
     } else {
-        Err(format!(
-            "Failed to open file manager for path: {}",
-            path
-        ))
+        Err(format!("Failed to open file manager for path: {}", path))
     }
 }
 
@@ -366,9 +363,17 @@ pub fn get_git_sync_status(path: &str) -> Result<GitSyncStatus, String> {
         .map(|v| !v.is_empty())
         .unwrap_or(false);
 
-    let has_remote = run_git(path, &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"])
-        .map(|v| !v.is_empty())
-        .unwrap_or(false);
+    let has_remote = run_git(
+        path,
+        &[
+            "rev-parse",
+            "--abbrev-ref",
+            "--symbolic-full-name",
+            "@{upstream}",
+        ],
+    )
+    .map(|v| !v.is_empty())
+    .unwrap_or(false);
 
     if !has_remote {
         return Ok(GitSyncStatus {
@@ -380,7 +385,10 @@ pub fn get_git_sync_status(path: &str) -> Result<GitSyncStatus, String> {
         });
     }
 
-    let (ahead, behind) = match run_git(path, &["rev-list", "--left-right", "--count", "HEAD...@{upstream}"]) {
+    let (ahead, behind) = match run_git(
+        path,
+        &["rev-list", "--left-right", "--count", "HEAD...@{upstream}"],
+    ) {
         Ok(counts) => {
             let mut parts = counts.split_whitespace();
             let ahead = parts
@@ -481,13 +489,14 @@ mod tests {
         fs::create_dir_all(root.join(".git")).expect("create .git");
         fs::create_dir_all(root.join("workspace")).expect("create workspace");
         fs::write(root.join("workspace").join("ok.md"), "ok").expect("write ok.md");
-        fs::write(root.join("node_modules").join("pkg").join("x.md"), "x")
-            .expect("write x.md");
+        fs::write(root.join("node_modules").join("pkg").join("x.md"), "x").expect("write x.md");
 
         let nodes = list_tree(root.to_string_lossy().as_ref()).expect("list tree");
         let names: Vec<String> = nodes.iter().map(|n| n.name.clone()).collect();
 
-        assert!(names.iter().all(|name| name != "node_modules" && name != ".git"));
+        assert!(names
+            .iter()
+            .all(|name| name != "node_modules" && name != ".git"));
 
         fs::remove_dir_all(root).expect("cleanup");
     }

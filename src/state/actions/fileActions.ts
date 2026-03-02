@@ -2,6 +2,7 @@ import { FsService } from '../../services/fs/FsService';
 import { useEditorStore } from '../slices/editorSlice';
 import { useFileTreeStore } from '../slices/filetreeSlice';
 import { useWorkspaceStore } from '../slices/workspaceSlice';
+import { isPathMatch } from '../../utils/pathUtils';
 
 const refreshCurrentTree = async (): Promise<void> => {
   const { currentPath } = useWorkspaceStore.getState();
@@ -26,10 +27,7 @@ export const fileActions = {
     await refreshCurrentTree();
 
     const selectedPath = useFileTreeStore.getState().selectedPath;
-    if (
-      selectedPath &&
-      (selectedPath === path || selectedPath.startsWith(`${path}/`))
-    ) {
+    if (selectedPath && isPathMatch(path, selectedPath)) {
       useFileTreeStore.getState().setSelectedPath(null);
     }
   },

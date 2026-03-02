@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Editor } from '@tiptap/react';
-import {
-  getRelativePath,
-  useImagePaste,
-  generateUniqueFilename,
-} from './useImagePaste';
+import { useImagePaste, generateUniqueFilename } from './useImagePaste';
+import { getRelativePath } from '../../utils/pathUtils';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { FsService } from '../../services/fs/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';

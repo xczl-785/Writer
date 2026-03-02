@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { SlashPhase } from '../menus/SlashMenu';
+import { isStrictSlashTriggerEligible } from '../menus/slashEligibility';
 
 export type GhostHintPosition = {
   open: boolean;
@@ -34,18 +35,12 @@ export function useGhostHint(
         return;
       }
 
+      if (!isStrictSlashTriggerEligible(editor)) {
+        setPosition({ open: false, x: 0, y: 0 });
+        return;
+      }
+
       const { selection } = editor.state;
-      if (!selection.empty) {
-        setPosition({ open: false, x: 0, y: 0 });
-        return;
-      }
-
-      const parentText = selection.$from.parent.textContent.trim();
-      if (parentText.length > 0) {
-        setPosition({ open: false, x: 0, y: 0 });
-        return;
-      }
-
       const rect = getSafeCoordsAtPos(editor, selection.from);
       if (!rect) {
         setPosition({ open: false, x: 0, y: 0 });
