@@ -172,7 +172,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
       () => [
         toolbarShortcutExtension,
         findReplaceShortcutExtension,
-        BlockBoundaryExtension,
+        BlockBoundaryExtension.configure({ showCodeBlock: false }),
         StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
         Table.configure({ resizable: true, allowTableNodeSelection: false }),
         TableRow,

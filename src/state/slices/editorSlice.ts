@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isPathMatch } from '../../utils/pathUtils';
 
 export interface CursorPosition {
   line: number;
@@ -89,7 +90,7 @@ export const useEditorStore = create<EditorState & EditorActions>((set) => ({
       let changed = false;
 
       Object.keys(newFileStates).forEach((path) => {
-        if (path === oldPath || path.startsWith(`${oldPath}/`)) {
+        if (isPathMatch(oldPath, path)) {
           const fileState = newFileStates[path];
           delete newFileStates[path];
           const updatedPath =
@@ -107,7 +108,7 @@ export const useEditorStore = create<EditorState & EditorActions>((set) => ({
       const newFileStates = { ...state.fileStates };
       let changed = false;
       Object.keys(newFileStates).forEach((f) => {
-        if (f === path || f.startsWith(`${path}/`)) {
+        if (isPathMatch(path, f)) {
           delete newFileStates[f];
           changed = true;
         }

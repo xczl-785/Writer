@@ -1,12 +1,13 @@
 import { useEditorStore } from '../../state/slices/editorSlice';
 import { AutosaveService } from '../autosave/AutosaveService';
 import { ErrorService } from '../error/ErrorService';
+import { isPathMatch } from '../../utils/pathUtils';
 
 export const FsSafety = {
   getAffectedDirtyFiles(path: string): string[] {
     const { fileStates } = useEditorStore.getState();
     return Object.keys(fileStates).filter((filePath) => {
-      const isAffected = filePath === path || filePath.startsWith(`${path}/`);
+      const isAffected = isPathMatch(path, filePath);
       return isAffected && fileStates[filePath].isDirty;
     });
   },

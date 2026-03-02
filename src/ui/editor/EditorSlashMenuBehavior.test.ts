@@ -7,13 +7,32 @@ describe('Editor slash menu behavior', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const readSlashMenu = () =>
     readFileSync(join(currentDir, 'menus', 'SlashMenu.tsx'), 'utf-8');
+  const readSlashEligibility = () =>
+    readFileSync(join(currentDir, 'menus', 'slashEligibility.ts'), 'utf-8');
   const readSafeCoords = () =>
     readFileSync(join(currentDir, 'hooks', 'useSafeCoords.ts'), 'utf-8');
+  const readGhostHintHook = () =>
+    readFileSync(join(currentDir, 'hooks', 'useGhostHint.ts'), 'utf-8');
 
   it('supports slash trigger chars for Latin and full-width input', () => {
     const slashMenuTsx = readSlashMenu();
     expect(slashMenuTsx).toContain("value === '/'");
     expect(slashMenuTsx).toContain("value === '／'");
+  });
+
+  it('enforces strict slash trigger eligibility for top-level empty paragraph only', () => {
+    const slashEligibilityTs = readSlashEligibility();
+    expect(slashEligibilityTs).toContain('isStrictSlashTriggerEligible');
+    expect(slashEligibilityTs).toContain('$from.depth !== 1');
+    expect(slashEligibilityTs).toContain("$from.parent.type.name !== 'paragraph'");
+    expect(slashEligibilityTs).toContain('$from.parent.content.size === 0');
+  });
+
+  it('reuses strict eligibility in slash menu and ghost hint', () => {
+    const slashMenuTsx = readSlashMenu();
+    const ghostHintTs = readGhostHintHook();
+    expect(slashMenuTsx).toContain('isStrictSlashTriggerEligible');
+    expect(ghostHintTs).toContain('isStrictSlashTriggerEligible');
   });
 
   it('handles beforeinput and compositionend for IME-safe slash flow', () => {

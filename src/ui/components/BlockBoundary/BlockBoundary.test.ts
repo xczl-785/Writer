@@ -20,8 +20,10 @@ describe('BlockBoundary visuals', () => {
   it('defines expected boundary styles and reveal timing', () => {
     expect(cssSrc).toContain('.block-boundary-code');
     expect(cssSrc).toContain('.block-boundary-quote');
-    expect(cssSrc).toContain('inset 4px 0 0');
-    expect(cssSrc).toContain('inset 2px 0 0');
+    expect(cssSrc).toContain('box-shadow: 0 0 0 1px');
+    expect(cssSrc).toContain('box-shadow: none;');
+    expect(cssSrc).toContain('background: rgb(59 130 246 / 6%);');
+    expect(cssSrc).toContain('background: rgb(161 161 170 / 10%);');
     expect(cssSrc).toContain('transition: box-shadow 50ms ease-out;');
   });
 });

@@ -1,4 +1,9 @@
 import type { FileNode } from '../../state/types';
+import {
+  getParentPath as getParentPathBase,
+  getFileExtension as getFileExtensionBase,
+  isMarkdownFile as isMarkdownFileBase,
+} from '../../utils/pathUtils';
 
 type NodeType = FileNode['type'] | null;
 
@@ -9,13 +14,7 @@ export interface ResolveCreateBasePathInput {
   activeFile: string | null;
 }
 
-export const getParentPath = (path: string): string => {
-  const lastSlashIndex = path.lastIndexOf('/');
-  if (lastSlashIndex <= 0) {
-    return '';
-  }
-  return path.substring(0, lastSlashIndex);
-};
+export const getParentPath = getParentPathBase;
 
 export const resolveCreateBasePath = ({
   currentPath,
@@ -32,8 +31,6 @@ export const resolveCreateBasePath = ({
     }
   }
 
-  // S2-V3-02: If selectedPath is explicitly null (e.g. clicking blank area),
-  // resolve to workspace root (currentPath) instead of active file parent.
   if (selectedPath === null) {
     return currentPath;
   }
@@ -54,20 +51,8 @@ export const hasInvalidNodeName = (name: string): boolean => {
   return trimmed.includes('/') || trimmed.includes('\\');
 };
 
-const MARKDOWN_EXTENSIONS = ['.md', '.markdown', '.mdx'];
-
-export const getFileExtension = (fileName: string): string => {
-  const idx = fileName.lastIndexOf('.');
-  if (idx <= 0 || idx === fileName.length - 1) {
-    return '';
-  }
-  return fileName.slice(idx);
-};
-
-export const isMarkdownFile = (fileName: string): boolean => {
-  const ext = getFileExtension(fileName).toLowerCase();
-  return MARKDOWN_EXTENSIONS.includes(ext);
-};
+export const getFileExtension = getFileExtensionBase;
+export const isMarkdownFile = isMarkdownFileBase;
 
 export const getDisplayName = (node: FileNode): string => {
   if (node.type === 'directory') {
@@ -79,6 +64,8 @@ export const getDisplayName = (node: FileNode): string => {
   }
   return node.name.slice(0, -ext.length);
 };
+
+const MARKDOWN_EXTENSIONS = ['.md', '.markdown', '.mdx'];
 
 export const ensureMarkdownExtension = (baseName: string): string => {
   const trimmed = baseName.trim();

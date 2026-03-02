@@ -5,6 +5,7 @@
  */
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
+import { isStrictSlashTriggerEligible } from './slashEligibility';
 
 const SLASH_MENU_MAX_ITEMS = 8;
 
@@ -146,14 +147,7 @@ export function useSlashMenu({
     const isInsertTextLikeInput = (inputType: string) =>
       inputType === 'insertText' || inputType === 'insertFromComposition';
 
-    const isSlashTriggerEligible = () => {
-      if (!editor.isFocused) return false;
-      if (editor.isActive('codeBlock')) return false;
-      const { selection } = editor.state;
-      if (!selection.empty) return false;
-      const parentText = selection.$from.parent.textContent.trim();
-      return parentText.length === 0;
-    };
+    const isSlashTriggerEligible = () => isStrictSlashTriggerEligible(editor);
 
     const openSlash = () => {
       const { selection } = editor.state;
@@ -319,8 +313,14 @@ export function useSlashMenu({
 
       if (slashState.phase === 'idle' && isSlashTriggerChar(data)) {
         const { selection } = editor.state;
-        const parentText = selection.$from.parent.textContent.trim();
-        const triggeredByCommittedChar = parentText === data;
+        const $from = selection.$from;
+        const parent = $from.parent;
+        const triggeredByCommittedChar =
+          $from.depth === 1 &&
+          parent.type.name === 'paragraph' &&
+          parent.childCount === 1 &&
+          parent.firstChild?.isText === true &&
+          parent.textContent === data;
 
         if (!isSlashTriggerEligible() && !triggeredByCommittedChar) {
           return;

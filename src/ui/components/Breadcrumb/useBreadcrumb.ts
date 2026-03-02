@@ -1,3 +1,10 @@
+import {
+  normalizePath,
+  splitPath,
+  trimTrailingSeparator,
+  joinPath,
+} from '../../../utils/pathUtils';
+
 export interface BreadcrumbItem {
   id: string;
   name: string;
@@ -10,11 +17,6 @@ export interface BreadcrumbSegment {
   item?: BreadcrumbItem;
 }
 
-const normalizeForCompare = (path: string): string => path.replace(/\\/g, '/');
-
-const trimTrailingSeparators = (path: string): string =>
-  path.replace(/[\\/]+$/g, '');
-
 export function buildBreadcrumb(
   workspacePath: string | null,
   activeFile: string | null,
@@ -23,40 +25,36 @@ export function buildBreadcrumb(
     return [];
   }
 
-  const normalizedWorkspacePath = normalizeForCompare(workspacePath);
-  const normalizedActiveFile = normalizeForCompare(activeFile);
+  const normalizedWorkspacePath = normalizePath(workspacePath);
+  const normalizedActiveFile = normalizePath(activeFile);
 
-  const workspaceName = normalizedWorkspacePath.split('/').filter(Boolean).pop();
+  const workspaceParts = splitPath(normalizedWorkspacePath);
+  const workspaceName = workspaceParts[workspaceParts.length - 1];
   if (!workspaceName) {
     return [];
   }
 
-  const workspacePrefix = normalizedWorkspacePath.endsWith('/')
-    ? normalizedWorkspacePath
-    : `${normalizedWorkspacePath}/`;
+  const workspacePrefix = normalizedWorkspacePath + '/';
   const relative = normalizedActiveFile.startsWith(workspacePrefix)
     ? normalizedActiveFile.slice(workspacePrefix.length)
     : normalizedActiveFile;
-  const parts = relative.split('/').filter(Boolean);
+  const parts = splitPath(relative);
   if (parts.length === 0) {
     return [];
   }
-
-  const separator =
-    workspacePath.includes('\\') && !workspacePath.includes('/') ? '\\' : '/';
 
   const items: BreadcrumbItem[] = [
     {
       id: 'workspace',
       name: workspaceName,
       type: 'workspace',
-      path: workspacePath,
+      path: normalizedWorkspacePath,
     },
   ];
 
-  let currentPath = trimTrailingSeparators(workspacePath);
+  let currentPath = trimTrailingSeparator(normalizedWorkspacePath);
   parts.forEach((part, index) => {
-    currentPath = `${currentPath}${separator}${part}`;
+    currentPath = joinPath(currentPath, part);
     const isLast = index === parts.length - 1;
     items.push({
       id: `${index}-${part}`,

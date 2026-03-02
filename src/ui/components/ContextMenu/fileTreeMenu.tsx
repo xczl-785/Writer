@@ -17,6 +17,7 @@ import {
 import type { MenuItem } from '../ContextMenu/contextMenuRegistry';
 import { divider } from '../ContextMenu/contextMenuRegistry';
 import type { FileNode } from '../../../state/types';
+import { t } from '../../../i18n';
 
 export interface FileTreeMenuContext {
   node: FileNode;
@@ -39,14 +40,14 @@ export function getFileTreeMenuItems(context: FileTreeMenuContext): MenuItem[] {
   const items: MenuItem[] = [
     {
       id: 'new-file',
-      label: 'New File',
+      label: t('contextMenu.newFile'),
       shortcut: 'Cmd+N',
       icon: <FilePlus size={14} />,
       action: context.onNewFile,
     },
     {
       id: 'new-folder',
-      label: 'New Folder',
+      label: t('contextMenu.newFolder'),
       shortcut: 'Shift+Cmd+N',
       icon: <FolderPlus size={14} />,
       action: context.onNewFolder,
@@ -54,7 +55,7 @@ export function getFileTreeMenuItems(context: FileTreeMenuContext): MenuItem[] {
     divider(),
     {
       id: 'rename',
-      label: 'Rename',
+      label: t('contextMenu.rename'),
       shortcut: 'Enter',
       icon: <Pencil size={14} />,
       action: context.onRename,
@@ -68,7 +69,7 @@ export function getFileTreeMenuItems(context: FileTreeMenuContext): MenuItem[] {
     },
     {
       id: 'copy-path',
-      label: 'Copy Path',
+      label: t('contextMenu.copyPath'),
       icon: <Copy size={14} />,
       action: context.onCopyPath,
     },

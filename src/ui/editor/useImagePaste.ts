@@ -5,6 +5,7 @@ import { useStatusStore } from '../../state/slices/statusSlice';
 import { ImageResolver } from '../../services/images/ImageResolver';
 import { ErrorService } from '../../services/error/ErrorService';
 import { EDITOR_CONFIG } from '../../config/editor';
+import { joinPath, getRelativePath } from '../../utils/pathUtils';
 
 const shouldShowImageRenderDiagnostic = (): boolean =>
   import.meta.env?.VITE_SHOW_IMAGE_DIAGNOSTIC === '1';
@@ -14,7 +15,7 @@ export const generateUniqueFilename = async (
   baseName: string,
   extension: string,
 ): Promise<string> => {
-  const fullPath = `${baseDir}/${baseName}.${extension}`;
+  const fullPath = joinPath(baseDir, `${baseName}.${extension}`);
   const exists = await FsService.checkExists(fullPath);
 
   if (!exists) {
@@ -23,7 +24,7 @@ export const generateUniqueFilename = async (
 
   let i = 1;
   while (true) {
-    const newPath = `${baseDir}/${baseName}-${i}.${extension}`;
+    const newPath = joinPath(baseDir, `${baseName}-${i}.${extension}`);
     const newExists = await FsService.checkExists(newPath);
     if (!newExists) {
       return newPath;
@@ -86,7 +87,7 @@ export const useImagePaste = (editor: Editor | null = null) => {
           now.getSeconds().toString().padStart(2, '0');
 
         const baseName = `image-${timestamp}`;
-        const assetsDir = `${currentPath}/assets`;
+        const assetsDir = joinPath(currentPath, 'assets');
         const imagePath = await generateUniqueFilename(
           assetsDir,
           baseName,
@@ -125,32 +126,4 @@ export const useImagePaste = (editor: Editor | null = null) => {
   };
 
   return { handlePaste };
-};
-
-export const getRelativePath = (from: string, to: string): string => {
-  const normalize = (p: string) => p.replace(/\\/g, '/');
-  const fromParts = normalize(from).split('/').filter(Boolean);
-  const toParts = normalize(to).split('/').filter(Boolean);
-
-  fromParts.pop();
-
-  let commonIndex = 0;
-
-  while (
-    commonIndex < fromParts.length &&
-    commonIndex < toParts.length &&
-    fromParts[commonIndex] === toParts[commonIndex]
-  ) {
-    commonIndex++;
-  }
-
-  const upCount = fromParts.length - commonIndex;
-  const upParts = Array(upCount).fill('..');
-  const downParts = toParts.slice(commonIndex);
-
-  const result = [...upParts, ...downParts].join('/');
-  if (result.startsWith('.')) {
-    return result;
-  }
-  return './' + result;
 };

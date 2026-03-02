@@ -28,6 +28,7 @@ import {
   hasInvalidNodeName,
   resolveCreateBasePath,
 } from './pathing';
+import { joinPath } from '../../utils/pathUtils';
 import { dispatchExplorerCommand, EXPLORER_COMMANDS } from './explorerCommands';
 import { matchExplorerShortcut } from './explorerKeybindings';
 import {
@@ -39,6 +40,7 @@ import {
   FolderPlus,
   X,
 } from 'lucide-react';
+import { t } from '../../i18n';
 
 type GhostNode = {
   parentPath: string | null;
@@ -218,7 +220,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
 
     if (hasInvalidNodeName(nodeName)) {
       if (trigger === 'enter') {
-        useStatusStore.getState().setStatus('error', 'Invalid name');
+        useStatusStore.getState().setStatus('error', t('sidebar.invalidName'));
       } else {
         cancelCreate();
       }
@@ -226,7 +228,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
     }
 
     const basePath = ghostNode.parentPath || currentPath;
-    const fullPath = `${basePath}/${nodeName}`.replace(/\/+/g, '/');
+    const fullPath = joinPath(basePath, nodeName);
 
     try {
       if (ghostNode.type === 'file') {
@@ -274,11 +276,9 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
   const copyPathToClipboard = async (path: string): Promise<void> => {
     try {
       await navigator.clipboard.writeText(path);
-      useStatusStore.getState().setStatus('idle', 'Path copied');
+      useStatusStore.getState().setStatus('idle', t('sidebar.pathCopied'));
     } catch {
-      useStatusStore
-        .getState()
-        .setStatus('error', 'Failed to copy path to clipboard');
+      useStatusStore.getState().setStatus('error', t('sidebar.copyFailed'));
     }
   };
 
@@ -286,9 +286,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
     try {
       await FsService.revealInFileManager(path);
     } catch {
-      useStatusStore
-        .getState()
-        .setStatus('error', 'Failed to reveal path in file manager');
+      useStatusStore.getState().setStatus('error', t('sidebar.revealFailed'));
     }
   };
 
@@ -305,7 +303,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
     if (!success) {
       useStatusStore
         .getState()
-        .setStatus('error', 'Failed to save changes before delete');
+        .setStatus('error', t('sidebar.saveBeforeDelete'));
       return;
     }
 
@@ -315,7 +313,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
       const message = error instanceof Error ? error.message : String(error);
       useStatusStore
         .getState()
-        .setStatus('error', `Failed to delete: ${message}`);
+        .setStatus('error', `${t('sidebar.deleteFailed')}: ${message}`);
     }
   };
 
@@ -366,7 +364,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
     showWorkspaceRequiredAlert: () =>
       useStatusStore
         .getState()
-        .setStatus('error', 'Please open a workspace first.'),
+        .setStatus('error', t('sidebar.openWorkspaceFirst')),
   };
 
   useEffect(() => {
@@ -405,7 +403,10 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
       }
     };
 
-    window.addEventListener('writer:sidebar-command', onMenuCommand as EventListener);
+    window.addEventListener(
+      'writer:sidebar-command',
+      onMenuCommand as EventListener,
+    );
     return () =>
       window.removeEventListener(
         'writer:sidebar-command',
@@ -430,7 +431,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
-          Files
+          {t('sidebar.title')}
         </span>
         <div className="flex items-center gap-1">
           <button
@@ -438,7 +439,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx)
             }
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
-            title="New File"
+            title={t('sidebar.newFile')}
           >
             <FilePlus size={16} />
           </button>
@@ -447,7 +448,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx)
             }
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
-            title="New Folder"
+            title={t('sidebar.newFolder')}
           >
             <FolderPlus size={16} />
           </button>
@@ -456,7 +457,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
               onToggleVisibility?.();
             }}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
-            title="Collapse Sidebar"
+            title={t('sidebar.collapse')}
           >
             <CollapseSidebarIcon className="h-4 w-4" />
           </button>
@@ -468,7 +469,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <label htmlFor="explorer-search" className="sr-only">
-          Search files
+          {t('sidebar.search')}
         </label>
         <div className="relative">
           <Search
@@ -510,10 +511,12 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
             }}
             disabled={!currentPath}
             placeholder={
-              currentPath ? 'Search files…' : 'Open a folder to search'
+              currentPath
+                ? t('sidebar.searchPlaceholder')
+                : t('sidebar.openFolderToSearch')
             }
             className="w-full bg-white border border-zinc-200 rounded-md py-1.5 pl-8 pr-7 text-xs text-zinc-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-zinc-400 disabled:opacity-60"
-            aria-label="Search files"
+            aria-label={t('sidebar.search')}
             aria-controls={
               isSearchActive ? 'explorer-search-results' : undefined
             }
@@ -531,7 +534,7 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
               onClick={() => setSearchQuery('')}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-zinc-200 text-zinc-500 hover:text-zinc-700"
               aria-label="Clear search"
-              title="Clear"
+              title={t('sidebar.clear')}
             >
               <X size={14} aria-hidden="true" />
             </button>
@@ -552,9 +555,9 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
             {searchMatches.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-zinc-400 text-sm">
                 <Search size={24} className="mb-2 opacity-20" />
-                <span>No matches</span>
+                <span>{t('sidebar.noMatches')}</span>
                 <span className="mt-1 text-xs text-zinc-400">
-                  Try a different name or path
+                  {t('sidebar.tryDifferent')}
                 </span>
               </div>
             ) : (
@@ -608,14 +611,14 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
           <div className="flex flex-col items-center justify-center h-32 text-zinc-400 text-sm">
             <FolderIcon className="mb-2 h-6 w-6 opacity-20 text-zinc-500" />
             <span>
-              {currentPath ? 'No markdown files' : 'No folder opened'}
+              {currentPath ? t('sidebar.noMarkdown') : t('sidebar.noFolder')}
             </span>
             {!currentPath && (
               <button
                 onClick={openWorkspace}
                 className="mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium"
               >
-                Open Folder
+                {t('sidebar.openFolderBtn')}
               </button>
             )}
           </div>
@@ -689,7 +692,11 @@ function GhostRow({
       </span>
       <InlineInput
         value=""
-        placeholder={type === 'file' ? 'untitled' : 'new-folder'}
+        placeholder={
+          type === 'file'
+            ? t('sidebar.untitled')
+            : t('sidebar.newFolderPlaceholder')
+        }
         onCommit={onCommit}
         onCancel={() => onCancel()}
         autoFocus={true}
@@ -782,7 +789,7 @@ function FileTreeNode({
 
     if (hasInvalidNodeName(newName)) {
       if (trigger === 'enter') {
-        useStatusStore.getState().setStatus('error', 'Invalid name');
+        useStatusStore.getState().setStatus('error', t('sidebar.invalidName'));
       }
       setRenameDraft(oldName);
       setIsRenaming(false);
@@ -795,7 +802,7 @@ function FileTreeNode({
       if (trigger === 'enter') {
         useStatusStore
           .getState()
-          .setStatus('error', 'Failed to save changes before rename');
+          .setStatus('error', t('sidebar.saveBeforeRename'));
       }
       setRenameDraft(oldName);
       setIsRenaming(false);
@@ -808,7 +815,9 @@ function FileTreeNode({
       node.type === 'file'
         ? `${newName}${getFileExtension(node.name) || '.md'}`
         : newName;
-    const newPath = parentPath ? `${parentPath}/${newFileName}` : newFileName;
+    const newPath = parentPath
+      ? joinPath(parentPath, newFileName)
+      : newFileName;
 
     try {
       await fileActions.renamePath(node.path, newPath);
@@ -865,7 +874,11 @@ function FileTreeNode({
             }`}
             aria-hidden="true"
           >
-            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {isExpanded ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronRight size={14} />
+            )}
           </span>
         ) : (
           <span className="w-3.5" aria-hidden="true" />
