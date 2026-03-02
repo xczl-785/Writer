@@ -1,4 +1,5 @@
 import { isPathMatch } from '../utils/pathUtils';
+import { t } from '../i18n';
 
 export type CloseAction = 'save_then_close' | 'close_now';
 
@@ -17,8 +18,7 @@ export const getCloseAction = ({
   return 'close_now';
 };
 
-export const getForceCloseHint = (): string =>
-  '保存失败，再次点击关闭按钮将强制关闭窗口。';
+export const getForceCloseHint = (): string => t('close.saveFailed');
 
 export const filterSavableDirtyPaths = (
   dirtyPaths: string[],

@@ -5,6 +5,8 @@
  * This implementation guarantees safe default focus behavior for destructive actions.
  */
 
+import { t } from '../../../i18n';
+
 export interface ConfirmDialogOptions {
   /** Dialog title */
   title: string;
@@ -57,9 +59,7 @@ export async function showConfirmDialog(
     messageElement.className = 'mt-2 text-sm text-zinc-700';
     messageElement.textContent = message;
 
-    const descriptionElement = description
-      ? document.createElement('p')
-      : null;
+    const descriptionElement = description ? document.createElement('p') : null;
     if (descriptionElement) {
       descriptionElement.className = 'mt-1 text-sm text-zinc-500';
       descriptionElement.textContent = description ?? null;
@@ -170,15 +170,15 @@ export async function showDeleteConfirmDialog(
   itemName: string,
   isDirectory: boolean,
 ): Promise<boolean> {
-  const message = `确定要将 "${itemName}"${
-    isDirectory ? ' 及其所有内容' : ''
-  }移至废纸篓吗？`;
+  const message = isDirectory
+    ? t('confirm.deleteFolder').replace('{name}', itemName)
+    : t('confirm.deleteFile').replace('{name}', itemName);
 
   return showConfirmDialog({
-    title: '移至废纸篓',
+    title: t('confirm.deleteTitle'),
     message,
     kind: 'warning',
-    okLabel: '移至废纸篓',
-    cancelLabel: '取消',
+    okLabel: t('confirm.delete'),
+    cancelLabel: t('confirm.cancel'),
   });
 }

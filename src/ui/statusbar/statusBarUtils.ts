@@ -1,5 +1,6 @@
 import type { GitSyncStatus } from '../../services/fs/FsService';
 import type { SaveStatus } from '../../state/slices/statusSlice';
+import { t } from '../../i18n';
 
 export function countCharacters(value: string): number {
   return Array.from(value).filter((char) => !/\s/u.test(char)).length;
@@ -53,33 +54,36 @@ export function deriveSyncState(
 export function syncLabel(state: SyncState): string {
   switch (state) {
     case 'no-git':
-      return 'SYNC';
+      return t('status.sync');
     case 'local-only':
-      return 'LOCAL';
+      return t('status.local');
     default:
-      return 'SYNC';
+      return t('status.sync');
   }
 }
 
-export function syncTooltip(state: SyncState, git: GitSyncStatus | null): string {
+export function syncTooltip(
+  state: SyncState,
+  git: GitSyncStatus | null,
+): string {
   switch (state) {
     case 'no-git':
-      return 'No Git repository';
+      return t('status.noGit');
     case 'local-only':
-      return 'Local repository (no upstream)';
+      return t('status.localRepo');
     case 'syncing':
-      return 'Saving changes...';
+      return t('status.syncing');
     case 'dirty':
-      return 'Uncommitted changes';
+      return t('status.uncommitted');
     case 'ahead':
-      return `Ahead ${git?.ahead ?? 0} commit(s)`;
+      return `${t('status.ahead')} ${git?.ahead ?? 0} ${t('status.commits')}`;
     case 'behind':
-      return `Behind ${git?.behind ?? 0} commit(s)`;
+      return `${t('status.behind')} ${git?.behind ?? 0} ${t('status.commits')}`;
     case 'diverged':
-      return `Diverged (ahead ${git?.ahead ?? 0}, behind ${git?.behind ?? 0})`;
+      return `${t('status.diverged')} (${t('status.ahead')} ${git?.ahead ?? 0}, ${t('status.behind')} ${git?.behind ?? 0})`;
     case 'synced':
-      return 'Synced with upstream';
+      return t('status.synced');
     default:
-      return 'Sync status';
+      return t('status.syncStatus');
   }
 }

@@ -9,6 +9,7 @@ import {
   syncLabel,
   syncTooltip,
 } from './statusBarUtils';
+import { t } from '../../i18n';
 import './StatusBar.css';
 
 export const StatusBar: React.FC = () => {
@@ -20,7 +21,9 @@ export const StatusBar: React.FC = () => {
   const [gitSync, setGitSync] = useState<GitSyncStatus | null>(null);
   const [encodingLabel, setEncodingLabel] = useState('UTF-8');
 
-  const activeContent = activeFile ? fileStates[activeFile]?.content ?? '' : '';
+  const activeContent = activeFile
+    ? (fileStates[activeFile]?.content ?? '')
+    : '';
   const charactersCount = countCharacters(activeContent);
 
   useEffect(() => {
@@ -81,7 +84,7 @@ export const StatusBar: React.FC = () => {
       })
       .catch(() => {
         if (!disposed) {
-          setEncodingLabel('Unknown');
+          setEncodingLabel(t('status.unknown'));
         }
       });
 
@@ -138,13 +141,13 @@ export const StatusBar: React.FC = () => {
     if (message) return message;
     switch (saveStatus) {
       case 'dirty':
-        return 'Unsaved';
+        return t('status.unsaved');
       case 'saving':
-        return 'Saving...';
+        return t('status.saving');
       case 'error':
-        return saveError?.reason ?? 'Save failed';
+        return saveError?.reason ?? t('status.saveFailed');
       default:
-        return 'Saved';
+        return t('status.saved');
     }
   };
 
@@ -174,12 +177,16 @@ export const StatusBar: React.FC = () => {
         <span className="status-message">{getStatusText()}</span>
       </div>
       <div className="status-bar__right">
-        <span className="status-meta">{charactersCount} chars</span>
+        <span className="status-meta">
+          {charactersCount} {t('status.chars')}
+        </span>
         <button
           type="button"
           className="status-meta status-meta-btn"
-          title={`Encoding: ${encodingLabel}`}
-          onClick={() => setStatus('idle', `Encoding: ${encodingLabel}`)}
+          title={`${t('status.encoding')}: ${encodingLabel}`}
+          onClick={() =>
+            setStatus('idle', `${t('status.encoding')}: ${encodingLabel}`)
+          }
         >
           {encodingLabel}
         </button>

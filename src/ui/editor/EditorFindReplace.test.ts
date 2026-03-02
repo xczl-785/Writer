@@ -25,12 +25,12 @@ describe('Editor find and replace', () => {
   it('includes source markers for find-replace accessible labels', () => {
     const panelTsx = readPanel();
 
-    expect(panelTsx).toContain('aria-label="Find"');
-    expect(panelTsx).toContain('aria-label="Replace"');
-    expect(panelTsx).toContain('aria-label="Previous match"');
-    expect(panelTsx).toContain('aria-label="Next match"');
-    expect(panelTsx).toContain('aria-label="Replace match"');
-    expect(panelTsx).toContain('aria-label="Replace all matches"');
+    expect(panelTsx).toContain("t('dialog.find')");
+    expect(panelTsx).toContain("t('dialog.replace')");
+    expect(panelTsx).toContain("t('dialog.prev')");
+    expect(panelTsx).toContain("t('dialog.next')");
+    expect(panelTsx).toContain("t('dialog.replace')");
+    expect(panelTsx).toContain("t('dialog.replaceAll')");
   });
 
   it('includes source markers for find-replace status and count strings', () => {
