@@ -12,6 +12,10 @@ describe('App settings integration', () => {
   );
   const messagesTs = readFileSync(join(currentDir, '..', 'i18n', 'messages.ts'), 'utf-8');
   const i18nIndexTs = readFileSync(join(currentDir, '..', 'i18n', 'index.ts'), 'utf-8');
+  const appLibRs = readFileSync(
+    join(currentDir, '..', '..', 'src-tauri', 'src', 'lib.rs'),
+    'utf-8',
+  );
   const tauriMenuRs = readFileSync(
     join(currentDir, '..', '..', 'src-tauri', 'src', 'menu.rs'),
     'utf-8',
@@ -27,6 +31,7 @@ describe('App settings integration', () => {
     expect(fileCommandsTs).toContain("menuCommandBus.register('menu.file.settings'");
     expect(fileCommandsTs).toContain('onOpenSettings');
     expect(appTsx).toContain('<SettingsPanel');
+    expect(appTsx).toContain("invoke('set_menu_locale'");
   });
 
   it('provides settings i18n keys and locale preference api', () => {
@@ -37,5 +42,7 @@ describe('App settings integration', () => {
     expect(messagesTs).toContain("'settings.language.enUS'");
     expect(i18nIndexTs).toContain('setLocalePreference');
     expect(i18nIndexTs).toContain('getLocalePreference');
+    expect(appLibRs).toContain('fn set_menu_locale');
+    expect(tauriMenuRs).toContain('build_native_menu_for_locale');
   });
 });

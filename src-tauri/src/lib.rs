@@ -1,9 +1,19 @@
 pub mod fs;
 pub mod menu;
+use tauri::AppHandle;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
+#[tauri::command]
+fn set_menu_locale(app: AppHandle, locale: String) -> Result<(), String> {
+    let native_menu =
+        menu::build_native_menu_for_locale(&app, &locale).map_err(|err| err.to_string())?;
+    app.set_menu(native_menu)
+        .map(|_| ())
+        .map_err(|err| err.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,6 +27,7 @@ pub fn run() {
     builder
         .invoke_handler(tauri::generate_handler![
             greet,
+            set_menu_locale,
             fs::list_tree,
             fs::read_file,
             fs::write_file_atomic,
