@@ -1,6 +1,7 @@
 import { Copy, Quote, Rows3, Table2, Type } from 'lucide-react';
 import type { MenuItem } from './contextMenuRegistry';
 import { divider } from './contextMenuRegistry';
+import { t } from '../../../i18n';
 
 export interface EditorContextMenuActions {
   onPaste: () => void;
@@ -55,34 +56,34 @@ export function getEditorContextMenuItems(
   return [
     {
       id: 'paste',
-      label: 'Paste',
+      label: t('editor.paste'),
       shortcut: 'Cmd+V',
       icon: <Copy size={14} />,
       action: actions.onPaste,
     },
     {
       id: 'select-all',
-      label: 'Select All',
+      label: t('editor.selectAll'),
       shortcut: 'Cmd+A',
       icon: <Type size={14} />,
       action: actions.onSelectAll,
     },
     {
       id: 'copy-full-text',
-      label: 'Copy Full Text',
+      label: t('editor.copyFullText'),
       icon: <Rows3 size={14} />,
       action: actions.onCopyFullText,
     },
     divider(),
     {
       id: 'insert-table',
-      label: 'Insert Table',
+      label: t('editor.insertTable'),
       icon: <Table2 size={14} />,
       action: actions.onInsertTable,
     },
     {
       id: 'insert-quote',
-      label: 'Insert Quote',
+      label: t('editor.insertQuote'),
       icon: <Quote size={14} />,
       action: actions.onInsertQuote,
     },
@@ -95,19 +96,19 @@ export function getCodeBlockContextMenuItems(
   return [
     {
       id: 'copy-code-block',
-      label: 'Copy Code Block',
+      label: t('editor.copyCodeBlock'),
       icon: <Copy size={14} />,
       action: actions.onCopyCodeBlock,
     },
     {
       id: 'change-language',
-      label: 'Change Language',
+      label: t('editor.changeLanguage'),
       icon: <Type size={14} />,
       action: actions.onChangeLanguage,
     },
     {
       id: 'format-code',
-      label: 'Format Code',
+      label: t('editor.formatCode'),
       icon: <Rows3 size={14} />,
       action: actions.onFormatCode,
     },
@@ -120,21 +121,21 @@ export function getTableContextMenuItems(
   return [
     {
       id: 'insert-row-above',
-      label: 'Insert Row Above',
+      label: t('editor.insertRowAbove'),
       icon: <Rows3 size={14} />,
       action: actions.onInsertRowAbove,
       disabled: () => !actions.canInsertRowAbove(),
     },
     {
       id: 'insert-row-below',
-      label: 'Insert Row Below',
+      label: t('editor.insertRowBelow'),
       icon: <Rows3 size={14} />,
       action: actions.onInsertRowBelow,
       disabled: () => !actions.canInsertRowBelow(),
     },
     {
       id: 'delete-row',
-      label: 'Delete Row',
+      label: t('editor.deleteRow'),
       icon: <Rows3 size={14} />,
       action: actions.onDeleteRow,
       disabled: () => !actions.canDeleteRow(),
@@ -142,21 +143,21 @@ export function getTableContextMenuItems(
     divider(),
     {
       id: 'insert-column-left',
-      label: 'Insert Column Left',
+      label: t('editor.insertColumnLeft'),
       icon: <Table2 size={14} />,
       action: actions.onInsertColumnLeft,
       disabled: () => !actions.canInsertColumnLeft(),
     },
     {
       id: 'insert-column-right',
-      label: 'Insert Column Right',
+      label: t('editor.insertColumnRight'),
       icon: <Table2 size={14} />,
       action: actions.onInsertColumnRight,
       disabled: () => !actions.canInsertColumnRight(),
     },
     {
       id: 'delete-column',
-      label: 'Delete Column',
+      label: t('editor.deleteColumn'),
       icon: <Table2 size={14} />,
       action: actions.onDeleteColumn,
       disabled: () => !actions.canDeleteColumn(),
@@ -164,14 +165,14 @@ export function getTableContextMenuItems(
     divider(),
     {
       id: 'merge-cells',
-      label: 'Merge Cells',
+      label: t('editor.mergeCells'),
       icon: <Table2 size={14} />,
       action: actions.onMergeCells,
       disabled: () => !actions.canMergeCells(),
     },
     {
       id: 'split-cell',
-      label: 'Split Cell',
+      label: t('editor.splitCell'),
       icon: <Table2 size={14} />,
       action: actions.onSplitCell,
       disabled: () => !actions.canSplitCell(),
@@ -179,14 +180,14 @@ export function getTableContextMenuItems(
     divider(),
     {
       id: 'toggle-header-row',
-      label: 'Toggle Header Row',
+      label: t('editor.toggleHeaderRow'),
       icon: <Type size={14} />,
       action: actions.onToggleHeaderRow,
       disabled: () => !actions.canToggleHeaderRow(),
     },
     {
       id: 'toggle-header-column',
-      label: 'Toggle Header Column',
+      label: t('editor.toggleHeaderColumn'),
       icon: <Type size={14} />,
       action: actions.onToggleHeaderColumn,
       disabled: () => !actions.canToggleHeaderColumn(),
@@ -194,28 +195,28 @@ export function getTableContextMenuItems(
     divider(),
     {
       id: 'align-left',
-      label: 'Align Left',
+      label: t('editor.alignLeft'),
       icon: <Type size={14} />,
       action: actions.onAlignLeft,
       disabled: () => !actions.canAlignLeft(),
     },
     {
       id: 'align-center',
-      label: 'Align Center',
+      label: t('editor.alignCenter'),
       icon: <Type size={14} />,
       action: actions.onAlignCenter,
       disabled: () => !actions.canAlignCenter(),
     },
     {
       id: 'align-right',
-      label: 'Align Right',
+      label: t('editor.alignRight'),
       icon: <Type size={14} />,
       action: actions.onAlignRight,
       disabled: () => !actions.canAlignRight(),
     },
     {
       id: 'toggle-cell-border',
-      label: 'Toggle Cell Border',
+      label: t('editor.toggleCellBorder'),
       icon: <Table2 size={14} />,
       action: actions.onToggleCellBorder,
       disabled: () => !actions.canToggleCellBorder(),
@@ -223,7 +224,7 @@ export function getTableContextMenuItems(
     divider(),
     {
       id: 'delete-table',
-      label: 'Delete Table',
+      label: t('editor.deleteTable'),
       icon: <Table2 size={14} />,
       danger: true,
       action: actions.onDeleteTable,

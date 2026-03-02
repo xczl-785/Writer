@@ -9,7 +9,7 @@ describe('Sidebar Search Behavior Markers', () => {
 
   it('includes the search input marker', () => {
     expect(sidebarTsx).toContain('id="explorer-search"');
-    expect(sidebarTsx).toContain('aria-label="Search files"');
+    expect(sidebarTsx).toContain("t('sidebar.search')");
   });
 
   it('implements keyboard navigation handlers for search results', () => {
@@ -31,8 +31,8 @@ describe('Sidebar Search Behavior Markers', () => {
   });
 
   it('defines the no-match state text', () => {
-    expect(sidebarTsx).toContain('<span>No matches</span>');
-    expect(sidebarTsx).toContain('Try a different name or path');
+    expect(sidebarTsx).toContain("t('sidebar.noMatches')");
+    expect(sidebarTsx).toContain("t('sidebar.tryDifferent')");
   });
 
   it('includes the clear search button marker', () => {

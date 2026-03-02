@@ -3,6 +3,7 @@ import {
   type SaveErrorAction,
   type SaveErrorCategory,
 } from '../../state/slices/statusSlice';
+import { t } from '../../i18n';
 
 /**
  * Error classification for user-friendly messages
@@ -80,29 +81,29 @@ function generateErrorInfo(
       case 'permission':
         return {
           category: 'permission',
-          reason: '无法写入文件',
-          suggestion: '请检查文件权限，或尝试另存为新位置',
+          reason: t('error.permission'),
+          suggestion: t('error.permissionSuggestion'),
         };
 
       case 'network':
         return {
           category: 'network',
-          reason: '网络连接失败',
-          suggestion: '请检查网络连接后重试',
+          reason: t('error.network'),
+          suggestion: t('error.networkSuggestion'),
         };
 
       case 'user':
         return {
           category: 'user',
           reason: message,
-          suggestion: '请检查输入是否正确',
+          suggestion: t('error.userSuggestion'),
         };
 
       default:
         return {
           category: 'system',
-          reason: `${context} 失败`,
-          suggestion: '请稍后重试，或联系技术支持',
+          reason: `${context} ${t('error.unknown')}`,
+          suggestion: t('error.systemSuggestion'),
         };
     }
   })();
@@ -145,7 +146,10 @@ export const ErrorService = {
     return info;
   },
 
-  async handleAsync<T>(promise: Promise<T>, context: string): Promise<T | null> {
+  async handleAsync<T>(
+    promise: Promise<T>,
+    context: string,
+  ): Promise<T | null> {
     try {
       return await promise;
     } catch (error) {

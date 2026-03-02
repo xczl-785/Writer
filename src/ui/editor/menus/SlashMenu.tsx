@@ -6,14 +6,15 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { Editor } from '@tiptap/react';
 import { isStrictSlashTriggerEligible } from './slashEligibility';
+import { t } from '../../../i18n';
 
-const SLASH_MENU_MAX_ITEMS = 8;
+const SLASH_MENU_MAX_ITEMS = 14;
 
 export type SlashPhase = 'idle' | 'open' | 'searching' | 'executing';
 
 export type SlashCommand = {
   id: string;
-  group: 'Basic Blocks' | 'Advanced Components';
+  group: 'basic' | 'advanced';
   label: string;
   hint: string;
   keywords: string[];
@@ -58,8 +59,8 @@ export function useSlashMenu({
     () => [
       {
         id: 'heading1',
-        group: 'Basic Blocks',
-        label: 'Heading 1',
+        group: 'basic',
+        label: t('slash.heading1'),
         hint: '⌘1',
         keywords: ['h1', 'title', 'heading'],
         run: (instance) => {
@@ -67,9 +68,59 @@ export function useSlashMenu({
         },
       },
       {
+        id: 'heading2',
+        group: 'basic',
+        label: t('slash.heading2'),
+        hint: '⌘2',
+        keywords: ['h2', 'heading'],
+        run: (instance) => {
+          instance.chain().focus().toggleHeading({ level: 2 }).run();
+        },
+      },
+      {
+        id: 'heading3',
+        group: 'basic',
+        label: t('slash.heading3'),
+        hint: '⌘3',
+        keywords: ['h3', 'heading'],
+        run: (instance) => {
+          instance.chain().focus().toggleHeading({ level: 3 }).run();
+        },
+      },
+      {
+        id: 'heading4',
+        group: 'basic',
+        label: t('slash.heading4'),
+        hint: '⌘4',
+        keywords: ['h4', 'heading'],
+        run: (instance) => {
+          instance.chain().focus().toggleHeading({ level: 4 }).run();
+        },
+      },
+      {
+        id: 'heading5',
+        group: 'basic',
+        label: t('slash.heading5'),
+        hint: '⌘5',
+        keywords: ['h5', 'heading'],
+        run: (instance) => {
+          instance.chain().focus().toggleHeading({ level: 5 }).run();
+        },
+      },
+      {
+        id: 'heading6',
+        group: 'basic',
+        label: t('slash.heading6'),
+        hint: '⌘6',
+        keywords: ['h6', 'heading'],
+        run: (instance) => {
+          instance.chain().focus().toggleHeading({ level: 6 }).run();
+        },
+      },
+      {
         id: 'unorderedList',
-        group: 'Basic Blocks',
-        label: 'Unordered List',
+        group: 'basic',
+        label: t('slash.unorderedList'),
         hint: '⌥⌘U',
         keywords: ['list', 'bullet', 'ul'],
         run: (instance) => {
@@ -78,8 +129,8 @@ export function useSlashMenu({
       },
       {
         id: 'orderedList',
-        group: 'Basic Blocks',
-        label: 'Ordered List',
+        group: 'basic',
+        label: t('slash.orderedList'),
         hint: '⌥⌘O',
         keywords: ['list', 'number', 'ol'],
         run: (instance) => {
@@ -87,9 +138,19 @@ export function useSlashMenu({
         },
       },
       {
+        id: 'taskList',
+        group: 'basic',
+        label: t('slash.taskList'),
+        hint: '',
+        keywords: ['task', 'todo', 'checkbox', 'checklist'],
+        run: (instance) => {
+          instance.chain().focus().toggleTaskList().run();
+        },
+      },
+      {
         id: 'table',
-        group: 'Advanced Components',
-        label: 'Table',
+        group: 'advanced',
+        label: t('slash.table'),
         hint: '⌥⌘T',
         keywords: ['table', 'grid'],
         run: (instance) => {
@@ -98,8 +159,8 @@ export function useSlashMenu({
       },
       {
         id: 'codeBlock',
-        group: 'Advanced Components',
-        label: 'Code Block',
+        group: 'advanced',
+        label: t('slash.codeBlock'),
         hint: '⌥⌘C',
         keywords: ['code', 'pre'],
         run: (instance) => {
@@ -108,12 +169,46 @@ export function useSlashMenu({
       },
       {
         id: 'blockquote',
-        group: 'Advanced Components',
-        label: 'Blockquote',
+        group: 'advanced',
+        label: t('slash.blockquote'),
         hint: '⇧⌘Q',
         keywords: ['quote', 'blockquote'],
         run: (instance) => {
           instance.chain().focus().toggleBlockquote().run();
+        },
+      },
+      {
+        id: 'horizontalRule',
+        group: 'advanced',
+        label: t('slash.horizontalRule'),
+        hint: '',
+        keywords: ['hr', 'divider', 'line', 'separator'],
+        run: (instance) => {
+          instance.chain().focus().setHorizontalRule().run();
+        },
+      },
+      {
+        id: 'image',
+        group: 'advanced',
+        label: t('slash.image'),
+        hint: '',
+        keywords: ['img', 'picture', 'photo'],
+        run: (instance) => {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'image/*';
+          input.onchange = async () => {
+            const file = input.files?.[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const dataUrl = reader.result as string;
+                instance.chain().focus().setImage({ src: dataUrl }).run();
+              };
+              reader.readAsDataURL(file);
+            }
+          };
+          input.click();
         },
       },
     ],
@@ -419,7 +514,11 @@ export function SlashMenu({
 }: SlashMenuProps) {
   if (!isOpen) return null;
 
-  const groups = ['Basic Blocks', 'Advanced Components'] as const;
+  const groups: Array<'basic' | 'advanced'> = ['basic', 'advanced'];
+  const groupLabels: Record<'basic' | 'advanced', string> = {
+    basic: t('slash.basicBlocks'),
+    advanced: t('slash.advanced'),
+  };
 
   return (
     <div
@@ -427,14 +526,16 @@ export function SlashMenu({
       style={{ left: x, top: y }}
     >
       {commands.length === 0 ? (
-        <div className="editor-slash-menu__empty">No matching commands</div>
+        <div className="editor-slash-menu__empty">{t('slash.noMatch')}</div>
       ) : (
         groups.map((group) => {
           const groupItems = commands.filter((cmd) => cmd.group === group);
           if (groupItems.length === 0) return null;
           return (
             <div key={group}>
-              <div className="editor-slash-menu__group">{group}</div>
+              <div className="editor-slash-menu__group">
+                {groupLabels[group]}
+              </div>
               {groupItems.map((cmd) => {
                 const absoluteIndex = commands.findIndex(
                   (item) => item.id === cmd.id,

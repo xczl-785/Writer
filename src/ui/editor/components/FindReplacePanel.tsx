@@ -19,6 +19,8 @@ type Props = {
   onReplaceAll: () => void;
 };
 
+import { t } from '../../../i18n';
+
 export function FindReplacePanel({
   isOpen,
   isReplaceMode,
@@ -46,22 +48,22 @@ export function FindReplacePanel({
         <button
           type="button"
           className="editor-toolbar__button"
-          aria-label="Find"
-          title="Find (Mod-f)"
+          aria-label={t('dialog.find')}
+          title={`${t('dialog.find')} (Mod-f)`}
           onMouseDown={(e) => e.preventDefault()}
           onClick={onOpenFind}
         >
-          Find
+          {t('dialog.find')}
         </button>
         <button
           type="button"
           className="editor-toolbar__button"
-          aria-label="Replace"
-          title="Replace (Mod-h)"
+          aria-label={t('dialog.replace')}
+          title={`${t('dialog.replace')} (Mod-h)`}
           onMouseDown={(e) => e.preventDefault()}
           onClick={onOpenReplace}
         >
-          Replace
+          {t('dialog.replace')}
         </button>
       </div>
     );
@@ -91,8 +93,8 @@ export function FindReplacePanel({
         ref={findInputRef}
         type="text"
         inputMode="search"
-        placeholder="Find"
-        aria-label="Find"
+        placeholder={t('dialog.find')}
+        aria-label={t('dialog.find')}
         className="editor-find-panel__input"
         value={findQuery}
         onChange={(e) => onFindQueryChange(e.target.value)}
@@ -102,8 +104,8 @@ export function FindReplacePanel({
         <input
           ref={replaceInputRef}
           type="text"
-          placeholder="Replace"
-          aria-label="Replace"
+          placeholder={t('dialog.replace')}
+          aria-label={t('dialog.replace')}
           className="editor-find-panel__input"
           value={replaceQuery}
           onChange={(e) => onReplaceQueryChange(e.target.value)}
@@ -113,37 +115,37 @@ export function FindReplacePanel({
       <button
         type="button"
         className="editor-find-panel__button"
-        aria-label="Previous match"
-        title="Previous match (Shift+Enter)"
+        aria-label={t('dialog.prev')}
+        title={`${t('dialog.prev')} (Shift+Enter)`}
         disabled={!findMatchesCount}
         onMouseDown={(e) => e.preventDefault()}
         onClick={onPrev}
       >
-        Prev
+        {t('dialog.prev')}
       </button>
       <button
         type="button"
         className="editor-find-panel__button"
-        aria-label="Next match"
-        title="Next match (Enter)"
+        aria-label={t('dialog.next')}
+        title={`${t('dialog.next')} (Enter)`}
         disabled={!findMatchesCount}
         onMouseDown={(e) => e.preventDefault()}
         onClick={onNext}
       >
-        Next
+        {t('dialog.next')}
       </button>
 
       {isReplaceMode ? (
         <button
           type="button"
           className="editor-find-panel__button"
-          aria-label="Replace match"
-          title="Replace current match"
+          aria-label={t('dialog.replace')}
+          title={t('dialog.replace')}
           disabled={!findMatchesCount}
           onMouseDown={(e) => e.preventDefault()}
           onClick={onReplaceOne}
         >
-          Replace
+          {t('dialog.replace')}
         </button>
       ) : null}
 
@@ -151,13 +153,13 @@ export function FindReplacePanel({
         <button
           type="button"
           className="editor-find-panel__button"
-          aria-label="Replace all matches"
-          title="Replace all matches"
+          aria-label={t('dialog.replaceAll')}
+          title={t('dialog.replaceAll')}
           disabled={!findMatchesCount}
           onMouseDown={(e) => e.preventDefault()}
           onClick={onReplaceAll}
         >
-          Replace all
+          {t('dialog.replaceAll')}
         </button>
       ) : null}
 
@@ -174,8 +176,8 @@ export function FindReplacePanel({
       <button
         type="button"
         className="editor-find-panel__button"
-        aria-label="Close find"
-        title="Close (Esc)"
+        aria-label={t('dialog.close')}
+        title={`${t('dialog.close')} (Esc)`}
         onMouseDown={(e) => e.preventDefault()}
         onClick={onClose}
       >

@@ -100,7 +100,11 @@ export function getPlatformLabels(): {
     navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
   return {
-    revealLabel: isMac ? 'Reveal in Finder' : 'Show in Explorer',
-    trashLabel: isMac ? 'Move to Trash' : 'Move to Recycle Bin',
+    revealLabel: isMac
+      ? t('contextMenu.revealInFinder')
+      : t('contextMenu.revealInExplorer'),
+    trashLabel: isMac
+      ? t('contextMenu.moveToTrash')
+      : t('contextMenu.moveToRecycleBin'),
   };
 }
