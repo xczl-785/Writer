@@ -71,6 +71,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             &item(app, "menu.file.export_pdf", "导出 PDF", "Export PDF", None)?,
             &item(app, "menu.file.export_html", "导出 HTML", "Export HTML", None)?,
             &item(app, "menu.file.export_image", "导出图片", "Export Image", None)?,
+            &item(app, "menu.file.settings", "设置", "Settings", None)?,
         ],
     )?;
 
