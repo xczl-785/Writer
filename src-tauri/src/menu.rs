@@ -13,7 +13,7 @@ struct MenuCommandEvent {
     id: String,
 }
 
-fn locale() -> Locale {
+fn locale_from_env() -> Locale {
     let lang = std::env::var("LANG").unwrap_or_default().to_lowercase();
     if lang.starts_with("zh") {
         Locale::Zh
@@ -22,8 +22,17 @@ fn locale() -> Locale {
     }
 }
 
-fn tr(zh: &str, en: &str) -> String {
-    match locale() {
+fn locale_from_tag(tag: &str) -> Locale {
+    let lower = tag.to_lowercase();
+    if lower.starts_with("zh") {
+        Locale::Zh
+    } else {
+        Locale::En
+    }
+}
+
+fn tr(locale: Locale, zh: &str, en: &str) -> String {
+    match locale {
         Locale::Zh => zh.to_string(),
         Locale::En => en.to_string(),
     }
@@ -31,23 +40,39 @@ fn tr(zh: &str, en: &str) -> String {
 
 fn item<R: Runtime>(
     app: &AppHandle<R>,
+    locale: Locale,
     id: &str,
     zh: &str,
     en: &str,
     accelerator: Option<&str>,
 ) -> Result<MenuItem<R>, tauri::Error> {
-    MenuItem::with_id(app, id, tr(zh, en), true, accelerator)
+    MenuItem::with_id(app, id, tr(locale, zh, en), true, accelerator)
 }
 
 pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, tauri::Error> {
+    build_native_menu_with_locale(app, locale_from_env())
+}
+
+pub fn build_native_menu_for_locale<R: Runtime>(
+    app: &AppHandle<R>,
+    locale_tag: &str,
+) -> Result<Menu<R>, tauri::Error> {
+    build_native_menu_with_locale(app, locale_from_tag(locale_tag))
+}
+
+fn build_native_menu_with_locale<R: Runtime>(
+    app: &AppHandle<R>,
+    locale: Locale,
+) -> Result<Menu<R>, tauri::Error> {
     let file_menu = Submenu::with_items(
         app,
-        &tr("文件", "File"),
+        &tr(locale, "文件", "File"),
         true,
         &[
-            &item(app, "menu.file.new", "新建", "New", Some("CmdOrCtrl+N"))?,
+            &item(app, locale, "menu.file.new", "新建", "New", Some("CmdOrCtrl+N"))?,
             &item(
                 app,
+                locale,
                 "menu.file.open_folder",
                 "打开文件夹",
                 "Open Folder",
@@ -55,52 +80,57 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.file.close_folder",
                 "关闭文件夹",
                 "Close Folder",
                 Some("Shift+CmdOrCtrl+W"),
             )?,
-            &item(app, "menu.file.save", "保存", "Save", Some("CmdOrCtrl+S"))?,
+            &item(app, locale, "menu.file.save", "保存", "Save", Some("CmdOrCtrl+S"))?,
             &item(
                 app,
+                locale,
                 "menu.file.save_as",
                 "另存为",
                 "Save As",
                 Some("Shift+CmdOrCtrl+S"),
             )?,
-            &item(app, "menu.file.export_pdf", "导出 PDF", "Export PDF", None)?,
-            &item(app, "menu.file.export_html", "导出 HTML", "Export HTML", None)?,
-            &item(app, "menu.file.export_image", "导出图片", "Export Image", None)?,
-            &item(app, "menu.file.settings", "设置", "Settings", None)?,
+            &item(app, locale, "menu.file.export_pdf", "导出 PDF", "Export PDF", None)?,
+            &item(app, locale, "menu.file.export_html", "导出 HTML", "Export HTML", None)?,
+            &item(app, locale, "menu.file.export_image", "导出图片", "Export Image", None)?,
+            &item(app, locale, "menu.file.settings", "设置", "Settings", None)?,
         ],
     )?;
 
     let edit_menu = Submenu::with_items(
         app,
-        &tr("编辑", "Edit"),
+        &tr(locale, "编辑", "Edit"),
         true,
         &[
-            &item(app, "menu.edit.undo", "撤销", "Undo", Some("CmdOrCtrl+Z"))?,
+            &item(app, locale, "menu.edit.undo", "撤销", "Undo", Some("CmdOrCtrl+Z"))?,
             &item(
                 app,
+                locale,
                 "menu.edit.redo",
                 "重做",
                 "Redo",
                 Some("Shift+CmdOrCtrl+Z"),
             )?,
-            &item(app, "menu.edit.cut", "剪切", "Cut", Some("CmdOrCtrl+X"))?,
-            &item(app, "menu.edit.copy", "复制", "Copy", Some("CmdOrCtrl+C"))?,
-            &item(app, "menu.edit.paste", "粘贴", "Paste", Some("CmdOrCtrl+V"))?,
+            &item(app, locale, "menu.edit.cut", "剪切", "Cut", Some("CmdOrCtrl+X"))?,
+            &item(app, locale, "menu.edit.copy", "复制", "Copy", Some("CmdOrCtrl+C"))?,
+            &item(app, locale, "menu.edit.paste", "粘贴", "Paste", Some("CmdOrCtrl+V"))?,
             &item(
                 app,
+                locale,
                 "menu.edit.select_all",
                 "全选",
                 "Select All",
                 Some("CmdOrCtrl+A"),
             )?,
-            &item(app, "menu.edit.find", "查找", "Find", Some("CmdOrCtrl+F"))?,
+            &item(app, locale, "menu.edit.find", "查找", "Find", Some("CmdOrCtrl+F"))?,
             &item(
                 app,
+                locale,
                 "menu.edit.replace",
                 "替换",
                 "Replace",
@@ -111,11 +141,12 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
 
     let paragraph_menu = Submenu::with_items(
         app,
-        &tr("段落", "Paragraph"),
+        &tr(locale, "段落", "Paragraph"),
         true,
         &[
             &item(
                 app,
+                locale,
                 "menu.paragraph.heading_1",
                 "标题 1",
                 "Heading 1",
@@ -123,6 +154,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.heading_2",
                 "标题 2",
                 "Heading 2",
@@ -130,6 +162,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.heading_3",
                 "标题 3",
                 "Heading 3",
@@ -137,6 +170,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.heading_4",
                 "标题 4",
                 "Heading 4",
@@ -144,6 +178,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.heading_5",
                 "标题 5",
                 "Heading 5",
@@ -151,6 +186,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.heading_6",
                 "标题 6",
                 "Heading 6",
@@ -158,6 +194,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.blockquote",
                 "引用",
                 "Blockquote",
@@ -165,6 +202,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.code_block",
                 "代码块",
                 "Code Block",
@@ -172,6 +210,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.table",
                 "表格",
                 "Table",
@@ -179,6 +218,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.unordered_list",
                 "无序列表",
                 "Unordered List",
@@ -186,6 +226,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.ordered_list",
                 "有序列表",
                 "Ordered List",
@@ -193,6 +234,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.task_list",
                 "任务列表",
                 "Task List",
@@ -200,6 +242,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.horizontal_rule",
                 "分割线",
                 "Horizontal Rule",
@@ -207,6 +250,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.paragraph.math_block",
                 "数学公式块",
                 "Math Block",
@@ -217,13 +261,14 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
 
     let format_menu = Submenu::with_items(
         app,
-        &tr("格式", "Format"),
+        &tr(locale, "格式", "Format"),
         true,
         &[
-            &item(app, "menu.format.bold", "加粗", "Bold", Some("CmdOrCtrl+B"))?,
-            &item(app, "menu.format.italic", "斜体", "Italic", Some("CmdOrCtrl+I"))?,
+            &item(app, locale, "menu.format.bold", "加粗", "Bold", Some("CmdOrCtrl+B"))?,
+            &item(app, locale, "menu.format.italic", "斜体", "Italic", Some("CmdOrCtrl+I"))?,
             &item(
                 app,
+                locale,
                 "menu.format.inline_code",
                 "行内代码",
                 "Inline Code",
@@ -231,6 +276,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.format.strike",
                 "删除线",
                 "Strikethrough",
@@ -238,6 +284,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.format.underline",
                 "下划线",
                 "Underline",
@@ -245,14 +292,16 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.format.highlight",
                 "高亮",
                 "Highlight",
                 Some("Shift+CmdOrCtrl+H"),
             )?,
-            &item(app, "menu.format.link", "链接", "Link", Some("CmdOrCtrl+K"))?,
+            &item(app, locale, "menu.format.link", "链接", "Link", Some("CmdOrCtrl+K"))?,
             &item(
                 app,
+                locale,
                 "menu.format.image",
                 "图片",
                 "Image",
@@ -263,11 +312,12 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
 
     let view_menu = Submenu::with_items(
         app,
-        &tr("视图", "View"),
+        &tr(locale, "视图", "View"),
         true,
         &[
             &item(
                 app,
+                locale,
                 "menu.view.outline",
                 "显示大纲",
                 "Show Outline",
@@ -275,6 +325,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.view.toggle_sidebar",
                 "切换侧边栏",
                 "Toggle Sidebar",
@@ -282,6 +333,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.view.focus_mode",
                 "专注模式",
                 "Focus Mode",
@@ -289,6 +341,7 @@ pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, taur
             )?,
             &item(
                 app,
+                locale,
                 "menu.view.source_mode",
                 "源码模式",
                 "Source Mode",

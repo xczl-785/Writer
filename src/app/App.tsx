@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { invoke } from '@tauri-apps/api/core';
 import { Editor } from '../ui/editor/Editor';
 import { StateDebug } from '../ui/StateDebug';
 import { Sidebar } from '../ui/sidebar/Sidebar';
@@ -12,7 +13,13 @@ import { FsService } from '../services/fs/FsService';
 import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
 import { ErrorService } from '../services/error/ErrorService';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
-import { t, getLocalePreference, setLocalePreference, type LocalePreference } from '../i18n';
+import {
+  t,
+  getLocale,
+  getLocalePreference,
+  setLocalePreference,
+  type LocalePreference,
+} from '../i18n';
 import {
   filterSavableDirtyPaths,
   getCloseAction,
@@ -55,6 +62,12 @@ function App() {
     setLocalePreference(preference);
     setLocalePreferenceState(getLocalePreference());
   }, []);
+
+  useEffect(() => {
+    void invoke('set_menu_locale', { locale: getLocale() }).catch(() => {
+      // Ignore in web/test runtime where Tauri IPC may be unavailable.
+    });
+  }, [localePreference]);
 
   useEffect(() => {
     currentPathRef.current = currentPath;

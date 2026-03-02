@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "writer",
-  "version": "0.1.5",
+  "productName": "Writer",
+  "version": "0.2.0",
   "identifier": "com.writer.app",
   "build": {
     "frontendDist": "../dist",
