@@ -12,6 +12,7 @@ import type { Editor } from '@tiptap/react';
 import { useOutlineExtractor, type OutlineItem } from './useOutlineExtractor';
 import { OutlineItemComponent } from './OutlineItem';
 import { computeOutlineWindow, findActiveOutlineIndex } from './outlineUtils';
+import { t } from '../../../i18n';
 
 export interface OutlineProps {
   /** TipTap editor instance */
@@ -113,14 +114,15 @@ export const Outline: React.FC<OutlineProps> = ({
     <div
       className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.15)]"
       role="dialog"
-      aria-label="Document outline"
+      aria-label={t('outline.title')}
     >
       <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/50 px-4 py-3">
         <h3 className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">
-          Document Outline
+          {t('outline.title')}
         </h3>
         <span className="text-[10px] text-zinc-400">
-          {items.length} {items.length === 1 ? 'heading' : 'headings'}
+          {items.length}{' '}
+          {items.length === 1 ? t('outline.heading') : t('outline.headings')}
         </span>
       </div>
 
@@ -136,7 +138,7 @@ export const Outline: React.FC<OutlineProps> = ({
       >
         {items.length === 0 ? (
           <div className="px-3 py-8 text-center text-sm text-zinc-400">
-            No headings in document
+            {t('outline.empty')}
           </div>
         ) : (
           <div style={{ paddingTop, paddingBottom }}>

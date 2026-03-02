@@ -46,4 +46,11 @@ describe('Outline behavior', () => {
       "document.removeEventListener('pointerdown', onPointerDown, true)",
     );
   });
+
+  it('localizes outline panel copy through i18n keys', () => {
+    expect(outlineTsx).toContain("t('outline.title')");
+    expect(outlineTsx).toContain("t('outline.heading')");
+    expect(outlineTsx).toContain("t('outline.headings')");
+    expect(outlineTsx).toContain("t('outline.empty')");
+  });
 });

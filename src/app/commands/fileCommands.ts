@@ -24,6 +24,7 @@ const emitSidebarCommand = (id: string) => {
 export function registerFileCommands(
   setIsSidebarVisible: (value: boolean | ((prev: boolean) => boolean)) => void,
   isSidebarVisible: boolean,
+  onOpenSettings: () => void,
 ): CleanupFn {
   const cleanups: CleanupFn[] = [];
 
@@ -104,6 +105,12 @@ export function registerFileCommands(
   cleanups.push(
     menuCommandBus.register('menu.file.export_image', () => {
       useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.settings', () => {
+      onOpenSettings();
     }),
   );
 

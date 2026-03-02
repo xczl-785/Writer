@@ -12,7 +12,7 @@ import { FsService } from '../services/fs/FsService';
 import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
 import { ErrorService } from '../services/error/ErrorService';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
-import { t } from '../i18n';
+import { t, getLocalePreference, setLocalePreference, type LocalePreference } from '../i18n';
 import {
   filterSavableDirtyPaths,
   getCloseAction,
@@ -25,11 +25,16 @@ import {
   registerParagraphCommands,
   registerViewCommands,
 } from './commands';
+import { SettingsPanel } from '../ui/components/Settings';
 import './App.css';
 
 function App() {
   const { currentPath } = useWorkspaceStore();
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [localePreference, setLocalePreferenceState] = useState<LocalePreference>(
+    () => getLocalePreference(),
+  );
   const isClosingRef = useRef(false);
   const isProgrammaticCloseRef = useRef(false);
   const forceCloseRequestedRef = useRef(false);
@@ -44,6 +49,12 @@ function App() {
   const toggleSidebar = useCallback(() => {
     setIsSidebarVisible((prev) => !prev);
   }, []);
+  const openSettings = useCallback(() => setIsSettingsOpen(true), []);
+  const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
+  const handleLocalePreferenceChange = useCallback((preference: LocalePreference) => {
+    setLocalePreference(preference);
+    setLocalePreferenceState(getLocalePreference());
+  }, []);
 
   useEffect(() => {
     currentPathRef.current = currentPath;
@@ -57,7 +68,7 @@ function App() {
   // Register menu commands
   useEffect(() => {
     const unregister = [
-      registerFileCommands(setIsSidebarVisible, isSidebarVisible),
+      registerFileCommands(setIsSidebarVisible, isSidebarVisible, openSettings),
       registerEditCommands(),
       registerFormatCommands(),
       registerParagraphCommands(),
@@ -67,7 +78,7 @@ function App() {
     return () => {
       unregister.forEach((fn) => fn());
     };
-  }, [isSidebarVisible, toggleSidebar]);
+  }, [isSidebarVisible, openSettings, toggleSidebar]);
 
   // Handle window close requests (Tauri)
   useEffect(() => {
@@ -190,6 +201,12 @@ function App() {
         ) : null}
       </div>
       <StatusBar />
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        localePreference={localePreference}
+        onLocalePreferenceChange={handleLocalePreferenceChange}
+        onClose={closeSettings}
+      />
     </div>
   );
 }
