@@ -7,6 +7,8 @@ import { Sidebar } from '../ui/sidebar/Sidebar';
 import { useWorkspaceStore } from '../state/slices/workspaceSlice';
 import { useEditorStore } from '../state/slices/editorSlice';
 import { useStatusStore } from '../state/slices/statusSlice';
+import { useSettingsStore } from '../state/slices/settingsSlice';
+import { useViewModeStore } from '../state/slices/viewModeSlice';
 import { StatusBar } from '../ui/statusbar/StatusBar';
 import { AutosaveService } from '../services/autosave/AutosaveService';
 import { FsService } from '../services/fs/FsService';
@@ -37,6 +39,17 @@ import './App.css';
 
 function App() {
   const { currentPath } = useWorkspaceStore();
+  const typewriterEnabledByUser = useSettingsStore(
+    (state) => state.typewriterEnabledByUser,
+  );
+  const enterZen = useViewModeStore((state) => state.enterZen);
+  const exitZen = useViewModeStore((state) => state.exitZen);
+  const isTypewriterActive = useViewModeStore(
+    (state) => state.isTypewriterActive,
+  );
+  const syncTypewriterFromUserPreference = useViewModeStore(
+    (state) => state.syncTypewriterFromUserPreference,
+  );
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [localePreference, setLocalePreferenceState] = useState<LocalePreference>(
@@ -54,8 +67,16 @@ function App() {
   });
 
   const toggleSidebar = useCallback(() => {
-    setIsSidebarVisible((prev) => !prev);
-  }, []);
+    setIsSidebarVisible((prev) => {
+      const nextVisible = !prev;
+      if (nextVisible) {
+        exitZen();
+      } else {
+        enterZen(typewriterEnabledByUser);
+      }
+      return nextVisible;
+    });
+  }, [enterZen, exitZen, typewriterEnabledByUser]);
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
   const handleLocalePreferenceChange = useCallback((preference: LocalePreference) => {
@@ -72,6 +93,10 @@ function App() {
   useEffect(() => {
     currentPathRef.current = currentPath;
   }, [currentPath]);
+
+  useEffect(() => {
+    syncTypewriterFromUserPreference(typewriterEnabledByUser);
+  }, [syncTypewriterFromUserPreference, typewriterEnabledByUser]);
 
   // Warm up Tauri IPC on idle time to reduce first native dialog latency.
   useEffect(() => {
@@ -203,6 +228,7 @@ function App() {
           <Editor
             isSidebarVisible={isSidebarVisible}
             onToggleSidebar={toggleSidebar}
+            isTypewriterActive={isTypewriterActive}
           />
         </main>
 

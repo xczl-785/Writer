@@ -70,6 +70,7 @@ export type EditorHandle = {
 type EditorProps = {
   isSidebarVisible?: boolean;
   onToggleSidebar?: () => void;
+  isTypewriterActive?: boolean;
 };
 
 export const EDITOR_SOURCE_MARKERS = [
@@ -96,7 +97,7 @@ const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
   value;
 
 export const Editor = forwardRef<EditorHandle, EditorProps>(
-  ({ isSidebarVisible = true, onToggleSidebar }, ref) => {
+  ({ isSidebarVisible = true, onToggleSidebar, isTypewriterActive = false }, ref) => {
     const { activeFile, currentPath } = useWorkspaceStore();
     const { setStatus } = useStatusStore();
     const { setSelectedPath, expandNode } = useFileTreeStore();
@@ -450,7 +451,11 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
 
     return (
       <>
-        <div className="relative h-full w-full">
+        <div
+          className={`relative h-full w-full ${
+            isTypewriterActive ? 'is-typewriter-active' : ''
+          }`}
+        >
           <EditorShell
             editor={editor}
             setHasEditorWidgetFocus={setHasEditorWidgetFocus}
