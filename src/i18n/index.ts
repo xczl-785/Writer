@@ -1,9 +1,12 @@
 import { MESSAGES, type AppLocale } from './messages';
+import {
+  useSettingsStore,
+  type SettingsLocalePreference,
+} from '../state/slices/settingsSlice';
 
 const DEFAULT_LOCALE: AppLocale = 'zh-CN';
-const LOCALE_PREFERENCE_KEY = 'writer.locale.preference';
 
-export type LocalePreference = 'system' | AppLocale;
+export type LocalePreference = SettingsLocalePreference;
 
 let currentLocale: AppLocale = DEFAULT_LOCALE;
 let localePreference: LocalePreference = 'system';
@@ -26,30 +29,8 @@ const applyLocalePreference = (preference: LocalePreference): AppLocale => {
   return preference === 'system' ? detectSystemLocale() : preference;
 };
 
-const loadLocalePreference = (): LocalePreference => {
-  if (typeof window === 'undefined') {
-    return 'system';
-  }
-  const stored = window.localStorage.getItem(LOCALE_PREFERENCE_KEY);
-  if (stored === 'zh-CN' || stored === 'en-US') {
-    return stored;
-  }
-  return 'system';
-};
-
-const persistLocalePreference = (preference: LocalePreference): void => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  if (preference === 'system') {
-    window.localStorage.removeItem(LOCALE_PREFERENCE_KEY);
-    return;
-  }
-  window.localStorage.setItem(LOCALE_PREFERENCE_KEY, preference);
-};
-
 export const initLocale = (): AppLocale => {
-  localePreference = loadLocalePreference();
+  localePreference = useSettingsStore.getState().localePreference;
   currentLocale = applyLocalePreference(localePreference);
   return currentLocale;
 };
@@ -57,15 +38,15 @@ export const initLocale = (): AppLocale => {
 export const setLocale = (locale: AppLocale): void => {
   localePreference = locale;
   currentLocale = locale;
-  persistLocalePreference(localePreference);
+  useSettingsStore.getState().setLocalePreference(localePreference);
 };
 
 export const getLocale = (): AppLocale => currentLocale;
 
 export const setLocalePreference = (preference: LocalePreference): void => {
-  localePreference = preference;
-  currentLocale = applyLocalePreference(preference);
-  persistLocalePreference(preference);
+  useSettingsStore.getState().setLocalePreference(preference);
+  localePreference = useSettingsStore.getState().localePreference;
+  currentLocale = applyLocalePreference(localePreference);
 };
 
 export const getLocalePreference = (): LocalePreference => localePreference;

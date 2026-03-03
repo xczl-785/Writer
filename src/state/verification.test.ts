@@ -3,6 +3,7 @@ import { useWorkspaceStore } from './slices/workspaceSlice';
 import { useFileTreeStore } from './slices/filetreeSlice';
 import { useEditorStore } from './slices/editorSlice';
 import { useStatusStore } from './slices/statusSlice';
+import { useSettingsStore } from './slices/settingsSlice';
 
 test('Workspace State', () => {
   const store = useWorkspaceStore.getState();
@@ -42,4 +43,10 @@ test('Status State', () => {
   useStatusStore.getState().setStatus('loading', 'Loading...');
   expect(useStatusStore.getState().status).toBe('loading');
   expect(useStatusStore.getState().message).toBe('Loading...');
+});
+
+test('Settings State', () => {
+  expect(useSettingsStore.getState().localePreference).toBeDefined();
+  useSettingsStore.getState().setTypewriterEnabledByUser(true);
+  expect(useSettingsStore.getState().typewriterEnabledByUser).toBe(true);
 });
