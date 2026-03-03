@@ -35,10 +35,12 @@ import {
   registerViewCommands,
 } from './commands';
 import { SettingsPanel } from '../ui/components/Settings';
+import { useViewportTier } from '../ui/layout/useViewportTier';
 import './App.css';
 
 function App() {
   const { currentPath } = useWorkspaceStore();
+  const { tier } = useViewportTier();
   const typewriterEnabledByUser = useSettingsStore(
     (state) => state.typewriterEnabledByUser,
   );
@@ -217,7 +219,7 @@ function App() {
   }, []);
 
   return (
-    <div className="app-container h-screen flex flex-col">
+    <div className="app-container h-screen flex flex-col" data-viewport-tier={tier}>
       <div className="flex-grow flex overflow-hidden">
         {isSidebarVisible ? (
           <Sidebar onToggleVisibility={toggleSidebar} />
