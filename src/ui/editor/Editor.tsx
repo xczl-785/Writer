@@ -465,7 +465,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
         <div
           className={`relative h-full w-full ${
             isTypewriterActive ? 'is-typewriter-active' : ''
-          }`}
+          } viewport-tier-${viewportTier}`}
         >
           <EditorShell
             editor={editor}
