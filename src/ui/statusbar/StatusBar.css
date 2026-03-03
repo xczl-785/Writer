@@ -12,6 +12,12 @@
   flex-shrink: 0;
 }
 
+.status-bar--focus-zen-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
 .status-bar__left {
   display: inline-flex;
   align-items: center;
