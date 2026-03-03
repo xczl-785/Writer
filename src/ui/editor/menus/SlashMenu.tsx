@@ -4,12 +4,19 @@
  * Provides a command palette triggered by '/' for quick block insertion.
  */
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import type { Editor } from '@tiptap/react';
 import { match } from 'pinyin-pro';
 import { isStrictSlashTriggerEligible } from './slashEligibility';
 import { t, getLocale } from '../../../i18n';
 
 const SLASH_MENU_MAX_ITEMS = 14;
+const SLASH_MENU_WIDTH = 260;
+const SLASH_MENU_EDGE_PADDING = 10;
+const SLASH_MENU_FLIP_THRESHOLD = 500;
+const SLASH_MENU_ITEM_HEIGHT = 34;
+const SLASH_MENU_GROUP_HEIGHT = 24;
+const SLASH_MENU_FRAME_HEIGHT = 8;
 
 export type SlashPhase = 'idle' | 'open' | 'searching' | 'executing';
 
@@ -529,6 +536,68 @@ export type SlashMenuProps = {
   onHover: (index: number) => void;
 };
 
+type SlashMenuLayoutInput = {
+  x: number;
+  y: number;
+  menuWidth: number;
+  menuHeight: number;
+  viewportWidth: number;
+  viewportHeight: number;
+};
+
+type SlashMenuLayout = {
+  left: number;
+  top: number;
+  maxHeight?: string;
+  overflowY?: CSSProperties['overflowY'];
+};
+
+const estimateSlashMenuHeight = (commands: SlashCommand[]): number => {
+  const basicCount = commands.filter((command) => command.group === 'basic').length;
+  const advancedCount = commands.filter(
+    (command) => command.group === 'advanced',
+  ).length;
+  const groupCount = Number(basicCount > 0) + Number(advancedCount > 0);
+
+  return (
+    commands.length * SLASH_MENU_ITEM_HEIGHT +
+    groupCount * SLASH_MENU_GROUP_HEIGHT +
+    SLASH_MENU_FRAME_HEIGHT
+  );
+};
+
+export const computeSlashMenuLayout = ({
+  x,
+  y,
+  menuWidth,
+  menuHeight,
+  viewportWidth,
+  viewportHeight,
+}: SlashMenuLayoutInput): SlashMenuLayout => {
+  const maxLeft = viewportWidth - menuWidth - SLASH_MENU_EDGE_PADDING;
+  const left = Math.max(
+    SLASH_MENU_EDGE_PADDING,
+    Math.min(x, Math.max(SLASH_MENU_EDGE_PADDING, maxLeft)),
+  );
+
+  const availableBelow = viewportHeight - y;
+  const availableAbove = y;
+  const shouldFlipUp =
+    availableBelow < SLASH_MENU_FLIP_THRESHOLD && availableAbove >= menuHeight;
+  const top = shouldFlipUp ? Math.max(SLASH_MENU_EDGE_PADDING, y - menuHeight) : y;
+
+  if (viewportHeight < SLASH_MENU_FLIP_THRESHOLD) {
+    return {
+      left,
+      top: Math.max(SLASH_MENU_EDGE_PADDING, top),
+      maxHeight: '85vh',
+      overflowY: 'auto',
+    };
+  }
+
+  return { left, top: Math.max(SLASH_MENU_EDGE_PADDING, top) };
+};
+
 export function SlashMenu({
   isOpen,
   x,
@@ -545,11 +614,20 @@ export function SlashMenu({
     basic: t('slash.basicBlocks'),
     advanced: t('slash.advanced'),
   };
+  const menuHeight = estimateSlashMenuHeight(commands);
+  const layout = computeSlashMenuLayout({
+    x,
+    y,
+    menuWidth: SLASH_MENU_WIDTH,
+    menuHeight,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+  });
 
   return (
     <div
       className={`editor-slash-menu ${isOpen ? 'is-open' : ''}`}
-      style={{ left: x, top: y }}
+      style={layout}
     >
       {commands.length === 0 ? (
         <div className="editor-slash-menu__empty">{t('slash.noMatch')}</div>
