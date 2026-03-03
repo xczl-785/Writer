@@ -296,6 +296,7 @@ function App() {
       <StatusBar isFocusZen={isFocusZen} isVisibleInFocusZen={isFooterAwake} />
       <SettingsPanel
         isOpen={isSettingsOpen}
+        viewportTier={tier}
         localePreference={localePreference}
         onLocalePreferenceChange={handleLocalePreferenceChange}
         onClose={closeSettings}
