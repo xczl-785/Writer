@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writer V5 极致禅模式原型 (Focus Zen)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FFFFFF;
+            overflow: hidden;
+        }
+
+        /* 极致禅模式下的消隐逻辑 */
+        .zen-auto-hide {
+            opacity: 0;
+            transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease;
+            pointer-events: none;
+        }
+
+        .zen-auto-hide.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* 编辑区呼吸感 */
+        .editor-container {
+            padding-top: 64px;
+            padding-bottom: 40vh;
+            max-width: 850px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 打字机光标行高亮（演示） */
+        .typewriter-active-line {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);
+            border-left: 2px solid #3B82F6;
+            margin-left: -2px;
+        }
+
+        .hairline {
+            border-width: 0.5px !important;
+        }
+
+        /* 交互提示 */
+        .focus-toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(24, 24, 27, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 99px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body class="bg-white">
+
+    <!-- 交互提示：极致禅已激活 -->
+    <div id="focus-toast" class="focus-toast">极致禅模式：双击左上角按钮进入/退出</div>
+
+    <!-- Header (动态消隐) -->
+    <header id="zen-header"
+        class="zen-auto-hide fixed top-0 inset-x-0 h-12 flex items-center justify-between px-6 border-b border-[#E4E4E7] hairline bg-white/80 backdrop-blur-md z-50">
+        <div class="flex items-center gap-2">
+            <button ondblclick="exitZen()" class="p-1 hover:bg-zinc-100 rounded-md" title="双击退出极致禅">
+                <svg class="w-5 h-5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+            <div class="text-sm font-semibold text-zinc-800 italic">深夜写作：关于极致沉浸的思考.md</div>
+            <span
+                class="ml-2 text-[9px] px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded-full font-bold uppercase tracking-widest">Focus
+                Mode</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="exitZen()"
+                class="text-[10px] font-bold text-blue-500 hover:text-blue-700 uppercase tracking-tighter">退出极致禅
+                (ESC)</button>
+        </div>
+    </header>
+
+    <!-- 主编辑器区 -->
+    <main id="editor-viewport" class="h-screen overflow-y-auto no-scrollbar pt-12">
+        <div class="editor-container px-8">
+            <h1 class="text-4xl font-bold mb-12 tracking-tight text-zinc-900">极致禅模式：只为那一瞬间的灵感</h1>
+
+            <div class="space-y-8 text-lg leading-relaxed text-zinc-700">
+                <p>当你不再需要关注字数统计，不再需要思考文件路径，不再被侧边栏的树状结构分散注意力时，你才真正开始了写作。</p>
+
+                <div class="typewriter-active-line py-2 px-4 -mx-4">
+                    <p class="font-medium text-zinc-900">这是当前正在书写的行。在极致禅模式下，我们建议默认开启打字机模式，光标永远锁定在屏幕的 45%
+                        黄金位。你的视线无需跟随文档向下移动，只需平视前方。</p>
+                </div>
+
+                <p>这就是 Writer V5 要交付的“极致沉浸协议”。当你处于这个模式时，整个界面会逐渐消退。你可以试着将鼠标移开窗口的顶端和底端...</p>
+
+                <p class="italic text-zinc-400">（请在此停留 2 秒，观察 UI 的变化）</p>
+
+                <p>当你产生焦虑，想要确认进度时，只需轻轻将鼠标移回顶部或底部边缘，那些必要的数值便会像雾气消散后的大地一样，平滑地浮现出来。</p>
+
+                <div class="h-64"></div>
+                <p>这种交互不仅是节省像素，更是在心理上给作者一种“安全感”。你知道工具就在那里，但它绝不喧宾夺主。</p>
+            </div>
+        </div>
+
+        <!-- Footer (动态消隐) -->
+        <footer id="zen-footer"
+            class="zen-auto-hide fixed bottom-0 inset-x-0 h-8 bg-zinc-50 border-t border-[#E4E4E7] hairline flex items-center justify-between px-4 text-[10px] text-zinc-400 font-medium z-50">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5">
+                    <div class="w-1.5 h-1.5 rounded-full bg-green-500 opacity-40"></div>
+                    <span>云端已实时同步</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <span>842 CHARS</span>
+                <span>READING TIME: 3MIN</span>
+                <span class="font-bold text-zinc-200">FOCUS ACTIVE</span>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        const header = document.getElementById('zen-header');
+        const footer = document.getElementById('zen-footer');
+        const toast = document.getElementById('focus-toast');
+
+        // 初始激活提示
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+        }, 500);
+
+        // 悬浮唤醒算法核心逻辑
+        document.addEventListener('mousemove', (e) => {
+            const h = window.innerHeight;
+            const threshold = 50; // 激活阈值 50px (与文档一致)
+
+            // 检测顶部
+            if (e.clientY < threshold) {
+                header.classList.add('visible');
+            } else {
+                header.classList.remove('visible');
+            }
+
+            // 检测底部
+            if (e.clientY > h - threshold) {
+                footer.classList.add('visible');
+            } else {
+                footer.classList.remove('visible');
+            }
+        });
+
+        // 退出演示
+        function exitZen() {
+            toast.innerText = "正在退出极致禅模式...";
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+
+        // ESC 退出
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') exitZen();
+        });
+    </script>
+</body>
+
+</html>
