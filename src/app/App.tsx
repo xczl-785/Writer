@@ -41,6 +41,8 @@ import './App.css';
 function App() {
   const { currentPath } = useWorkspaceStore();
   const { tier } = useViewportTier();
+  const isMinTier = tier === 'min';
+  const isOverlaySidebar = isMinTier && isSidebarVisible;
   const typewriterEnabledByUser = useSettingsStore(
     (state) => state.typewriterEnabledByUser,
   );
@@ -99,6 +101,12 @@ function App() {
   useEffect(() => {
     syncTypewriterFromUserPreference(typewriterEnabledByUser);
   }, [syncTypewriterFromUserPreference, typewriterEnabledByUser]);
+
+  useEffect(() => {
+    if (!isMinTier || !isSidebarVisible) return;
+    setIsSidebarVisible(false);
+    enterZen(typewriterEnabledByUser);
+  }, [enterZen, isMinTier, isSidebarVisible, typewriterEnabledByUser]);
 
   // Warm up Tauri IPC on idle time to reduce first native dialog latency.
   useEffect(() => {
@@ -219,9 +227,23 @@ function App() {
   }, []);
 
   return (
-    <div className="app-container h-screen flex flex-col" data-viewport-tier={tier}>
+    <div
+      className="app-container h-screen flex flex-col"
+      data-viewport-tier={tier}
+      data-overlay-mode={isOverlaySidebar}
+    >
       <div className="flex-grow flex overflow-hidden">
-        {isSidebarVisible ? (
+        {isOverlaySidebar ? (
+          <>
+            <div
+              className="fixed inset-0 z-30 bg-black/10"
+              onClick={() => setIsSidebarVisible(false)}
+            />
+            <div className="fixed inset-y-0 left-0 z-40">
+              <Sidebar onToggleVisibility={toggleSidebar} />
+            </div>
+          </>
+        ) : isSidebarVisible ? (
           <Sidebar onToggleVisibility={toggleSidebar} />
         ) : null}
 
@@ -231,6 +253,7 @@ function App() {
             isSidebarVisible={isSidebarVisible}
             onToggleSidebar={toggleSidebar}
             isTypewriterActive={isTypewriterActive}
+            viewportTier={tier}
           />
         </main>
 
