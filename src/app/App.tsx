@@ -46,6 +46,12 @@ function App() {
   const typewriterEnabledByUser = useSettingsStore(
     (state) => state.typewriterEnabledByUser,
   );
+  const focusZenEnabledByUser = useSettingsStore(
+    (state) => state.focusZenEnabledByUser,
+  );
+  const setFocusZenEnabledByUser = useSettingsStore(
+    (state) => state.setFocusZenEnabledByUser,
+  );
   const enterZen = useViewModeStore((state) => state.enterZen);
   const exitZen = useViewModeStore((state) => state.exitZen);
   const isFocusZen = useViewModeStore((state) => state.isFocusZen);
@@ -107,6 +113,20 @@ function App() {
   useEffect(() => {
     syncTypewriterFromUserPreference(typewriterEnabledByUser);
   }, [syncTypewriterFromUserPreference, typewriterEnabledByUser]);
+
+  useEffect(() => {
+    if (isFocusZen === focusZenEnabledByUser) {
+      return;
+    }
+    setFocusZen(focusZenEnabledByUser);
+  }, [focusZenEnabledByUser, isFocusZen, setFocusZen]);
+
+  useEffect(() => {
+    if (focusZenEnabledByUser === isFocusZen) {
+      return;
+    }
+    setFocusZenEnabledByUser(isFocusZen);
+  }, [focusZenEnabledByUser, isFocusZen, setFocusZenEnabledByUser]);
 
   useEffect(() => {
     if (!isMinTier || !isSidebarVisible) return;
