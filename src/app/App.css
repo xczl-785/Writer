@@ -257,7 +257,8 @@
   border: none;
   border-radius: 999px;
   background: #e4e4e7;
-  cursor: not-allowed;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
 }
 
 .settings-toggle__dot {
@@ -270,6 +271,19 @@
   border: 1px solid #e4e4e7;
   border-radius: 999px;
   box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+  transition: transform 0.18s ease;
+}
+
+.settings-toggle[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+.settings-toggle--on {
+  background: #3b82f6;
+}
+
+.settings-toggle--on .settings-toggle__dot {
+  transform: translateX(15px);
 }
 
 .settings-placeholder {

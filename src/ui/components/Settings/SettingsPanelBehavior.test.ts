@@ -33,7 +33,7 @@ describe('Settings panel behavior', () => {
   });
 
   it('uses placeholder panel for unimplemented tabs', () => {
-    expect(settingsTsx).toContain('currentTab.implemented ? (');
+    expect(settingsTsx).toContain('currentTab.implemented && activeRows ? (');
     expect(settingsTsx).toContain("t('settings.placeholder.title')");
     expect(settingsTsx).toContain("t('settings.placeholder.desc')");
   });

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { t, type LocalePreference } from '../../../i18n';
+import { useSettingsStore } from '../../../state/slices/settingsSlice';
 
 export type SettingsPanelProps = {
   isOpen: boolean;
@@ -34,6 +35,7 @@ type SelectSettingRow = SettingRowBase & {
 type ToggleSettingRow = SettingRowBase & {
   kind: 'toggle';
   checked: boolean;
+  onToggle?: () => void;
 };
 
 type SettingRow = SelectSettingRow | ToggleSettingRow;
@@ -45,6 +47,18 @@ export function SettingsPanel({
   onClose,
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<SettingsTabId>('general');
+  const typewriterEnabledByUser = useSettingsStore(
+    (state) => state.typewriterEnabledByUser,
+  );
+  const focusZenEnabledByUser = useSettingsStore(
+    (state) => state.focusZenEnabledByUser,
+  );
+  const setTypewriterEnabledByUser = useSettingsStore(
+    (state) => state.setTypewriterEnabledByUser,
+  );
+  const setFocusZenEnabledByUser = useSettingsStore(
+    (state) => state.setFocusZenEnabledByUser,
+  );
 
   const tabs: SettingsTab[] = [
     {
@@ -63,7 +77,7 @@ export function SettingsPanel({
       id: 'editor',
       label: t('settings.tab.editor'),
       title: t('settings.title.editor'),
-      implemented: false,
+      implemented: true,
     },
     {
       id: 'shortcuts',
@@ -146,9 +160,13 @@ export function SettingsPanel({
       return (
         <button
           type="button"
-          className="settings-toggle settings-toggle--off"
-          disabled
-          aria-disabled="true"
+          className={`settings-toggle ${
+            row.checked ? 'settings-toggle--on' : 'settings-toggle--off'
+          }`}
+          onClick={row.onToggle}
+          disabled={row.mode !== 'active'}
+          aria-disabled={row.mode !== 'active' ? 'true' : 'false'}
+          aria-pressed={row.checked}
         >
           <span className="settings-toggle__dot" />
         </button>
@@ -159,6 +177,32 @@ export function SettingsPanel({
   };
 
   if (!isOpen) return null;
+  const editorRows: SettingRow[] = [
+    {
+      kind: 'toggle',
+      id: 'typewriter-mode',
+      label: t('settings.editor.typewriter.label'),
+      description: t('settings.editor.typewriter.desc'),
+      mode: 'active',
+      checked: typewriterEnabledByUser,
+      onToggle: () => setTypewriterEnabledByUser(!typewriterEnabledByUser),
+    },
+    {
+      kind: 'toggle',
+      id: 'focus-zen-mode',
+      label: t('settings.editor.focusZen.label'),
+      description: t('settings.editor.focusZen.desc'),
+      mode: 'active',
+      checked: focusZenEnabledByUser,
+      onToggle: () => setFocusZenEnabledByUser(!focusZenEnabledByUser),
+    },
+  ];
+  const activeRows =
+    currentTab.id === 'general'
+      ? generalRows
+      : currentTab.id === 'editor'
+        ? editorRows
+        : null;
 
   return (
     <div className="settings-overlay" role="dialog" aria-label={t('settings.title')}>
@@ -206,9 +250,9 @@ export function SettingsPanel({
           </div>
 
           <div className="settings-main__content">
-            {currentTab.implemented ? (
+            {currentTab.implemented && activeRows ? (
               <div className="settings-section">
-                {generalRows.map((row) => (
+                {activeRows.map((row) => (
                   <div
                     key={row.id}
                     className={`settings-item ${
