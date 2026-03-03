@@ -71,6 +71,7 @@ type EditorProps = {
   isSidebarVisible?: boolean;
   onToggleSidebar?: () => void;
   isTypewriterActive?: boolean;
+  viewportTier?: 'min' | 'default' | 'airy';
 };
 
 export const EDITOR_SOURCE_MARKERS = [
@@ -97,7 +98,15 @@ const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
   value;
 
 export const Editor = forwardRef<EditorHandle, EditorProps>(
-  ({ isSidebarVisible = true, onToggleSidebar, isTypewriterActive = false }, ref) => {
+  (
+    {
+      isSidebarVisible = true,
+      onToggleSidebar,
+      isTypewriterActive = false,
+      viewportTier = 'default',
+    },
+    ref,
+  ) => {
     const { activeFile, currentPath } = useWorkspaceStore();
     const { setStatus } = useStatusStore();
     const { setSelectedPath, expandNode } = useFileTreeStore();
@@ -437,6 +446,8 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
     if (!editor) return null;
 
     const breadcrumbItems = buildBreadcrumb(currentPath, activeFile);
+    const isMinTier = viewportTier === 'min';
+    const compactFileName = activeFile.split(/[/\\]/).pop() ?? activeFile;
 
     const handleBreadcrumbClick = (item: BreadcrumbItem) => {
       setSelectedPath(item.path);
@@ -489,11 +500,20 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
                     </svg>
                   </button>
                 ) : null}
-                <Breadcrumb
-                  items={breadcrumbItems}
-                  onItemClick={handleBreadcrumbClick}
-                  className="h-12 px-6"
-                />
+                {isMinTier ? (
+                  <div className="h-12 px-6 flex items-center text-sm text-zinc-500 min-w-0">
+                    <span className="shrink-0">... /</span>
+                    <span className="ml-1 font-semibold text-zinc-700 truncate">
+                      {compactFileName}
+                    </span>
+                  </div>
+                ) : (
+                  <Breadcrumb
+                    items={breadcrumbItems}
+                    onItemClick={handleBreadcrumbClick}
+                    className="h-12 px-6"
+                  />
+                )}
               </div>
             }
             outlinePopover={
