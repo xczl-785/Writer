@@ -10,6 +10,16 @@
 
 ---
 
+## Context Snapshot (Compressed)
+
+- 当前代码基线：`menu.view.focus_mode` 仍是占位逻辑，Zen/FocusZen/Typewriter 尚未完整落地。
+- 目标协议：Typewriter 为全局 Toggle；进入 Zen 强制开启；退出 Zen 恢复进入前偏好。
+- 本轮先决策：持久化先用 Zustand persist + 适配层，后续平滑迁移到 Tauri store。
+- 尺寸硬约束：`640` 阈值、`Top 64/32`、`Side 32/16`、正文 `850px`、底部 `40vh`。
+- FocusZen 硬约束：UI 默认消隐，顶/底 `50px` 唤醒，`Esc` 仅在无编辑器浮层时退出。
+
+---
+
 ## 0. 持久化方案调研与选型（先于开发）
 
 ### 方案 A：继续直接使用 `localStorage`（当前语言设置做法）
