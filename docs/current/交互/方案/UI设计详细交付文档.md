@@ -100,5 +100,18 @@
 2. [精确参数清单.md](file:///Users/zhengpanpan/Program/Writer/docs/current/交互/方案/尺寸清单.md)
 3. [极致禅模式 (Focus Zen) 原型](file:///Users/zhengpanpan/Program/Writer/docs/current/交互/方案/prototypes/11_v5_focus_zen.html)
 
+## 7. 实现备注与差异（2026-03-04）
+
+### 7.1 已实现映射
+- Typewriter 改造为全局双态开关，并接入持久化（`settingsSlice`）。
+- Zen / Focus Zen / Typewriter 已拆分为独立状态，支持「进入 Zen 强制 typewriter、退出恢复」。
+- Focus Zen 已实现：UI 默认消隐、顶/底 50px 唤醒、Esc（无活跃浮层时）退出。
+- Slash Menu 已实现右边缘防溢出、<500 高度保护、下方空间不足翻转。
+- 设置面板已接入 `编辑器` 页：Typewriter 与 Focus Zen 开关，持久化且即时生效。
+
+### 7.2 偏差与延期说明
+- Focus Zen 快捷键入口：本轮未新增独立快捷键绑定，当前仅保留双击侧栏按钮 + Esc 退出链路。后续若确定固定键位（例如 F11），可在菜单命令层补入并复用现有状态机。
+- Slash Menu 小窗保护采用 `max-height: 85vh`（等价于视口 85%）实现，以保证不同容器层级下的一致表现。
+
 ---
 **交付结语**：V5 的精髓在于由于窗口缩减而带来的“密度控制”。请实装时务必注意：**越小的窗口，留白越要节制（32px/16px），越大的窗口，留白越要奢侈（64px/32px）**。
