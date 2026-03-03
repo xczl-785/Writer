@@ -14,6 +14,8 @@ type Props = {
   onToggleOutline: () => void;
   onCloseOutline: () => void;
   outlinePopover?: ReactNode;
+  isFocusZen?: boolean;
+  isHeaderAwake?: boolean;
 };
 
 export function EditorShell({
@@ -29,6 +31,8 @@ export function EditorShell({
   onToggleOutline,
   onCloseOutline,
   outlinePopover,
+  isFocusZen = false,
+  isHeaderAwake = true,
 }: Props) {
   const outlineAreaRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +60,11 @@ export function EditorShell({
         }
       }}
     >
-      <header className="editor-header">
+      <header
+        className={`editor-header ${
+          isFocusZen && !isHeaderAwake ? 'editor-header--focus-zen-hidden' : ''
+        }`}
+      >
         <div className="editor-header__breadcrumb">{breadcrumb}</div>
         <div className="editor-header__actions" ref={outlineAreaRef}>
           <button

@@ -36,18 +36,20 @@ import {
 } from './commands';
 import { SettingsPanel } from '../ui/components/Settings';
 import { useViewportTier } from '../ui/layout/useViewportTier';
+import { useFocusZenWakeup } from '../ui/layout/useFocusZenWakeup';
 import './App.css';
 
 function App() {
   const { currentPath } = useWorkspaceStore();
   const { tier } = useViewportTier();
   const isMinTier = tier === 'min';
-  const isOverlaySidebar = isMinTier && isSidebarVisible;
   const typewriterEnabledByUser = useSettingsStore(
     (state) => state.typewriterEnabledByUser,
   );
   const enterZen = useViewModeStore((state) => state.enterZen);
   const exitZen = useViewModeStore((state) => state.exitZen);
+  const isFocusZen = useViewModeStore((state) => state.isFocusZen);
+  const setFocusZen = useViewModeStore((state) => state.setFocusZen);
   const isTypewriterActive = useViewModeStore(
     (state) => state.isTypewriterActive,
   );
@@ -55,10 +57,14 @@ function App() {
     (state) => state.syncTypewriterFromUserPreference,
   );
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const isOverlaySidebar = isMinTier && isSidebarVisible;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [localePreference, setLocalePreferenceState] = useState<LocalePreference>(
     () => getLocalePreference(),
   );
+  const { isHeaderAwake, isFooterAwake } = useFocusZenWakeup({
+    enabled: isFocusZen,
+  });
   const isClosingRef = useRef(false);
   const isProgrammaticCloseRef = useRef(false);
   const forceCloseRequestedRef = useRef(false);
@@ -254,6 +260,9 @@ function App() {
             onToggleSidebar={toggleSidebar}
             isTypewriterActive={isTypewriterActive}
             viewportTier={tier}
+            isFocusZen={isFocusZen}
+            isHeaderAwake={isHeaderAwake}
+            onSetFocusZen={setFocusZen}
           />
         </main>
 
@@ -264,7 +273,7 @@ function App() {
           </aside>
         ) : null}
       </div>
-      <StatusBar />
+      <StatusBar isFocusZen={isFocusZen} isVisibleInFocusZen={isFooterAwake} />
       <SettingsPanel
         isOpen={isSettingsOpen}
         localePreference={localePreference}

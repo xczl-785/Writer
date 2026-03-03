@@ -12,7 +12,15 @@ import {
 import { t } from '../../i18n';
 import './StatusBar.css';
 
-export const StatusBar: React.FC = () => {
+type StatusBarProps = {
+  isFocusZen?: boolean;
+  isVisibleInFocusZen?: boolean;
+};
+
+export const StatusBar: React.FC<StatusBarProps> = ({
+  isFocusZen = false,
+  isVisibleInFocusZen = true,
+}) => {
   const { saveStatus, message, saveError, lastSavedAt, setStatus } =
     useStatusStore();
   const { currentPath, activeFile } = useWorkspaceStore();
@@ -152,9 +160,13 @@ export const StatusBar: React.FC = () => {
   };
 
   const syncState = deriveSyncState(saveStatus, gitSync);
+  const focusZenClass =
+    isFocusZen && !isVisibleInFocusZen ? 'status-bar--focus-zen-hidden' : '';
 
   return (
-    <div className={`status-bar ${getStatusClass()} ${isFaded ? 'fade' : ''}`}>
+    <div
+      className={`status-bar ${getStatusClass()} ${isFaded ? 'fade' : ''} ${focusZenClass}`}
+    >
       <div className="status-bar__left">
         <div className="status-indicator-wrap">
           <div className="status-indicator" />

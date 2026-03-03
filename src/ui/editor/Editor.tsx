@@ -72,6 +72,9 @@ type EditorProps = {
   onToggleSidebar?: () => void;
   isTypewriterActive?: boolean;
   viewportTier?: 'min' | 'default' | 'airy';
+  isFocusZen?: boolean;
+  isHeaderAwake?: boolean;
+  onSetFocusZen?: (enabled: boolean) => void;
 };
 
 export const EDITOR_SOURCE_MARKERS = [
@@ -104,6 +107,9 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
       onToggleSidebar,
       isTypewriterActive = false,
       viewportTier = 'default',
+      isFocusZen = false,
+      isHeaderAwake = true,
+      onSetFocusZen,
     },
     ref,
   ) => {
@@ -156,6 +162,11 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
       editorRevision,
       setTransientStatus,
     });
+    const hasTransientOverlay =
+      slashState.phase !== 'idle' ||
+      findReplace.isFindPanelOpen ||
+      contextMenu.state.isOpen ||
+      isOutlineOpen;
     const { runToolbarCommand } = useToolbarCommands({
       hasEditorWidgetFocus,
       setTransientStatus,
@@ -295,6 +306,18 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
 
     useTypewriterAnchor({ editor, enabled: isTypewriterActive });
 
+    useEffect(() => {
+      if (!isFocusZen) return;
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key !== 'Escape') return;
+        if (hasTransientOverlay) return;
+        event.preventDefault();
+        onSetFocusZen?.(false);
+      };
+      window.addEventListener('keydown', onKeyDown);
+      return () => window.removeEventListener('keydown', onKeyDown);
+    }, [hasTransientOverlay, isFocusZen, onSetFocusZen]);
+
     // Update toolbar command runner
     useEffect(() => {
       if (!editor) return;
@@ -417,6 +440,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
                     type="button"
                     className="editor-header__sidebar-btn"
                     onClick={onToggleSidebar}
+                    onDoubleClick={() => onSetFocusZen?.(!isFocusZen)}
                     aria-label="Expand sidebar"
                     title="Expand Sidebar"
                   >
@@ -462,6 +486,18 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
       }
     };
 
+    const handleSidebarButtonClick = () => {
+      if (isFocusZen) {
+        onSetFocusZen?.(false);
+        return;
+      }
+      onToggleSidebar?.();
+    };
+
+    const handleSidebarButtonDoubleClick = () => {
+      onSetFocusZen?.(!isFocusZen);
+    };
+
     return (
       <>
         <div
@@ -482,7 +518,8 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
                   <button
                     type="button"
                     className="editor-header__sidebar-btn"
-                    onClick={onToggleSidebar}
+                    onClick={handleSidebarButtonClick}
+                    onDoubleClick={handleSidebarButtonDoubleClick}
                     aria-label="Expand sidebar"
                     title="Expand Sidebar"
                   >
@@ -565,6 +602,8 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
                 onHover={setSlashSelectedIndex}
               />
             }
+            isFocusZen={isFocusZen}
+            isHeaderAwake={isHeaderAwake}
           />
           <SlashInline
             isOpen={slashState.phase !== 'idle'}
