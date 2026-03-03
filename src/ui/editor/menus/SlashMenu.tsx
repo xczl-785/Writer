@@ -389,12 +389,6 @@ export function useSlashMenu({
         return;
       }
 
-      if (event.inputType === 'insertFromComposition' && event.data) {
-        event.preventDefault();
-        appendSlashQuery(event.data);
-        return;
-      }
-
       if (event.isComposing || composingRef.current) {
         return;
       }
@@ -420,7 +414,25 @@ export function useSlashMenu({
       if (!editor.isFocused) return;
       const data = event.data ?? '';
 
-      if (slashState.phase === 'idle' && isSlashTriggerChar(data)) {
+      if (slashState.phase !== 'idle') {
+        if (data) {
+          const { selection } = editor.state;
+          const insertedLength = data.length;
+          if (selection.from >= insertedLength) {
+            editor
+              .chain()
+              .deleteRange({
+                from: selection.from - insertedLength,
+                to: selection.from,
+              })
+              .run();
+          }
+          appendSlashQuery(data);
+        }
+        return;
+      }
+
+      if (isSlashTriggerChar(data)) {
         const { selection } = editor.state;
         const $from = selection.$from;
         const parent = $from.parent;
