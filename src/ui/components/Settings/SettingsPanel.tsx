@@ -4,6 +4,7 @@ import { useSettingsStore } from '../../../state/slices/settingsSlice';
 
 export type SettingsPanelProps = {
   isOpen: boolean;
+  viewportTier?: 'min' | 'default' | 'airy';
   localePreference: LocalePreference;
   onLocalePreferenceChange: (value: LocalePreference) => void;
   onClose: () => void;
@@ -42,6 +43,7 @@ type SettingRow = SelectSettingRow | ToggleSettingRow;
 
 export function SettingsPanel({
   isOpen,
+  viewportTier = 'default',
   localePreference,
   onLocalePreferenceChange,
   onClose,
@@ -205,7 +207,12 @@ export function SettingsPanel({
         : null;
 
   return (
-    <div className="settings-overlay" role="dialog" aria-label={t('settings.title')}>
+    <div
+      className="settings-overlay"
+      data-viewport-tier={viewportTier}
+      role="dialog"
+      aria-label={t('settings.title')}
+    >
       <div className="settings-dialog">
         <aside className="settings-sidebar">
           <div className="settings-sidebar__header">{t('settings.title')}</div>

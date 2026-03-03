@@ -47,8 +47,12 @@ describe('Settings panel behavior', () => {
     expect(appCss).toContain('.settings-dialog');
     expect(appCss).toContain('width: min(640px, 90vw);');
     expect(appCss).toContain('height: min(480px, 85vh);');
+    expect(appCss).toContain(".settings-overlay[data-viewport-tier='min']");
+    expect(appCss).toContain('padding: 20px;');
+    expect(appCss).toContain('box-shadow: none;');
     expect(appCss).toContain('.settings-sidebar');
     expect(appCss).toContain('.settings-tab.is-active .settings-tab__indicator');
     expect(appCss).toContain('.settings-placeholder');
+    expect(settingsTsx).toContain("data-viewport-tier={viewportTier}");
   });
 });
