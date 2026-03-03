@@ -1,10 +1,11 @@
 /**
  * View menu commands
  *
- * Handles view operations like outline, sidebar, focus mode.
+ * Handles view operations like outline, sidebar, typewriter mode.
  */
 import { menuCommandBus } from '../../ui/commands/menuCommandBus';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { useSettingsStore } from '../../state/slices/settingsSlice';
 import { t } from '../../i18n';
 
 export type CleanupFn = () => void;
@@ -32,7 +33,17 @@ export function registerViewCommands(toggleSidebar: () => void): CleanupFn {
 
   cleanups.push(
     menuCommandBus.register('menu.view.focus_mode', () => {
-      useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
+      const settingsStore = useSettingsStore.getState();
+      const nextEnabled = !settingsStore.typewriterEnabledByUser;
+      settingsStore.setTypewriterEnabledByUser(nextEnabled);
+      useStatusStore
+        .getState()
+        .setStatus(
+          'idle',
+          nextEnabled
+            ? t('status.menu.typewriterOn')
+            : t('status.menu.typewriterOff'),
+        );
     }),
   );
 

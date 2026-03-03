@@ -335,8 +335,8 @@ fn build_native_menu_with_locale<R: Runtime>(
                 app,
                 locale,
                 "menu.view.focus_mode",
-                "专注模式",
-                "Focus Mode",
+                "打字机模式",
+                "Typewriter Mode",
                 Some("F11"),
             )?,
             &item(
