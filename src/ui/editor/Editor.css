@@ -355,7 +355,7 @@
   position: fixed;
   z-index: 50;
   width: 260px;
-  border-radius: var(--radius-dialog);
+  border-radius: 12px;
   border: 1px solid #3f3f46;
   background: var(--bg-popover);
   color: #f4f4f5;
@@ -385,8 +385,9 @@
   text-align: left;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #e4e4e7;
+  min-height: 34px;
   padding: 6px 8px;
   font-size: 13px;
   cursor: pointer;
