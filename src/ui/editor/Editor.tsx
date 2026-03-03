@@ -58,7 +58,7 @@ import {
   BubbleMenu,
   GhostHint,
 } from './menus';
-import { useSafeCoords, useGhostHint, useUndoRedo } from './hooks';
+import { useSafeCoords, useGhostHint, useUndoRedo, useTypewriterAnchor } from './hooks';
 import { createMenuCommandHandler, createContextMenuOpener } from './handlers';
 import '../components/BlockBoundary/blockBoundary.css';
 import './Editor.css';
@@ -292,6 +292,8 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
       },
       [activeFile],
     );
+
+    useTypewriterAnchor({ editor, enabled: isTypewriterActive });
 
     // Update toolbar command runner
     useEffect(() => {
