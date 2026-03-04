@@ -102,9 +102,10 @@ function FolderIcon({ className, filled = false }: FolderIconProps) {
 
 type SidebarProps = {
   onToggleVisibility?: () => void;
+  onToggleFocusZen?: () => void;
 };
 
-export function Sidebar({ onToggleVisibility }: SidebarProps) {
+export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) {
   const { nodes, selectedPath, setSelectedPath } = useFileTreeStore();
   const { currentPath, activeFile } = useWorkspaceStore();
   const contextMenu = useContextMenu();
@@ -455,6 +456,11 @@ export function Sidebar({ onToggleVisibility }: SidebarProps) {
           <button
             onClick={() => {
               onToggleVisibility?.();
+            }}
+            onDoubleClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onToggleFocusZen?.();
             }}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
             title={t('sidebar.collapse')}

@@ -129,6 +129,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
     const [hasEditorWidgetFocus, setHasEditorWidgetFocus] = useState(false);
     const [editorRevision, forceRerender] = useState(0);
     const [isOutlineOpen, setIsOutlineOpen] = useState(false);
+    const sidebarClickTimerRef = useRef<number | null>(null);
 
     // Custom hooks
     const { getSafeCoordsAtPos } = useSafeCoords();
@@ -318,6 +319,37 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
       return () => window.removeEventListener('keydown', onKeyDown);
     }, [hasTransientOverlay, isFocusZen, onSetFocusZen]);
 
+    useEffect(
+      () => () => {
+        if (sidebarClickTimerRef.current !== null) {
+          window.clearTimeout(sidebarClickTimerRef.current);
+          sidebarClickTimerRef.current = null;
+        }
+      },
+      [],
+    );
+
+    const handleSidebarButtonDoubleClick = () => {
+      if (sidebarClickTimerRef.current !== null) {
+        window.clearTimeout(sidebarClickTimerRef.current);
+        sidebarClickTimerRef.current = null;
+      }
+      onSetFocusZen?.(!isFocusZen);
+    };
+    const handleSidebarButtonClick = () => {
+      if (sidebarClickTimerRef.current !== null) {
+        window.clearTimeout(sidebarClickTimerRef.current);
+      }
+      sidebarClickTimerRef.current = window.setTimeout(() => {
+        sidebarClickTimerRef.current = null;
+        if (isFocusZen) {
+          onSetFocusZen?.(false);
+          return;
+        }
+        onToggleSidebar?.();
+      }, 220);
+    };
+
     // Update toolbar command runner
     useEffect(() => {
       if (!editor) return;
@@ -439,8 +471,8 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
                   <button
                     type="button"
                     className="editor-header__sidebar-btn"
-                    onClick={onToggleSidebar}
-                    onDoubleClick={() => onSetFocusZen?.(!isFocusZen)}
+                    onClick={handleSidebarButtonClick}
+                    onDoubleClick={handleSidebarButtonDoubleClick}
                     aria-label="Expand sidebar"
                     title="Expand Sidebar"
                   >
@@ -484,18 +516,6 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
       if (item.type === 'folder' || item.type === 'workspace') {
         expandNode(item.path);
       }
-    };
-
-    const handleSidebarButtonClick = () => {
-      if (isFocusZen) {
-        onSetFocusZen?.(false);
-        return;
-      }
-      onToggleSidebar?.();
-    };
-
-    const handleSidebarButtonDoubleClick = () => {
-      onSetFocusZen?.(!isFocusZen);
     };
 
     return (
