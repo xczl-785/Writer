@@ -4,7 +4,7 @@
  * @see docs/current/PM/V5 功能清单.md - INT-010: 文件树右键菜单
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
@@ -116,6 +116,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
   const [explorerFocus, setExplorerFocus] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActiveIndex, setSearchActiveIndex] = useState(0);
+  const collapseClickTimerRef = useRef<number | null>(null);
 
   const selectedNode = selectedPath
     ? findNodeByPath(visibleNodes, selectedPath)
@@ -174,12 +175,44 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
     });
   }, [isSearchActive, searchMatches.length]);
 
+  useEffect(
+    () => () => {
+      if (collapseClickTimerRef.current !== null) {
+        window.clearTimeout(collapseClickTimerRef.current);
+        collapseClickTimerRef.current = null;
+      }
+    },
+    [],
+  );
+
   const openSearchMatch = (match: FileNode | undefined): void => {
     if (!match) {
       return;
     }
     setSelectedPath(match.path);
     void openFile(match.path);
+  };
+
+  const handleCollapseButtonClick = () => {
+    if (collapseClickTimerRef.current !== null) {
+      window.clearTimeout(collapseClickTimerRef.current);
+    }
+    collapseClickTimerRef.current = window.setTimeout(() => {
+      collapseClickTimerRef.current = null;
+      onToggleVisibility?.();
+    }, 220);
+  };
+
+  const handleCollapseButtonDoubleClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (collapseClickTimerRef.current !== null) {
+      window.clearTimeout(collapseClickTimerRef.current);
+      collapseClickTimerRef.current = null;
+    }
+    onToggleFocusZen?.();
   };
 
   const startCreate = (type: 'file' | 'directory') => {
@@ -454,14 +487,8 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
             <FolderPlus size={16} />
           </button>
           <button
-            onClick={() => {
-              onToggleVisibility?.();
-            }}
-            onDoubleClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onToggleFocusZen?.();
-            }}
+            onClick={handleCollapseButtonClick}
+            onDoubleClick={handleCollapseButtonDoubleClick}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
             title={t('sidebar.collapse')}
           >
