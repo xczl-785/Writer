@@ -98,20 +98,22 @@ function App() {
   }, [enterZen, exitZen, typewriterEnabledByUser]);
   const applyFocusZen = useCallback(
     (enabled: boolean) => {
+      if (enabled) {
+        setIsSidebarVisible(false);
+        enterZen(typewriterEnabledByUser);
+      }
       setFocusZen(enabled);
       setFocusZenEnabledByUser(enabled);
     },
-    [setFocusZen, setFocusZenEnabledByUser],
+    [enterZen, setFocusZen, setFocusZenEnabledByUser, typewriterEnabledByUser],
   );
   const toggleFocusZenBySidebarButton = useCallback(() => {
     if (isFocusZen) {
       applyFocusZen(false);
       return;
     }
-    setIsSidebarVisible(false);
-    enterZen(typewriterEnabledByUser);
     applyFocusZen(true);
-  }, [applyFocusZen, enterZen, isFocusZen, typewriterEnabledByUser]);
+  }, [applyFocusZen, isFocusZen]);
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
   const handleLocalePreferenceChange = useCallback((preference: LocalePreference) => {
