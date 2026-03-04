@@ -14,7 +14,11 @@ describe('sidebar responsive behavior', () => {
     expect(appTsx).toContain('data-overlay-mode={isOverlaySidebar}');
     expect(appTsx).toContain('onClick={() => setIsSidebarVisible(false)}');
     expect(appTsx).toContain('const previousIsMinTierRef = useRef<boolean | null>(null)');
+    expect(appTsx).toContain('const sidebarVisibilityBeforeMinRef = useRef<boolean | null>(null)');
     expect(appTsx).toContain('const isEnteringMinTier =');
+    expect(appTsx).toContain('const isLeavingMinTier =');
+    expect(appTsx).toContain('sidebarVisibilityBeforeMinRef.current = isSidebarVisible');
+    expect(appTsx).toContain('setIsSidebarVisible(sidebarVisibilityBeforeMin)');
   });
 
   it('degrades breadcrumb/header content to compact filename in min tier', () => {
