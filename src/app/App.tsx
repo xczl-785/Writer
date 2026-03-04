@@ -75,6 +75,7 @@ function App() {
   const isProgrammaticCloseRef = useRef(false);
   const forceCloseRequestedRef = useRef(false);
   const previousIsMinTierRef = useRef<boolean | null>(null);
+  const sidebarVisibilityBeforeMinRef = useRef<boolean | null>(null);
   const currentPathRef = useRef(currentPath);
   const showStateDebug =
     import.meta.env.DEV && import.meta.env.VITE_SHOW_STATE_DEBUG === '1';
@@ -142,13 +143,33 @@ function App() {
     const previousIsMinTier = previousIsMinTierRef.current;
     const isEnteringMinTier =
       previousIsMinTier === null ? isMinTier : !previousIsMinTier && isMinTier;
+    const isLeavingMinTier = previousIsMinTier === true && !isMinTier;
     previousIsMinTierRef.current = isMinTier;
-    if (!isEnteringMinTier) {
+
+    if (isEnteringMinTier) {
+      sidebarVisibilityBeforeMinRef.current = isSidebarVisible;
+      setIsSidebarVisible(false);
+      enterZen(typewriterEnabledByUser);
       return;
     }
-    setIsSidebarVisible(false);
+
+    if (!isLeavingMinTier) {
+      return;
+    }
+
+    const sidebarVisibilityBeforeMin = sidebarVisibilityBeforeMinRef.current;
+    sidebarVisibilityBeforeMinRef.current = null;
+    if (sidebarVisibilityBeforeMin === null) {
+      return;
+    }
+
+    setIsSidebarVisible(sidebarVisibilityBeforeMin);
+    if (sidebarVisibilityBeforeMin) {
+      exitZen();
+      return;
+    }
     enterZen(typewriterEnabledByUser);
-  }, [enterZen, isMinTier, typewriterEnabledByUser]);
+  }, [enterZen, exitZen, isMinTier, isSidebarVisible, typewriterEnabledByUser]);
 
   // Warm up Tauri IPC on idle time to reduce first native dialog latency.
   useEffect(() => {
