@@ -309,14 +309,30 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
 
     useEffect(() => {
       if (!isFocusZen) return;
+      const hasActiveOverlayInDom = (eventTarget: EventTarget | null) => {
+        const target = eventTarget instanceof Element ? eventTarget : null;
+        const targetInsideOverlay = Boolean(
+          target?.closest(
+            '.editor-find-panel, .editor-slash-menu, .editor-slash-inline, .context-menu, .outline-popover',
+          ),
+        );
+        if (targetInsideOverlay) {
+          return true;
+        }
+        return Boolean(
+          document.querySelector(
+            '.editor-find-panel, .editor-slash-menu.is-open, .context-menu, .outline-popover',
+          ),
+        );
+      };
       const onKeyDown = (event: KeyboardEvent) => {
         if (event.key !== 'Escape') return;
-        if (hasTransientOverlay) return;
+        if (hasTransientOverlay || hasActiveOverlayInDom(event.target)) return;
         event.preventDefault();
         onSetFocusZen?.(false);
       };
-      window.addEventListener('keydown', onKeyDown);
-      return () => window.removeEventListener('keydown', onKeyDown);
+      window.addEventListener('keydown', onKeyDown, true);
+      return () => window.removeEventListener('keydown', onKeyDown, true);
     }, [hasTransientOverlay, isFocusZen, onSetFocusZen]);
 
     useEffect(
