@@ -79,10 +79,10 @@ describe('Editor toolbar MVP', () => {
     expect(css).toMatch(/\.editor-find-panel\s*\{/i);
     expect(css).toMatch(/\.editor-ghost-slash\s*\{/i);
     expect(css).toMatch(/\.editor-slash-menu\s*\{/i);
-    expect(css).toContain('max-width: 850px;');
-    expect(css).toContain('padding: 64px 32px 40vh;');
-    expect(css).toContain('.viewport-tier-min .editor-content-area .ProseMirror');
-    expect(css).toContain('padding: 32px 16px 40vh;');
+    expect(css).toContain('max-width: var(--editor-content-max-width, 850px);');
+    expect(css).toContain('var(--editor-content-padding-top, 64px)');
+    expect(css).toContain('var(--editor-content-padding-inline, 32px)');
+    expect(css).toContain('var(--editor-content-padding-bottom, 40vh)');
   });
 
   it('disables code block boundary indicator in editor composition', () => {

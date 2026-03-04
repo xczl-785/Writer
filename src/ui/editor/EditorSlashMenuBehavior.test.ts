@@ -9,15 +9,20 @@ describe('Editor slash menu behavior', () => {
     readFileSync(join(currentDir, 'menus', 'SlashMenu.tsx'), 'utf-8');
   const readSlashEligibility = () =>
     readFileSync(join(currentDir, 'menus', 'slashEligibility.ts'), 'utf-8');
+  const readSlashDomain = () =>
+    readFileSync(
+      join(currentDir, 'domain', 'slash', 'slashDomain.ts'),
+      'utf-8',
+    );
   const readSafeCoords = () =>
     readFileSync(join(currentDir, 'hooks', 'useSafeCoords.ts'), 'utf-8');
   const readGhostHintHook = () =>
     readFileSync(join(currentDir, 'hooks', 'useGhostHint.ts'), 'utf-8');
 
   it('supports slash trigger chars for Latin and full-width input', () => {
-    const slashMenuTsx = readSlashMenu();
-    expect(slashMenuTsx).toContain("value === '/'");
-    expect(slashMenuTsx).toContain("value === '／'");
+    const slashDomainTs = readSlashDomain();
+    expect(slashDomainTs).toContain("value === '/'");
+    expect(slashDomainTs).toContain("value === '／'");
   });
 
   it('enforces strict slash trigger eligibility for top-level empty paragraph only', () => {
@@ -37,11 +42,12 @@ describe('Editor slash menu behavior', () => {
 
   it('handles beforeinput and compositionend for IME-safe slash flow', () => {
     const slashMenuTsx = readSlashMenu();
+    const slashDomainTs = readSlashDomain();
     expect(slashMenuTsx).toContain("addEventListener('beforeinput'");
     expect(slashMenuTsx).toContain("addEventListener('compositionstart'");
     expect(slashMenuTsx).toContain("addEventListener('compositionend'");
     expect(slashMenuTsx).toContain('const onCompositionEnd');
-    expect(slashMenuTsx).toContain("inputType === 'insertFromComposition'");
+    expect(slashDomainTs).toContain("inputType === 'insertFromComposition'");
     expect(slashMenuTsx).toContain(
       'if (event.isComposing || composingRef.current)',
     );

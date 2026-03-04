@@ -1,40 +1,21 @@
 import { useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
+import {
+  computeTypewriterTargetScrollTop,
+  DEFAULT_TYPEWRITER_ANCHOR_RATIO,
+  shouldActivateTypewriterAnchor,
+} from '../domain';
 
-export const shouldActivateTypewriterAnchor = ({
-  enabled,
-  contentHeight,
-  viewportHeight,
-}: {
-  enabled: boolean;
-  contentHeight: number;
-  viewportHeight: number;
-}) => enabled && contentHeight > viewportHeight;
-
-export const computeTypewriterTargetScrollTop = ({
-  currentScrollTop,
-  containerTop,
-  containerHeight,
-  cursorTop,
-  anchorRatio = 0.45,
-}: {
-  currentScrollTop: number;
-  containerTop: number;
-  containerHeight: number;
-  cursorTop: number;
-  anchorRatio?: number;
-}) => {
-  const anchorY = containerTop + containerHeight * anchorRatio;
-  const delta = cursorTop - anchorY;
-  return Math.max(0, Math.round(currentScrollTop + delta));
-};
+export { computeTypewriterTargetScrollTop, shouldActivateTypewriterAnchor };
 
 export const useTypewriterAnchor = ({
   editor,
   enabled,
+  anchorRatio = DEFAULT_TYPEWRITER_ANCHOR_RATIO,
 }: {
   editor: Editor | null;
   enabled: boolean;
+  anchorRatio?: number;
 }) => {
   useEffect(() => {
     if (!editor || !enabled) return;
@@ -66,6 +47,7 @@ export const useTypewriterAnchor = ({
         containerTop: containerRect.top,
         containerHeight: scrollContainer.clientHeight,
         cursorTop: coords.top,
+        anchorRatio,
       });
 
       if (Math.abs(targetScrollTop - scrollContainer.scrollTop) <= 1) {
@@ -81,6 +63,5 @@ export const useTypewriterAnchor = ({
       editor.off('selectionUpdate', updateAnchor);
       editor.off('transaction', updateAnchor);
     };
-  }, [editor, enabled]);
+  }, [editor, enabled, anchorRatio]);
 };
-

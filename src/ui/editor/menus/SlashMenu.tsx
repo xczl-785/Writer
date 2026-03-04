@@ -16,6 +16,7 @@ import type { Editor } from '@tiptap/react';
 import { match } from 'pinyin-pro';
 import { isStrictSlashTriggerEligible } from './slashEligibility';
 import { t, getLocale } from '../../../i18n';
+import { isInsertTextLikeInput, isSlashTriggerChar } from '../domain';
 
 const SLASH_MENU_MAX_ITEMS = 14;
 const SLASH_MENU_WIDTH = 260;
@@ -265,12 +266,6 @@ export function useSlashMenu({
   // Set up event handlers
   useEffect(() => {
     if (!editor) return;
-
-    const isSlashTriggerChar = (value: string | null | undefined) =>
-      value === '/' || value === '／';
-
-    const isInsertTextLikeInput = (inputType: string) =>
-      inputType === 'insertText' || inputType === 'insertFromComposition';
 
     const isSlashTriggerEligible = () => isStrictSlashTriggerEligible(editor);
 
