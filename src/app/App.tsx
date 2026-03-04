@@ -46,9 +46,6 @@ function App() {
   const typewriterEnabledByUser = useSettingsStore(
     (state) => state.typewriterEnabledByUser,
   );
-  const focusZenEnabledByUser = useSettingsStore(
-    (state) => state.focusZenEnabledByUser,
-  );
   const setFocusZenEnabledByUser = useSettingsStore(
     (state) => state.setFocusZenEnabledByUser,
   );
@@ -61,6 +58,9 @@ function App() {
   );
   const syncTypewriterFromUserPreference = useViewModeStore(
     (state) => state.syncTypewriterFromUserPreference,
+  );
+  const focusZenEnabledByUser = useSettingsStore(
+    (state) => state.focusZenEnabledByUser,
   );
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const isOverlaySidebar = isMinTier && isSidebarVisible;
@@ -96,15 +96,22 @@ function App() {
       return nextVisible;
     });
   }, [enterZen, exitZen, typewriterEnabledByUser]);
+  const applyFocusZen = useCallback(
+    (enabled: boolean) => {
+      setFocusZen(enabled);
+      setFocusZenEnabledByUser(enabled);
+    },
+    [setFocusZen, setFocusZenEnabledByUser],
+  );
   const toggleFocusZenBySidebarButton = useCallback(() => {
     if (isFocusZen) {
-      setFocusZen(false);
+      applyFocusZen(false);
       return;
     }
     setIsSidebarVisible(false);
     enterZen(typewriterEnabledByUser);
-    setFocusZen(true);
-  }, [enterZen, isFocusZen, setFocusZen, typewriterEnabledByUser]);
+    applyFocusZen(true);
+  }, [applyFocusZen, enterZen, isFocusZen, typewriterEnabledByUser]);
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
   const handleLocalePreferenceChange = useCallback((preference: LocalePreference) => {
@@ -131,18 +138,8 @@ function App() {
   }, [syncTypewriterFromUserPreference, typewriterEnabledByUser]);
 
   useEffect(() => {
-    if (isFocusZen === focusZenEnabledByUser) {
-      return;
-    }
     setFocusZen(focusZenEnabledByUser);
-  }, [focusZenEnabledByUser, isFocusZen, setFocusZen]);
-
-  useEffect(() => {
-    if (focusZenEnabledByUser === isFocusZen) {
-      return;
-    }
-    setFocusZenEnabledByUser(isFocusZen);
-  }, [focusZenEnabledByUser, isFocusZen, setFocusZenEnabledByUser]);
+  }, [focusZenEnabledByUser, setFocusZen]);
 
   useEffect(() => {
     const previousIsMinTier = previousIsMinTierRef.current;
@@ -335,7 +332,7 @@ function App() {
             viewportTier={tier}
             isFocusZen={isFocusZen}
             isHeaderAwake={isHeaderAwake}
-            onSetFocusZen={setFocusZen}
+            onSetFocusZen={applyFocusZen}
           />
         </main>
 
