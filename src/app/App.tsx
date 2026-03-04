@@ -74,6 +74,7 @@ function App() {
   const isClosingRef = useRef(false);
   const isProgrammaticCloseRef = useRef(false);
   const forceCloseRequestedRef = useRef(false);
+  const previousIsMinTierRef = useRef<boolean | null>(null);
   const currentPathRef = useRef(currentPath);
   const showStateDebug =
     import.meta.env.DEV && import.meta.env.VITE_SHOW_STATE_DEBUG === '1';
@@ -93,6 +94,15 @@ function App() {
       return nextVisible;
     });
   }, [enterZen, exitZen, typewriterEnabledByUser]);
+  const toggleFocusZenBySidebarButton = useCallback(() => {
+    if (isFocusZen) {
+      setFocusZen(false);
+      return;
+    }
+    setIsSidebarVisible(false);
+    enterZen(typewriterEnabledByUser);
+    setFocusZen(true);
+  }, [enterZen, isFocusZen, setFocusZen, typewriterEnabledByUser]);
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
   const handleLocalePreferenceChange = useCallback((preference: LocalePreference) => {
@@ -129,10 +139,16 @@ function App() {
   }, [focusZenEnabledByUser, isFocusZen, setFocusZenEnabledByUser]);
 
   useEffect(() => {
-    if (!isMinTier || !isSidebarVisible) return;
+    const previousIsMinTier = previousIsMinTierRef.current;
+    const isEnteringMinTier =
+      previousIsMinTier === null ? isMinTier : !previousIsMinTier && isMinTier;
+    previousIsMinTierRef.current = isMinTier;
+    if (!isEnteringMinTier) {
+      return;
+    }
     setIsSidebarVisible(false);
     enterZen(typewriterEnabledByUser);
-  }, [enterZen, isMinTier, isSidebarVisible, typewriterEnabledByUser]);
+  }, [enterZen, isMinTier, typewriterEnabledByUser]);
 
   // Warm up Tauri IPC on idle time to reduce first native dialog latency.
   useEffect(() => {
@@ -266,11 +282,17 @@ function App() {
               onClick={() => setIsSidebarVisible(false)}
             />
             <div className="fixed inset-y-0 left-0 z-40">
-              <Sidebar onToggleVisibility={toggleSidebar} />
+              <Sidebar
+                onToggleVisibility={toggleSidebar}
+                onToggleFocusZen={toggleFocusZenBySidebarButton}
+              />
             </div>
           </>
         ) : isSidebarVisible ? (
-          <Sidebar onToggleVisibility={toggleSidebar} />
+          <Sidebar
+            onToggleVisibility={toggleSidebar}
+            onToggleFocusZen={toggleFocusZenBySidebarButton}
+          />
         ) : null}
 
         {/* Main Editor Area */}

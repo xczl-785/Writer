@@ -13,6 +13,8 @@ describe('sidebar responsive behavior', () => {
     expect(appTsx).toContain('const isOverlaySidebar = isMinTier && isSidebarVisible');
     expect(appTsx).toContain('data-overlay-mode={isOverlaySidebar}');
     expect(appTsx).toContain('onClick={() => setIsSidebarVisible(false)}');
+    expect(appTsx).toContain('const previousIsMinTierRef = useRef<boolean | null>(null)');
+    expect(appTsx).toContain('const isEnteringMinTier =');
   });
 
   it('degrades breadcrumb/header content to compact filename in min tier', () => {
@@ -20,5 +22,14 @@ describe('sidebar responsive behavior', () => {
     expect(editorTsx).toContain('const compactFileName =');
     expect(editorTsx).toContain('... /');
   });
-});
 
+  it('wires sidebar button double-click for focus zen and single-click delay handling', () => {
+    const sidebarTsx = readFileSync(join(currentDir, 'Sidebar.tsx'), 'utf-8');
+    expect(sidebarTsx).toContain('onToggleFocusZen?: () => void;');
+    expect(sidebarTsx).toContain('onDoubleClick');
+    expect(sidebarTsx).toContain('onToggleFocusZen?.()');
+    expect(editorTsx).toContain('const sidebarClickTimerRef = useRef<number | null>(null)');
+    expect(editorTsx).toContain('window.setTimeout(() =>');
+    expect(editorTsx).toContain('handleSidebarButtonDoubleClick');
+  });
+});
