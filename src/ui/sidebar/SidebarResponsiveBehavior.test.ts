@@ -32,6 +32,11 @@ describe('sidebar responsive behavior', () => {
     expect(sidebarTsx).toContain('onToggleFocusZen?: () => void;');
     expect(sidebarTsx).toContain('onDoubleClick');
     expect(sidebarTsx).toContain('onToggleFocusZen?.()');
+    expect(sidebarTsx).toContain('const collapseClickTimerRef = useRef<number | null>(null)');
+    expect(sidebarTsx).toContain('const handleCollapseButtonClick = () =>');
+    expect(sidebarTsx).toContain('const handleCollapseButtonDoubleClick = (');
+    expect(sidebarTsx).toContain('onClick={handleCollapseButtonClick}');
+    expect(sidebarTsx).toContain('onDoubleClick={handleCollapseButtonDoubleClick}');
     expect(editorTsx).toContain('const sidebarClickTimerRef = useRef<number | null>(null)');
     expect(editorTsx).toContain('window.setTimeout(() =>');
     expect(editorTsx).toContain('handleSidebarButtonDoubleClick');
