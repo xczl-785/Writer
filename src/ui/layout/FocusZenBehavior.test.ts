@@ -36,8 +36,11 @@ describe('focus zen behavior wiring', () => {
   it('wires escape and double-click exit logic with transient overlay guard', () => {
     expect(editorTsx).toContain('onDoubleClick');
     expect(editorTsx).toContain('hasTransientOverlay');
+    expect(editorTsx).toContain('hasActiveOverlayInDom');
+    expect(editorTsx).toContain('.editor-find-panel');
     expect(editorTsx).toContain("if (event.key !== 'Escape')");
-    expect(editorTsx).toContain('if (hasTransientOverlay) return');
+    expect(editorTsx).toContain('if (hasTransientOverlay || hasActiveOverlayInDom(event.target)) return');
+    expect(editorTsx).toContain("window.addEventListener('keydown', onKeyDown, true)");
   });
 
   it('defines focus zen hide/reveal classes with 200ms transition', () => {
@@ -47,4 +50,3 @@ describe('focus zen behavior wiring', () => {
     expect(statusCss).toContain('.status-bar--focus-zen-hidden');
   });
 });
-
