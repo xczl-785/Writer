@@ -3,7 +3,14 @@
  *
  * Provides a command palette triggered by '/' for quick block insertion.
  */
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import {
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useLayoutEffect,
+} from 'react';
 import type { CSSProperties } from 'react';
 import type { Editor } from '@tiptap/react';
 import { match } from 'pinyin-pro';
@@ -17,6 +24,8 @@ const SLASH_MENU_FLIP_THRESHOLD = 500;
 const SLASH_MENU_ITEM_HEIGHT = 34;
 const SLASH_MENU_GROUP_HEIGHT = 24;
 const SLASH_MENU_FRAME_HEIGHT = 8;
+const SLASH_MENU_FLIP_GAP = 36;
+const SLASH_MENU_SCROLL_BUFFER = 16;
 
 export type SlashPhase = 'idle' | 'open' | 'searching' | 'executing';
 
@@ -584,7 +593,9 @@ export const computeSlashMenuLayout = ({
   const availableAbove = y;
   const shouldFlipUp =
     availableBelow < SLASH_MENU_FLIP_THRESHOLD && availableAbove >= menuHeight;
-  const top = shouldFlipUp ? Math.max(SLASH_MENU_EDGE_PADDING, y - menuHeight) : y;
+  const top = shouldFlipUp
+    ? Math.max(SLASH_MENU_EDGE_PADDING, y - menuHeight - SLASH_MENU_FLIP_GAP)
+    : y;
 
   if (viewportHeight < SLASH_MENU_FLIP_THRESHOLD) {
     return {
@@ -608,13 +619,15 @@ export function SlashMenu({
   onHover,
 }: SlashMenuProps) {
   if (!isOpen) return null;
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [measuredMenuHeight, setMeasuredMenuHeight] = useState<number | null>(null);
 
   const groups: Array<'basic' | 'advanced'> = ['basic', 'advanced'];
   const groupLabels: Record<'basic' | 'advanced', string> = {
     basic: t('slash.basicBlocks'),
     advanced: t('slash.advanced'),
   };
-  const menuHeight = estimateSlashMenuHeight(commands);
+  const menuHeight = measuredMenuHeight ?? estimateSlashMenuHeight(commands);
   const layout = computeSlashMenuLayout({
     x,
     y,
@@ -624,8 +637,43 @@ export function SlashMenu({
     viewportHeight: window.innerHeight,
   });
 
+  useLayoutEffect(() => {
+    const nextHeight = menuRef.current?.offsetHeight ?? 0;
+    if (nextHeight <= 0 || measuredMenuHeight === nextHeight) {
+      return;
+    }
+    setMeasuredMenuHeight(nextHeight);
+  }, [commands, measuredMenuHeight, selectedIndex]);
+
+  useEffect(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+    const activeItem = menu.querySelector<HTMLButtonElement>(
+      '.editor-slash-menu__item.is-active',
+    );
+    if (!activeItem) return;
+
+    const itemTop = activeItem.offsetTop;
+    const itemBottom = itemTop + activeItem.offsetHeight;
+    const visibleTop = menu.scrollTop + SLASH_MENU_SCROLL_BUFFER;
+    const visibleBottom =
+      menu.scrollTop + menu.clientHeight - SLASH_MENU_SCROLL_BUFFER;
+
+    if (itemTop < visibleTop) {
+      menu.scrollTop = Math.max(0, itemTop - SLASH_MENU_SCROLL_BUFFER);
+      return;
+    }
+    if (itemBottom > visibleBottom) {
+      menu.scrollTop = Math.max(
+        0,
+        itemBottom - menu.clientHeight + SLASH_MENU_SCROLL_BUFFER,
+      );
+    }
+  }, [selectedIndex]);
+
   return (
     <div
+      ref={menuRef}
       className={`editor-slash-menu ${isOpen ? 'is-open' : ''}`}
       style={layout}
     >

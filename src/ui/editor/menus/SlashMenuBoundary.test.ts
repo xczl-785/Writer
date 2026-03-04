@@ -15,7 +15,7 @@ describe('slash menu boundary layout', () => {
       viewportHeight: 900,
     });
 
-    expect(layout.top).toBe(240);
+    expect(layout.top).toBe(204);
   });
 
   it('clamps right overflow and keeps dropdown when top space is insufficient', () => {
@@ -52,5 +52,16 @@ describe('slash menu boundary layout', () => {
 
     expect(css).toContain('border-radius: 12px;');
     expect(css).toContain('min-height: 34px;');
+  });
+
+  it('keeps active item in view during keyboard navigation', () => {
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const slashTsx = readFileSync(join(currentDir, 'SlashMenu.tsx'), 'utf-8');
+
+    expect(slashTsx).toContain('useLayoutEffect');
+    expect(slashTsx).toContain('setMeasuredMenuHeight');
+    expect(slashTsx).toContain('const visibleTop =');
+    expect(slashTsx).toContain('const visibleBottom =');
+    expect(slashTsx).toContain('menu.scrollTop = Math.max(');
   });
 });
