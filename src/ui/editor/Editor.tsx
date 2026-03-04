@@ -1,4 +1,5 @@
 import {
+  type CSSProperties,
   forwardRef,
   type MouseEvent as ReactMouseEvent,
   useCallback,
@@ -21,7 +22,6 @@ import { useStatusStore } from '../../state/slices/statusSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { ErrorService } from '../../services/error/ErrorService';
 import { MarkdownService } from '../../services/markdown/MarkdownService';
-import { AutosaveService } from '../../services/autosave/AutosaveService';
 import { ImageResolver } from '../../services/images/ImageResolver';
 import { t } from '../../i18n';
 import {
@@ -32,7 +32,6 @@ import {
 import { EditorShell } from './components/EditorShell';
 import { FindReplacePanel } from './components/FindReplacePanel';
 import { useImagePaste } from './useImagePaste';
-import { createHandleDOMEvents } from './pasteHandler';
 import {
   createEditorKeyDownHandler,
   createFindReplaceShortcutExtension,
@@ -59,7 +58,15 @@ import {
   GhostHint,
 } from './menus';
 import { useSafeCoords, useGhostHint, useUndoRedo, useTypewriterAnchor } from './hooks';
-import { createMenuCommandHandler, createContextMenuOpener } from './handlers';
+import { createEditorLayoutModel } from './core/EditorLayoutModel';
+import {
+  attachEditorMenuBridge,
+  createEditorPasteDOMEvents,
+  flushEditorOnBlur,
+  openEditorContextMenu as openEditorContextMenuBridge,
+  persistEditorUpdate,
+} from './integration';
+import { hasActiveOverlayInDom } from './domain';
 import '../components/BlockBoundary/blockBoundary.css';
 import './Editor.css';
 
@@ -67,7 +74,7 @@ export type EditorHandle = {
   insertDefaultTable: () => void;
 };
 
-type EditorProps = {
+export type EditorProps = {
   isSidebarVisible?: boolean;
   onToggleSidebar?: () => void;
   isTypewriterActive?: boolean;
@@ -95,6 +102,7 @@ export const EDITOR_SOURCE_MARKERS = [
   "'Mod-y': () =>",
   "'Mod-Shift-z': () =>",
   'return redo(editorRef.current)',
+  String.raw`markdown.replace(/\xA0/g, ' ')`,
 ] as const;
 
 const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
@@ -263,9 +271,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
         content: '',
         editorProps: {
           attributes: { class: 'editor-content h-full focus:outline-none' },
-          handleDOMEvents: createHandleDOMEvents((event) =>
-            handlePaste(event, editorRef.current),
-          ),
+          handleDOMEvents: createEditorPasteDOMEvents(handlePaste, editorRef),
           handleKeyDown: withSourceMarkers(
             [
               'instanceof CellSelection',
@@ -280,20 +286,16 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
           ),
         },
         onUpdate: async ({ editor }: { editor: TiptapEditor }) => {
-          if (isLoading || !activeFile) return;
-          try {
-            let markdown = await MarkdownService.serialize(editor.getJSON());
-            markdown = markdown.replace(/\xA0/g, ' ');
-            markdown = markdown.replace(/\|\s*&nbsp;\s*(?=\|)/g, '|   ');
-            updateFileContent(activeFile, markdown);
-            setDirty(activeFile, true);
-            AutosaveService.schedule(activeFile, markdown);
-          } catch (error) {
-            ErrorService.handle(error, 'Failed to serialize editor content');
-          }
+          await persistEditorUpdate({
+            editor,
+            activeFile,
+            isLoading,
+            updateFileContent,
+            setDirty,
+          });
         },
         onBlur: () => {
-          if (activeFile) AutosaveService.flush(activeFile);
+          flushEditorOnBlur(activeFile);
         },
         onCreate: ({ editor }: { editor: TiptapEditor }) => {
           editorRef.current = editor;
@@ -305,26 +307,19 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
       [activeFile],
     );
 
-    useTypewriterAnchor({ editor, enabled: isTypewriterActive });
+    const layoutModel = useMemo(
+      () => createEditorLayoutModel(viewportTier),
+      [viewportTier],
+    );
+
+    useTypewriterAnchor({
+      editor,
+      enabled: isTypewriterActive,
+      anchorRatio: layoutModel.typewriterAnchorRatio,
+    });
 
     useEffect(() => {
       if (!isFocusZen) return;
-      const hasActiveOverlayInDom = (eventTarget: EventTarget | null) => {
-        const target = eventTarget instanceof Element ? eventTarget : null;
-        const targetInsideOverlay = Boolean(
-          target?.closest(
-            '.editor-find-panel, .editor-slash-menu, .editor-slash-inline, .context-menu, .outline-popover',
-          ),
-        );
-        if (targetInsideOverlay) {
-          return true;
-        }
-        return Boolean(
-          document.querySelector(
-            '.editor-find-panel, .editor-slash-menu.is-open, .context-menu, .outline-popover',
-          ),
-        );
-      };
       const onKeyDown = (event: KeyboardEvent) => {
         if (event.key !== 'Escape') return;
         if (hasTransientOverlay || hasActiveOverlayInDom(event.target)) return;
@@ -432,34 +427,25 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
     // Menu command handler
     useEffect(() => {
       if (!editor) return;
-      const onMenuCommand = createMenuCommandHandler(
+      return attachEditorMenuBridge({
         editor,
         findReplace,
         setStatus,
-        setIsOutlineOpen,
-      );
-      window.addEventListener(
-        'writer:editor-command',
-        onMenuCommand as EventListener,
-      );
-      return () =>
-        window.removeEventListener(
-          'writer:editor-command',
-          onMenuCommand as EventListener,
-        );
+        setOutlineOpen: setIsOutlineOpen,
+      });
     }, [editor, findReplace, setStatus]);
 
     // Context menu handler
     const openEditorContextMenu = useCallback(
       (event: ReactMouseEvent) => {
         if (!editor) return;
-        const opener = createContextMenuOpener(
+        openEditorContextMenuBridge({
+          event,
           editor,
           contextMenu,
           copyText,
           setStatus,
-        );
-        opener(event);
+        });
       },
       [editor, contextMenu, copyText, setStatus],
     );
@@ -523,6 +509,14 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
     const isMinTier = viewportTier === 'min';
     const compactFileName = activeFile.split(/[/\\]/).pop() ?? activeFile;
 
+    const editorLayoutStyle: CSSProperties = {
+      ['--editor-content-max-width' as string]: `${layoutModel.maxContentWidth}px`,
+      ['--editor-content-padding-top' as string]: `${layoutModel.contentPaddingTop}px`,
+      ['--editor-content-padding-inline' as string]: `${layoutModel.contentPaddingInline}px`,
+      ['--editor-content-padding-bottom' as string]:
+        layoutModel.contentPaddingBottom,
+    };
+
     const handleBreadcrumbClick = (item: BreadcrumbItem) => {
       setSelectedPath(item.path);
       if (item.type === 'file') {
@@ -540,6 +534,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(
           className={`relative h-full w-full ${
             isTypewriterActive ? 'is-typewriter-active' : ''
           } viewport-tier-${viewportTier}`}
+          style={editorLayoutStyle}
         >
           <EditorShell
             editor={editor}

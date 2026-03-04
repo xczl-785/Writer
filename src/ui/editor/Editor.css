@@ -1,9 +1,12 @@
 .ProseMirror {
   outline: none;
   min-height: 100%;
-  max-width: 850px;
+  max-width: var(--editor-content-max-width, 850px);
   margin: 0 auto;
-  padding: 64px 32px 40vh;
+  padding:
+    var(--editor-content-padding-top, 64px)
+    var(--editor-content-padding-inline, 32px)
+    var(--editor-content-padding-bottom, 40vh);
   font-family:
     system-ui,
     -apple-system,
@@ -241,10 +244,6 @@
 .editor-content-area {
   flex: 1;
   overflow: auto;
-}
-
-.viewport-tier-min .editor-content-area .ProseMirror {
-  padding: 32px 16px 40vh;
 }
 
 .editor-find-panel {

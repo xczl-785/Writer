@@ -102,13 +102,23 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       merge: (persistedState, currentState) => {
         const adapter = resolveAdapter();
         const persisted = (persistedState as Partial<PersistedSettings>) ?? {};
-        const merged = {
-          ...currentState,
-          ...persisted,
-          localePreference: normalizeLocalePreference(persisted.localePreference),
+        const normalizedLocale = normalizeLocalePreference(
+          persisted.localePreference,
+        );
+        const mergedState: PersistedSettings = {
+          localePreference: normalizedLocale,
+          typewriterEnabledByUser:
+            persisted.typewriterEnabledByUser ??
+            currentState.typewriterEnabledByUser,
+          focusZenEnabledByUser:
+            persisted.focusZenEnabledByUser ?? currentState.focusZenEnabledByUser,
         };
 
-        return migrateFromLegacyLocale(merged, adapter);
+        const migrated = migrateFromLegacyLocale(mergedState, adapter);
+        return {
+          ...currentState,
+          ...migrated,
+        };
       },
       onRehydrateStorage: () => (state) => {
         if (!state) return;

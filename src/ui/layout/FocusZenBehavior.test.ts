@@ -10,6 +10,17 @@ describe('focus zen behavior wiring', () => {
     join(currentDir, '..', 'editor', 'Editor.tsx'),
     'utf-8',
   );
+  const focusZenDomainTs = readFileSync(
+    join(
+      currentDir,
+      '..',
+      'editor',
+      'domain',
+      'focusZen',
+      'focusZenEscapeDomain.ts',
+    ),
+    'utf-8',
+  );
   const shellTsx = readFileSync(
     join(currentDir, '..', 'editor', 'components', 'EditorShell.tsx'),
     'utf-8',
@@ -37,7 +48,7 @@ describe('focus zen behavior wiring', () => {
     expect(editorTsx).toContain('onDoubleClick');
     expect(editorTsx).toContain('hasTransientOverlay');
     expect(editorTsx).toContain('hasActiveOverlayInDom');
-    expect(editorTsx).toContain('.editor-find-panel');
+    expect(focusZenDomainTs).toContain('.editor-find-panel');
     expect(editorTsx).toContain("if (event.key !== 'Escape')");
     expect(editorTsx).toContain('if (hasTransientOverlay || hasActiveOverlayInDom(event.target)) return');
     expect(editorTsx).toContain("window.addEventListener('keydown', onKeyDown, true)");
