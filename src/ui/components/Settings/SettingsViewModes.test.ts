@@ -29,9 +29,10 @@ describe('Settings editor view modes', () => {
 
   it('keeps focus-zen setting synchronized with view mode state', () => {
     expect(appTsx).toContain('focusZenEnabledByUser');
+    expect(appTsx).toContain('const applyFocusZen = useCallback');
     expect(appTsx).toContain('setFocusZenEnabledByUser');
     expect(appTsx).toContain('setFocusZen(focusZenEnabledByUser)');
-    expect(appTsx).toContain('setFocusZenEnabledByUser(isFocusZen)');
+    expect(appTsx).toContain('onSetFocusZen={applyFocusZen}');
   });
 
   it('ships localized copy for editor mode switches', () => {
