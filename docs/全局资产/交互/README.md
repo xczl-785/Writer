@@ -9,7 +9,7 @@
 
 ## 迭代版本文档 (Iteration Docs)
 与具体版本（如 V5）强绑定的 UI 规范、组件字典及原型图，已移至：
-- **当前活跃版本**: [`docs/current/交互/`](../../current/交互/)
+- **V5 归档目录**: [`docs/archive/2026-03-06_v5-interaction-closeout/交互/`](../../archive/2026-03-06_v5-interaction-closeout/交互/)
 
 ## 使用规则
 - **严禁**将包含具体色值 (Hex)、具体版本号 (V5/V6) 的实现文档存放在此。

@@ -278,6 +278,6 @@ type SlashAction =
 
 ## 九、参考资源
 
-- [Slash Menu 重做规格文档](../../current/交互/方案/Slash%20Menu重做规格文档.md)
+- [Slash Menu 重做规格文档](../../archive/2026-03-06_v5-interaction-closeout/交互/方案/Slash%20Menu重做规格文档.md)
 - [POL-03 Slash Menu 功能闭环设计](../../archive/2026-03-01_v5-closeout/current/DEV/POL-03%20Slash%20Menu%20功能闭环设计.md)
 - [Markdown 语法完全指南](../../参考资料/Markdown语法完全指南.md)

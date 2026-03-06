@@ -155,7 +155,8 @@ export const useTypewriterAnchor = ({
     };
     const handleCompositionEnd = () => {
       isComposing = false;
-      scheduleAnchorUpdate('immediate');
+      lastTypingUpdateAtMs = Date.now();
+      scheduleAnchorUpdate('typing');
     };
     const handleSelectionUpdate = () => {
       scheduleAnchorUpdate('typing');
