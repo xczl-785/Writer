@@ -1,7 +1,12 @@
 # Slash Menu 设计规范
 
-**更新日期**: 2026-03-02
-**实现文件**: `src/ui/editor/menus/SlashMenu.tsx`
+**更新日期**: 2026-03-05
+**实现文件**:
+- `src/ui/editor/menus/useSlashMenu.ts` (主 hook)
+- `src/ui/editor/domain/slash/slashSessionMachine.ts` (状态机)
+- `src/ui/editor/domain/slash/slashLayout.ts` (布局算法)
+- `src/ui/editor/domain/slash/slashScroll.ts` (滚动算法)
+- `src/ui/editor/menus/SlashMenuView.tsx` (渲染组件)
 
 ---
 
@@ -183,30 +188,74 @@ SEARCHING
 ### 6.1 Basic Blocks
 
 ```typescript
-{ id: 'heading1', label: 'Heading 1', hint: '⌘1', keywords: ['h1', 'title'] }
-{ id: 'heading2', label: 'Heading 2', hint: '⌘2', keywords: ['h2'] }
-{ id: 'heading3', label: 'Heading 3', hint: '⌘3', keywords: ['h3'] }
-{ id: 'heading4', label: 'Heading 4', hint: '⌘4', keywords: ['h4'] }
-{ id: 'heading5', label: 'Heading 5', hint: '⌘5', keywords: ['h5'] }
-{ id: 'heading6', label: 'Heading 6', hint: '⌘6', keywords: ['h6'] }
+{ id: 'heading1', label: 'Heading 1', hint: '⌘1', keywords: ['h1', 'title', 'heading'] }
+{ id: 'heading2', label: 'Heading 2', hint: '⌘2', keywords: ['h2', 'heading'] }
+{ id: 'heading3', label: 'Heading 3', hint: '⌘3', keywords: ['h3', 'heading'] }
+{ id: 'heading4', label: 'Heading 4', hint: '⌘4', keywords: ['h4', 'heading'] }
+{ id: 'heading5', label: 'Heading 5', hint: '⌘5', keywords: ['h5', 'heading'] }
+{ id: 'heading6', label: 'Heading 6', hint: '⌘6', keywords: ['h6', 'heading'] }
 { id: 'unorderedList', label: 'Unordered List', hint: '⌥⌘U', keywords: ['list', 'bullet', 'ul'] }
 { id: 'orderedList', label: 'Ordered List', hint: '⌥⌘O', keywords: ['list', 'number', 'ol'] }
-{ id: 'taskList', label: 'Task List', hint: '', keywords: ['task', 'todo', 'checkbox'] }
+{ id: 'taskList', label: 'Task List', hint: '', keywords: ['task', 'todo', 'checkbox', 'checklist'] }
 ```
 
 ### 6.2 Advanced Components
 
 ```typescript
-{ id: 'blockquote', label: 'Blockquote', hint: '⇧⌘Q', keywords: ['quote'] }
+{ id: 'blockquote', label: 'Blockquote', hint: '⇧⌘Q', keywords: ['quote', 'blockquote'] }
 { id: 'codeBlock', label: 'Code Block', hint: '⌥⌘C', keywords: ['code', 'pre'] }
 { id: 'table', label: 'Table', hint: '⌥⌘T', keywords: ['table', 'grid'] }
-{ id: 'horizontalRule', label: 'Horizontal Rule', hint: '', keywords: ['hr', 'divider', 'line'] }
+{ id: 'horizontalRule', label: 'Horizontal Rule', hint: '', keywords: ['hr', 'divider', 'line', 'separator'] }
 { id: 'image', label: 'Image', hint: '', keywords: ['img', 'picture', 'photo'] }
 ```
 
 ---
 
-## 七、实现进度
+## 七、架构设计
+
+### 7.1 模块分离
+
+采用纯函数层与 UI 层分离的架构设计：
+
+```
+src/ui/editor/
+├── domain/slash/
+│   ├── slashDomain.ts           # 触发字符判定
+│   ├── slashSessionMachine.ts   # 状态机（纯函数）
+│   ├── slashLayout.ts           # 布局算法（纯函数）
+│   └── slashScroll.ts           # 滚动算法（纯函数）
+├── menus/
+│   ├── SlashMenu.tsx            # 兼容导出入口
+│   ├── SlashMenuView.tsx        # 纯渲染组件
+│   ├── useSlashMenu.ts          # 状态机驱动的 hook
+│   └── slashEligibility.ts      # 触发资格判定
+```
+
+### 7.2 设计原则
+
+| 原则         | 说明                                    |
+| ------------ | --------------------------------------- |
+| 单一职责     | 状态机、布局、滚动、渲染各自独立        |
+| 纯函数优先   | 关键算法可脱离 React 生命周期独立测试   |
+| 单向数据流   | UI 只消费状态机输出，不自行推导业务状态  |
+| 可测试性     | 纯函数层可独立进行单元测试              |
+
+### 7.3 状态机 Actions
+
+```typescript
+type SlashAction =
+  | { type: 'OPEN'; anchorRect: AnchorRect; source: 'keyboard' | 'ime' }
+  | { type: 'APPEND_QUERY'; char: string }
+  | { type: 'DELETE_QUERY' }
+  | { type: 'MOVE_NEXT'; itemCount: number }
+  | { type: 'MOVE_PREV'; itemCount: number }
+  | { type: 'SUBMIT' }
+  | { type: 'CLOSE' };
+```
+
+---
+
+## 八、实现进度
 
 | 命令            | 状态      | 备注               |
 | --------------- | --------- | ------------------ |
@@ -227,7 +276,8 @@ SEARCHING
 
 ---
 
-## 八、参考资源
+## 九、参考资源
 
+- [Slash Menu 重做规格文档](../../current/交互/方案/Slash%20Menu重做规格文档.md)
 - [POL-03 Slash Menu 功能闭环设计](../../archive/2026-03-01_v5-closeout/current/DEV/POL-03%20Slash%20Menu%20功能闭环设计.md)
 - [Markdown 语法完全指南](../../参考资料/Markdown语法完全指南.md)
