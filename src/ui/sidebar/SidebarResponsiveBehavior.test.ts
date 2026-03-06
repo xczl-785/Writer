@@ -19,6 +19,8 @@ describe('sidebar responsive behavior', () => {
     expect(appTsx).toContain('if (previousIsMinTier === isMinTier)');
     expect(appTsx).toContain('sidebarVisibilityBeforeMinRef.current = sidebarVisibilityRef.current');
     expect(appTsx).toContain('setIsSidebarVisible(sidebarVisibilityBeforeMin)');
+    expect(appTsx).toContain('className="fixed inset-y-0 left-0 z-40"');
+    expect(appTsx).toContain('className="flex-1 flex flex-col relative min-w-0 h-full"');
   });
 
   it('degrades breadcrumb/header content to compact filename in min tier', () => {

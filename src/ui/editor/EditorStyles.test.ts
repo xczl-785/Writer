@@ -79,10 +79,25 @@ describe('Editor toolbar MVP', () => {
     expect(css).toMatch(/\.editor-find-panel\s*\{/i);
     expect(css).toMatch(/\.editor-ghost-slash\s*\{/i);
     expect(css).toMatch(/\.editor-slash-menu\s*\{/i);
+    expect(css).toContain('--editor-content-offset-top: 0px;');
+    expect(css).toContain('--editor-content-padding-top-effective');
     expect(css).toContain('max-width: var(--editor-content-max-width, 850px);');
+    expect(css).toMatch(
+      /--editor-content-padding-top-effective,\s*var\(--editor-content-padding-top,\s*64px\)/,
+    );
     expect(css).toContain('var(--editor-content-padding-top, 64px)');
     expect(css).toContain('var(--editor-content-padding-inline, 32px)');
     expect(css).toContain('var(--editor-content-padding-bottom, 40vh)');
+  });
+
+  it('does not force editor content to fixed full height', () => {
+    const editorImplTsx = readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
+    expect(editorImplTsx).toContain(
+      "attributes: { class: 'editor-content focus:outline-none' }",
+    );
+    expect(editorImplTsx).not.toContain(
+      "attributes: { class: 'editor-content h-full focus:outline-none' }",
+    );
   });
 
   it('disables code block boundary indicator in editor composition', () => {

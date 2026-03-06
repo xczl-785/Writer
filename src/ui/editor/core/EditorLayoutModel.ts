@@ -1,3 +1,5 @@
+import { EDITOR_SPACING_SPEC } from './EditorSpacingSpec';
+
 export type EditorViewportTier = 'min' | 'default' | 'airy';
 
 export type EditorLayoutModel = {
@@ -20,11 +22,14 @@ export function createEditorLayoutModel(
     viewportTier,
     headerHeight: 48,
     footerHeight: 28,
-    contentPaddingTop: isMin ? 32 : 64,
-    contentPaddingBottom: '40vh',
-    contentPaddingInline: isMin ? 16 : 32,
-    maxContentWidth: 850,
+    contentPaddingTop: isMin
+      ? EDITOR_SPACING_SPEC.top.min
+      : EDITOR_SPACING_SPEC.top.default,
+    contentPaddingBottom: EDITOR_SPACING_SPEC.bottom.all,
+    contentPaddingInline: isMin
+      ? EDITOR_SPACING_SPEC.inline.min
+      : EDITOR_SPACING_SPEC.inline.default,
+    maxContentWidth: EDITOR_SPACING_SPEC.maxContentWidth,
     typewriterAnchorRatio: 0.45,
   };
 }
-

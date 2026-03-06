@@ -31,6 +31,7 @@ describe('editor contracts', () => {
   it('layout model stays aligned with existing visual constants', () => {
     const defaultLayout = createEditorLayoutModel('default');
     const minLayout = createEditorLayoutModel('min');
+    const airyLayout = createEditorLayoutModel('airy');
 
     expect(defaultLayout.maxContentWidth).toBe(850);
     expect(defaultLayout.contentPaddingTop).toBe(64);
@@ -38,6 +39,10 @@ describe('editor contracts', () => {
 
     expect(minLayout.contentPaddingTop).toBe(32);
     expect(minLayout.contentPaddingInline).toBe(16);
+
+    expect(airyLayout.contentPaddingTop).toBe(64);
+    expect(airyLayout.contentPaddingInline).toBe(32);
+    expect(airyLayout.contentPaddingBottom).toBe('40vh');
   });
 
   it('typewriter contract keeps cursor near 45% anchor when active', () => {
@@ -59,4 +64,3 @@ describe('editor contracts', () => {
     ).toBe(280);
   });
 });
-

@@ -5,6 +5,7 @@ import {
   computeTypewriterTargetScrollTop,
   hasActiveOverlayInDom,
   isInsertTextLikeInput,
+  isWithinAnchorDeadband,
   isSlashTriggerChar,
   shouldActivateTypewriterAnchor,
 } from './index';
@@ -44,6 +45,8 @@ describe('editor domain helpers', () => {
         anchorRatio: 0.45,
       }),
     ).toBe(390);
+    expect(isWithinAnchorDeadband(462, 460, 12)).toBe(true);
+    expect(isWithinAnchorDeadband(490, 460, 12)).toBe(false);
   });
 
   it('provides slash input predicates', () => {
@@ -64,4 +67,3 @@ describe('editor domain helpers', () => {
     expect(hasActiveOverlayInDom(null)).toBe(false);
   });
 });
-
