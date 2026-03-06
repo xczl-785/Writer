@@ -1,5 +1,11 @@
 import { EditorContent, type Editor as TiptapEditor } from '@tiptap/react';
-import { useEffect, useRef, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from 'react';
 
 type Props = {
   editor: TiptapEditor;
@@ -35,6 +41,7 @@ export function EditorShell({
   isHeaderAwake = true,
 }: Props) {
   const outlineAreaRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOutlineOpen) return;
@@ -49,8 +56,66 @@ export function EditorShell({
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, [isOutlineOpen, onCloseOutline]);
 
+  useLayoutEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    const scrollContainer = root.querySelector('.editor-content-area') as
+      | HTMLElement
+      | null;
+    if (!scrollContainer) return;
+
+    let rafId: number | null = null;
+    const syncOffsetVariable = () => {
+      const findPanel = root.querySelector('.editor-find-panel') as
+        | HTMLElement
+        | null;
+
+      let offsetTop = 0;
+      if (findPanel) {
+        const panelRect = findPanel.getBoundingClientRect();
+        const scrollRect = scrollContainer.getBoundingClientRect();
+        offsetTop = Math.max(0, Math.round(panelRect.bottom - scrollRect.top));
+      }
+
+      scrollContainer.style.setProperty(
+        '--editor-content-offset-top',
+        `${offsetTop}px`,
+      );
+    };
+
+    const scheduleSync = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        syncOffsetVariable();
+      });
+    };
+
+    const observer = new ResizeObserver(() => scheduleSync());
+    observer.observe(scrollContainer);
+    const findPanel = root.querySelector('.editor-find-panel') as
+      | HTMLElement
+      | null;
+    if (findPanel) {
+      observer.observe(findPanel);
+    }
+    window.addEventListener('resize', scheduleSync);
+    scheduleSync();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', scheduleSync);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+      scrollContainer.style.removeProperty('--editor-content-offset-top');
+    };
+  }, [findReplacePanel]);
+
   return (
     <div
+      ref={containerRef}
       className="editor-container h-full w-full flex flex-col"
       onFocusCapture={() => setHasEditorWidgetFocus(true)}
       onBlurCapture={(event) => {
@@ -96,7 +161,7 @@ export function EditorShell({
           {outlinePopover}
         </div>
       </header>
-      {findReplacePanel}
+      <div className="editor-find-panel-host">{findReplacePanel}</div>
       {bubbleMenu}
       {ghostHint}
       {slashMenu}

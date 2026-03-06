@@ -1,10 +1,22 @@
+.editor-container {
+  /* Find panel is in normal flow today, so offset remains 0 in current layout. */
+  --editor-content-offset-top: 0px;
+  --editor-content-padding-top-effective: calc(
+    var(--editor-content-padding-top, 64px) +
+      var(--editor-content-offset-top, 0px)
+  );
+}
+
 .ProseMirror {
   outline: none;
   min-height: 100%;
   max-width: var(--editor-content-max-width, 850px);
   margin: 0 auto;
   padding:
-    var(--editor-content-padding-top, 64px)
+    var(
+      --editor-content-padding-top-effective,
+      var(--editor-content-padding-top, 64px)
+    )
     var(--editor-content-padding-inline, 32px)
     var(--editor-content-padding-bottom, 40vh);
   font-family:

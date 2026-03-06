@@ -257,7 +257,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         extensions,
         content: '',
         editorProps: {
-          attributes: { class: 'editor-content h-full focus:outline-none' },
+          attributes: { class: 'editor-content focus:outline-none' },
           handleDOMEvents: createEditorPasteDOMEvents(handlePaste, editorRef),
           handleKeyDown: withSourceMarkers(
             [
