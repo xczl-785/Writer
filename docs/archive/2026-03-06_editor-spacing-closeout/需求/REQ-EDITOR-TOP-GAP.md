@@ -9,7 +9,7 @@
 1. `docs/current/交互/方案/UI设计详细交付文档.md` §1.1, §2.1
 2. `docs/current/交互/方案/尺寸清单.md` §2
 3. `docs/current/交互/V5交互测试用例与需求映射.md` R-01, R-02, TC-A04, TC-A05
-4. `docs/current/交互/V5交互测试遗留清单.md` G-04（与底部留白同组回归）
+4. `docs/archive/2026-03-06_v5-test-leftovers-closeout/V5交互测试遗留清单.md` G-04（与底部留白同组回归）
 
 ## 3. 范围
 
@@ -35,4 +35,3 @@
 
 1. 不定义 Header 高度与按钮布局。
 2. 不定义 Slash Menu 定位逻辑。
-

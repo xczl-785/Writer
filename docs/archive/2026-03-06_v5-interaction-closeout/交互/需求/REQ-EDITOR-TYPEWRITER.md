@@ -9,7 +9,7 @@
 1. `docs/current/交互/方案/UI设计详细交付文档.md` §0, §4.1, §4.2
 2. `docs/current/交互/方案/适配与尺寸方案.md` §2
 3. `docs/current/交互/V5交互测试用例与需求映射.md` R-04, R-05, TC-D01~TC-D10
-4. `docs/current/交互/V5交互测试遗留清单.md` L-D-01, G-03
+4. `docs/archive/2026-03-06_v5-test-leftovers-closeout/V5交互测试遗留清单.md` L-D-01, G-03
 
 ## 3. 范围
 
@@ -41,4 +41,3 @@
 
 1. 不得破坏 Esc 优先级（先处理活跃浮层）。
 2. 不得修改 Slash Menu 定位坐标来源。
-

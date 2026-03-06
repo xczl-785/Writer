@@ -15,6 +15,8 @@ describe('useTypewriterAnchor behavior contract', () => {
     expect(hookTs).toContain("editorDom?.addEventListener('compositionstart'");
     expect(hookTs).toContain("editorDom?.addEventListener('compositionend'");
     expect(hookTs).toContain('if (isComposing)');
+    expect(hookTs).toContain('lastTypingUpdateAtMs = Date.now();');
+    expect(hookTs).toContain("scheduleAnchorUpdate('typing')");
   });
 
   it('reads runtime top offset css variable from scroll container', () => {
