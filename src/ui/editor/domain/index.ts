@@ -10,3 +10,34 @@ export {
 } from './typewriter/typewriterDomain';
 export { hasActiveOverlayInDom } from './focusZen/focusZenEscapeDomain';
 export { isSlashTriggerChar, isInsertTextLikeInput } from './slash/slashDomain';
+export {
+  type SlashPhase,
+  type SlashSession,
+  type SlashAction,
+  type AnchorRect,
+  createInitialSlashSession,
+  slashReducer,
+  isOpenPhase,
+  isActivePhase,
+} from './slash/slashSessionMachine';
+export {
+  SLASH_MENU_WIDTH,
+  SLASH_MENU_EDGE_PADDING,
+  SLASH_MENU_FLIP_THRESHOLD,
+  SLASH_MENU_FLIP_SAFE_GAP,
+  SLASH_MENU_ITEM_HEIGHT,
+  SLASH_MENU_GROUP_HEIGHT,
+  SLASH_MENU_FRAME_HEIGHT,
+  SLASH_MENU_TRIGGER_GAP,
+  type SlashMenuLayoutInput,
+  type SlashMenuLayout,
+  estimateSlashMenuHeight,
+  computeSlashMenuLayout,
+  computeSlashInlinePosition,
+} from './slash/slashLayout';
+export {
+  SLASH_MENU_SCROLL_BUFFER,
+  type ScrollComputeInput,
+  computeKeyboardScrollTop,
+  needsScrollAdjustment,
+} from './slash/slashScroll';

@@ -1,14 +1,15 @@
 import { forwardRef } from 'react';
-import type { EditorHandle, EditorProps } from '../Editor';
-import { Editor } from '../Editor';
+import type { EditorHandle, EditorProps } from './editorTypes';
+import { EditorImpl } from '../EditorImpl';
 
 /**
  * Temporary orchestration entry for phased refactor.
  * Current behavior is delegated to the legacy Editor component.
  */
 export const EditorOrchestrator = forwardRef<EditorHandle, EditorProps>(
-  (props, ref) => <Editor {...props} ref={ref} />,
+  (props, ref) => <EditorImpl {...props} ref={ref} />,
 );
 
 EditorOrchestrator.displayName = 'EditorOrchestrator';
 
+export default EditorOrchestrator;

@@ -5,11 +5,15 @@ export {
   useSlashMenu,
   SlashMenu,
   SlashInline,
+  SlashMenuView,
+  SlashInlineView,
   type SlashPhase,
   type SlashCommand,
   type SlashMenuState,
   type SlashMenuProps,
   type SlashInlineProps,
+  type UseSlashMenuOptions,
+  type UseSlashMenuResult,
 } from './SlashMenu';
 
 export {
