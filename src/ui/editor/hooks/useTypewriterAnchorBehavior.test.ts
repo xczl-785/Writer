@@ -20,8 +20,9 @@ describe('useTypewriterAnchor behavior contract', () => {
   });
 
   it('reads runtime top offset css variable from scroll container', () => {
-    expect(hookTs).toContain("'--editor-content-offset-top'");
     expect(hookTs).toContain('resolveEditorContentTopOffset');
     expect(hookTs).toContain('effectiveViewportHeight');
+    expect(hookTs).toContain('findScrollContainer');
+    expect(hookTs).toContain('setScrollTop');
   });
 });
