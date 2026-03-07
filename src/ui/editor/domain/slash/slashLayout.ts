@@ -11,7 +11,7 @@ import type { CSSProperties } from 'react';
 export const SLASH_MENU_WIDTH = 260;
 export const SLASH_MENU_EDGE_PADDING = 10;
 export const SLASH_MENU_FLIP_THRESHOLD = 500;
-export const SLASH_MENU_FLIP_SAFE_GAP = 48;
+export const SLASH_MENU_FLIP_SAFE_GAP = 64;
 export const SLASH_MENU_ITEM_HEIGHT = 34;
 export const SLASH_MENU_GROUP_HEIGHT = 24;
 export const SLASH_MENU_FRAME_HEIGHT = 8;
@@ -113,9 +113,10 @@ export function computeSlashMenuLayout(
 /**
  * Compute inline indicator position
  */
-export function computeSlashInlinePosition(
-  anchorRect: { left: number; top: number },
-): { x: number; y: number } {
+export function computeSlashInlinePosition(anchorRect: {
+  left: number;
+  top: number;
+}): { x: number; y: number } {
   return {
     x: anchorRect.left + 4,
     y: anchorRect.top + 2,
