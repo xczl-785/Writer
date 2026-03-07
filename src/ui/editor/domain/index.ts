@@ -18,6 +18,11 @@ export {
   reduceTypewriterInputMovement,
   computeLockedTypewriterTargetScrollTop,
 } from './typewriter/typewriterStateMachine';
+export {
+  TYPEWRITER_FORCE_FREE_EVENT,
+  type TypewriterForceFreeReason,
+  emitTypewriterForceFree,
+} from './typewriter/typewriterEvents';
 export { hasActiveOverlayInDom } from './focusZen/focusZenEscapeDomain';
 export { isSlashTriggerChar, isInsertTextLikeInput } from './slash/slashDomain';
 export {
