@@ -28,6 +28,7 @@ export function useGhostHint(
 
   useEffect(() => {
     if (!editor) return;
+    let rafId: number | null = null;
 
     const updateGhostHint = () => {
       if (!editor.isFocused || slashPhase !== 'idle') {
@@ -50,7 +51,15 @@ export function useGhostHint(
       setPosition({
         open: true,
         x: rect.left + 4,
-        y: rect.top + 2,
+        y: rect.top - 2,
+      });
+    };
+
+    const scheduleGhostHintUpdate = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        updateGhostHint();
       });
     };
 
@@ -59,16 +68,28 @@ export function useGhostHint(
     };
 
     updateGhostHint();
+    const editorDom = editor.view.dom as HTMLElement | null;
+    const scrollContainer = editorDom?.closest('.editor-content-area');
     editor.on('selectionUpdate', updateGhostHint);
     editor.on('transaction', updateGhostHint);
     editor.on('focus', updateGhostHint);
     editor.on('blur', hideGhostHint);
+    scrollContainer?.addEventListener('scroll', scheduleGhostHintUpdate, {
+      passive: true,
+    });
+    window.addEventListener('resize', scheduleGhostHintUpdate);
 
     return () => {
       editor.off('selectionUpdate', updateGhostHint);
       editor.off('transaction', updateGhostHint);
       editor.off('focus', updateGhostHint);
       editor.off('blur', hideGhostHint);
+      scrollContainer?.removeEventListener('scroll', scheduleGhostHintUpdate);
+      window.removeEventListener('resize', scheduleGhostHintUpdate);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
     };
   }, [editor, getSafeCoordsAtPos, slashPhase]);
 

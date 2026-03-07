@@ -78,6 +78,7 @@ describe('Editor toolbar MVP', () => {
     expect(css).toMatch(/\.editor-header\s*\{/i);
     expect(css).toMatch(/\.editor-find-panel\s*\{/i);
     expect(css).toMatch(/\.editor-ghost-slash\s*\{/i);
+    expect(css).toMatch(/\.editor-ghost-slash__trigger\s*\{/i);
     expect(css).toMatch(/\.editor-slash-menu\s*\{/i);
     expect(css).toContain('--editor-content-offset-top: 0px;');
     expect(css).toContain('--editor-content-padding-top-effective');
