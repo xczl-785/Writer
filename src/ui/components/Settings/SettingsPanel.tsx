@@ -49,14 +49,8 @@ export function SettingsPanel({
   onClose,
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<SettingsTabId>('general');
-  const typewriterKeepCaretInMiddle = useSettingsStore(
-    (state) => state.typewriterKeepCaretInMiddle,
-  );
   const focusZenEnabledByUser = useSettingsStore(
     (state) => state.focusZenEnabledByUser,
-  );
-  const setTypewriterKeepCaretInMiddle = useSettingsStore(
-    (state) => state.setTypewriterKeepCaretInMiddle,
   );
   const setFocusZenEnabledByUser = useSettingsStore(
     (state) => state.setFocusZenEnabledByUser,
@@ -182,16 +176,6 @@ export function SettingsPanel({
 
   if (!isOpen) return null;
   const editorRows: SettingRow[] = [
-    {
-      kind: 'toggle',
-      id: 'typewriter-keep-middle',
-      label: t('settings.editor.typewriterKeepMiddle.label'),
-      description: t('settings.editor.typewriterKeepMiddle.desc'),
-      mode: 'active',
-      checked: typewriterKeepCaretInMiddle,
-      onToggle: () =>
-        setTypewriterKeepCaretInMiddle(!typewriterKeepCaretInMiddle),
-    },
     {
       kind: 'toggle',
       id: 'focus-zen-mode',

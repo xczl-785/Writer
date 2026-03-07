@@ -18,12 +18,10 @@ describe('Settings editor view modes', () => {
     'utf-8',
   );
 
-  it('enables editor tab and exposes typewriter/focus-zen toggles', () => {
+  it('enables editor tab and exposes focus-zen toggle', () => {
     expect(settingsTsx).toContain("id: 'editor'");
     expect(settingsTsx).toContain('implemented: true');
-    expect(settingsTsx).toContain("id: 'typewriter-keep-middle'");
     expect(settingsTsx).toContain("id: 'focus-zen-mode'");
-    expect(settingsTsx).toContain('setTypewriterKeepCaretInMiddle');
     expect(settingsTsx).toContain('setFocusZenEnabledByUser');
   });
 
@@ -36,11 +34,7 @@ describe('Settings editor view modes', () => {
   });
 
   it('ships localized copy for editor mode switches', () => {
-    expect(messagesTs).toContain(
-      "'settings.editor.typewriterKeepMiddle.label'",
-    );
     expect(messagesTs).toContain("'settings.editor.focusZen.label'");
-    expect(messagesTs).toContain("'settings.editor.typewriterKeepMiddle.desc'");
     expect(messagesTs).toContain("'settings.editor.focusZen.desc'");
   });
 });

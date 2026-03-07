@@ -46,9 +46,6 @@ function App() {
   const typewriterEnabledByUser = useSettingsStore(
     (state) => state.typewriterEnabledByUser,
   );
-  const typewriterKeepCaretInMiddle = useSettingsStore(
-    (state) => state.typewriterKeepCaretInMiddle,
-  );
   const setFocusZenEnabledByUser = useSettingsStore(
     (state) => state.setFocusZenEnabledByUser,
   );
@@ -336,7 +333,6 @@ function App() {
             isSidebarVisible={isSidebarVisible}
             onToggleSidebar={toggleSidebar}
             isTypewriterActive={isTypewriterActive}
-            typewriterKeepCaretInMiddle={typewriterKeepCaretInMiddle}
             viewportTier={tier}
             isFocusZen={isFocusZen}
             isHeaderAwake={isHeaderAwake}
