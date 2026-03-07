@@ -4,7 +4,6 @@ import { FIND_MATCH_LIMIT } from './constants';
 import {
   collectFindTextMatches,
   getActiveFindMatchIndex,
-  emitTypewriterNonInputJump,
 } from './domain';
 
 type UseFindReplaceArgs = {
@@ -60,7 +59,6 @@ export function useFindReplace({
       if (!editor) return;
       const match = findMatches[index];
       if (!match) return;
-      emitTypewriterNonInputJump({ source: 'find-replace' });
       editor
         .chain()
         .focus()
@@ -152,7 +150,6 @@ export function useFindReplace({
 
     const nextIndex = Math.min(index, nextMatches.length - 1);
     const nextMatch = nextMatches[nextIndex];
-    emitTypewriterNonInputJump({ source: 'find-replace' });
     editor
       .chain()
       .focus()
