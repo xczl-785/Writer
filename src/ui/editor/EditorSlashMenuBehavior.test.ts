@@ -20,6 +20,10 @@ describe('Editor slash menu behavior', () => {
     readFileSync(join(currentDir, 'hooks', 'useSafeCoords.ts'), 'utf-8');
   const readGhostHintHook = () =>
     readFileSync(join(currentDir, 'hooks', 'useGhostHint.ts'), 'utf-8');
+  const readGhostHint = () =>
+    readFileSync(join(currentDir, 'menus', 'GhostHint.tsx'), 'utf-8');
+  const readMessages = () =>
+    readFileSync(join(currentDir, '../../i18n/messages.ts'), 'utf-8');
 
   it('supports slash trigger chars for Latin and full-width input', () => {
     const slashDomainTs = readSlashDomain();
@@ -40,6 +44,22 @@ describe('Editor slash menu behavior', () => {
     const ghostHintTs = readGhostHintHook();
     expect(useSlashMenuTs).toContain('isStrictSlashTriggerEligible');
     expect(ghostHintTs).toContain('isStrictSlashTriggerEligible');
+  });
+
+  it('recomputes ghost hint position on scroll to avoid fixed overlay drift', () => {
+    const ghostHintTs = readGhostHintHook();
+    expect(ghostHintTs).toContain('window.requestAnimationFrame');
+    expect(ghostHintTs).toContain("addEventListener('scroll'");
+  });
+
+  it('renders localized ghost hint copy with styled slash token', () => {
+    const ghostHintTsx = readGhostHint();
+    const messagesTs = readMessages();
+    expect(ghostHintTsx).toContain("t('ghostHint.prefix')");
+    expect(ghostHintTsx).toContain("t('ghostHint.suffix')");
+    expect(ghostHintTsx).toContain('editor-ghost-slash__trigger');
+    expect(messagesTs).toContain("'ghostHint.prefix'");
+    expect(messagesTs).toContain("'ghostHint.suffix'");
   });
 
   it('handles beforeinput and compositionend for IME-safe slash flow', () => {

@@ -3,6 +3,8 @@
  *
  * Shows a hint when cursor is at an empty line.
  */
+import { t } from '../../../i18n';
+
 export type GhostHintPosition = {
   open: boolean;
   x: number;
@@ -24,7 +26,9 @@ export function GhostHint({ position }: GhostHintProps) {
         top: position.y,
       }}
     >
-      / 输入以唤出菜单...
+      <span className="editor-ghost-slash__text">{t('ghostHint.prefix')}</span>
+      <kbd className="editor-ghost-slash__trigger">{t('ghostHint.trigger')}</kbd>
+      <span className="editor-ghost-slash__text">{t('ghostHint.suffix')}</span>
     </div>
   );
 }
