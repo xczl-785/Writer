@@ -4,17 +4,17 @@ import {
   computeTypewriterTargetScrollTop,
   DEFAULT_TYPEWRITER_ANCHOR_RATIO,
   shouldActivateTypewriterAnchor,
+  resolveEditorContentTopOffset,
+  findScrollContainer,
+  setScrollTop,
+  shouldSkipScrollAdjustment,
 } from '../domain';
 
 export { computeTypewriterTargetScrollTop, shouldActivateTypewriterAnchor };
 export const DEFAULT_TYPEWRITER_SCROLL_MIN_DELTA_PX = 6;
 export const DEFAULT_TYPEWRITER_TYPING_THROTTLE_MS = 120;
 
-export const shouldSkipTypewriterScrollAdjustment = (
-  targetScrollTop: number,
-  currentScrollTop: number,
-  minDeltaPx = DEFAULT_TYPEWRITER_SCROLL_MIN_DELTA_PX,
-) => Math.abs(targetScrollTop - currentScrollTop) < minDeltaPx;
+export const shouldSkipTypewriterScrollAdjustment = shouldSkipScrollAdjustment;
 
 export const shouldThrottleTypewriterTypingUpdate = (
   nowMs: number,
@@ -22,16 +22,7 @@ export const shouldThrottleTypewriterTypingUpdate = (
   throttleMs = DEFAULT_TYPEWRITER_TYPING_THROTTLE_MS,
 ) => nowMs - lastTypingUpdateAtMs < throttleMs;
 
-export const resolveEditorContentTopOffset = (element: HTMLElement): number => {
-  const rawValue = getComputedStyle(element)
-    .getPropertyValue('--editor-content-offset-top')
-    .trim();
-  const parsed = Number.parseFloat(rawValue);
-  if (!Number.isFinite(parsed)) {
-    return 0;
-  }
-  return Math.max(0, parsed);
-};
+export { resolveEditorContentTopOffset };
 
 export const useTypewriterAnchor = ({
   editor,
@@ -56,9 +47,7 @@ export const useTypewriterAnchor = ({
       }
 
       const editorDom = editor.view.dom as HTMLElement | null;
-      const scrollContainer = editorDom?.closest('.editor-content-area') as
-        | HTMLElement
-        | null;
+      const scrollContainer = editorDom ? findScrollContainer(editorDom) : null;
       if (!editorDom || !scrollContainer) {
         return;
       }
@@ -93,7 +82,7 @@ export const useTypewriterAnchor = ({
         anchorRatio,
       });
 
-      if (
+if (
         shouldSkipTypewriterScrollAdjustment(
           targetScrollTop,
           scrollContainer.scrollTop,
@@ -101,7 +90,7 @@ export const useTypewriterAnchor = ({
       ) {
         return;
       }
-      scrollContainer.scrollTop = targetScrollTop;
+      setScrollTop(scrollContainer, targetScrollTop);
     };
 
     const scheduleAnchorUpdate = (
