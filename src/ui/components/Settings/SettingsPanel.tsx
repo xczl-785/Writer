@@ -49,14 +49,14 @@ export function SettingsPanel({
   onClose,
 }: SettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<SettingsTabId>('general');
-  const typewriterEnabledByUser = useSettingsStore(
-    (state) => state.typewriterEnabledByUser,
+  const typewriterKeepCaretInMiddle = useSettingsStore(
+    (state) => state.typewriterKeepCaretInMiddle,
   );
   const focusZenEnabledByUser = useSettingsStore(
     (state) => state.focusZenEnabledByUser,
   );
-  const setTypewriterEnabledByUser = useSettingsStore(
-    (state) => state.setTypewriterEnabledByUser,
+  const setTypewriterKeepCaretInMiddle = useSettingsStore(
+    (state) => state.setTypewriterKeepCaretInMiddle,
   );
   const setFocusZenEnabledByUser = useSettingsStore(
     (state) => state.setFocusZenEnabledByUser,
@@ -124,7 +124,9 @@ export function SettingsPanel({
   const renderBadge = (mode: SettingItemMode) => {
     if (mode !== 'coming-soon') return null;
     return (
-      <span className="settings-item__badge">{t('settings.badge.comingSoon')}</span>
+      <span className="settings-item__badge">
+        {t('settings.badge.comingSoon')}
+      </span>
     );
   };
 
@@ -182,12 +184,13 @@ export function SettingsPanel({
   const editorRows: SettingRow[] = [
     {
       kind: 'toggle',
-      id: 'typewriter-mode',
-      label: t('settings.editor.typewriter.label'),
-      description: t('settings.editor.typewriter.desc'),
+      id: 'typewriter-keep-middle',
+      label: t('settings.editor.typewriterKeepMiddle.label'),
+      description: t('settings.editor.typewriterKeepMiddle.desc'),
       mode: 'active',
-      checked: typewriterEnabledByUser,
-      onToggle: () => setTypewriterEnabledByUser(!typewriterEnabledByUser),
+      checked: typewriterKeepCaretInMiddle,
+      onToggle: () =>
+        setTypewriterKeepCaretInMiddle(!typewriterKeepCaretInMiddle),
     },
     {
       kind: 'toggle',
@@ -216,7 +219,10 @@ export function SettingsPanel({
       <div className="settings-dialog">
         <aside className="settings-sidebar">
           <div className="settings-sidebar__header">{t('settings.title')}</div>
-          <nav className="settings-sidebar__tabs" aria-label={t('settings.title')}>
+          <nav
+            className="settings-sidebar__tabs"
+            aria-label={t('settings.title')}
+          >
             {tabs.map((tab) => {
               const isActive = tab.id === currentTab.id;
               return (
@@ -268,10 +274,14 @@ export function SettingsPanel({
                   >
                     <div className="settings-item__text">
                       <div className="settings-item__label-line">
-                        <span className="settings-item__label">{row.label}</span>
+                        <span className="settings-item__label">
+                          {row.label}
+                        </span>
                         {renderBadge(row.mode)}
                       </div>
-                      <div className="settings-item__desc">{row.description}</div>
+                      <div className="settings-item__desc">
+                        {row.description}
+                      </div>
                     </div>
                     {renderRowControl(row)}
                   </div>

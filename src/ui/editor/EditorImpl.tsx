@@ -56,7 +56,12 @@ import {
   BubbleMenu,
   GhostHint,
 } from './menus';
-import { useSafeCoords, useGhostHint, useUndoRedo, useTypewriterAnchor } from './hooks';
+import {
+  useSafeCoords,
+  useGhostHint,
+  useUndoRedo,
+  useTypewriterAnchor,
+} from './hooks';
 import { createEditorLayoutModel } from './core/EditorLayoutModel';
 import { EditorView } from './view/EditorView';
 import {
@@ -101,6 +106,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       isSidebarVisible = true,
       onToggleSidebar,
       isTypewriterActive = false,
+      typewriterKeepCaretInMiddle = true,
       viewportTier = 'default',
       isFocusZen = false,
       isHeaderAwake = true,
@@ -303,6 +309,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       editor,
       enabled: isTypewriterActive,
       anchorRatio: layoutModel.typewriterAnchorRatio,
+      keepCaretInMiddle: typewriterKeepCaretInMiddle,
     });
 
     useEffect(() => {
@@ -613,7 +620,11 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
               <SlashMenu
                 isOpen={slashSession.phase !== 'idle'}
                 x={slashSession.anchorRect?.left ?? 0}
-                y={slashSession.anchorRect ? slashSession.anchorRect.bottom + 8 : 0}
+                y={
+                  slashSession.anchorRect
+                    ? slashSession.anchorRect.bottom + 8
+                    : 0
+                }
                 commands={slashCommands}
                 selectedIndex={slashSelectedIndex}
                 onSelect={executeCommand}

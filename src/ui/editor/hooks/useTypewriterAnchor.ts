@@ -28,10 +28,12 @@ export const useTypewriterAnchor = ({
   editor,
   enabled,
   anchorRatio = DEFAULT_TYPEWRITER_ANCHOR_RATIO,
+  keepCaretInMiddle = true,
 }: {
   editor: Editor | null;
   enabled: boolean;
   anchorRatio?: number;
+  keepCaretInMiddle?: boolean;
 }) => {
   useEffect(() => {
     if (!editor || !enabled) return;
@@ -82,7 +84,7 @@ export const useTypewriterAnchor = ({
         anchorRatio,
       });
 
-if (
+      if (
         shouldSkipTypewriterScrollAdjustment(
           targetScrollTop,
           scrollContainer.scrollTop,
@@ -108,9 +110,7 @@ if (
         rafId = null;
         if (pendingUpdateMode === 'typing') {
           const now = Date.now();
-          if (
-            shouldThrottleTypewriterTypingUpdate(now, lastTypingUpdateAtMs)
-          ) {
+          if (shouldThrottleTypewriterTypingUpdate(now, lastTypingUpdateAtMs)) {
             return;
           }
           lastTypingUpdateAtMs = now;
@@ -136,7 +136,9 @@ if (
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key.startsWith('Arrow')) {
-        scheduleAnchorUpdate('immediate');
+        if (keepCaretInMiddle) {
+          scheduleAnchorUpdate('immediate');
+        }
       }
     };
     const handleCompositionStart = () => {
@@ -148,15 +150,22 @@ if (
       scheduleAnchorUpdate('typing');
     };
     const handleSelectionUpdate = () => {
-      scheduleAnchorUpdate('typing');
+      if (keepCaretInMiddle) {
+        scheduleAnchorUpdate('typing');
+      }
     };
     const handleTransaction = () => {
-      scheduleAnchorUpdate('typing');
+      if (keepCaretInMiddle) {
+        scheduleAnchorUpdate('typing');
+      }
     };
 
     editor.on('selectionUpdate', handleSelectionUpdate);
     editor.on('transaction', handleTransaction);
-    editorDom?.addEventListener('beforeinput', handleBeforeInput as EventListener);
+    editorDom?.addEventListener(
+      'beforeinput',
+      handleBeforeInput as EventListener,
+    );
     editorDom?.addEventListener('keydown', handleKeyDown, true);
     editorDom?.addEventListener('compositionstart', handleCompositionStart);
     editorDom?.addEventListener('compositionend', handleCompositionEnd);
@@ -170,12 +179,15 @@ if (
         handleBeforeInput as EventListener,
       );
       editorDom?.removeEventListener('keydown', handleKeyDown, true);
-      editorDom?.removeEventListener('compositionstart', handleCompositionStart);
+      editorDom?.removeEventListener(
+        'compositionstart',
+        handleCompositionStart,
+      );
       editorDom?.removeEventListener('compositionend', handleCompositionEnd);
       if (rafId !== null) {
         window.cancelAnimationFrame(rafId);
         rafId = null;
       }
     };
-  }, [editor, enabled, anchorRatio]);
+  }, [editor, enabled, anchorRatio, keepCaretInMiddle]);
 };

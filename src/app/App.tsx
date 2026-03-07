@@ -46,6 +46,9 @@ function App() {
   const typewriterEnabledByUser = useSettingsStore(
     (state) => state.typewriterEnabledByUser,
   );
+  const typewriterKeepCaretInMiddle = useSettingsStore(
+    (state) => state.typewriterKeepCaretInMiddle,
+  );
   const setFocusZenEnabledByUser = useSettingsStore(
     (state) => state.setFocusZenEnabledByUser,
   );
@@ -65,9 +68,8 @@ function App() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const isOverlaySidebar = isMinTier && isSidebarVisible;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [localePreference, setLocalePreferenceState] = useState<LocalePreference>(
-    () => getLocalePreference(),
-  );
+  const [localePreference, setLocalePreferenceState] =
+    useState<LocalePreference>(() => getLocalePreference());
   const { isHeaderAwake, isFooterAwake } = useFocusZenWakeup({
     enabled: isFocusZen,
   });
@@ -116,10 +118,13 @@ function App() {
   }, [applyFocusZen, isFocusZen]);
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
-  const handleLocalePreferenceChange = useCallback((preference: LocalePreference) => {
-    setLocalePreference(preference);
-    setLocalePreferenceState(getLocalePreference());
-  }, []);
+  const handleLocalePreferenceChange = useCallback(
+    (preference: LocalePreference) => {
+      setLocalePreference(preference);
+      setLocalePreferenceState(getLocalePreference());
+    },
+    [],
+  );
 
   useEffect(() => {
     void invoke('set_menu_locale', { locale: getLocale() }).catch(() => {
@@ -331,6 +336,7 @@ function App() {
             isSidebarVisible={isSidebarVisible}
             onToggleSidebar={toggleSidebar}
             isTypewriterActive={isTypewriterActive}
+            typewriterKeepCaretInMiddle={typewriterKeepCaretInMiddle}
             viewportTier={tier}
             isFocusZen={isFocusZen}
             isHeaderAwake={isHeaderAwake}
