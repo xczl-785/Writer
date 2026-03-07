@@ -10,6 +10,14 @@ export {
   DEFAULT_TYPEWRITER_ANCHOR_DEADBAND_PX,
   isWithinAnchorDeadband,
 } from './typewriter/typewriterDomain';
+export {
+  type TypewriterMode,
+  type TypewriterState,
+  createInitialTypewriterState,
+  createLockedTypewriterState,
+  reduceTypewriterInputMovement,
+  computeLockedTypewriterTargetScrollTop,
+} from './typewriter/typewriterStateMachine';
 export { hasActiveOverlayInDom } from './focusZen/focusZenEscapeDomain';
 export { isSlashTriggerChar, isInsertTextLikeInput } from './slash/slashDomain';
 export {
