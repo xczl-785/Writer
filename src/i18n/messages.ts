@@ -221,9 +221,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'settings.editor.typewriter.label': '打字机模式',
     'settings.editor.typewriter.desc':
       '将光标锚定在视口约 45% 的区域，减少视线跳动',
-    'settings.editor.typewriterKeepMiddle.label': '始终将光标保持在屏幕中间',
-    'settings.editor.typewriterKeepMiddle.desc':
-      '打字机模式下，鼠标点击和键盘导航时也将光标重置到屏幕中间',
     'settings.editor.focusZen.label': '极致禅模式',
     'settings.editor.focusZen.desc': '自动消隐头尾 UI，仅在边缘唤醒以保持沉浸',
     'settings.badge.comingSoon': '即将推出',
@@ -457,9 +454,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'settings.editor.typewriter.label': 'Typewriter Mode',
     'settings.editor.typewriter.desc':
       'Keep the caret near 45% of viewport height for stable writing focus.',
-    'settings.editor.typewriterKeepMiddle.label': 'Keep Caret Centered',
-    'settings.editor.typewriterKeepMiddle.desc':
-      'In typewriter mode, scroll to center the caret on mouse click and keyboard navigation.',
     'settings.editor.focusZen.label': 'Focus Zen',
     'settings.editor.focusZen.desc':
       'Auto-hide top and bottom UI, and wake controls only at viewport edges.',

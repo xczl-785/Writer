@@ -28,12 +28,10 @@ export const useTypewriterAnchor = ({
   editor,
   enabled,
   anchorRatio = DEFAULT_TYPEWRITER_ANCHOR_RATIO,
-  keepCaretInMiddle = true,
 }: {
   editor: Editor | null;
   enabled: boolean;
   anchorRatio?: number;
-  keepCaretInMiddle?: boolean;
 }) => {
   useEffect(() => {
     if (!editor || !enabled) return;
@@ -136,9 +134,7 @@ export const useTypewriterAnchor = ({
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key.startsWith('Arrow')) {
-        if (keepCaretInMiddle) {
-          scheduleAnchorUpdate('immediate');
-        }
+        scheduleAnchorUpdate('immediate');
       }
     };
     const handleCompositionStart = () => {
@@ -149,19 +145,6 @@ export const useTypewriterAnchor = ({
       lastTypingUpdateAtMs = Date.now();
       scheduleAnchorUpdate('typing');
     };
-    const handleSelectionUpdate = () => {
-      if (keepCaretInMiddle) {
-        scheduleAnchorUpdate('typing');
-      }
-    };
-    const handleTransaction = () => {
-      if (keepCaretInMiddle) {
-        scheduleAnchorUpdate('typing');
-      }
-    };
-
-    editor.on('selectionUpdate', handleSelectionUpdate);
-    editor.on('transaction', handleTransaction);
     editorDom?.addEventListener(
       'beforeinput',
       handleBeforeInput as EventListener,
@@ -172,8 +155,6 @@ export const useTypewriterAnchor = ({
     scheduleAnchorUpdate('immediate');
 
     return () => {
-      editor.off('selectionUpdate', handleSelectionUpdate);
-      editor.off('transaction', handleTransaction);
       editorDom?.removeEventListener(
         'beforeinput',
         handleBeforeInput as EventListener,
@@ -189,5 +170,5 @@ export const useTypewriterAnchor = ({
         rafId = null;
       }
     };
-  }, [editor, enabled, anchorRatio, keepCaretInMiddle]);
+  }, [editor, enabled, anchorRatio]);
 };

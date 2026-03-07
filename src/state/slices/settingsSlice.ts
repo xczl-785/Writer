@@ -32,14 +32,12 @@ export const LEGACY_LOCALE_PREFERENCE_KEY = 'writer.locale.preference';
 export interface SettingsState {
   localePreference: SettingsLocalePreference;
   typewriterEnabledByUser: boolean;
-  typewriterKeepCaretInMiddle: boolean;
   focusZenEnabledByUser: boolean;
 }
 
 export interface SettingsActions {
   setLocalePreference: (preference: SettingsLocalePreference) => void;
   setTypewriterEnabledByUser: (enabled: boolean) => void;
-  setTypewriterKeepCaretInMiddle: (value: boolean) => void;
   setFocusZenEnabledByUser: (enabled: boolean) => void;
 }
 
@@ -48,7 +46,6 @@ type PersistedSettings = SettingsState;
 const DEFAULT_SETTINGS: SettingsState = {
   localePreference: 'system',
   typewriterEnabledByUser: false,
-  typewriterKeepCaretInMiddle: true,
   focusZenEnabledByUser: false,
 };
 
@@ -91,8 +88,6 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         set({ localePreference: normalizeLocalePreference(preference) }),
       setTypewriterEnabledByUser: (enabled) =>
         set({ typewriterEnabledByUser: enabled }),
-      setTypewriterKeepCaretInMiddle: (value) =>
-        set({ typewriterKeepCaretInMiddle: value }),
       setFocusZenEnabledByUser: (enabled) =>
         set({ focusZenEnabledByUser: enabled }),
     }),
@@ -102,7 +97,6 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       partialize: (state) => ({
         localePreference: state.localePreference,
         typewriterEnabledByUser: state.typewriterEnabledByUser,
-        typewriterKeepCaretInMiddle: state.typewriterKeepCaretInMiddle,
         focusZenEnabledByUser: state.focusZenEnabledByUser,
       }),
       merge: (persistedState, currentState) => {
@@ -116,9 +110,6 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
           typewriterEnabledByUser:
             persisted.typewriterEnabledByUser ??
             currentState.typewriterEnabledByUser,
-          typewriterKeepCaretInMiddle:
-            persisted.typewriterKeepCaretInMiddle ??
-            currentState.typewriterKeepCaretInMiddle,
           focusZenEnabledByUser:
             persisted.focusZenEnabledByUser ??
             currentState.focusZenEnabledByUser,

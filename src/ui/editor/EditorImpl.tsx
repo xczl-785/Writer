@@ -106,7 +106,6 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       isSidebarVisible = true,
       onToggleSidebar,
       isTypewriterActive = false,
-      typewriterKeepCaretInMiddle = true,
       viewportTier = 'default',
       isFocusZen = false,
       isHeaderAwake = true,
@@ -309,7 +308,6 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       editor,
       enabled: isTypewriterActive,
       anchorRatio: layoutModel.typewriterAnchorRatio,
-      keepCaretInMiddle: typewriterKeepCaretInMiddle,
     });
 
     useEffect(() => {
