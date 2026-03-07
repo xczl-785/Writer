@@ -5,7 +5,7 @@
  * Receives state and callbacks, contains no business logic.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { t } from '../../../i18n';
 import type { SlashCommand } from './useSlashMenu';
 import {
@@ -64,9 +64,10 @@ export function SlashMenuView({
         })
       : null;
 
-  // Measure actual height after render
+  // Measure actual height after render (valid useLayoutEffect pattern for DOM measurement)
   useLayoutEffect(() => {
     if (!isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMeasuredHeight(null);
       return;
     }
@@ -74,10 +75,10 @@ export function SlashMenuView({
     if (actualHeight > 0 && actualHeight !== measuredHeight) {
       setMeasuredHeight(actualHeight);
     }
-  }, [commands, isOpen, measuredHeight]);
+  }, [isOpen, measuredHeight]);
 
   // Scroll active item into view
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen || !menuRef.current) return;
     const newScrollTop = computeKeyboardScrollTop(
       menuRef.current,
