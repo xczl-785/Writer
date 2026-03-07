@@ -43,3 +43,17 @@ export {
   computeKeyboardScrollTop,
   needsScrollAdjustment,
 } from './slash/slashScroll';
+export {
+  type ScrollSource,
+  type ScrollBehavior,
+  type ScrollRequest,
+  type ScrollResult,
+  type ScrollContainerInfo,
+  resolveEditorContentTopOffset,
+  findScrollContainer,
+  getScrollContainerInfo,
+  setScrollTop,
+  shouldSkipScrollAdjustment,
+  createScrollCoordinator,
+  type ScrollCoordinator,
+} from './scroll';
