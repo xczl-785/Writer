@@ -21,6 +21,7 @@ V5 专项文档已统一归档到：
 docs/current/
 ├── README.md
 ├── REQ-SLASH-MENU-遗留专项需求.md
+├── 打字机模式(Typewriter)交互规格说明.md
 └── 跟踪/
     ├── 全流程需求跟踪台账.md
     └── design-block-indicator-system.md
@@ -33,6 +34,7 @@ docs/current/
 | 文档 | 用途 | 状态 |
 | --- | --- | --- |
 | `REQ-SLASH-MENU-遗留专项需求.md` | Slash Menu 遗留专项需求与验收基线 | 持续维护 |
+| `打字机模式(Typewriter)交互规格说明.md` | **[核心]** 打字机锁定逻辑与智能引力模型规范 | 2026-03-07 更新 |
 | `跟踪/全流程需求跟踪台账.md` | 跨版本需求状态跟踪台账 | 持续维护 |
 | `跟踪/design-block-indicator-system.md` | 下一版本延续设计专题 | 持续维护 |
 
