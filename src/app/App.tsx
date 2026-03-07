@@ -85,15 +85,13 @@ function App() {
   });
 
   const toggleSidebar = useCallback(() => {
-    setIsSidebarVisible((prev) => {
-      const nextVisible = !prev;
-      if (nextVisible) {
-        exitZen();
-      } else {
-        enterZen(typewriterEnabledByUser);
-      }
-      return nextVisible;
-    });
+    const nextVisible = !sidebarVisibilityRef.current;
+    setIsSidebarVisible(nextVisible);
+    if (nextVisible) {
+      exitZen();
+      return;
+    }
+    enterZen(typewriterEnabledByUser);
   }, [enterZen, exitZen, typewriterEnabledByUser]);
   const applyFocusZen = useCallback(
     (enabled: boolean) => {
