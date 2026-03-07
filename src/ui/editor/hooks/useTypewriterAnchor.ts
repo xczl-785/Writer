@@ -8,6 +8,9 @@ import {
   findScrollContainer,
   setScrollTop,
   shouldSkipScrollAdjustment,
+  createInitialTypewriterState,
+  reduceTypewriterInputMovement,
+  computeLockedTypewriterTargetScrollTop,
 } from '../domain';
 
 export { computeTypewriterTargetScrollTop, shouldActivateTypewriterAnchor };
@@ -40,6 +43,8 @@ export const useTypewriterAnchor = ({
     let isComposing = false;
     let pendingUpdateMode: 'typing' | 'immediate' = 'immediate';
     let lastTypingUpdateAtMs = 0;
+    let typewriterState = createInitialTypewriterState();
+    let previousCaretTop: number | null = null;
 
     const updateAnchor = () => {
       if (isComposing) {
@@ -74,23 +79,39 @@ export const useTypewriterAnchor = ({
       const selectionPos = editor.state.selection.from;
       const coords = editor.view.coordsAtPos(selectionPos);
       const containerRect = scrollContainer.getBoundingClientRect();
-      const targetScrollTop = computeTypewriterTargetScrollTop({
-        currentScrollTop: scrollContainer.scrollTop,
-        containerTop: containerRect.top + offsetTop,
-        containerHeight: effectiveViewportHeight,
-        cursorTop: coords.top,
-        anchorRatio,
-      });
+
+      const thresholdY =
+        containerRect.top + offsetTop + effectiveViewportHeight * anchorRatio;
+
+      if (previousCaretTop !== null) {
+        typewriterState = reduceTypewriterInputMovement(typewriterState, {
+          previousCaretTop,
+          nextCaretTop: coords.top,
+          thresholdY,
+        });
+      }
 
       if (
-        shouldSkipTypewriterScrollAdjustment(
-          targetScrollTop,
-          scrollContainer.scrollTop,
-        )
+        typewriterState.mode === 'locked' &&
+        typewriterState.dynamicAnchorY !== null
       ) {
-        return;
+        const targetScrollTop = computeLockedTypewriterTargetScrollTop({
+          currentScrollTop: scrollContainer.scrollTop,
+          caretTop: coords.top,
+          dynamicAnchorY: typewriterState.dynamicAnchorY,
+        });
+
+        if (
+          !shouldSkipTypewriterScrollAdjustment(
+            targetScrollTop,
+            scrollContainer.scrollTop,
+          )
+        ) {
+          setScrollTop(scrollContainer, targetScrollTop);
+        }
       }
-      setScrollTop(scrollContainer, targetScrollTop);
+
+      previousCaretTop = coords.top;
     };
 
     const scheduleAnchorUpdate = (
@@ -143,7 +164,7 @@ export const useTypewriterAnchor = ({
     const handleCompositionEnd = () => {
       isComposing = false;
       lastTypingUpdateAtMs = Date.now();
-      scheduleAnchorUpdate('typing');
+      scheduleAnchorUpdate('immediate');
     };
     editorDom?.addEventListener(
       'beforeinput',
