@@ -17,6 +17,7 @@ import {
 export { computeTypewriterTargetScrollTop, shouldActivateTypewriterAnchor };
 export const DEFAULT_TYPEWRITER_SCROLL_MIN_DELTA_PX = 6;
 export const DEFAULT_TYPEWRITER_TYPING_THROTTLE_MS = 120;
+export const TYPEWRITER_COMPENSATION_ANIMATION_MS = 140;
 
 export const shouldSkipTypewriterScrollAdjustment = shouldSkipScrollAdjustment;
 
@@ -41,14 +42,53 @@ export const useTypewriterAnchor = ({
     if (!editor || !enabled) return;
 
     let rafId: number | null = null;
+    let animationRafId: number | null = null;
     let isComposing = false;
     let pendingUpdateMode: 'typing' | 'immediate' = 'immediate';
     let lastTypingUpdateAtMs = 0;
     let typewriterState = createInitialTypewriterState();
     let previousCaretTop: number | null = null;
     const resetToFreeMode = () => {
+      if (animationRafId !== null) {
+        window.cancelAnimationFrame(animationRafId);
+        animationRafId = null;
+      }
       typewriterState = createInitialTypewriterState();
       previousCaretTop = null;
+    };
+    const animateScrollTop = (
+      scrollContainer: HTMLElement,
+      targetScrollTop: number,
+    ) => {
+      if (animationRafId !== null) {
+        window.cancelAnimationFrame(animationRafId);
+        animationRafId = null;
+      }
+
+      const startScrollTop = scrollContainer.scrollTop;
+      const delta = targetScrollTop - startScrollTop;
+      if (Math.abs(delta) < 1) {
+        setScrollTop(scrollContainer, targetScrollTop);
+        return;
+      }
+
+      const startAtMs = window.performance.now();
+      const animateStep = (nowMs: number) => {
+        const elapsed = nowMs - startAtMs;
+        const progress = Math.min(
+          1,
+          elapsed / TYPEWRITER_COMPENSATION_ANIMATION_MS,
+        );
+        const eased = 1 - (1 - progress) * (1 - progress) * (1 - progress);
+        setScrollTop(scrollContainer, Math.round(startScrollTop + delta * eased));
+        if (progress < 1) {
+          animationRafId = window.requestAnimationFrame(animateStep);
+          return;
+        }
+        animationRafId = null;
+      };
+
+      animationRafId = window.requestAnimationFrame(animateStep);
     };
 
     const updateAnchor = () => {
@@ -101,6 +141,11 @@ export const useTypewriterAnchor = ({
         typewriterState.mode === 'locked' &&
         typewriterState.dynamicAnchorY !== null
       ) {
+        if (coords.top < typewriterState.dynamicAnchorY) {
+          resetToFreeMode();
+          previousCaretTop = coords.top;
+          return;
+        }
         const targetScrollTop = computeLockedTypewriterTargetScrollTop({
           currentScrollTop: scrollContainer.scrollTop,
           caretTop: coords.top,
@@ -113,7 +158,7 @@ export const useTypewriterAnchor = ({
             scrollContainer.scrollTop,
           )
         ) {
-          setScrollTop(scrollContainer, targetScrollTop);
+          animateScrollTop(scrollContainer, targetScrollTop);
         }
       }
 
@@ -208,6 +253,10 @@ export const useTypewriterAnchor = ({
       if (rafId !== null) {
         window.cancelAnimationFrame(rafId);
         rafId = null;
+      }
+      if (animationRafId !== null) {
+        window.cancelAnimationFrame(animationRafId);
+        animationRafId = null;
       }
     };
   }, [editor, enabled, anchorRatio]);
