@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
+import { emitTypewriterNonInputJump } from '../../editor/domain';
 
 export interface OutlineItem {
   /** Unique identifier */
@@ -105,6 +106,7 @@ export function useOutlineExtractor(
 
       const maxPos = editor.state.doc.content.size;
       const safePos = Math.min(Math.max(item.position, 1), Math.max(1, maxPos));
+      emitTypewriterNonInputJump({ source: 'outline' });
       editor.chain().focus().setTextSelection(safePos).scrollIntoView().run();
     },
     [editor],

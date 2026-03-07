@@ -30,6 +30,8 @@ describe('Outline behavior', () => {
     expect(extractorTs).toContain(
       'const safePos = Math.min(Math.max(item.position, 1), Math.max(1, maxPos));',
     );
+    expect(extractorTs).toContain('emitTypewriterNonInputJump');
+    expect(extractorTs).toContain("source: 'outline'");
   });
 
   it('closes outline popover on active file change', () => {
