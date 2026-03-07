@@ -11,6 +11,7 @@ import {
   createInitialTypewriterState,
   reduceTypewriterInputMovement,
   computeLockedTypewriterTargetScrollTop,
+  TYPEWRITER_FORCE_FREE_EVENT,
 } from '../domain';
 
 export { computeTypewriterTargetScrollTop, shouldActivateTypewriterAnchor };
@@ -45,6 +46,10 @@ export const useTypewriterAnchor = ({
     let lastTypingUpdateAtMs = 0;
     let typewriterState = createInitialTypewriterState();
     let previousCaretTop: number | null = null;
+    const resetToFreeMode = () => {
+      typewriterState = createInitialTypewriterState();
+      previousCaretTop = null;
+    };
 
     const updateAnchor = () => {
       if (isComposing) {
@@ -73,6 +78,7 @@ export const useTypewriterAnchor = ({
           viewportHeight: effectiveViewportHeight,
         })
       ) {
+        resetToFreeMode();
         return;
       }
 
@@ -166,13 +172,24 @@ export const useTypewriterAnchor = ({
       lastTypingUpdateAtMs = Date.now();
       scheduleAnchorUpdate('immediate');
     };
+    const handleMouseDown = (event: MouseEvent) => {
+      if (event.button !== 0) {
+        return;
+      }
+      resetToFreeMode();
+    };
+    const handleForceFree = () => {
+      resetToFreeMode();
+    };
     editorDom?.addEventListener(
       'beforeinput',
       handleBeforeInput as EventListener,
     );
     editorDom?.addEventListener('keydown', handleKeyDown, true);
+    editorDom?.addEventListener('mousedown', handleMouseDown, true);
     editorDom?.addEventListener('compositionstart', handleCompositionStart);
     editorDom?.addEventListener('compositionend', handleCompositionEnd);
+    window.addEventListener(TYPEWRITER_FORCE_FREE_EVENT, handleForceFree);
     scheduleAnchorUpdate('immediate');
 
     return () => {
@@ -181,11 +198,13 @@ export const useTypewriterAnchor = ({
         handleBeforeInput as EventListener,
       );
       editorDom?.removeEventListener('keydown', handleKeyDown, true);
+      editorDom?.removeEventListener('mousedown', handleMouseDown, true);
       editorDom?.removeEventListener(
         'compositionstart',
         handleCompositionStart,
       );
       editorDom?.removeEventListener('compositionend', handleCompositionEnd);
+      window.removeEventListener(TYPEWRITER_FORCE_FREE_EVENT, handleForceFree);
       if (rafId !== null) {
         window.cancelAnimationFrame(rafId);
         rafId = null;
