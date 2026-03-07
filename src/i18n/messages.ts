@@ -218,9 +218,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
       '编辑内容暂停输入 1 秒后自动静默保存，极低打扰',
     'settings.general.defaultPath.label': '默认文件存储路径',
     'settings.general.defaultPath.desc': '新创建文档及图片资源的默认落盘目录',
-    'settings.editor.typewriter.label': '打字机模式',
-    'settings.editor.typewriter.desc':
-      '将光标锚定在视口约 45% 的区域，减少视线跳动',
     'settings.editor.focusZen.label': '极致禅模式',
     'settings.editor.focusZen.desc': '自动消隐头尾 UI，仅在边缘唤醒以保持沉浸',
     'settings.badge.comingSoon': '即将推出',
@@ -451,9 +448,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'settings.general.defaultPath.label': 'Default File Storage Path',
     'settings.general.defaultPath.desc':
       'Default output directory for new documents and image assets.',
-    'settings.editor.typewriter.label': 'Typewriter Mode',
-    'settings.editor.typewriter.desc':
-      'Keep the caret near 45% of viewport height for stable writing focus.',
     'settings.editor.focusZen.label': 'Focus Zen',
     'settings.editor.focusZen.desc':
       'Auto-hide top and bottom UI, and wake controls only at viewport edges.',
