@@ -15,3 +15,6 @@ docs/archive/evidence/
 
 # Local throwaway workspace
 test-workspace/
+
+# Git worktrees
+.worktrees/
