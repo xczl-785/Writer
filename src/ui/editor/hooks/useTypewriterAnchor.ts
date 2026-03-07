@@ -18,8 +18,6 @@ import {
 export { computeTypewriterTargetScrollTop, shouldActivateTypewriterAnchor };
 export const DEFAULT_TYPEWRITER_SCROLL_MIN_DELTA_PX = 6;
 export const DEFAULT_TYPEWRITER_TYPING_THROTTLE_MS = 120;
-export const DEFAULT_TYPEWRITER_COMPENSATION_DURATION_MS = 120;
-export const DEFAULT_TYPEWRITER_REVERSE_JUMP_DEGRADE_PX = 96;
 
 export const shouldSkipTypewriterScrollAdjustment = shouldSkipScrollAdjustment;
 
@@ -28,27 +26,6 @@ export const shouldThrottleTypewriterTypingUpdate = (
   lastTypingUpdateAtMs: number,
   throttleMs = DEFAULT_TYPEWRITER_TYPING_THROTTLE_MS,
 ) => nowMs - lastTypingUpdateAtMs < throttleMs;
-
-export const shouldDegradeTypewriterLockedMode = (
-  targetScrollTop: number,
-  currentScrollTop: number,
-  maxReverseJumpPx = DEFAULT_TYPEWRITER_REVERSE_JUMP_DEGRADE_PX,
-) => currentScrollTop - targetScrollTop > maxReverseJumpPx;
-
-export const easeOutCubic = (progress: number): number => {
-  const clamped = Math.min(1, Math.max(0, progress));
-  return 1 - (1 - clamped) ** 3;
-};
-
-export const interpolateTypewriterCompensationScrollTop = ({
-  from,
-  to,
-  progress,
-}: {
-  from: number;
-  to: number;
-  progress: number;
-}) => Math.round(from + (to - from) * easeOutCubic(progress));
 
 export { resolveEditorContentTopOffset };
 
@@ -65,12 +42,10 @@ export const useTypewriterAnchor = ({
     if (!editor || !enabled) return;
 
     let rafId: number | null = null;
-    let compensationRafId: number | null = null;
     let isComposing = false;
     let typewriterState = createInitialTypewriterState();
     let pendingUpdateMode: 'typing' | 'immediate' = 'immediate';
     let lastTypingUpdateAtMs = 0;
-    let lastInputSignalAtMs = 0;
 
     const cancelPendingUpdate = () => {
       if (rafId !== null) {
@@ -79,68 +54,11 @@ export const useTypewriterAnchor = ({
       }
     };
 
-    const cancelCompensationAnimation = () => {
-      if (compensationRafId !== null) {
-        window.cancelAnimationFrame(compensationRafId);
-        compensationRafId = null;
-      }
-    };
-
-    const animateCompensationTo = (
-      scrollContainer: HTMLElement,
-      targetScrollTop: number,
-      durationMs = DEFAULT_TYPEWRITER_COMPENSATION_DURATION_MS,
-    ) => {
-      cancelCompensationAnimation();
-
-      const startScrollTop = scrollContainer.scrollTop;
-      if (
-        shouldSkipTypewriterScrollAdjustment(targetScrollTop, startScrollTop)
-      ) {
-        return;
-      }
-
-      const maxScrollTop = Math.max(
-        0,
-        scrollContainer.scrollHeight - scrollContainer.clientHeight,
-      );
-      const clampedTargetScrollTop = Math.max(
-        0,
-        Math.min(targetScrollTop, maxScrollTop),
-      );
-
-      const animationStartAt = performance.now();
-      const step = (now: number) => {
-        const progress = Math.min(1, (now - animationStartAt) / durationMs);
-        const nextScrollTop = interpolateTypewriterCompensationScrollTop({
-          from: startScrollTop,
-          to: clampedTargetScrollTop,
-          progress,
-        });
-        setScrollTop(scrollContainer, nextScrollTop);
-
-        if (progress < 1) {
-          compensationRafId = window.requestAnimationFrame(step);
-          return;
-        }
-        compensationRafId = null;
-      };
-
-      compensationRafId = window.requestAnimationFrame(step);
-    };
-
-    const resetToFreeMode = (
-      eventType: 'mouse-caret-placement' | 'non-input-jump',
-    ) => {
+    const resetToFreeMode = (eventType: 'mouse-caret-placement' | 'non-input-jump') => {
       typewriterState = reduceTypewriterState(typewriterState, {
         type: eventType,
       });
       cancelPendingUpdate();
-      cancelCompensationAnimation();
-    };
-
-    const markInputSignal = () => {
-      lastInputSignalAtMs = Date.now();
     };
 
     const updateAnchor = () => {
@@ -173,7 +91,6 @@ export const useTypewriterAnchor = ({
         typewriterState = reduceTypewriterState(typewriterState, {
           type: 'reset',
         });
-        cancelCompensationAnimation();
         return;
       }
 
@@ -202,29 +119,31 @@ export const useTypewriterAnchor = ({
         dynamicAnchorY: typewriterState.dynamicAnchorY,
       });
 
+      // Fail-safe: if locked compensation unexpectedly requires upward pull,
+      // degrade to free mode and do not force reverse scrolling.
+      if (targetScrollTop < scrollContainer.scrollTop) {
+        typewriterState = reduceTypewriterState(typewriterState, {
+          type: 'non-input-jump',
+        });
+        return;
+      }
+
       const maxScrollTop = Math.max(
         0,
         scrollContainer.scrollHeight - scrollContainer.clientHeight,
       );
-      const clampedTargetScrollTop = Math.max(
-        0,
-        Math.min(targetScrollTop, maxScrollTop),
-      );
+      const clampedTargetScrollTop = Math.min(targetScrollTop, maxScrollTop);
 
       if (
-        shouldDegradeTypewriterLockedMode(
+        shouldSkipTypewriterScrollAdjustment(
           clampedTargetScrollTop,
           scrollContainer.scrollTop,
         )
       ) {
-        typewriterState = reduceTypewriterState(typewriterState, {
-          type: 'non-input-jump',
-        });
-        cancelCompensationAnimation();
         return;
       }
 
-      animateCompensationTo(scrollContainer, clampedTargetScrollTop);
+      setScrollTop(scrollContainer, clampedTargetScrollTop);
     };
 
     const scheduleAnchorUpdate = (
@@ -253,10 +172,8 @@ export const useTypewriterAnchor = ({
     };
 
     const editorDom = editor.view.dom as HTMLElement | null;
-
     const handleBeforeInput = (event: InputEvent) => {
       if (event.isComposing) return;
-      markInputSignal();
       if (event.inputType === 'insertText') {
         scheduleAnchorUpdate('typing');
         return;
@@ -271,7 +188,6 @@ export const useTypewriterAnchor = ({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key.startsWith('Arrow')) {
-        markInputSignal();
         scheduleAnchorUpdate('immediate');
       }
     };
@@ -289,34 +205,12 @@ export const useTypewriterAnchor = ({
       resetToFreeMode('non-input-jump');
     };
 
-    const handleSelectionUpdate = () => {
-      if (
-        typewriterState.mode !== 'locked' ||
-        typewriterState.dynamicAnchorY === null ||
-        isComposing
-      ) {
-        return;
-      }
-      if (Date.now() - lastInputSignalAtMs < 150) {
-        return;
-      }
-
-      const selectionPos = editor.state.selection.from;
-      const coords = editor.view.coordsAtPos(selectionPos);
-      const anchorDelta = Math.abs(coords.top - typewriterState.dynamicAnchorY);
-      if (anchorDelta <= DEFAULT_TYPEWRITER_REVERSE_JUMP_DEGRADE_PX) {
-        return;
-      }
-      resetToFreeMode('non-input-jump');
-    };
-
     const handleCompositionStart = () => {
       isComposing = true;
     };
 
     const handleCompositionEnd = () => {
       isComposing = false;
-      markInputSignal();
       lastTypingUpdateAtMs = Date.now();
       scheduleAnchorUpdate('typing');
     };
@@ -333,7 +227,6 @@ export const useTypewriterAnchor = ({
       TYPEWRITER_NON_INPUT_JUMP_EVENT,
       handleNonInputJump as EventListener,
     );
-    editor.on('selectionUpdate', handleSelectionUpdate);
 
     scheduleAnchorUpdate('immediate');
 
@@ -353,9 +246,7 @@ export const useTypewriterAnchor = ({
         TYPEWRITER_NON_INPUT_JUMP_EVENT,
         handleNonInputJump as EventListener,
       );
-      editor.off('selectionUpdate', handleSelectionUpdate);
       cancelPendingUpdate();
-      cancelCompensationAnimation();
     };
   }, [editor, enabled, anchorRatio]);
 };

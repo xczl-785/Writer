@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   shouldSkipTypewriterScrollAdjustment,
   shouldThrottleTypewriterTypingUpdate,
-  shouldDegradeTypewriterLockedMode,
-  interpolateTypewriterCompensationScrollTop,
   resolveEditorContentTopOffset,
   shouldActivateTypewriterAnchor,
   computeTypewriterTargetScrollTop,
@@ -75,27 +73,5 @@ describe('typewriter anchor helpers', () => {
   it('throttles typing updates within configured interval', () => {
     expect(shouldThrottleTypewriterTypingUpdate(1000, 900)).toBe(true);
     expect(shouldThrottleTypewriterTypingUpdate(1020, 900)).toBe(false);
-  });
-
-  it('degrades locked mode only for large unexpected reverse compensation', () => {
-    expect(shouldDegradeTypewriterLockedMode(180, 220, 96)).toBe(false);
-    expect(shouldDegradeTypewriterLockedMode(100, 220, 96)).toBe(true);
-  });
-
-  it('interpolates compensation scroll top with easing curve', () => {
-    expect(
-      interpolateTypewriterCompensationScrollTop({
-        from: 100,
-        to: 220,
-        progress: 0,
-      }),
-    ).toBe(100);
-    expect(
-      interpolateTypewriterCompensationScrollTop({
-        from: 100,
-        to: 220,
-        progress: 1,
-      }),
-    ).toBe(220);
   });
 });
