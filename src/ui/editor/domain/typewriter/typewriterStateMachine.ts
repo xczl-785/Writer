@@ -1,33 +1,28 @@
+import type { TriggerSource } from './events';
+import { hasCrossedOrTouchedThreshold } from './guards';
+
 export type TypewriterMode = 'free' | 'locked';
 
 export type TypewriterState = {
   mode: TypewriterMode;
   dynamicAnchorY: number | null;
+  lastTrigger: TriggerSource | null;
 };
 
 export const createInitialTypewriterState = (): TypewriterState => ({
   mode: 'free',
   dynamicAnchorY: null,
+  lastTrigger: null,
 });
 
 export const createLockedTypewriterState = (
   dynamicAnchorY: number,
+  lastTrigger: TriggerSource = 'input',
 ): TypewriterState => ({
   mode: 'locked',
   dynamicAnchorY,
+  lastTrigger,
 });
-
-const hasCrossedOrTouchedThreshold = ({
-  previousCaretTop,
-  nextCaretTop,
-  thresholdY,
-}: {
-  previousCaretTop: number;
-  nextCaretTop: number;
-  thresholdY: number;
-}) =>
-  Math.min(previousCaretTop, nextCaretTop) <= thresholdY &&
-  Math.max(previousCaretTop, nextCaretTop) >= thresholdY;
 
 export const reduceTypewriterInputMovement = (
   state: TypewriterState,
@@ -42,16 +37,22 @@ export const reduceTypewriterInputMovement = (
   },
 ): TypewriterState => {
   if (state.mode === 'locked') {
-    return state;
+    return {
+      ...state,
+      lastTrigger: 'input',
+    };
   }
 
   if (
     hasCrossedOrTouchedThreshold({ previousCaretTop, nextCaretTop, thresholdY })
   ) {
-    return createLockedTypewriterState(nextCaretTop);
+    return createLockedTypewriterState(nextCaretTop, 'input');
   }
 
-  return state;
+  return {
+    ...state,
+    lastTrigger: 'input',
+  };
 };
 
 export const computeLockedTypewriterTargetScrollTop = ({
