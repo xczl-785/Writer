@@ -36,5 +36,7 @@ describe('Settings editor view modes', () => {
   it('ships localized copy for editor mode switches', () => {
     expect(messagesTs).toContain("'settings.editor.focusZen.label'");
     expect(messagesTs).toContain("'settings.editor.focusZen.desc'");
+    expect(messagesTs).not.toContain("'settings.editor.typewriter.label'");
+    expect(messagesTs).not.toContain("'settings.editor.typewriter.desc'");
   });
 });

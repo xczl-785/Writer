@@ -5,6 +5,10 @@ import {
   resolveEditorContentTopOffset,
   shouldActivateTypewriterAnchor,
   computeTypewriterTargetScrollTop,
+  shouldForceFreeOnMouseCaretPlacement,
+  resolveMovementBaselineCaretTop,
+  shouldDowngradeLockedModeForUpwardCompensation,
+  shouldCaptureLockOnActivationEdge,
 } from './useTypewriterAnchor';
 
 describe('typewriter anchor helpers', () => {
@@ -73,5 +77,103 @@ describe('typewriter anchor helpers', () => {
   it('throttles typing updates within configured interval', () => {
     expect(shouldThrottleTypewriterTypingUpdate(1000, 900)).toBe(true);
     expect(shouldThrottleTypewriterTypingUpdate(1020, 900)).toBe(false);
+  });
+
+  it('forces free mode only when primary click produces a new caret placement', () => {
+    expect(
+      shouldForceFreeOnMouseCaretPlacement({
+        isPrimaryButton: true,
+        isInsideEditorContent: true,
+        selectionBefore: 10,
+        selectionAfter: 25,
+      }),
+    ).toBe(true);
+    expect(
+      shouldForceFreeOnMouseCaretPlacement({
+        isPrimaryButton: true,
+        isInsideEditorContent: true,
+        selectionBefore: 10,
+        selectionAfter: 10,
+      }),
+    ).toBe(false);
+    expect(
+      shouldForceFreeOnMouseCaretPlacement({
+        isPrimaryButton: true,
+        isInsideEditorContent: false,
+        selectionBefore: 10,
+        selectionAfter: 25,
+      }),
+    ).toBe(false);
+  });
+
+  it('uses pre-input caret snapshot as movement baseline when available', () => {
+    expect(
+      resolveMovementBaselineCaretTop({
+        previousCaretTop: 320,
+        caretTopBeforeInputMutation: 340,
+      }),
+    ).toBe(340);
+    expect(
+      resolveMovementBaselineCaretTop({
+        previousCaretTop: 320,
+        caretTopBeforeInputMutation: null,
+      }),
+    ).toBe(320);
+  });
+
+  it('does not downgrade locked mode for upward compensation from input chain', () => {
+    expect(
+      shouldDowngradeLockedModeForUpwardCompensation({
+        triggerSource: 'input',
+        caretTop: 430,
+        dynamicAnchorY: 455,
+      }),
+    ).toBe(false);
+    expect(
+      shouldDowngradeLockedModeForUpwardCompensation({
+        triggerSource: 'ime',
+        caretTop: 430,
+        dynamicAnchorY: 455,
+      }),
+    ).toBe(false);
+    expect(
+      shouldDowngradeLockedModeForUpwardCompensation({
+        triggerSource: 'external',
+        caretTop: 430,
+        dynamicAnchorY: 455,
+      }),
+    ).toBe(true);
+  });
+
+  it('captures lock when typewriter just becomes active and caret is already below threshold', () => {
+    expect(
+      shouldCaptureLockOnActivationEdge({
+        wasTypewriterActive: false,
+        isTypewriterActive: true,
+        nextCaretTop: 520,
+        thresholdY: 450,
+        triggerSource: 'input',
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldCaptureLockOnActivationEdge({
+        wasTypewriterActive: false,
+        isTypewriterActive: true,
+        nextCaretTop: 420,
+        thresholdY: 450,
+        triggerSource: 'input',
+      }),
+    ).toBe(false);
+
+    expect(
+      shouldCaptureLockOnActivationEdge({
+        wasTypewriterActive: false,
+        isTypewriterActive: true,
+        nextCaretTop: 520,
+        thresholdY: 450,
+        triggerSource: 'external',
+      }),
+    ).toBe(false);
   });
 });

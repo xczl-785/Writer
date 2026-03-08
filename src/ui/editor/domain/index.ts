@@ -10,6 +10,33 @@ export {
   DEFAULT_TYPEWRITER_ANCHOR_DEADBAND_PX,
   isWithinAnchorDeadband,
 } from './typewriter/typewriterDomain';
+export {
+  type TypewriterMode,
+  type TypewriterState,
+  createInitialTypewriterState,
+  createLockedTypewriterState,
+  reduceTypewriterInputMovement,
+  computeLockedTypewriterTargetScrollTop,
+} from './typewriter/typewriterStateMachine';
+export {
+  type TriggerSource,
+  type TypewriterEventType,
+  type TypewriterEventEnvelope,
+  createTypewriterEventEnvelope,
+} from './typewriter/events';
+export {
+  reduceTypewriterState,
+  dispatchTypewriterEvent,
+} from './typewriter/reducers';
+export {
+  hasCrossedOrTouchedThreshold,
+  shouldDowngradeLockedStateForExternalUpwardCompensation,
+} from './typewriter/guards';
+export {
+  TYPEWRITER_FORCE_FREE_EVENT,
+  type TypewriterForceFreeReason,
+  emitTypewriterForceFree,
+} from './typewriter/typewriterEvents';
 export { hasActiveOverlayInDom } from './focusZen/focusZenEscapeDomain';
 export { isSlashTriggerChar, isInsertTextLikeInput } from './slash/slashDomain';
 export {
