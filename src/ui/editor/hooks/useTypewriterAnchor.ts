@@ -27,6 +27,21 @@ export const shouldThrottleTypewriterTypingUpdate = (
   throttleMs = DEFAULT_TYPEWRITER_TYPING_THROTTLE_MS,
 ) => nowMs - lastTypingUpdateAtMs < throttleMs;
 
+export const shouldForceFreeOnMouseCaretPlacement = ({
+  isPrimaryButton,
+  isInsideEditorContent,
+  selectionBefore,
+  selectionAfter,
+}: {
+  isPrimaryButton: boolean;
+  isInsideEditorContent: boolean;
+  selectionBefore: number;
+  selectionAfter: number;
+}) =>
+  isPrimaryButton &&
+  isInsideEditorContent &&
+  selectionAfter !== selectionBefore;
+
 export { resolveEditorContentTopOffset };
 
 export const useTypewriterAnchor = ({
@@ -48,6 +63,8 @@ export const useTypewriterAnchor = ({
     let lastTypingUpdateAtMs = 0;
     let typewriterState = createInitialTypewriterState();
     let previousCaretTop: number | null = null;
+    let pointerSelectionSnapshot: number | null = null;
+    let pointerFromEditorContent = false;
     const resetToFreeMode = () => {
       if (animationRafId !== null) {
         window.cancelAnimationFrame(animationRafId);
@@ -218,10 +235,36 @@ export const useTypewriterAnchor = ({
       scheduleAnchorUpdate('immediate');
     };
     const handleMouseDown = (event: MouseEvent) => {
-      if (event.button !== 0) {
+      if (!(event.target instanceof Node)) {
+        pointerSelectionSnapshot = null;
+        pointerFromEditorContent = false;
         return;
       }
-      resetToFreeMode();
+      pointerFromEditorContent = editorDom?.contains(event.target) ?? false;
+      pointerSelectionSnapshot = editor.state.selection.from;
+      if (event.button !== 0 || !pointerFromEditorContent) {
+        return;
+      }
+    };
+    const clearPointerSelectionSnapshot = () => {
+      pointerSelectionSnapshot = null;
+      pointerFromEditorContent = false;
+    };
+    const handleSelectionChange = () => {
+      if (pointerSelectionSnapshot === null) {
+        return;
+      }
+      if (
+        shouldForceFreeOnMouseCaretPlacement({
+          isPrimaryButton: true,
+          isInsideEditorContent: pointerFromEditorContent,
+          selectionBefore: pointerSelectionSnapshot,
+          selectionAfter: editor.state.selection.from,
+        })
+      ) {
+        resetToFreeMode();
+      }
+      clearPointerSelectionSnapshot();
     };
     const handleForceFree = () => {
       resetToFreeMode();
@@ -232,8 +275,10 @@ export const useTypewriterAnchor = ({
     );
     editorDom?.addEventListener('keydown', handleKeyDown, true);
     editorDom?.addEventListener('mousedown', handleMouseDown, true);
+    editorDom?.addEventListener('mouseup', clearPointerSelectionSnapshot, true);
     editorDom?.addEventListener('compositionstart', handleCompositionStart);
     editorDom?.addEventListener('compositionend', handleCompositionEnd);
+    document.addEventListener('selectionchange', handleSelectionChange);
     window.addEventListener(TYPEWRITER_FORCE_FREE_EVENT, handleForceFree);
     scheduleAnchorUpdate('immediate');
 
@@ -245,10 +290,16 @@ export const useTypewriterAnchor = ({
       editorDom?.removeEventListener('keydown', handleKeyDown, true);
       editorDom?.removeEventListener('mousedown', handleMouseDown, true);
       editorDom?.removeEventListener(
+        'mouseup',
+        clearPointerSelectionSnapshot,
+        true,
+      );
+      editorDom?.removeEventListener(
         'compositionstart',
         handleCompositionStart,
       );
       editorDom?.removeEventListener('compositionend', handleCompositionEnd);
+      document.removeEventListener('selectionchange', handleSelectionChange);
       window.removeEventListener(TYPEWRITER_FORCE_FREE_EVENT, handleForceFree);
       if (rafId !== null) {
         window.cancelAnimationFrame(rafId);

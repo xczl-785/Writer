@@ -5,6 +5,7 @@ import {
   resolveEditorContentTopOffset,
   shouldActivateTypewriterAnchor,
   computeTypewriterTargetScrollTop,
+  shouldForceFreeOnMouseCaretPlacement,
 } from './useTypewriterAnchor';
 
 describe('typewriter anchor helpers', () => {
@@ -73,5 +74,32 @@ describe('typewriter anchor helpers', () => {
   it('throttles typing updates within configured interval', () => {
     expect(shouldThrottleTypewriterTypingUpdate(1000, 900)).toBe(true);
     expect(shouldThrottleTypewriterTypingUpdate(1020, 900)).toBe(false);
+  });
+
+  it('forces free mode only when primary click produces a new caret placement', () => {
+    expect(
+      shouldForceFreeOnMouseCaretPlacement({
+        isPrimaryButton: true,
+        isInsideEditorContent: true,
+        selectionBefore: 10,
+        selectionAfter: 25,
+      }),
+    ).toBe(true);
+    expect(
+      shouldForceFreeOnMouseCaretPlacement({
+        isPrimaryButton: true,
+        isInsideEditorContent: true,
+        selectionBefore: 10,
+        selectionAfter: 10,
+      }),
+    ).toBe(false);
+    expect(
+      shouldForceFreeOnMouseCaretPlacement({
+        isPrimaryButton: true,
+        isInsideEditorContent: false,
+        selectionBefore: 10,
+        selectionAfter: 25,
+      }),
+    ).toBe(false);
   });
 });

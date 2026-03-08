@@ -17,6 +17,8 @@ describe('Typewriter fallback integration', () => {
 
   it('forces free mode on editor click caret placement', () => {
     expect(hookTs).toContain("editorDom?.addEventListener('mousedown'");
+    expect(hookTs).toContain("document.addEventListener('selectionchange'");
+    expect(hookTs).toContain('shouldForceFreeOnMouseCaretPlacement');
     expect(hookTs).toContain('typewriterState = createInitialTypewriterState()');
   });
 
