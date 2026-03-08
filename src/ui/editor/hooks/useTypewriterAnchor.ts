@@ -77,6 +77,24 @@ export const shouldForceFreeOnMouseCaretPlacement = ({
   isInsideEditorContent &&
   selectionAfter !== selectionBefore;
 
+export const shouldCaptureLockOnActivationEdge = ({
+  wasTypewriterActive,
+  isTypewriterActive,
+  nextCaretTop,
+  thresholdY,
+  triggerSource,
+}: {
+  wasTypewriterActive: boolean;
+  isTypewriterActive: boolean;
+  nextCaretTop: number;
+  thresholdY: number;
+  triggerSource: TriggerSource;
+}) =>
+  !wasTypewriterActive &&
+  isTypewriterActive &&
+  triggerSource !== 'external' &&
+  nextCaretTop >= thresholdY;
+
 export { resolveEditorContentTopOffset };
 
 const mapForceFreeReasonToEventType = (
@@ -118,6 +136,7 @@ export const useTypewriterAnchor = ({
     let lastAnchorUpdateEventType: TypewriterEventType = 'before-input';
     let pointerSelectionSnapshot: number | null = null;
     let pointerFromEditorContent = false;
+    let wasTypewriterActive = false;
 
     const clearCompensationAnimation = () => {
       if (animationRafId !== null) {
@@ -226,6 +245,7 @@ export const useTypewriterAnchor = ({
       );
 
       if (!isTypewriterActive) {
+        wasTypewriterActive = false;
         previousCaretTop = null;
         caretTopBeforeInputMutation = null;
         return;
@@ -237,6 +257,31 @@ export const useTypewriterAnchor = ({
 
       const thresholdY =
         containerRect.top + offsetTop + effectiveViewportHeight * anchorRatio;
+
+      if (
+        shouldCaptureLockOnActivationEdge({
+          wasTypewriterActive,
+          isTypewriterActive,
+          nextCaretTop: coords.top,
+          thresholdY,
+          triggerSource: lastAnchorUpdateTriggerSource,
+        })
+      ) {
+        transitionToState(
+          dispatchTypewriterEvent(
+            typewriterState,
+            createTypewriterEventEnvelope({
+              type: lastAnchorUpdateEventType,
+              source: lastAnchorUpdateTriggerSource,
+              payload: {
+                previousCaretTop: thresholdY,
+                nextCaretTop: coords.top,
+                thresholdY,
+              },
+            }),
+          ),
+        );
+      }
 
       const movementBaselineCaretTop = resolveMovementBaselineCaretTop({
         previousCaretTop,
@@ -288,6 +333,7 @@ export const useTypewriterAnchor = ({
       }
 
       previousCaretTop = coords.top;
+      wasTypewriterActive = true;
     };
 
     const scheduleAnchorUpdate = (
@@ -459,4 +505,3 @@ export const useTypewriterAnchor = ({
     };
   }, [editor, enabled, anchorRatio]);
 };
-
