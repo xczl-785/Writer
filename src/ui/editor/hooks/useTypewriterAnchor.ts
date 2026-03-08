@@ -27,6 +27,28 @@ export const shouldThrottleTypewriterTypingUpdate = (
   throttleMs = DEFAULT_TYPEWRITER_TYPING_THROTTLE_MS,
 ) => nowMs - lastTypingUpdateAtMs < throttleMs;
 
+export const resolveMovementBaselineCaretTop = ({
+  previousCaretTop,
+  caretTopBeforeInputMutation,
+}: {
+  previousCaretTop: number | null;
+  caretTopBeforeInputMutation: number | null;
+}) =>
+  caretTopBeforeInputMutation !== null
+    ? caretTopBeforeInputMutation
+    : previousCaretTop;
+
+export const shouldDowngradeLockedModeForUpwardCompensation = ({
+  triggerSource,
+  caretTop,
+  dynamicAnchorY,
+}: {
+  triggerSource: 'input' | 'ime' | 'external';
+  caretTop: number;
+  dynamicAnchorY: number;
+}) =>
+  triggerSource === 'external' && caretTop < dynamicAnchorY;
+
 export const shouldForceFreeOnMouseCaretPlacement = ({
   isPrimaryButton,
   isInsideEditorContent,
@@ -63,8 +85,19 @@ export const useTypewriterAnchor = ({
     let lastTypingUpdateAtMs = 0;
     let typewriterState = createInitialTypewriterState();
     let previousCaretTop: number | null = null;
+    let caretTopBeforeInputMutation: number | null = null;
+    let lastAnchorUpdateTriggerSource: 'input' | 'ime' | 'external' = 'input';
     let pointerSelectionSnapshot: number | null = null;
     let pointerFromEditorContent = false;
+    const captureCaretTopSnapshot = () => {
+      try {
+        const selectionPos = editor.state.selection.from;
+        const coords = editor.view.coordsAtPos(selectionPos);
+        caretTopBeforeInputMutation = coords.top;
+      } catch {
+        caretTopBeforeInputMutation = null;
+      }
+    };
     const resetToFreeMode = () => {
       if (animationRafId !== null) {
         window.cancelAnimationFrame(animationRafId);
@@ -146,19 +179,30 @@ export const useTypewriterAnchor = ({
       const thresholdY =
         containerRect.top + offsetTop + effectiveViewportHeight * anchorRatio;
 
-      if (previousCaretTop !== null) {
+      const movementBaselineCaretTop = resolveMovementBaselineCaretTop({
+        previousCaretTop,
+        caretTopBeforeInputMutation,
+      });
+      if (movementBaselineCaretTop !== null) {
         typewriterState = reduceTypewriterInputMovement(typewriterState, {
-          previousCaretTop,
+          previousCaretTop: movementBaselineCaretTop,
           nextCaretTop: coords.top,
           thresholdY,
         });
       }
+      caretTopBeforeInputMutation = null;
 
       if (
         typewriterState.mode === 'locked' &&
         typewriterState.dynamicAnchorY !== null
       ) {
-        if (coords.top < typewriterState.dynamicAnchorY) {
+        if (
+          shouldDowngradeLockedModeForUpwardCompensation({
+            triggerSource: lastAnchorUpdateTriggerSource,
+            caretTop: coords.top,
+            dynamicAnchorY: typewriterState.dynamicAnchorY,
+          })
+        ) {
           resetToFreeMode();
           previousCaretTop = coords.top;
           return;
@@ -210,6 +254,8 @@ export const useTypewriterAnchor = ({
     const editorDom = editor.view.dom as HTMLElement | null;
     const handleBeforeInput = (event: InputEvent) => {
       if (event.isComposing) return;
+      captureCaretTopSnapshot();
+      lastAnchorUpdateTriggerSource = 'input';
       if (event.inputType === 'insertText') {
         scheduleAnchorUpdate('typing');
         return;
@@ -223,6 +269,8 @@ export const useTypewriterAnchor = ({
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key.startsWith('Arrow')) {
+        captureCaretTopSnapshot();
+        lastAnchorUpdateTriggerSource = 'input';
         scheduleAnchorUpdate('immediate');
       }
     };
@@ -231,6 +279,7 @@ export const useTypewriterAnchor = ({
     };
     const handleCompositionEnd = () => {
       isComposing = false;
+      lastAnchorUpdateTriggerSource = 'ime';
       lastTypingUpdateAtMs = Date.now();
       scheduleAnchorUpdate('immediate');
     };
@@ -267,6 +316,7 @@ export const useTypewriterAnchor = ({
       clearPointerSelectionSnapshot();
     };
     const handleForceFree = () => {
+      lastAnchorUpdateTriggerSource = 'external';
       resetToFreeMode();
     };
     editorDom?.addEventListener(

@@ -19,7 +19,8 @@ describe('useTypewriterAnchor phase3 contract', () => {
   });
 
   it('degrades to free mode when locked path would compensate upward', () => {
-    expect(hookTs).toContain('coords.top < typewriterState.dynamicAnchorY');
+    expect(hookTs).toContain('shouldDowngradeLockedModeForUpwardCompensation');
+    expect(hookTs).toContain("triggerSource: lastAnchorUpdateTriggerSource");
     expect(hookTs).toContain('resetToFreeMode();');
     expect(hookTs).toContain('return;');
   });
