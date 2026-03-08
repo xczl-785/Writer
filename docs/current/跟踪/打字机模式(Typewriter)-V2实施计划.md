@@ -111,10 +111,11 @@
 
 ## 3. 统一验证基线（每阶段执行）
 
-- 构建验证：`npm run build`
+- 客户端形态验证：`pnpm tauri dev`（手工交互验收）
+- 构建验证：`pnpm build`
 - 目标测试（随阶段扩展）
-  - `npm run test -- src/ui/editor/hooks/useTypewriterAnchor.test.ts`
-  - `npm run test -- src/ui/editor/domain/typewriter/typewriterDomain.test.ts`
+  - `pnpm test -- src/ui/editor/hooks/useTypewriterAnchor.test.ts`
+  - `pnpm test -- src/ui/editor/domain/typewriter/typewriterDomain.test.ts`
   - 涉及回退矩阵时补跑 Outline / Find 相关测试
 
 说明：当前仓库存在与本需求无关的既有失败（`SlashMenuBoundary.test.ts`），不作为 Typewriter V2 阶段阻塞项，但每次提交都会记录其状态。
