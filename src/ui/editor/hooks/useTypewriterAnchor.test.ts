@@ -8,6 +8,7 @@ import {
   shouldForceFreeOnMouseCaretPlacement,
   resolveMovementBaselineCaretTop,
   shouldDowngradeLockedModeForUpwardCompensation,
+  shouldCaptureLockOnActivationEdge,
 } from './useTypewriterAnchor';
 
 describe('typewriter anchor helpers', () => {
@@ -142,5 +143,37 @@ describe('typewriter anchor helpers', () => {
         dynamicAnchorY: 455,
       }),
     ).toBe(true);
+  });
+
+  it('captures lock when typewriter just becomes active and caret is already below threshold', () => {
+    expect(
+      shouldCaptureLockOnActivationEdge({
+        wasTypewriterActive: false,
+        isTypewriterActive: true,
+        nextCaretTop: 520,
+        thresholdY: 450,
+        triggerSource: 'input',
+      }),
+    ).toBe(true);
+
+    expect(
+      shouldCaptureLockOnActivationEdge({
+        wasTypewriterActive: false,
+        isTypewriterActive: true,
+        nextCaretTop: 420,
+        thresholdY: 450,
+        triggerSource: 'input',
+      }),
+    ).toBe(false);
+
+    expect(
+      shouldCaptureLockOnActivationEdge({
+        wasTypewriterActive: false,
+        isTypewriterActive: true,
+        nextCaretTop: 520,
+        thresholdY: 450,
+        triggerSource: 'external',
+      }),
+    ).toBe(false);
   });
 });
