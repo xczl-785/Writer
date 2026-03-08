@@ -11,6 +11,7 @@ describe('typewriterStateMachine', () => {
     expect(createInitialTypewriterState()).toEqual({
       mode: 'free',
       dynamicAnchorY: null,
+      lastTrigger: null,
     });
   });
 
@@ -26,6 +27,7 @@ describe('typewriterStateMachine', () => {
     expect(next).toEqual({
       mode: 'locked',
       dynamicAnchorY: 460,
+      lastTrigger: 'input',
     });
   });
 
@@ -41,6 +43,7 @@ describe('typewriterStateMachine', () => {
     expect(next).toEqual({
       mode: 'locked',
       dynamicAnchorY: 440,
+      lastTrigger: 'input',
     });
   });
 
@@ -82,6 +85,7 @@ describe('typewriterStateMachine', () => {
     expect(locked).toEqual({
       mode: 'locked',
       dynamicAnchorY: 455,
+      lastTrigger: 'input',
     });
 
     expect(

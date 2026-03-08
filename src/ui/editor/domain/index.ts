@@ -19,6 +19,20 @@ export {
   computeLockedTypewriterTargetScrollTop,
 } from './typewriter/typewriterStateMachine';
 export {
+  type TriggerSource,
+  type TypewriterEventType,
+  type TypewriterEventEnvelope,
+  createTypewriterEventEnvelope,
+} from './typewriter/events';
+export {
+  reduceTypewriterState,
+  dispatchTypewriterEvent,
+} from './typewriter/reducers';
+export {
+  hasCrossedOrTouchedThreshold,
+  shouldDowngradeLockedStateForExternalUpwardCompensation,
+} from './typewriter/guards';
+export {
   TYPEWRITER_FORCE_FREE_EVENT,
   type TypewriterForceFreeReason,
   emitTypewriterForceFree,
