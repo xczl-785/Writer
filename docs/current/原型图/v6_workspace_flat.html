@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writer V6 工作区原型 - 平铺组件库 (遵循 V5 布局规范)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        zinc: {
+                            50: '#f9f9fb',
+                            100: '#f4f4f5',
+                            200: '#e4e4e7',
+                            300: '#d4d4d8',
+                            400: '#a1a1aa',
+                            500: '#71717a',
+                            600: '#52525b',
+                            700: '#3f3f46',
+                            800: '#27272a',
+                            900: '#18181b',
+                        },
+                        blue: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .component-card {
+            border: 1px solid #e4e4e7;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 32px;
+            background: white;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #18181b;
+            margin-bottom: 16px;
+            border-left: 4px solid #2563eb;
+            padding-left: 12px;
+        }
+
+        .sub-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #71717a;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .state-label {
+            font-size: 0.75rem;
+            color: #a1a1aa;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        /* 遵循 V5 文件树样式 */
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .tree-item:hover {
+            background-color: rgba(244, 244, 245, 0.5);
+        }
+
+        .tree-item.selected {
+            background-color: rgba(239, 246, 255, 0.5);
+            /* blue-50/50 */
+            color: #18181b;
+        }
+    </style>
+</head>
+
+<body class="bg-zinc-50 p-8 text-zinc-800">
+
+    <header class="mb-12">
+        <h1 class="text-3xl font-bold text-zinc-900">Writer V6 工作区原型图 (平铺视图)</h1>
+        <p class="text-zinc-500 mt-2">严格对齐 V5 基础布局规范，并体现 V6 工作区新增设计</p>
+    </header>
+
+    <!-- 1. Empty State -->
+    <section>
+        <h2 class="section-title">2.1 EmptyStateWorkspace (空状态界面)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="component-card flex flex-col items-center">
+                <div class="sub-title">默认状态</div>
+                <div class="w-full max-w-sm py-20 flex flex-col items-center">
+                    <div class="mb-1"><i data-lucide="sparkles" class="w-10 h-10 text-zinc-900"></i></div>
+                    <div class="text-xl font-bold mb-1">Writer</div>
+                    <div class="text-sm text-zinc-400 mb-10 italic">写作，心流</div>
+
+                    <div class="flex space-x-4 mb-10">
+                        <button
+                            class="px-6 py-2 bg-zinc-900 text-white text-sm font-medium rounded-md hover:bg-zinc-800 transition-colors flex items-center shadow-sm">
+                            打开文件夹
+                        </button>
+                        <button
+                            class="px-6 py-2 border border-zinc-200 text-zinc-600 text-sm font-medium rounded-md hover:bg-zinc-50 transition-colors flex items-center">
+                            打开工作区
+                        </button>
+                    </div>
+
+                    <div class="w-full px-8">
+                        <div
+                            class="flex items-center text-zinc-300 text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
+                            <div class="flex-grow border-t border-zinc-200 mr-3"></div>
+                            最近打开
+                            <div class="flex-grow border-t border-zinc-200 ml-3"></div>
+                        </div>
+                        <div class="space-y-1">
+                            <div
+                                class="flex items-center text-sm p-2 rounded hover:bg-zinc-100/50 text-zinc-700 cursor-pointer transition-colors">
+                                <i data-lucide="briefcase" class="w-4 h-4 mr-2.5 text-zinc-400"></i>
+                                <span>项目文档 (工作区)</span>
+                            </div>
+                            <div
+                                class="flex items-center text-sm p-2 rounded hover:bg-zinc-100/50 text-zinc-700 cursor-pointer transition-colors">
+                                <i data-lucide="folder" class="w-4 h-4 mr-2.5 text-zinc-400"></i>
+                                <span class="truncate">~/Documents/notes</span>
+                            </div>
+                        </div>
+                        <div class="mt-8 text-center text-xs text-zinc-300 italic">或拖拽文件夹到此处</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-card flex flex-col items-center">
+                <div class="sub-title">拖拽反馈</div>
+                <div
+                    class="w-full max-w-sm py-20 flex flex-col items-center border border-zinc-300 bg-zinc-50 rounded-lg transition-all">
+                    <div class="mb-4"><i data-lucide="folder-down" class="w-12 h-12 text-zinc-400"></i></div>
+                    <div class="text-base font-medium text-zinc-600">添加到工作区</div>
+                </div>
+                <p class="state-label">边框 zinc-300 + 背景 zinc-50 (V6 定义)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Sidebar Structure -->
+    <section>
+        <h2 class="section-title">2.2 & 2.3 侧边栏与文件树 (对齐 V5 视觉)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="component-card">
+                <div class="sub-title">多根文件树结构</div>
+                <div class="w-64 bg-zinc-50 border border-zinc-200 rounded-md overflow-hidden flex flex-col">
+                    <!-- V5 Sidebar Header -->
+                    <div class="h-10 flex items-center justify-between px-3 border-b border-transparent">
+                        <span class="text-[11px] font-bold text-zinc-400 tracking-widest uppercase">FILES</span>
+                        <div class="flex space-x-1">
+                            <button
+                                class="p-1.5 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors">
+                                <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button
+                                class="p-1.5 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors">
+                                <i data-lucide="folder-plus" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button
+                                class="p-1.5 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors">
+                                <!-- V5 Sidebar Collapse Icon: Rect with vertical line -->
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- V5 Search Bar -->
+                    <div class="px-3 py-2 border-b border-zinc-200">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-2 top-2 w-3.5 h-3.5 text-zinc-400"></i>
+                            <input type="text" placeholder="Search files..."
+                                class="w-full bg-white border border-zinc-200 rounded-md py-1.5 pl-7 pr-3 text-xs focus:outline-none focus:border-blue-500 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto py-2">
+                        <!-- V6 Root Header 1 -->
+                        <div
+                            class="group flex items-center justify-between px-3 py-1.5 hover:bg-zinc-100 transition-colors cursor-pointer">
+                            <div class="flex items-center overflow-hidden">
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-500 mr-2"></i>
+                                <i data-lucide="folder" class="w-4 h-4 text-zinc-600 mr-2"></i>
+                                <span class="text-sm font-semibold text-zinc-800 truncate">项目文档</span>
+                            </div>
+                            <div class="hidden group-hover:flex items-center space-x-1 text-zinc-400">
+                                <i data-lucide="x" class="w-3.5 h-3.5 hover:text-red-500"></i>
+                            </div>
+                        </div>
+                        <!-- Underline Divider as per V6 Spec 2.2.1 -->
+                        <div class="h-px bg-zinc-200 mx-3 mb-1"></div>
+
+                        <div class="tree-item ml-6 select-none group mt-1 hover:bg-zinc-100/50">
+                            <i data-lucide="file-text" class="w-4 h-4 text-zinc-400 mr-2 shrink-0"></i>
+                            <span class="truncate text-zinc-500 group-hover:text-zinc-900">readme.md</span>
+                        </div>
+                        <div class="tree-item ml-6 selected select-none group relative bg-blue-50/50 mt-0.5">
+                            <div class="absolute left-[-24px] top-1 bottom-1 w-[3px] bg-blue-500 rounded-r-full"></div>
+                            <i data-lucide="file-text" class="w-4 h-4 text-blue-500 mr-2 shrink-0"></i>
+                            <span class="truncate font-medium text-zinc-900">api_design.md</span>
+                        </div>
+
+                        <!-- V6 Root Header 2 -->
+                        <div
+                            class="group flex items-center justify-between px-3 py-1.5 hover:bg-zinc-100 transition-colors cursor-pointer mt-2">
+                            <div class="flex items-center overflow-hidden">
+                                <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-300 mr-2"></i>
+                                <i data-lucide="folder" class="w-4 h-4 text-zinc-600 mr-2"></i>
+                                <span class="text-sm font-semibold text-zinc-800">用户手册</span>
+                            </div>
+                        </div>
+                        <div class="h-px bg-zinc-200 mx-3 mb-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-card">
+                <div class="sub-title">状态指示与位置 (状态栏)</div>
+                <div
+                    class="h-7 border-t border-zinc-200 bg-white flex items-center justify-between px-3 text-[11px] text-zinc-400">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.4)]"></div>
+                        <span class="text-zinc-500">已保存</span>
+                        <div class="border-l border-zinc-100 pl-3 flex items-center">
+                            <span class="text-zinc-400 font-medium">项目文档 (工作区)</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span>150 words</span>
+                        <span>UTF-8</span>
+                        <!-- 移除 SYNC，保留占位 -->
+                        <span class="w-2"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="mt-20 pt-8 border-t border-zinc-200 text-center text-zinc-300 text-sm">
+        Writer Interaction Design Prototype V6 (Alignment Edition)
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
