@@ -268,6 +268,12 @@ export const useTypewriterAnchor = ({
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        captureCaretTopSnapshot();
+        lastAnchorUpdateTriggerSource = 'input';
+        scheduleAnchorUpdate('immediate');
+        return;
+      }
       if (event.key.startsWith('Arrow')) {
         captureCaretTopSnapshot();
         lastAnchorUpdateTriggerSource = 'input';
