@@ -5,7 +5,7 @@
  * Receives state and callbacks, contains no business logic.
  */
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { t } from '../../../i18n';
 import type { SlashCommand } from './useSlashMenu';
 import {
@@ -50,10 +50,9 @@ export function SlashMenuView({
   onHover,
 }: SlashMenuViewProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
 
   // Compute layout
-  const menuHeight = measuredHeight ?? estimateHeight(commands);
+  const menuHeight = estimateHeight(commands);
   const layout =
     anchorRect && isOpen
       ? computeSlashMenuLayout({
@@ -63,19 +62,6 @@ export function SlashMenuView({
           viewportHeight: window.innerHeight,
         })
       : null;
-
-  // Measure actual height after render (valid useLayoutEffect pattern for DOM measurement)
-  useLayoutEffect(() => {
-    if (!isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMeasuredHeight(null);
-      return;
-    }
-    const actualHeight = menuRef.current?.offsetHeight ?? 0;
-    if (actualHeight > 0 && actualHeight !== measuredHeight) {
-      setMeasuredHeight(actualHeight);
-    }
-  }, [isOpen, measuredHeight]);
 
   // Scroll active item into view
   useLayoutEffect(() => {
@@ -162,7 +148,7 @@ export function SlashInlineView({
   return (
     <div
       className="editor-slash-inline is-open"
-      style={{ left: anchorRect.left + 4, top: anchorRect.top + 2 }}
+      style={{ left: anchorRect.left + 4, top: anchorRect.top - 1 }}
       aria-hidden="true"
     >
       <span className="editor-slash-inline__trigger">/</span>

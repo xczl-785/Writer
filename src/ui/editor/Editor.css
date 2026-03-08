@@ -446,10 +446,12 @@
   user-select: none;
   opacity: 0;
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 2px;
-  font-size: 0.875rem;
-  font-style: italic;
+  font-size: 16px;
+  line-height: 1.6;
+  font-style: normal;
+  font-weight: 300;
   color: var(--text-tertiary);
   transition: opacity 0.08s ease-out;
 }
@@ -461,4 +463,9 @@
 .editor-slash-inline__trigger,
 .editor-slash-inline__query {
   color: var(--text-tertiary);
+}
+
+.editor-slash-inline__query {
+  font-weight: 300;
+  line-height: 1.6;
 }

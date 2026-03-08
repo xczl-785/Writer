@@ -298,6 +298,13 @@ export function useSlashMenu({
     dispatch({ type: 'MOVE_PREV', itemCount: commands.length });
   }, [commands.length]);
 
+  const setSelected = useCallback(
+    (index: number) => {
+      dispatch({ type: 'SET_SELECTED', index, itemCount: commands.length });
+    },
+    [commands.length],
+  );
+
   // Command execution
   const executeCommand = useCallback(
     (command: SlashCommand) => {
@@ -309,9 +316,9 @@ export function useSlashMenu({
     [editor, closeSlash],
   );
 
-  const hoverIndex = useCallback((_index: number) => {
-    // Direct state update for hover (not through reducer for performance)
-  }, []);
+  const hoverIndex = useCallback((index: number) => {
+    setSelected(index);
+  }, [setSelected]);
 
   // Event handlers
   useEffect(() => {
@@ -474,6 +481,9 @@ export function useSlashMenu({
       }
       closeSlash();
     };
+    const handleBlur = () => {
+      closeSlash();
+    };
 
     let dom: HTMLElement | null = null;
     try {
@@ -488,6 +498,7 @@ export function useSlashMenu({
     dom.addEventListener('compositionstart', handleCompositionStart);
     dom.addEventListener('compositionend', handleCompositionEnd as EventListener);
     window.addEventListener('mousedown', handlePointerDown);
+    editor.on('blur', handleBlur);
 
     return () => {
       dom?.removeEventListener('keydown', handleKeyDown, true);
@@ -498,6 +509,7 @@ export function useSlashMenu({
         handleCompositionEnd as EventListener,
       );
       window.removeEventListener('mousedown', handlePointerDown);
+      editor.off('blur', handleBlur);
     };
   }, [
     editor,

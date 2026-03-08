@@ -50,8 +50,8 @@ import { Outline } from '../components/Outline';
 import { BlockBoundaryExtension } from '../components/BlockBoundary';
 import {
   useSlashMenu,
-  SlashMenu,
-  SlashInline,
+  SlashMenuView,
+  SlashInlineView,
   useBubbleMenu,
   BubbleMenu,
   GhostHint,
@@ -615,14 +615,9 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
             }
             ghostHint={<GhostHint position={ghostHintPosition} />}
             slashMenu={
-              <SlashMenu
+              <SlashMenuView
                 isOpen={slashSession.phase !== 'idle'}
-                x={slashSession.anchorRect?.left ?? 0}
-                y={
-                  slashSession.anchorRect
-                    ? slashSession.anchorRect.bottom + 8
-                    : 0
-                }
+                anchorRect={slashSession.anchorRect}
                 commands={slashCommands}
                 selectedIndex={slashSelectedIndex}
                 onSelect={executeCommand}
@@ -632,10 +627,9 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
             isFocusZen={isFocusZen}
             isHeaderAwake={isHeaderAwake}
           />
-          <SlashInline
+          <SlashInlineView
             isOpen={slashSession.phase !== 'idle'}
-            x={slashSession.anchorRect?.left ?? 0}
-            y={slashSession.anchorRect?.top ?? 0}
+            anchorRect={slashSession.anchorRect}
             query={slashSession.query}
           />
         </div>

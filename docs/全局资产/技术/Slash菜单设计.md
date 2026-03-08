@@ -1,12 +1,14 @@
 # Slash Menu 设计规范
 
-**更新日期**: 2026-03-05
+**更新日期**: 2026-03-08
 **实现文件**:
+- `src/ui/editor/EditorImpl.tsx` (运行时接入 `SlashMenuView/SlashInlineView`)
 - `src/ui/editor/menus/useSlashMenu.ts` (主 hook)
 - `src/ui/editor/domain/slash/slashSessionMachine.ts` (状态机)
 - `src/ui/editor/domain/slash/slashLayout.ts` (布局算法)
 - `src/ui/editor/domain/slash/slashScroll.ts` (滚动算法)
 - `src/ui/editor/menus/SlashMenuView.tsx` (渲染组件)
+- `src/ui/editor/domain/slash/slashLayout.test.ts` (布局回归测试)
 
 ---
 
@@ -149,7 +151,8 @@ SEARCHING
 
 - 水平：光标位置
 - 垂直：光标下方 8px
-- 边界：超出视口时自动调整
+- 边界：超出视口时自动调整（右侧钳制）
+- 上下空间不足时：基于 `spaceAbove/spaceBelow` 动态选择放置侧并启用内部滚动（`maxHeight + overflowY:auto`）
 
 ### 5.2 命令分组
 
@@ -180,6 +183,12 @@ SEARCHING
 ### 5.4 Ghost Hint
 
 空行时显示提示：`/ 输入以唤出菜单...`
+
+### 5.5 Slash 会话片段（Inline Overlay）
+
+- Slash 搜索词不写入正文，显示在 `SlashInlineView` 叠加层
+- 文本样式：`font-size: 16px`、`line-height: 1.6`、`font-weight: 300`、`font-style: normal`
+- 位置微调：`left = anchor.left + 4`，`top = anchor.top - 1`
 
 ---
 
@@ -247,11 +256,18 @@ type SlashAction =
   | { type: 'OPEN'; anchorRect: AnchorRect; source: 'keyboard' | 'ime' }
   | { type: 'APPEND_QUERY'; char: string }
   | { type: 'DELETE_QUERY' }
+  | { type: 'SET_SELECTED'; index: number; itemCount: number }
   | { type: 'MOVE_NEXT'; itemCount: number }
   | { type: 'MOVE_PREV'; itemCount: number }
   | { type: 'SUBMIT' }
   | { type: 'CLOSE' };
 ```
+
+### 7.4 当前实现补充
+
+- 运行时已切换到 `SlashMenuView/SlashInlineView`，不再使用旧 `SlashMenu/SlashInline` 渲染入口
+- `hover` 已通过 `SET_SELECTED` 更新高亮索引
+- `blur` 事件会关闭 Slash 会话，满足 `失焦 -> IDLE`
 
 ---
 

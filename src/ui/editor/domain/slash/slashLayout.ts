@@ -71,43 +71,49 @@ export function computeSlashMenuLayout(
     Math.min(anchorRect.left, maxLeft),
   );
 
-  // Calculate available space
-  const availableBelow = viewportHeight - anchorRect.bottom;
-  const availableAbove = anchorRect.top;
-
   // Default: position below anchor
   const defaultTop = anchorRect.bottom + SLASH_MENU_TRIGGER_GAP;
+  const spaceBelow = Math.max(
+    0,
+    viewportHeight - defaultTop - SLASH_MENU_EDGE_PADDING,
+  );
+  const spaceAbove = Math.max(
+    0,
+    anchorRect.top - SLASH_MENU_FLIP_SAFE_GAP - SLASH_MENU_EDGE_PADDING,
+  );
 
-  // Flip-up conditions:
-  // 1. Insufficient space below threshold
-  // 2. Enough space above for menu + safe gap
-  const shouldFlipUp =
-    availableBelow < SLASH_MENU_FLIP_THRESHOLD &&
-    availableAbove >= menuHeight + SLASH_MENU_FLIP_SAFE_GAP;
+  const fitsBelow = spaceBelow >= menuHeight;
+  const fitsAbove = spaceAbove >= menuHeight;
 
-  // Calculate top position
-  let top: number;
-  if (shouldFlipUp) {
-    // Position above anchor with safe gap
-    top = anchorRect.top - menuHeight - SLASH_MENU_FLIP_SAFE_GAP;
-  } else {
-    top = defaultTop;
+  if (fitsBelow) {
+    return { left, top: defaultTop };
   }
 
-  // Ensure top doesn't go above viewport
-  top = Math.max(SLASH_MENU_EDGE_PADDING, top);
-
-  // Low viewport protection
-  if (viewportHeight < SLASH_MENU_FLIP_THRESHOLD) {
+  if (fitsAbove) {
     return {
       left,
-      top,
-      maxHeight: '85vh',
-      overflowY: 'auto',
+      top: Math.max(
+        SLASH_MENU_EDGE_PADDING,
+        anchorRect.top - menuHeight - SLASH_MENU_FLIP_SAFE_GAP,
+      ),
     };
   }
 
-  return { left, top };
+  const placeAbove = spaceAbove > spaceBelow;
+  const availableHeight = Math.max(0, Math.floor(placeAbove ? spaceAbove : spaceBelow));
+  const top = placeAbove
+    ? Math.max(
+        SLASH_MENU_EDGE_PADDING,
+        anchorRect.top - availableHeight - SLASH_MENU_FLIP_SAFE_GAP,
+      )
+    : defaultTop;
+
+  return {
+    left,
+    top,
+    maxHeight: `${availableHeight}px`,
+    overflowY: 'auto',
+  };
 }
 
 /**

@@ -25,6 +25,7 @@ export type SlashAction =
   | { type: 'OPEN'; anchorRect: AnchorRect; source: 'keyboard' | 'ime' }
   | { type: 'APPEND_QUERY'; char: string }
   | { type: 'DELETE_QUERY' }
+  | { type: 'SET_SELECTED'; index: number; itemCount: number }
   | { type: 'MOVE_NEXT'; itemCount: number }
   | { type: 'MOVE_PREV'; itemCount: number }
   | { type: 'SUBMIT' }
@@ -72,6 +73,16 @@ export function slashReducer(
         query: nextQuery,
         phase: nextQuery.length > 0 ? 'searching' : 'open',
         selectedIndex: 0,
+      };
+
+    case 'SET_SELECTED':
+      if (state.phase === 'idle' || action.itemCount === 0) return state;
+      return {
+        ...state,
+        selectedIndex: Math.min(
+          Math.max(action.index, 0),
+          action.itemCount - 1,
+        ),
       };
 
     case 'MOVE_NEXT':
