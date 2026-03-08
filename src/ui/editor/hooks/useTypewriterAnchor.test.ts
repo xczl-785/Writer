@@ -6,6 +6,8 @@ import {
   shouldActivateTypewriterAnchor,
   computeTypewriterTargetScrollTop,
   shouldForceFreeOnMouseCaretPlacement,
+  resolveMovementBaselineCaretTop,
+  shouldDowngradeLockedModeForUpwardCompensation,
 } from './useTypewriterAnchor';
 
 describe('typewriter anchor helpers', () => {
@@ -101,5 +103,44 @@ describe('typewriter anchor helpers', () => {
         selectionAfter: 25,
       }),
     ).toBe(false);
+  });
+
+  it('uses pre-input caret snapshot as movement baseline when available', () => {
+    expect(
+      resolveMovementBaselineCaretTop({
+        previousCaretTop: 320,
+        caretTopBeforeInputMutation: 340,
+      }),
+    ).toBe(340);
+    expect(
+      resolveMovementBaselineCaretTop({
+        previousCaretTop: 320,
+        caretTopBeforeInputMutation: null,
+      }),
+    ).toBe(320);
+  });
+
+  it('does not downgrade locked mode for upward compensation from input chain', () => {
+    expect(
+      shouldDowngradeLockedModeForUpwardCompensation({
+        triggerSource: 'input',
+        caretTop: 430,
+        dynamicAnchorY: 455,
+      }),
+    ).toBe(false);
+    expect(
+      shouldDowngradeLockedModeForUpwardCompensation({
+        triggerSource: 'ime',
+        caretTop: 430,
+        dynamicAnchorY: 455,
+      }),
+    ).toBe(false);
+    expect(
+      shouldDowngradeLockedModeForUpwardCompensation({
+        triggerSource: 'external',
+        caretTop: 430,
+        dynamicAnchorY: 455,
+      }),
+    ).toBe(true);
   });
 });
