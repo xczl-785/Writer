@@ -9,9 +9,14 @@ import {
   setScrollTop,
   shouldSkipScrollAdjustment,
   createInitialTypewriterState,
-  reduceTypewriterInputMovement,
   computeLockedTypewriterTargetScrollTop,
   TYPEWRITER_FORCE_FREE_EVENT,
+  createTypewriterEventEnvelope,
+  dispatchTypewriterEvent,
+  shouldDowngradeLockedStateForExternalUpwardCompensation,
+  type TriggerSource,
+  type TypewriterEventType,
+  type TypewriterForceFreeReason,
 } from '../domain';
 
 export { computeTypewriterTargetScrollTop, shouldActivateTypewriterAnchor };
@@ -43,11 +48,19 @@ export const shouldDowngradeLockedModeForUpwardCompensation = ({
   caretTop,
   dynamicAnchorY,
 }: {
-  triggerSource: 'input' | 'ime' | 'external';
+  triggerSource: TriggerSource;
   caretTop: number;
   dynamicAnchorY: number;
 }) =>
-  triggerSource === 'external' && caretTop < dynamicAnchorY;
+  shouldDowngradeLockedStateForExternalUpwardCompensation({
+    state: {
+      mode: 'locked',
+      dynamicAnchorY,
+      lastTrigger: triggerSource,
+    },
+    source: triggerSource,
+    caretTop,
+  });
 
 export const shouldForceFreeOnMouseCaretPlacement = ({
   isPrimaryButton,
@@ -65,6 +78,21 @@ export const shouldForceFreeOnMouseCaretPlacement = ({
   selectionAfter !== selectionBefore;
 
 export { resolveEditorContentTopOffset };
+
+const mapForceFreeReasonToEventType = (
+  reason: TypewriterForceFreeReason,
+): TypewriterEventType => {
+  if (reason === 'editor-click') {
+    return 'mouse-caret-placed';
+  }
+  if (reason === 'find-navigation') {
+    return 'find-jump';
+  }
+  if (reason === 'outline-navigation') {
+    return 'outline-jump';
+  }
+  return 'programmatic-selection';
+};
 
 export const useTypewriterAnchor = ({
   editor,
@@ -86,9 +114,18 @@ export const useTypewriterAnchor = ({
     let typewriterState = createInitialTypewriterState();
     let previousCaretTop: number | null = null;
     let caretTopBeforeInputMutation: number | null = null;
-    let lastAnchorUpdateTriggerSource: 'input' | 'ime' | 'external' = 'input';
+    let lastAnchorUpdateTriggerSource: TriggerSource = 'input';
+    let lastAnchorUpdateEventType: TypewriterEventType = 'before-input';
     let pointerSelectionSnapshot: number | null = null;
     let pointerFromEditorContent = false;
+
+    const clearCompensationAnimation = () => {
+      if (animationRafId !== null) {
+        window.cancelAnimationFrame(animationRafId);
+        animationRafId = null;
+      }
+    };
+
     const captureCaretTopSnapshot = () => {
       try {
         const selectionPos = editor.state.selection.from;
@@ -98,22 +135,32 @@ export const useTypewriterAnchor = ({
         caretTopBeforeInputMutation = null;
       }
     };
-    const resetToFreeMode = () => {
-      if (animationRafId !== null) {
-        window.cancelAnimationFrame(animationRafId);
-        animationRafId = null;
+
+    const transitionToState = (nextState: typeof typewriterState) => {
+      if (typewriterState.mode === 'locked' && nextState.mode === 'free') {
+        clearCompensationAnimation();
       }
-      typewriterState = createInitialTypewriterState();
+      typewriterState = nextState;
+    };
+
+    const resetToFreeMode = (source: TriggerSource) => {
+      transitionToState(
+        dispatchTypewriterEvent(
+          typewriterState,
+          createTypewriterEventEnvelope({
+            type: 'force-free',
+            source,
+          }),
+        ),
+      );
       previousCaretTop = null;
     };
+
     const animateScrollTop = (
       scrollContainer: HTMLElement,
       targetScrollTop: number,
     ) => {
-      if (animationRafId !== null) {
-        window.cancelAnimationFrame(animationRafId);
-        animationRafId = null;
-      }
+      clearCompensationAnimation();
 
       const startScrollTop = scrollContainer.scrollTop;
       const delta = targetScrollTop - startScrollTop;
@@ -161,14 +208,26 @@ export const useTypewriterAnchor = ({
         scrollContainer.clientHeight - offsetTop,
       );
 
-      if (
-        !shouldActivateTypewriterAnchor({
-          enabled,
-          contentHeight: editorDom.scrollHeight,
-          viewportHeight: effectiveViewportHeight,
-        })
-      ) {
-        resetToFreeMode();
+      const isTypewriterActive = shouldActivateTypewriterAnchor({
+        enabled,
+        contentHeight: editorDom.scrollHeight,
+        viewportHeight: effectiveViewportHeight,
+      });
+
+      transitionToState(
+        dispatchTypewriterEvent(
+          typewriterState,
+          createTypewriterEventEnvelope({
+            type: 'viewport-measured',
+            source: 'external',
+            payload: { isTypewriterActive },
+          }),
+        ),
+      );
+
+      if (!isTypewriterActive) {
+        previousCaretTop = null;
+        caretTopBeforeInputMutation = null;
         return;
       }
 
@@ -183,12 +242,28 @@ export const useTypewriterAnchor = ({
         previousCaretTop,
         caretTopBeforeInputMutation,
       });
+
       if (movementBaselineCaretTop !== null) {
-        typewriterState = reduceTypewriterInputMovement(typewriterState, {
-          previousCaretTop: movementBaselineCaretTop,
-          nextCaretTop: coords.top,
-          thresholdY,
+        const movementEvent = createTypewriterEventEnvelope({
+          type: lastAnchorUpdateEventType,
+          source: lastAnchorUpdateTriggerSource,
+          payload: {
+            previousCaretTop: movementBaselineCaretTop,
+            nextCaretTop: coords.top,
+            thresholdY,
+          },
         });
+        const nextState = dispatchTypewriterEvent(typewriterState, movementEvent);
+        transitionToState(nextState);
+
+        if (
+          typewriterState.mode === 'free' &&
+          lastAnchorUpdateTriggerSource === 'external'
+        ) {
+          previousCaretTop = coords.top;
+          caretTopBeforeInputMutation = null;
+          return;
+        }
       }
       caretTopBeforeInputMutation = null;
 
@@ -196,17 +271,6 @@ export const useTypewriterAnchor = ({
         typewriterState.mode === 'locked' &&
         typewriterState.dynamicAnchorY !== null
       ) {
-        if (
-          shouldDowngradeLockedModeForUpwardCompensation({
-            triggerSource: lastAnchorUpdateTriggerSource,
-            caretTop: coords.top,
-            dynamicAnchorY: typewriterState.dynamicAnchorY,
-          })
-        ) {
-          resetToFreeMode();
-          previousCaretTop = coords.top;
-          return;
-        }
         const targetScrollTop = computeLockedTypewriterTargetScrollTop({
           currentScrollTop: scrollContainer.scrollTop,
           caretTop: coords.top,
@@ -256,6 +320,7 @@ export const useTypewriterAnchor = ({
       if (event.isComposing) return;
       captureCaretTopSnapshot();
       lastAnchorUpdateTriggerSource = 'input';
+      lastAnchorUpdateEventType = 'before-input';
       if (event.inputType === 'insertText') {
         scheduleAnchorUpdate('typing');
         return;
@@ -264,6 +329,7 @@ export const useTypewriterAnchor = ({
         event.inputType === 'insertParagraph' ||
         event.inputType === 'insertLineBreak'
       ) {
+        lastAnchorUpdateEventType = 'enter-keydown';
         scheduleAnchorUpdate('immediate');
       }
     };
@@ -271,21 +337,26 @@ export const useTypewriterAnchor = ({
       if (event.key === 'Enter') {
         captureCaretTopSnapshot();
         lastAnchorUpdateTriggerSource = 'input';
+        lastAnchorUpdateEventType = 'enter-keydown';
         scheduleAnchorUpdate('immediate');
         return;
       }
       if (event.key.startsWith('Arrow')) {
         captureCaretTopSnapshot();
-        lastAnchorUpdateTriggerSource = 'input';
+        lastAnchorUpdateTriggerSource = 'arrow';
+        lastAnchorUpdateEventType = 'arrow-keydown';
         scheduleAnchorUpdate('immediate');
       }
     };
     const handleCompositionStart = () => {
       isComposing = true;
+      lastAnchorUpdateTriggerSource = 'ime';
+      lastAnchorUpdateEventType = 'composition-start';
     };
     const handleCompositionEnd = () => {
       isComposing = false;
       lastAnchorUpdateTriggerSource = 'ime';
+      lastAnchorUpdateEventType = 'composition-end';
       lastTypingUpdateAtMs = Date.now();
       scheduleAnchorUpdate('immediate');
     };
@@ -317,13 +388,35 @@ export const useTypewriterAnchor = ({
           selectionAfter: editor.state.selection.from,
         })
       ) {
-        resetToFreeMode();
+        transitionToState(
+          dispatchTypewriterEvent(
+            typewriterState,
+            createTypewriterEventEnvelope({
+              type: 'mouse-caret-placed',
+              source: 'mouse',
+            }),
+          ),
+        );
+        previousCaretTop = null;
       }
       clearPointerSelectionSnapshot();
     };
-    const handleForceFree = () => {
+    const handleForceFree = (event: Event) => {
+      const customEvent = event as CustomEvent<{ reason: TypewriterForceFreeReason }>;
       lastAnchorUpdateTriggerSource = 'external';
-      resetToFreeMode();
+      lastAnchorUpdateEventType = mapForceFreeReasonToEventType(
+        customEvent.detail?.reason ?? 'programmatic-selection',
+      );
+      transitionToState(
+        dispatchTypewriterEvent(
+          typewriterState,
+          createTypewriterEventEnvelope({
+            type: lastAnchorUpdateEventType,
+            source: 'external',
+          }),
+        ),
+      );
+      previousCaretTop = null;
     };
     editorDom?.addEventListener(
       'beforeinput',
@@ -361,10 +454,9 @@ export const useTypewriterAnchor = ({
         window.cancelAnimationFrame(rafId);
         rafId = null;
       }
-      if (animationRafId !== null) {
-        window.cancelAnimationFrame(animationRafId);
-        animationRafId = null;
-      }
+      clearCompensationAnimation();
+      resetToFreeMode('external');
     };
   }, [editor, enabled, anchorRatio]);
 };
+
