@@ -91,6 +91,33 @@ describe('Editor toolbar MVP', () => {
     expect(css).toContain('var(--editor-content-padding-bottom, 40vh)');
   });
 
+  it('renders slash inline query with 16px font size', () => {
+    const css = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');
+    expect(css).toMatch(/\.editor-slash-inline[\s\S]*font-size:\s*16px/i);
+  });
+
+  it('uses non-italic style for slash inline query text', () => {
+    const css = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');
+    expect(css).toMatch(/\.editor-slash-inline[\s\S]*font-style:\s*normal/i);
+  });
+
+  it('aligns slash inline content by text baseline with editor line-height', () => {
+    const css = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');
+    expect(css).toMatch(/\.editor-slash-inline[\s\S]*align-items:\s*baseline/i);
+    expect(css).toMatch(/\.editor-slash-inline[\s\S]*line-height:\s*1\.6/i);
+  });
+
+  it('uses lighter font weight for slash inline hint-like text', () => {
+    const css = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');
+    expect(css).toMatch(/\.editor-slash-inline[\s\S]*font-weight:\s*300/i);
+    expect(css).toMatch(
+      /\.editor-slash-inline__query[\s\S]*font-weight:\s*300/i,
+    );
+    expect(css).toMatch(
+      /\.editor-slash-inline__query[\s\S]*line-height:\s*1\.6/i,
+    );
+  });
+
   it('does not force editor content to fixed full height', () => {
     const editorImplTsx = readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
     expect(editorImplTsx).toContain(

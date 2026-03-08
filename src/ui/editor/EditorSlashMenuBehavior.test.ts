@@ -22,6 +22,7 @@ describe('Editor slash menu behavior', () => {
     readFileSync(join(currentDir, 'hooks', 'useGhostHint.ts'), 'utf-8');
   const readGhostHint = () =>
     readFileSync(join(currentDir, 'menus', 'GhostHint.tsx'), 'utf-8');
+  const readEditorImpl = () => readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
   const readMessages = () =>
     readFileSync(join(currentDir, '../../i18n/messages.ts'), 'utf-8');
 
@@ -93,6 +94,30 @@ describe('Editor slash menu behavior', () => {
     expect(slashMenuTsx).toContain('editor-slash-inline__trigger');
     expect(slashMenuTsx).toContain('editor-slash-inline__query');
     expect(slashMenuTsx).not.toContain('editor-slash-menu__fragment');
+  });
+
+  it('uses SlashMenuView + SlashInlineView in editor composition', () => {
+    const editorImplTsx = readEditorImpl();
+    expect(editorImplTsx).toContain('<SlashMenuView');
+    expect(editorImplTsx).toContain('<SlashInlineView');
+    expect(editorImplTsx).not.toContain('<SlashMenu ');
+    expect(editorImplTsx).not.toContain('<SlashInline ');
+  });
+
+  it('supports hover selection and blur close in slash session handling', () => {
+    const useSlashMenuTs = readUseSlashMenu();
+    expect(useSlashMenuTs).toContain("dispatch({ type: 'SET_SELECTED'");
+    expect(useSlashMenuTs).toContain("editor.on('blur', handleBlur)");
+    expect(useSlashMenuTs).toContain("editor.off('blur', handleBlur)");
+  });
+
+  it('keeps slash inline query vertically aligned to anchor top', () => {
+    const slashMenuViewTsx = readFileSync(
+      join(currentDir, 'menus', 'SlashMenuView.tsx'),
+      'utf-8',
+    );
+    expect(slashMenuViewTsx).toContain('top: anchorRect.top - 1');
+    expect(slashMenuViewTsx).not.toContain('top: anchorRect.top + 2');
   });
 
   it('does not append query from compositionend to avoid IME duplicate text', () => {
