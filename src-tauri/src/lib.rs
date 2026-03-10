@@ -1,5 +1,9 @@
 pub mod fs;
 pub mod menu;
+pub mod security;
+
+use security::WorkspaceAllowlist;
+use std::sync::Mutex;
 use tauri::AppHandle;
 
 #[tauri::command]
@@ -18,7 +22,10 @@ fn set_menu_locale(app: AppHandle, locale: String) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
+    let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        // 注册全局状态管理 - WorkspaceAllowlist 安全守卫
+        .manage(Mutex::new(WorkspaceAllowlist::default()));
 
     builder = builder.on_menu_event(|app, event| {
         menu::emit_menu_command(app, event.id().as_ref());
