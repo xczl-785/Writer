@@ -3,8 +3,8 @@ pub mod menu;
 pub mod security;
 
 use security::WorkspaceAllowlist;
-use std::sync::Mutex;
 use tauri::AppHandle;
+use tokio::sync::Mutex;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -36,6 +36,7 @@ pub fn run() {
             greet,
             set_menu_locale,
             fs::list_tree,
+            fs::list_tree_batch,
             fs::read_file,
             fs::write_file_atomic,
             fs::create_file,
@@ -46,7 +47,11 @@ pub fn run() {
             fs::save_image,
             fs::check_exists,
             fs::get_git_sync_status,
-            fs::detect_file_encoding
+            fs::detect_file_encoding,
+            // Workspace commands
+            fs::parse_workspace_file,
+            fs::save_workspace_file,
+            fs::resolve_relative_path,
         ])
         .setup(|app| {
             let native_menu = menu::build_native_menu(&app.handle())?;

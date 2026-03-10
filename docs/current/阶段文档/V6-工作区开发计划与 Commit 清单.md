@@ -265,7 +265,7 @@ test('removeFolderFromWorkspace should close open files', () => {});
 
 | Commit Hash | Commit 信息 | 日期 | 验证状态 | 备注 |
 |-------------|-------------|------|----------|------|
-| - | - | - | - | Phase 0 开发中 |
+| 322f93d | feat(security): 添加 WorkspaceAllowlist 安全层 | 2026-03-11 | ✅ 待验证 | Phase 0-1 完成 |
 
 ---
 
@@ -275,7 +275,7 @@ test('removeFolderFromWorkspace should close open files', () => {});
 
 | Commit | 验证人 | 验证日期 | 结果 | 备注 |
 |--------|--------|----------|------|------|
-| 0-1 | - | - | ⏳ 待验证 | - |
+| 0-1 (322f93d) | - | - | ⏳ 待验证 | 4 个单元测试通过 |
 | 0-2 | - | - | ⏳ 待验证 | - |
 | 0-3 | - | - | ⏳ 待验证 | - |
 | 0-4 | - | - | ⏳ 待验证 | - |
@@ -287,3 +287,12 @@ test('removeFolderFromWorkspace should close open files', () => {});
 **文档更新**: 每次提交后更新此文档
 
 **最后更新**: 2026-03-11
+
+---
+
+## 当前进度
+
+**Phase 0-1**: ✅ 已完成 (Commit: 322f93d)
+- WorkspaceAllowlist 安全层实现
+- 4 个单元测试全部通过
+- 已集成到 lib.rs 全局状态管理
