@@ -1,10 +1,12 @@
 pub mod fs;
 pub mod menu;
 pub mod security;
+pub mod watcher;
 
 use security::WorkspaceAllowlist;
 use tauri::AppHandle;
 use tokio::sync::Mutex;
+use watcher::WatcherState;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -24,8 +26,9 @@ fn set_menu_locale(app: AppHandle, locale: String) -> Result<(), String> {
 pub fn run() {
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        // 注册全局状态管理 - WorkspaceAllowlist 安全守卫
-        .manage(Mutex::new(WorkspaceAllowlist::default()));
+        // 注册全局状态管理
+        .manage(Mutex::new(WorkspaceAllowlist::default())) // WorkspaceAllowlist 安全守卫
+        .manage(Mutex::new(WatcherState::default())); // 文件监听器状态
 
     builder = builder.on_menu_event(|app, event| {
         menu::emit_menu_command(app, event.id().as_ref());
@@ -52,6 +55,11 @@ pub fn run() {
             fs::parse_workspace_file,
             fs::save_workspace_file,
             fs::resolve_relative_path,
+            // Watcher commands
+            watcher::start_watching,
+            watcher::stop_watching,
+            watcher::update_watch_paths,
+            watcher::get_watcher_status,
         ])
         .setup(|app| {
             let native_menu = menu::build_native_menu(&app.handle())?;
