@@ -95,6 +95,11 @@ impl WorkspaceAllowlist {
         self.roots.len()
     }
 
+    /// 获取根目录引用
+    pub fn roots(&self) -> &[PathBuf] {
+        &self.roots
+    }
+
     /// 设置根目录（用于测试）
     pub fn set_roots(&mut self, roots: Vec<String>) -> Result<(), SecurityError> {
         self.roots.clear();
