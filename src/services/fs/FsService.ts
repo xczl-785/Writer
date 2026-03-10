@@ -13,9 +13,29 @@ export interface EncodingStatus {
   label: string;
 }
 
+export interface FolderPathResult {
+  path: string;
+  nodes: FileNode[];
+  error?: string;
+}
+
+export interface WorkspaceConfig {
+  version: number;
+  folders: Array<{ path: string; name?: string }>;
+  state?: {
+    openFiles?: string[];
+    activeFile?: string;
+    sidebarVisible?: boolean;
+  };
+}
+
 export const FsService = {
   async listTree(path: string): Promise<FileNode[]> {
     return invoke('list_tree', { path });
+  },
+  
+  async listTreeBatch(paths: string[]): Promise<FolderPathResult[]> {
+    return invoke('list_tree_batch', { paths });
   },
 
   async readFile(path: string): Promise<string> {
@@ -24,6 +44,14 @@ export const FsService = {
 
   async writeFileAtomic(path: string, content: string): Promise<void> {
     return invoke('write_file_atomic', { path, content });
+  },
+  
+  async parseWorkspaceFile(path: string): Promise<WorkspaceConfig> {
+    return invoke('parse_workspace_file', { path });
+  },
+  
+  async saveWorkspaceFile(path: string, config: WorkspaceConfig): Promise<void> {
+    return invoke('save_workspace_file', { path, config });
   },
 
   async createFile(path: string): Promise<void> {
