@@ -7,7 +7,7 @@ import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { workspaceActions } from '../../state/actions/workspaceActions';
 import { Folder, FileIcon, ChevronDown, ChevronRight } from 'lucide-react';
-import { t } from '../../i18n';
+import { DeletedFileMarker } from '../components/ErrorStates';
 
 interface FileTreeNodeProps {
   node: FileNode;
@@ -51,16 +51,12 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
 
   if (isDeleted) {
     return (
-      <div
-        className="file-tree-node deleted"
-        style={style}
-        title={t('fileTree.deleted')}
-      >
-        <span className="node-icon">⚠️</span>
-        <span className="node-name">
-          {node.name} ({t('status.deleted')})
-        </span>
-      </div>
+      <DeletedFileMarker
+        filePath={node.path}
+        fileName={node.name}
+        isDirectory={isFolder}
+        depth={depth}
+      />
     );
   }
 

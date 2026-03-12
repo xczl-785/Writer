@@ -21,6 +21,7 @@ import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
 import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
 import { showDeleteConfirmDialog } from '../components/Dialog';
+import { DragDropOverlay } from '../components/ErrorStates';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import {
   ensureMarkdownExtension,
@@ -167,6 +168,7 @@ export function Sidebar({
   const [explorerFocus, setExplorerFocus] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActiveIndex, setSearchActiveIndex] = useState(0);
+  const [isDragOver, setIsDragOver] = useState(false);
   const collapseClickTimerRef = useRef<number | null>(null);
 
   const selectedNode = selectedPath
@@ -654,6 +656,26 @@ export function Sidebar({
           setExplorerFocus(false);
         }
       }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        if (e.dataTransfer.types.includes('Files')) {
+          setIsDragOver(true);
+        }
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget === e.target) {
+          setIsDragOver(false);
+        }
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        // Handle file drop logic here - future enhancement
+      }}
     >
       <div
         className="h-10 px-3 flex items-center justify-between border-b border-zinc-200/70"
@@ -875,6 +897,12 @@ export function Sidebar({
         y={contextMenu.state.y}
         items={contextMenu.state.items}
         onClose={contextMenu.close}
+      />
+
+      <DragDropOverlay
+        isVisible={isDragOver}
+        dragType="copy"
+        onDrop={() => setIsDragOver(false)}
       />
     </div>
   );
