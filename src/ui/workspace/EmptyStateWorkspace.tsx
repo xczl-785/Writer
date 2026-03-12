@@ -66,8 +66,13 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      role="application"
+      aria-label="Empty State Workspace"
     >
-      <div className={`empty-state-content ${isDragOver ? 'drag-over' : ''}`}>
+      <div
+        className={`empty-state-content ${isDragOver ? 'drag-over' : ''}`}
+        tabIndex={-1}
+      >
         {/* Logo 区域 */}
         <div className="empty-state-header">
           <div className="empty-state-logo">✦ Writer</div>
@@ -139,10 +144,10 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
         )}
 
         {/* 拖拽提示 */}
-        <div className="empty-state-drag-hint" role="status" aria-live="polite">
+        <p className="empty-state-drag-hint">
           <Upload size={16} />
           <span>{t('workspace.dragHint')}</span>
-        </div>
+        </p>
       </div>
     </div>
   );
