@@ -600,27 +600,27 @@ pub async fn save_workspace_file(
     drop(guard);
 
     let content = serde_json::to_string_pretty(&config)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e: serde_json::Error| e.to_string())?;
 
     let target_path = Path::new(path);
     let parent = target_path.parent().ok_or("Invalid path")?;
 
     // 使用随机名称的临时文件
     let mut temp_file = NamedTempFile::new_in(parent)
-        .map_err(|e| e.to_string())?;
+        .map_err(|e: std::io::Error| e.to_string())?;
 
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(temp_file.path(), std::fs::Permissions::from_mode(0o600))
-            .map_err(|e| e.to_string())?;
+            .map_err(|e: std::io::Error| e.to_string())?;
     }
 
     temp_file.write_all(content.as_bytes())
-        .map_err(|e| e.to_string())?;
+        .map_err(|e: std::io::Error| e.to_string())?;
 
     temp_file.persist(target_path)
-        .map_err(|e| format!("Failed to persist file: {}", e))?;
+        .map_err(|e: tempfile::PersistError| format!("Failed to persist file: {}", e))?;
 
     Ok(())
 }
