@@ -1,12 +1,13 @@
 /**
  * Sidebar Component with File Tree and Context Menu
+ * V6 适配版本 - 支持多根文件夹工作区
  *
  * @see docs/current/PM/V5 功能清单.md - INT-010: 文件树右键菜单
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
-import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
+import { useWorkspaceStore, getWorkspaceType } from '../../state/slices/workspaceSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { fileActions } from '../../state/actions/fileActions';
 import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
@@ -45,6 +46,7 @@ import { t } from '../../i18n';
 type GhostNode = {
   parentPath: string | null;
   type: 'file' | 'directory';
+  rootPath: string; // V6: 记录所属根路径
 };
 
 type FolderIconProps = {
@@ -106,10 +108,43 @@ type SidebarProps = {
 };
 
 export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) {
-  const { nodes, selectedPath, setSelectedPath } = useFileTreeStore();
-  const { currentPath, activeFile } = useWorkspaceStore();
+  // V6 状态获取 - 使用 selector 模式
+  const rootFolders = useFileTreeStore((state) => state.rootFolders);
+  const selectedPath = useFileTreeStore((state) => state.selectedPath);
+  const setSelectedPath = useFileTreeStore((state) => state.setSelectedPath);
+  const setNodes = useFileTreeStore((state) => state.setNodes);
+  const loadingPaths = useFileTreeStore((state) => state.loadingPaths);
+  
+  const folders = useWorkspaceStore((state) => state.folders);
+  const activeFile = useWorkspaceStore((state) => state.activeFile);
+  
   const contextMenu = useContextMenu();
-  const visibleNodes = filterVisibleNodes(nodes);
+  
+  // V6 兼容：计算单一工作区路径（用于单文件夹模式的兼容逻辑）
+  const currentPath = folders.length > 0 ? folders[0].path : null;
+  const workspaceType = getWorkspaceType({ folders, workspaceFile: null, isDirty: false, openFiles: [], activeFile });
+  
+  // V6: 将所有根文件夹的树合并为统一的可见节点列表（用于搜索等功能）
+  const allVisibleNodes = useMemo(() => {
+    const allNodes: FileNode[] = [];
+    for (const rootFolder of rootFolders) {
+      const filtered = filterVisibleNodes(rootFolder.tree);
+      allNodes.push(...filtered);
+    }
+    return allNodes;
+  }, [rootFolders]);
+  
+  // V6: 根据选中路径找到对应的根路径
+  const getRootPathForPath = (path: string | null): string | null => {
+    if (!path) return currentPath;
+    for (const folder of rootFolders) {
+      if (path === folder.workspacePath || path.startsWith(folder.workspacePath + '/')) {
+        return folder.workspacePath;
+      }
+    }
+    return currentPath;
+  };
+  
   const [ghostNode, setGhostNode] = useState<GhostNode | null>(null);
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameTrigger, setRenameTrigger] = useState(0);
@@ -119,7 +154,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
   const collapseClickTimerRef = useRef<number | null>(null);
 
   const selectedNode = selectedPath
-    ? findNodeByPath(visibleNodes, selectedPath)
+    ? findNodeByPath(allVisibleNodes, selectedPath)
     : null;
 
   useEffect(() => {
@@ -130,34 +165,38 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
+  // V6: 搜索逻辑适配多根
   const searchMatches = useMemo(() => {
-    if (!currentPath || !normalizedQuery) {
+    if (!normalizedQuery) {
       return [] as FileNode[];
     }
 
-    const workspacePrefix = currentPath.endsWith('/')
-      ? currentPath
-      : `${currentPath}/`;
-
-    const toRelativePath = (path: string): string =>
-      path.startsWith(workspacePrefix)
-        ? path.slice(workspacePrefix.length)
-        : path;
-
-    const allFiles = flattenFileNodes(visibleNodes);
+    const allFiles = flattenFileNodes(allVisibleNodes);
     return allFiles.filter((node) => {
       const name = node.name.toLowerCase();
       const fullPath = node.path.toLowerCase();
-      const relativePath = toRelativePath(node.path).toLowerCase();
+      
+      // V6: 计算相对路径（相对于各自的根文件夹）
+      let relativePath = fullPath;
+      for (const folder of rootFolders) {
+        const prefix = folder.workspacePath.endsWith('/')
+          ? folder.workspacePath
+          : `${folder.workspacePath}/`;
+        if (fullPath.startsWith(prefix.toLowerCase())) {
+          relativePath = fullPath.slice(prefix.length);
+          break;
+        }
+      }
+      
       return (
         name.includes(normalizedQuery) ||
         fullPath.includes(normalizedQuery) ||
         relativePath.includes(normalizedQuery)
       );
     });
-  }, [currentPath, normalizedQuery, visibleNodes]);
+  }, [normalizedQuery, allVisibleNodes, rootFolders]);
 
-  const isSearchActive = Boolean(currentPath && normalizedQuery);
+  const isSearchActive = Boolean(normalizedQuery);
 
   useEffect(() => {
     if (!isSearchActive) {
@@ -216,18 +255,22 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
   };
 
   const startCreate = (type: 'file' | 'directory') => {
-    if (!currentPath) {
+    // V6: 使用选中的根路径或第一个根路径
+    const targetRootPath = getRootPathForPath(selectedPath) || currentPath;
+    if (!targetRootPath) {
       return;
     }
+    
     const basePath = resolveCreateBasePath({
-      currentPath,
+      currentPath: targetRootPath,
       selectedPath,
       selectedType: selectedNode?.type ?? null,
       activeFile,
     });
     setGhostNode({
-      parentPath: basePath === currentPath ? null : basePath,
+      parentPath: basePath === targetRootPath ? null : basePath,
       type,
+      rootPath: targetRootPath,
     });
   };
 
@@ -239,7 +282,12 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
     nameRaw: string,
     trigger: InlineCommitTrigger,
   ): Promise<void> => {
-    if (!ghostNode || !currentPath) {
+    if (!ghostNode) {
+      return;
+    }
+
+    const targetRootPath = ghostNode.rootPath;
+    if (!targetRootPath) {
       return;
     }
 
@@ -261,7 +309,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
       return;
     }
 
-    const basePath = ghostNode.parentPath || currentPath;
+    const basePath = ghostNode.parentPath || targetRootPath;
     const fullPath = joinPath(basePath, nodeName);
 
     try {
@@ -271,8 +319,9 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
         await FsService.createDir(fullPath);
       }
 
-      const refreshedNodes = await FsService.listTree(currentPath);
-      useFileTreeStore.getState().setNodes(refreshedNodes);
+      // V6: 刷新对应根文件夹的树
+      const refreshedNodes = await FsService.listTree(targetRootPath);
+      setNodes(targetRootPath, refreshedNodes);
       setSelectedPath(fullPath);
 
       if (ghostNode.type === 'file') {
@@ -351,22 +400,30 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
     }
   };
 
-  const openNodeContextMenu = (event: React.MouseEvent, node: FileNode) => {
+  const openNodeContextMenu = (event: React.MouseEvent, node: FileNode, rootPath: string) => {
     event.preventDefault();
     event.stopPropagation();
     setSelectedPath(node.path);
 
-    const isReservedPath = Boolean(currentPath && node.path === currentPath);
+    const isReservedPath = rootFolders.some(f => node.path === f.workspacePath);
     const items = getFileTreeMenuItems({
       node,
       isReservedPath,
       onNewFile: () => {
         setSelectedPath(node.path);
-        startCreate('file');
+        setGhostNode({
+          parentPath: node.path,
+          type: 'file',
+          rootPath,
+        });
       },
       onNewFolder: () => {
         setSelectedPath(node.path);
-        startCreate('directory');
+        setGhostNode({
+          parentPath: node.path,
+          type: 'directory',
+          rootPath,
+        });
       },
       onRename: () => {
         setSelectedPath(node.path);
@@ -388,7 +445,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
   };
 
   const commandCtx = {
-    hasWorkspace: Boolean(currentPath),
+    hasWorkspace: rootFolders.length > 0,
     hasSelection: Boolean(selectedNode),
     openWorkspace,
     beginCreateFile: () => startCreate('file'),
@@ -446,12 +503,78 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
         'writer:sidebar-command',
         onMenuCommand as EventListener,
       );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- commandCtx is an object literal recreated every render
   }, [currentPath, selectedNode, ghostNode, renamingPath]);
+
+  // V6: 渲染空状态
+  const renderEmptyState = () => (
+    <div className="flex flex-col items-center justify-center h-32 text-zinc-400 text-sm">
+      <FolderIcon className="mb-2 h-6 w-6 opacity-20 text-zinc-500" />
+      <span>
+        {rootFolders.length > 0 ? t('sidebar.noMarkdown') : t('sidebar.noFolder')}
+      </span>
+      {rootFolders.length === 0 && (
+        <button
+          type="button"
+          onClick={openWorkspace}
+          className="mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium"
+        >
+          {t('sidebar.openFolderBtn')}
+        </button>
+      )}
+    </div>
+  );
+
+  // V6: 渲染单个根文件夹的文件树
+  const renderRootFolderTree = (rootFolder: { workspacePath: string; displayName: string; tree: FileNode[] }, level: number = 0) => {
+    const visibleNodes = filterVisibleNodes(rootFolder.tree);
+    const isLoading = loadingPaths.has(rootFolder.workspacePath);
+    
+    return (
+      <div key={rootFolder.workspacePath} className="root-folder-group">
+        {/* V6: 多根模式下显示根文件夹标题 */}
+        {workspaceType === 'multi' && (
+          <div
+            className="px-2 py-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider border-b border-zinc-200/50 mb-1"
+            title={rootFolder.workspacePath}
+          >
+            {rootFolder.displayName}
+          </div>
+        )}
+        
+        {isLoading ? (
+          <div className="px-3 py-2 text-xs text-zinc-400">
+            {t('sidebar.loading')}
+          </div>
+        ) : (
+          visibleNodes.map((node) => (
+            <FileTreeNode
+              key={node.path}
+              node={node}
+              level={level}
+              selectedPath={selectedPath}
+              activeFile={activeFile}
+              renamingPath={renamingPath}
+              renameTrigger={renameTrigger}
+              ghostNode={ghostNode}
+              onGhostCommit={commitCreate}
+              onGhostCancel={cancelCreate}
+              onOpenContextMenu={(e, n) => openNodeContextMenu(e, n, rootFolder.workspacePath)}
+              onRequestRenameStart={(path) => setRenamingPath(path)}
+              onRequestRenameEnd={() => setRenamingPath(null)}
+              onSelect={(path) => setSelectedPath(path)}
+            />
+          ))
+        )}
+      </div>
+    );
+  };
 
   return (
     <div
       className="h-full w-64 flex-shrink-0 select-none border-r border-zinc-200 bg-zinc-50 flex flex-col"
+      role="region"
+      aria-label={t('sidebar.title')}
       tabIndex={0}
       onFocusCapture={() => setExplorerFocus(true)}
       onBlurCapture={(e) => {
@@ -463,12 +586,15 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
       <div
         className="h-10 px-3 flex items-center justify-between border-b border-zinc-200/70"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        role="presentation"
       >
         <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
           {t('sidebar.title')}
         </span>
         <div className="flex items-center gap-1">
           <button
+            type="button"
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx)
             }
@@ -478,6 +604,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
             <FilePlus size={16} />
           </button>
           <button
+            type="button"
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx)
             }
@@ -487,6 +614,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
             <FolderPlus size={16} />
           </button>
           <button
+            type="button"
             onClick={handleCollapseButtonClick}
             onDoubleClick={handleCollapseButtonDoubleClick}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
@@ -500,6 +628,8 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
       <div
         className="px-3 py-2 border-b border-zinc-200"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        role="presentation"
       >
         <label htmlFor="explorer-search" className="sr-only">
           {t('sidebar.search')}
@@ -542,9 +672,9 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
                 openSearchMatch(searchMatches[searchActiveIndex]);
               }
             }}
-            disabled={!currentPath}
+            disabled={rootFolders.length === 0}
             placeholder={
-              currentPath
+              rootFolders.length > 0
                 ? t('sidebar.searchPlaceholder')
                 : t('sidebar.openFolderToSearch')
             }
@@ -582,6 +712,8 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
             setSelectedPath(null);
           }
         }}
+        onKeyDown={() => {}}
+        role="presentation"
       >
         {isSearchActive ? (
           <div>
@@ -602,15 +734,17 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
               >
                 {searchMatches.map((node, idx) => {
                   const isActive = idx === searchActiveIndex;
-                  const workspacePrefix = currentPath
-                    ? currentPath.endsWith('/')
-                      ? currentPath
-                      : `${currentPath}/`
-                    : '';
-                  const relativePath =
-                    workspacePrefix && node.path.startsWith(workspacePrefix)
-                      ? node.path.slice(workspacePrefix.length)
-                      : node.path;
+                  // V6: 找到对应的根路径计算相对路径
+                  let relativePath = node.path;
+                  for (const folder of rootFolders) {
+                    const prefix = folder.workspacePath.endsWith('/')
+                      ? folder.workspacePath
+                      : `${folder.workspacePath}/`;
+                    if (node.path.startsWith(prefix)) {
+                      relativePath = node.path.slice(prefix.length);
+                      break;
+                    }
+                  }
                   return (
                     <button
                       key={node.path}
@@ -640,23 +774,11 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
               </div>
             )}
           </div>
-        ) : visibleNodes.length === 0 && !ghostNode ? (
-          <div className="flex flex-col items-center justify-center h-32 text-zinc-400 text-sm">
-            <FolderIcon className="mb-2 h-6 w-6 opacity-20 text-zinc-500" />
-            <span>
-              {currentPath ? t('sidebar.noMarkdown') : t('sidebar.noFolder')}
-            </span>
-            {!currentPath && (
-              <button
-                onClick={openWorkspace}
-                className="mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium"
-              >
-                {t('sidebar.openFolderBtn')}
-              </button>
-            )}
-          </div>
+        ) : rootFolders.length === 0 && !ghostNode ? (
+          renderEmptyState()
         ) : (
           <div className="space-y-0.5">
+            {/* V6: 顶层 ghost 节点（根级别创建） */}
             {ghostNode && ghostNode.parentPath === null && (
               <GhostRow
                 level={0}
@@ -666,24 +788,10 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
               />
             )}
 
-            {visibleNodes.map((node) => (
-              <FileTreeNode
-                key={node.path}
-                node={node}
-                level={0}
-                selectedPath={selectedPath}
-                activeFile={activeFile}
-                renamingPath={renamingPath}
-                renameTrigger={renameTrigger}
-                ghostNode={ghostNode}
-                onGhostCommit={commitCreate}
-                onGhostCancel={cancelCreate}
-                onOpenContextMenu={openNodeContextMenu}
-                onRequestRenameStart={(path) => setRenamingPath(path)}
-                onRequestRenameEnd={() => setRenamingPath(null)}
-                onSelect={(path) => setSelectedPath(path)}
-              />
-            ))}
+            {/* V6: 渲染所有根文件夹 */}
+            {rootFolders.map((rootFolder) => 
+              renderRootFolderTree(rootFolder, 0)
+            )}
           </div>
         )}
       </div>
@@ -784,6 +892,7 @@ function FileTreeNode({
       setRenameDraft(getDisplayName(node));
       setIsRenaming(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- renameTrigger is used to trigger re-renders when rename is requested
   }, [node, renamingPath, renameTrigger]);
 
   useEffect(() => {
@@ -888,7 +997,16 @@ function FileTreeNode({
         }`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleClick(e as unknown as React.MouseEvent);
+          }
+        }}
         onContextMenu={(event) => onOpenContextMenu(event, node)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isDirectory ? isExpanded : undefined}
       >
         {isActiveFile ? (
           <span
