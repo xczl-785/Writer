@@ -234,6 +234,19 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'settings.placeholder.desc':
       '该模块正在匠心雕琢中，我们将保持“沉静与克制”，仅在打磨至完美时上线。',
     'settings.close': '关闭',
+    // Error States
+    'errorStates.folderMissing': '文件夹不存在或已被移动',
+    'errorStates.openFolder': '打开文件夹',
+    'errorStates.removeFromWorkspace': '移除',
+    'errorStates.fileDeleted': '文件已删除',
+    'errorStates.folderDeleted': '文件夹已删除',
+    'errorStates.restore': '恢复',
+    'errorStates.confirmRemove': '确认移除',
+    'errorStates.dropFilesHere': '拖放文件到此处',
+    'errorStates.dropToFolder': '拖放到此文件夹',
+    'errorStates.dropToWorkspace': '拖放到工作区',
+    'errorStates.copyFiles': '按住 Ctrl 复制文件',
+    'errorStates.moveFiles': '移动文件',
   },
   'en-US': {
     'menu.file': 'File',
@@ -473,5 +486,18 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'settings.placeholder.desc':
       'This module is being carefully crafted and will ship when it is ready.',
     'settings.close': 'Close',
+    // Error States
+    'errorStates.folderMissing': 'Folder does not exist or has been moved',
+    'errorStates.openFolder': 'Open Folder',
+    'errorStates.removeFromWorkspace': 'Remove',
+    'errorStates.fileDeleted': 'File deleted',
+    'errorStates.folderDeleted': 'Folder deleted',
+    'errorStates.restore': 'Restore',
+    'errorStates.confirmRemove': 'Confirm Remove',
+    'errorStates.dropFilesHere': 'Drop files here',
+    'errorStates.dropToFolder': 'Drop to this folder',
+    'errorStates.dropToWorkspace': 'Drop to workspace',
+    'errorStates.copyFiles': 'Hold Ctrl to copy files',
+    'errorStates.moveFiles': 'Move files',
   },
 };

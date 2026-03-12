@@ -1,5 +1,5 @@
 // src/ui/sidebar/WorkspaceRootHeader.tsx
-// V6 根文件夹头部组件 - 支持右键菜单
+// V6 根文件夹头部组件 - 支持右键菜单和缺失状态
 
 import React, { useState, useCallback } from 'react';
 import { ChevronDown, ChevronRight, Folder, X } from 'lucide-react';
@@ -10,17 +10,21 @@ import { workspaceActions } from '../../state/actions/workspaceActions';
 import { FsService } from '../../services/fs/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
+import { FolderMissingState } from '../components/ErrorStates';
 
 interface WorkspaceRootHeaderProps {
   folder: {
     workspacePath: string;
     displayName: string;
   };
+  /** 文件夹是否缺失（不存在或已移动） */
+  isMissing?: boolean;
   onContextMenu?: (event: React.MouseEvent) => void;
 }
 
 export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   folder,
+  isMissing = false,
   onContextMenu,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -122,6 +126,17 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
       onContextMenu,
     ],
   );
+
+  // 如果文件夹缺失，显示缺失状态
+  if (isMissing) {
+    return (
+      <FolderMissingState
+        folderPath={folder.workspacePath}
+        displayName={folder.displayName}
+        onRemove={handleRemoveFolder}
+      />
+    );
+  }
 
   return (
     <>
