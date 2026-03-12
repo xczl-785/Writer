@@ -34,6 +34,8 @@ import {
   hasInvalidNodeName,
   resolveCreateBasePath,
 } from './pathing';
+import { flattenMultipleRoots } from '../components/VirtualizedFileTree';
+import { VirtualizedFileTree } from '../components/VirtualizedFileTree/VirtualizedFileTree';
 import { joinPath } from '../../utils/pathUtils';
 import { dispatchExplorerCommand, EXPLORER_COMMANDS } from './explorerCommands';
 import { matchExplorerShortcut } from './explorerKeybindings';
@@ -122,6 +124,8 @@ export function Sidebar({
   const setSelectedPath = useFileTreeStore((state) => state.setSelectedPath);
   const setNodes = useFileTreeStore((state) => state.setNodes);
   const loadingPaths = useFileTreeStore((state) => state.loadingPaths);
+  const expandedPaths = useFileTreeStore((state) => state.expandedPaths);
+  const toggleNode = useFileTreeStore((state) => state.toggleNode);
 
   const folders = useWorkspaceStore((state) => state.folders);
   const activeFile = useWorkspaceStore((state) => state.activeFile);
@@ -147,6 +151,17 @@ export function Sidebar({
     }
     return allNodes;
   }, [rootFolders]);
+
+  // 虚拟滚动阈值
+  const VIRTUAL_SCROLL_THRESHOLD = 100;
+
+  // V6: 扁平化文件树用于虚拟滚动
+  const flattenedNodes = useMemo(() => {
+    return flattenMultipleRoots(rootFolders, expandedPaths);
+  }, [rootFolders, expandedPaths]);
+
+  // 判断是否使用虚拟滚动
+  const shouldUseVirtualization = flattenedNodes.length > VIRTUAL_SCROLL_THRESHOLD;
 
   // V6: 根据选中路径找到对应的根路径
   const getRootPathForPath = (path: string | null): string | null => {
@@ -871,6 +886,25 @@ export function Sidebar({
           </div>
         ) : rootFolders.length === 0 && !ghostNode ? (
           renderEmptyState()
+        ) : shouldUseVirtualization ? (
+          // 虚拟滚动模式（节点数 > 100）
+          <VirtualizedFileTree
+            flattenedNodes={flattenedNodes}
+            containerHeight={500}
+            selectedPath={selectedPath}
+            activeFile={activeFile}
+            renamingPath={renamingPath}
+            renameTrigger={renameTrigger}
+            ghostNode={ghostNode}
+            onToggleExpand={toggleNode}
+            onSelect={setSelectedPath}
+            onOpenContextMenu={openNodeContextMenu}
+            onGhostCommit={commitCreate}
+            onGhostCancel={cancelCreate}
+            onRequestRenameStart={(path) => setRenamingPath(path)}
+            onRequestRenameEnd={() => setRenamingPath(null)}
+            className="flex-1"
+          />
         ) : (
           <div className="space-y-0.5">
             {/* V6: 顶层 ghost 节点（根级别创建） */}
