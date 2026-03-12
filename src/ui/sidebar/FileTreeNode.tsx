@@ -35,6 +35,12 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, rootPat
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      handleClick();
+    }
+  };
+
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     // TODO: 集成右键菜单
@@ -59,27 +65,38 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, rootPat
   }
 
   return (
-    <>
-      <div
-        className={`file-tree-node ${isActive ? 'active' : ''} ${isFolder ? 'folder' : 'file'}`}
-        style={style}
-        onClick={handleClick}
-        onContextMenu={handleContextMenu}
-      >
-        {isFolder && (
-          <span className="expand-icon">
-            {isActuallyExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          </span>
-        )}
-        
-        <span className="node-icon">
-          {isFolder ? <Folder size={16} /> : <FileIcon size={16} />}
-        </span>
-        
-        <button className="node-name" type="button" onClick={handleClick}>
-          {node.name}
+    <div
+      className={`file-tree-node ${isActive ? 'active' : ''} ${isFolder ? 'folder' : 'file'}`}
+      style={style}
+      role={isFolder ? 'treeitem' : 'treeitem'}
+      aria-expanded={isFolder ? isActuallyExpanded : undefined}
+      aria-selected={isActive}
+    >
+      {isFolder && (
+        <button
+          className="expand-icon"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+        >
+          {isActuallyExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </button>
-      </div>
+      )}
+      
+      <span className="node-icon" aria-hidden="true">
+        {isFolder ? <Folder size={16} /> : <FileIcon size={16} />}
+      </span>
+      
+      <button
+        className={`node-name ${isActive ? 'active' : ''}`}
+        type="button"
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+      >
+        {node.name}
+      </button>
       
       {isFolder && isActuallyExpanded && node.children?.map((child) => (
         <FileTreeNode
@@ -89,6 +106,6 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, rootPat
           rootPath={rootPath}
         />
       ))}
-    </>
+    </div>
   );
 };
