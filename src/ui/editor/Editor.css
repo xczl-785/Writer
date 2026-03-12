@@ -176,6 +176,12 @@
   outline-offset: 1px;
 }
 
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .ProseMirror th {
   background: #f8fafc;
   font-weight: 600;
