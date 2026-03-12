@@ -16,7 +16,10 @@ describe('Editor orchestrator composition', () => {
   });
 
   it('routes editor shell rendering through EditorView', () => {
-    const editorTsx = readFileSync(join(currentDir, '..', 'Editor.tsx'), 'utf-8');
+    const editorTsx = readFileSync(
+      join(currentDir, '..', 'Editor.tsx'),
+      'utf-8',
+    );
     const implTsx = readFileSync(
       join(currentDir, '..', 'EditorImpl.tsx'),
       'utf-8',

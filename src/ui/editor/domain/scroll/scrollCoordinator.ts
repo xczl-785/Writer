@@ -6,10 +6,17 @@
  * Provides a unified entry point for future scroll conflict management.
  */
 
-import type { ScrollRequest, ScrollResult, ScrollContainerInfo } from './scrollTypes';
+import type {
+  ScrollRequest,
+  ScrollResult,
+  ScrollContainerInfo,
+} from './scrollTypes';
 
 export type ScrollCoordinator = {
-  requestScroll: (request: ScrollRequest, containerInfo: ScrollContainerInfo) => ScrollResult;
+  requestScroll: (
+    request: ScrollRequest,
+    containerInfo: ScrollContainerInfo,
+  ) => ScrollResult;
   getCurrentRequest: () => ScrollRequest | null;
   reset: () => void;
 };
@@ -27,7 +34,10 @@ export const createScrollCoordinator = (): ScrollCoordinator => {
       if (request.targetScrollTop !== undefined) {
         const targetScrollTop = Math.max(
           0,
-          Math.min(request.targetScrollTop, containerInfo.scrollHeight - containerInfo.clientHeight),
+          Math.min(
+            request.targetScrollTop,
+            containerInfo.scrollHeight - containerInfo.clientHeight,
+          ),
         );
         return {
           handled: true,

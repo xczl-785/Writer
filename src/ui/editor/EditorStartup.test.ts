@@ -49,8 +49,14 @@ describe('Editor startup and persistence contracts', () => {
 
   it('has a favicon to prevent startup 404 noise', () => {
     const currentDir = dirname(fileURLToPath(import.meta.url));
-    const faviconPath = join(currentDir, '..', '..', '..', 'public', 'favicon.ico');
+    const faviconPath = join(
+      currentDir,
+      '..',
+      '..',
+      '..',
+      'public',
+      'favicon.ico',
+    );
     expect(existsSync(faviconPath)).toBe(true);
   });
 });
-

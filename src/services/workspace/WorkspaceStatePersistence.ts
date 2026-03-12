@@ -12,31 +12,36 @@ export const WorkspaceStatePersistence = {
     // Linux: ~/.config/Writer/WorkspaceStorage/<id>/
     return `/workspace-storage/${_workspaceId}`;
   },
-  
+
   // 保存状态
-  async saveState(_workspaceId: string, state: Partial<WorkspaceState>): Promise<void> {
+  async saveState(
+    _workspaceId: string,
+    state: Partial<WorkspaceState>,
+  ): Promise<void> {
     // TODO: 实现状态持久化
     console.log('Saving state for workspace', _workspaceId, state);
   },
-  
+
   // 加载状态
-  async loadState(_workspaceId: string): Promise<Partial<WorkspaceState> | null> {
+  async loadState(
+    _workspaceId: string,
+  ): Promise<Partial<WorkspaceState> | null> {
     // TODO: 实现状态加载
     return null;
   },
-  
+
   // 生成工作区 ID
   generateId(workspacePath: string): string {
     // 使用简单 hash 生成唯一 ID
     let hash = 0;
     for (let i = 0; i < workspacePath.length; i++) {
       const char = workspacePath.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash).toString(36);
   },
-  
+
   // 保存当前状态（供 actions 调用）
   async saveCurrentState(): Promise<void> {
     // 延迟实现：在 Phase 0-6 完成后实现

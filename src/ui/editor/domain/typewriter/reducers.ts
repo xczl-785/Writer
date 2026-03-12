@@ -80,7 +80,10 @@ export const reduceTypewriterState = (
       thresholdY: event.payload.thresholdY,
     })
   ) {
-    return createLockedTypewriterState(event.payload.nextCaretTop, event.source);
+    return createLockedTypewriterState(
+      event.payload.nextCaretTop,
+      event.source,
+    );
   }
 
   return {
@@ -93,4 +96,3 @@ export const dispatchTypewriterEvent = (
   state: TypewriterState,
   event: TypewriterEventEnvelope,
 ): TypewriterState => reduceTypewriterState(state, event);
-

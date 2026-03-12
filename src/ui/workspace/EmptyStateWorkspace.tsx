@@ -35,26 +35,32 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      // 简化处理：只要有文件拖入就调用 onOpenFolder
-      // 实际路径获取需要 Tauri API 支持
-      onOpenFolder();
-    }
-  }, [onOpenFolder]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        // 简化处理：只要有文件拖入就调用 onOpenFolder
+        // 实际路径获取需要 Tauri API 支持
+        onOpenFolder();
+      }
+    },
+    [onOpenFolder],
+  );
 
   // 按类型分组最近项目
-  const groupedItems = recentItems.reduce((acc, item) => {
-    if (!acc[item.type]) {
-      acc[item.type] = [];
-    }
-    acc[item.type].push(item);
-    return acc;
-  }, {} as Record<string, RecentItem[]>);
+  const groupedItems = recentItems.reduce(
+    (acc, item) => {
+      if (!acc[item.type]) {
+        acc[item.type] = [];
+      }
+      acc[item.type].push(item);
+      return acc;
+    },
+    {} as Record<string, RecentItem[]>,
+  );
 
   const recentWorkspaces = groupedItems.workspace || [];
   const recentFolders = groupedItems.folder || [];
@@ -89,7 +95,7 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
             <FolderOpen size={18} />
             {t('workspace.openFolder')}
           </button>
-          
+
           <button
             className="btn btn-secondary"
             onClick={onOpenWorkspace}
@@ -101,41 +107,57 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
         </div>
 
         {/* 最近项目 */}
-        {(recentWorkspaces.length > 0 || recentFolders.length > 0 || recentFiles.length > 0) && (
+        {(recentWorkspaces.length > 0 ||
+          recentFolders.length > 0 ||
+          recentFiles.length > 0) && (
           <div className="empty-state-recent">
-            <h3 className="empty-state-recent-title">{t('workspace.recent')}</h3>
-            
+            <h3 className="empty-state-recent-title">
+              {t('workspace.recent')}
+            </h3>
+
             {recentWorkspaces.length > 0 && (
               <div className="empty-state-recent-group">
-                <span className="empty-state-recent-label">{t('workspace.workspaces')}</span>
+                <span className="empty-state-recent-label">
+                  {t('workspace.workspaces')}
+                </span>
                 {recentWorkspaces.slice(0, 5).map((item) => (
                   <div key={item.path} className="empty-state-recent-item">
                     <span className="item-icon">💼</span>
-                    <span className="item-name" title={item.path}>{item.name}</span>
+                    <span className="item-name" title={item.path}>
+                      {item.name}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
-            
+
             {recentFolders.length > 0 && (
               <div className="empty-state-recent-group">
-                <span className="empty-state-recent-label">{t('workspace.folders')}</span>
+                <span className="empty-state-recent-label">
+                  {t('workspace.folders')}
+                </span>
                 {recentFolders.slice(0, 5).map((item) => (
                   <div key={item.path} className="empty-state-recent-item">
                     <span className="item-icon">📁</span>
-                    <span className="item-name" title={item.path}>{item.name}</span>
+                    <span className="item-name" title={item.path}>
+                      {item.name}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
-            
+
             {recentFiles.length > 0 && (
               <div className="empty-state-recent-group">
-                <span className="empty-state-recent-label">{t('workspace.files')}</span>
+                <span className="empty-state-recent-label">
+                  {t('workspace.files')}
+                </span>
                 {recentFiles.slice(0, 5).map((item) => (
                   <div key={item.path} className="empty-state-recent-item">
                     <span className="item-icon">📄</span>
-                    <span className="item-name" title={item.path}>{item.name}</span>
+                    <span className="item-name" title={item.path}>
+                      {item.name}
+                    </span>
                   </div>
                 ))}
               </div>
