@@ -41,12 +41,6 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, rootPat
     }
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    // TODO: 集成右键菜单
-    console.log('Context menu for:', node.path);
-  };
-
   const style: React.CSSProperties = {
     paddingLeft: `${depth * 16}px`,
   };
