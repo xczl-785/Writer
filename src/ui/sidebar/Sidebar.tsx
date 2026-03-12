@@ -7,7 +7,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
-import { useWorkspaceStore, getWorkspaceType } from '../../state/slices/workspaceSlice';
+import {
+  useWorkspaceStore,
+  getWorkspaceType,
+} from '../../state/slices/workspaceSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { fileActions } from '../../state/actions/fileActions';
 import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
@@ -16,6 +19,7 @@ import { FsSafety } from '../../services/fs/FsSafety';
 import type { FileNode } from '../../state/types';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
+import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
 import { showDeleteConfirmDialog } from '../components/Dialog';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import {
@@ -107,23 +111,32 @@ type SidebarProps = {
   onToggleFocusZen?: () => void;
 };
 
-export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) {
+export function Sidebar({
+  onToggleVisibility,
+  onToggleFocusZen,
+}: SidebarProps) {
   // V6 状态获取 - 使用 selector 模式
   const rootFolders = useFileTreeStore((state) => state.rootFolders);
   const selectedPath = useFileTreeStore((state) => state.selectedPath);
   const setSelectedPath = useFileTreeStore((state) => state.setSelectedPath);
   const setNodes = useFileTreeStore((state) => state.setNodes);
   const loadingPaths = useFileTreeStore((state) => state.loadingPaths);
-  
+
   const folders = useWorkspaceStore((state) => state.folders);
   const activeFile = useWorkspaceStore((state) => state.activeFile);
-  
+
   const contextMenu = useContextMenu();
-  
+
   // V6 兼容：计算单一工作区路径（用于单文件夹模式的兼容逻辑）
   const currentPath = folders.length > 0 ? folders[0].path : null;
-  const workspaceType = getWorkspaceType({ folders, workspaceFile: null, isDirty: false, openFiles: [], activeFile });
-  
+  const workspaceType = getWorkspaceType({
+    folders,
+    workspaceFile: null,
+    isDirty: false,
+    openFiles: [],
+    activeFile,
+  });
+
   // V6: 将所有根文件夹的树合并为统一的可见节点列表（用于搜索等功能）
   const allVisibleNodes = useMemo(() => {
     const allNodes: FileNode[] = [];
@@ -133,18 +146,21 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
     }
     return allNodes;
   }, [rootFolders]);
-  
+
   // V6: 根据选中路径找到对应的根路径
   const getRootPathForPath = (path: string | null): string | null => {
     if (!path) return currentPath;
     for (const folder of rootFolders) {
-      if (path === folder.workspacePath || path.startsWith(folder.workspacePath + '/')) {
+      if (
+        path === folder.workspacePath ||
+        path.startsWith(folder.workspacePath + '/')
+      ) {
         return folder.workspacePath;
       }
     }
     return currentPath;
   };
-  
+
   const [ghostNode, setGhostNode] = useState<GhostNode | null>(null);
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameTrigger, setRenameTrigger] = useState(0);
@@ -175,7 +191,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
     return allFiles.filter((node) => {
       const name = node.name.toLowerCase();
       const fullPath = node.path.toLowerCase();
-      
+
       // V6: 计算相对路径（相对于各自的根文件夹）
       let relativePath = fullPath;
       for (const folder of rootFolders) {
@@ -187,7 +203,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
           break;
         }
       }
-      
+
       return (
         name.includes(normalizedQuery) ||
         fullPath.includes(normalizedQuery) ||
@@ -260,7 +276,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
     if (!targetRootPath) {
       return;
     }
-    
+
     const basePath = resolveCreateBasePath({
       currentPath: targetRootPath,
       selectedPath,
@@ -400,12 +416,18 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
     }
   };
 
-  const openNodeContextMenu = (event: React.MouseEvent, node: FileNode, rootPath: string) => {
+  const openNodeContextMenu = (
+    event: React.MouseEvent,
+    node: FileNode,
+    rootPath: string,
+  ) => {
     event.preventDefault();
     event.stopPropagation();
     setSelectedPath(node.path);
 
-    const isReservedPath = rootFolders.some(f => node.path === f.workspacePath);
+    const isReservedPath = rootFolders.some(
+      (f) => node.path === f.workspacePath,
+    );
     const items = getFileTreeMenuItems({
       node,
       isReservedPath,
@@ -439,6 +461,45 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
       onDelete: () => {
         void confirmDeleteNode(node);
       },
+    });
+
+    contextMenu.open(event.clientX, event.clientY, items);
+  };
+
+  // V6: 空白处右键菜单
+  const openEmptyAreaContextMenu = (event: React.MouseEvent) => {
+    // 只在点击到容器本身（空白区域）时触发
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const items = getEmptyAreaMenuItems({
+      onAddFolderToWorkspace: () => {
+        void openWorkspace();
+      },
+      onNewFile: () => {
+        // V6: 使用第一个根路径作为默认创建位置
+        const targetRootPath = rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
+        if (!targetRootPath) return;
+        setGhostNode({
+          parentPath: null,
+          type: 'file',
+          rootPath: targetRootPath,
+        });
+      },
+      onNewFolder: () => {
+        const targetRootPath = rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
+        if (!targetRootPath) return;
+        setGhostNode({
+          parentPath: null,
+          type: 'directory',
+          rootPath: targetRootPath,
+        });
+      },
+      hasWorkspace: rootFolders.length > 0,
     });
 
     contextMenu.open(event.clientX, event.clientY, items);
@@ -511,7 +572,9 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
     <div className="flex flex-col items-center justify-center h-32 text-zinc-400 text-sm">
       <FolderIcon className="mb-2 h-6 w-6 opacity-20 text-zinc-500" />
       <span>
-        {rootFolders.length > 0 ? t('sidebar.noMarkdown') : t('sidebar.noFolder')}
+        {rootFolders.length > 0
+          ? t('sidebar.noMarkdown')
+          : t('sidebar.noFolder')}
       </span>
       {rootFolders.length === 0 && (
         <button
@@ -526,10 +589,17 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
   );
 
   // V6: 渲染单个根文件夹的文件树
-  const renderRootFolderTree = (rootFolder: { workspacePath: string; displayName: string; tree: FileNode[] }, level: number = 0) => {
+  const renderRootFolderTree = (
+    rootFolder: {
+      workspacePath: string;
+      displayName: string;
+      tree: FileNode[];
+    },
+    level: number = 0,
+  ) => {
     const visibleNodes = filterVisibleNodes(rootFolder.tree);
     const isLoading = loadingPaths.has(rootFolder.workspacePath);
-    
+
     return (
       <div key={rootFolder.workspacePath} className="root-folder-group">
         {/* V6: 多根模式下显示根文件夹标题 */}
@@ -541,7 +611,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
             {rootFolder.displayName}
           </div>
         )}
-        
+
         {isLoading ? (
           <div className="px-3 py-2 text-xs text-zinc-400">
             {t('sidebar.loading')}
@@ -559,7 +629,9 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
               ghostNode={ghostNode}
               onGhostCommit={commitCreate}
               onGhostCancel={cancelCreate}
-              onOpenContextMenu={(e, n) => openNodeContextMenu(e, n, rootFolder.workspacePath)}
+              onOpenContextMenu={(e, n) =>
+                openNodeContextMenu(e, n, rootFolder.workspacePath)
+              }
               onRequestRenameStart={(path) => setRenamingPath(path)}
               onRequestRenameEnd={() => setRenamingPath(null)}
               onSelect={(path) => setSelectedPath(path)}
@@ -712,6 +784,7 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
             setSelectedPath(null);
           }
         }}
+        onContextMenu={openEmptyAreaContextMenu}
         onKeyDown={() => {}}
         role="presentation"
       >
@@ -789,8 +862,8 @@ export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) 
             )}
 
             {/* V6: 渲染所有根文件夹 */}
-            {rootFolders.map((rootFolder) => 
-              renderRootFolderTree(rootFolder, 0)
+            {rootFolders.map((rootFolder) =>
+              renderRootFolderTree(rootFolder, 0),
             )}
           </div>
         )}
@@ -892,7 +965,6 @@ function FileTreeNode({
       setRenameDraft(getDisplayName(node));
       setIsRenaming(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- renameTrigger is used to trigger re-renders when rename is requested
   }, [node, renamingPath, renameTrigger]);
 
   useEffect(() => {

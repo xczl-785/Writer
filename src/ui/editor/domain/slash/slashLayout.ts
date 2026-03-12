@@ -100,7 +100,10 @@ export function computeSlashMenuLayout(
   }
 
   const placeAbove = spaceAbove > spaceBelow;
-  const availableHeight = Math.max(0, Math.floor(placeAbove ? spaceAbove : spaceBelow));
+  const availableHeight = Math.max(
+    0,
+    Math.floor(placeAbove ? spaceAbove : spaceBelow),
+  );
   const top = placeAbove
     ? Math.max(
         SLASH_MENU_EDGE_PADDING,

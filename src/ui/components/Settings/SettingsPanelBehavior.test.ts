@@ -19,9 +19,11 @@ describe('Settings panel behavior', () => {
   );
 
   it('models item states with active/coming-soon/disabled modes', () => {
-    expect(settingsTsx).toContain("type SettingItemMode = 'active' | 'coming-soon' | 'disabled'");
+    expect(settingsTsx).toContain(
+      "type SettingItemMode = 'active' | 'coming-soon' | 'disabled'",
+    );
     expect(settingsTsx).toContain("mode: 'coming-soon'");
-    expect(settingsTsx).toContain("className={`settings-item ${");
+    expect(settingsTsx).toContain('className={`settings-item ${');
   });
 
   it('keeps only language selector active in general settings', () => {
@@ -51,8 +53,10 @@ describe('Settings panel behavior', () => {
     expect(appCss).toContain('padding: 20px;');
     expect(appCss).toContain('box-shadow: none;');
     expect(appCss).toContain('.settings-sidebar');
-    expect(appCss).toContain('.settings-tab.is-active .settings-tab__indicator');
+    expect(appCss).toContain(
+      '.settings-tab.is-active .settings-tab__indicator',
+    );
     expect(appCss).toContain('.settings-placeholder');
-    expect(settingsTsx).toContain("data-viewport-tier={viewportTier}");
+    expect(settingsTsx).toContain('data-viewport-tier={viewportTier}');
   });
 });

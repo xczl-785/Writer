@@ -33,7 +33,7 @@ export const FsService = {
   async listTree(path: string): Promise<FileNode[]> {
     return invoke('list_tree', { path });
   },
-  
+
   async listTreeBatch(paths: string[]): Promise<FolderPathResult[]> {
     return invoke('list_tree_batch', { paths });
   },
@@ -45,12 +45,15 @@ export const FsService = {
   async writeFileAtomic(path: string, content: string): Promise<void> {
     return invoke('write_file_atomic', { path, content });
   },
-  
+
   async parseWorkspaceFile(path: string): Promise<WorkspaceConfig> {
     return invoke('parse_workspace_file', { path });
   },
-  
-  async saveWorkspaceFile(path: string, config: WorkspaceConfig): Promise<void> {
+
+  async saveWorkspaceFile(
+    path: string,
+    config: WorkspaceConfig,
+  ): Promise<void> {
     return invoke('save_workspace_file', { path, config });
   },
 

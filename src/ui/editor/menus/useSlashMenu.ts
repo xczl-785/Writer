@@ -316,9 +316,12 @@ export function useSlashMenu({
     [editor, closeSlash],
   );
 
-  const hoverIndex = useCallback((index: number) => {
-    setSelected(index);
-  }, [setSelected]);
+  const hoverIndex = useCallback(
+    (index: number) => {
+      setSelected(index);
+    },
+    [setSelected],
+  );
 
   // Event handlers
   useEffect(() => {
@@ -453,7 +456,10 @@ export function useSlashMenu({
           parent.firstChild?.isText === true &&
           parent.textContent === data;
 
-        if (!isStrictSlashTriggerEligible(editor) && !triggeredByCommittedChar) {
+        if (
+          !isStrictSlashTriggerEligible(editor) &&
+          !triggeredByCommittedChar
+        ) {
           return;
         }
 
@@ -496,13 +502,19 @@ export function useSlashMenu({
     dom.addEventListener('keydown', handleKeyDown, true);
     dom.addEventListener('beforeinput', handleBeforeInput as EventListener);
     dom.addEventListener('compositionstart', handleCompositionStart);
-    dom.addEventListener('compositionend', handleCompositionEnd as EventListener);
+    dom.addEventListener(
+      'compositionend',
+      handleCompositionEnd as EventListener,
+    );
     window.addEventListener('mousedown', handlePointerDown);
     editor.on('blur', handleBlur);
 
     return () => {
       dom?.removeEventListener('keydown', handleKeyDown, true);
-      dom?.removeEventListener('beforeinput', handleBeforeInput as EventListener);
+      dom?.removeEventListener(
+        'beforeinput',
+        handleBeforeInput as EventListener,
+      );
       dom?.removeEventListener('compositionstart', handleCompositionStart);
       dom?.removeEventListener(
         'compositionend',

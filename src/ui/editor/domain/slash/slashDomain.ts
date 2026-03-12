@@ -5,4 +5,3 @@ export function isSlashTriggerChar(value: string | null | undefined): boolean {
 export function isInsertTextLikeInput(inputType: string): boolean {
   return inputType === 'insertText' || inputType === 'insertFromComposition';
 }
-

@@ -196,7 +196,10 @@ export const useTypewriterAnchor = ({
           elapsed / TYPEWRITER_COMPENSATION_ANIMATION_MS,
         );
         const eased = 1 - (1 - progress) * (1 - progress) * (1 - progress);
-        setScrollTop(scrollContainer, Math.round(startScrollTop + delta * eased));
+        setScrollTop(
+          scrollContainer,
+          Math.round(startScrollTop + delta * eased),
+        );
         if (progress < 1) {
           animationRafId = window.requestAnimationFrame(animateStep);
           return;
@@ -298,7 +301,10 @@ export const useTypewriterAnchor = ({
             thresholdY,
           },
         });
-        const nextState = dispatchTypewriterEvent(typewriterState, movementEvent);
+        const nextState = dispatchTypewriterEvent(
+          typewriterState,
+          movementEvent,
+        );
         transitionToState(nextState);
 
         if (
@@ -448,7 +454,9 @@ export const useTypewriterAnchor = ({
       clearPointerSelectionSnapshot();
     };
     const handleForceFree = (event: Event) => {
-      const customEvent = event as CustomEvent<{ reason: TypewriterForceFreeReason }>;
+      const customEvent = event as CustomEvent<{
+        reason: TypewriterForceFreeReason;
+      }>;
       lastAnchorUpdateTriggerSource = 'external';
       lastAnchorUpdateEventType = mapForceFreeReasonToEventType(
         customEvent.detail?.reason ?? 'programmatic-selection',

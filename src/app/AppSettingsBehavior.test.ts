@@ -10,8 +10,14 @@ describe('App settings integration', () => {
     join(currentDir, 'commands', 'fileCommands.ts'),
     'utf-8',
   );
-  const messagesTs = readFileSync(join(currentDir, '..', 'i18n', 'messages.ts'), 'utf-8');
-  const i18nIndexTs = readFileSync(join(currentDir, '..', 'i18n', 'index.ts'), 'utf-8');
+  const messagesTs = readFileSync(
+    join(currentDir, '..', 'i18n', 'messages.ts'),
+    'utf-8',
+  );
+  const i18nIndexTs = readFileSync(
+    join(currentDir, '..', 'i18n', 'index.ts'),
+    'utf-8',
+  );
   const appLibRs = readFileSync(
     join(currentDir, '..', '..', 'src-tauri', 'src', 'lib.rs'),
     'utf-8',
@@ -28,7 +34,9 @@ describe('App settings integration', () => {
   });
 
   it('registers file menu settings command and opens settings panel', () => {
-    expect(fileCommandsTs).toContain("menuCommandBus.register('menu.file.settings'");
+    expect(fileCommandsTs).toContain(
+      "menuCommandBus.register('menu.file.settings'",
+    );
     expect(fileCommandsTs).toContain('onOpenSettings');
     expect(appTsx).toContain('<SettingsPanel');
     expect(appTsx).toContain("invoke('set_menu_locale'");

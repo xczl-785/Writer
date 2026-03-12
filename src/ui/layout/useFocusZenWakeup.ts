@@ -32,4 +32,3 @@ export const useFocusZenWakeup = ({
 
   return { isHeaderAwake, isFooterAwake };
 };
-

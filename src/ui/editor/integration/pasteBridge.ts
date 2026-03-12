@@ -11,5 +11,7 @@ export function createEditorPasteDOMEvents(
   handlePaste: EditorAwarePasteHandler,
   editorRef: EditorRef,
 ) {
-  return createHandleDOMEvents((event) => handlePaste(event, editorRef.current));
+  return createHandleDOMEvents((event) =>
+    handlePaste(event, editorRef.current),
+  );
 }

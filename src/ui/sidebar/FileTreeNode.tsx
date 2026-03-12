@@ -15,13 +15,17 @@ interface FileTreeNodeProps {
   rootPath: string;
 }
 
-export const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, rootPath }) => {
+export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
+  node,
+  depth,
+  rootPath,
+}) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
-  
+
   const activeFile = useWorkspaceStore((state) => state.activeFile);
   const expandedPaths = useFileTreeStore((state) => state.expandedPaths);
   const deletedPaths = useFileTreeStore((state) => state.deletedPaths);
-  
+
   const isFolder = node.type === 'directory';
   const isActive = node.path === activeFile;
   const isDeleted = deletedPaths.has(node.path);
@@ -53,7 +57,9 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, rootPat
         title={t('fileTree.deleted')}
       >
         <span className="node-icon">⚠️</span>
-        <span className="node-name">{node.name} ({t('status.deleted')})</span>
+        <span className="node-name">
+          {node.name} ({t('status.deleted')})
+        </span>
       </div>
     );
   }
@@ -76,14 +82,18 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, rootPat
             setIsExpanded(!isExpanded);
           }}
         >
-          {isActuallyExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          {isActuallyExpanded ? (
+            <ChevronDown size={12} />
+          ) : (
+            <ChevronRight size={12} />
+          )}
         </button>
       )}
-      
+
       <span className="node-icon" aria-hidden="true">
         {isFolder ? <Folder size={16} /> : <FileIcon size={16} />}
       </span>
-      
+
       <button
         className={`node-name ${isActive ? 'active' : ''}`}
         type="button"
@@ -92,15 +102,17 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, rootPat
       >
         {node.name}
       </button>
-      
-      {isFolder && isActuallyExpanded && node.children?.map((child) => (
-        <FileTreeNode
-          key={child.path}
-          node={child}
-          depth={depth + 1}
-          rootPath={rootPath}
-        />
-      ))}
+
+      {isFolder &&
+        isActuallyExpanded &&
+        node.children?.map((child) => (
+          <FileTreeNode
+            key={child.path}
+            node={child}
+            depth={depth + 1}
+            rootPath={rootPath}
+          />
+        ))}
     </div>
   );
 };

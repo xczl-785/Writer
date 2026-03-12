@@ -9,7 +9,11 @@ import { t } from '../../../i18n';
 import type { SlashCommand as SlashCommandType } from './useSlashMenu';
 
 // Re-export types
-export type { SlashCommand, UseSlashMenuOptions, UseSlashMenuResult } from './useSlashMenu';
+export type {
+  SlashCommand,
+  UseSlashMenuOptions,
+  UseSlashMenuResult,
+} from './useSlashMenu';
 export type {
   SlashPhase,
   SlashSession,
@@ -116,7 +120,9 @@ function renderCommands(
       <div key={group}>
         <div className="editor-slash-menu__group">{groupLabels[group]}</div>
         {groupItems.map((cmd) => {
-          const absoluteIndex = commands.findIndex((item) => item.id === cmd.id);
+          const absoluteIndex = commands.findIndex(
+            (item) => item.id === cmd.id,
+          );
           return (
             <button
               key={cmd.id}
