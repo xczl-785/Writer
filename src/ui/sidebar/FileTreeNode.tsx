@@ -6,7 +6,7 @@ import type { FileNode } from '../../state/types';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
 import { workspaceActions } from '../../state/actions/workspaceActions';
-import { File as FileIcon, Folder, ChevronDown, ChevronRight } from 'lucide-react';
+import { Folder, FileIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { t } from '../../i18n';
 
 interface FileTreeNodeProps {
