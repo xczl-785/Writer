@@ -62,9 +62,10 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, rootPat
     <div
       className={`file-tree-node ${isActive ? 'active' : ''} ${isFolder ? 'folder' : 'file'}`}
       style={style}
-      role={isFolder ? 'treeitem' : 'treeitem'}
-      aria-expanded={isFolder ? isActuallyExpanded : undefined}
+      role="treeitem"
+      tabIndex={0}
       aria-selected={isActive}
+      data-expanded={isFolder ? isActuallyExpanded : undefined}
     >
       {isFolder && (
         <button
