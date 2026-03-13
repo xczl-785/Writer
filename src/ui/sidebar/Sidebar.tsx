@@ -161,7 +161,8 @@ export function Sidebar({
   }, [rootFolders, expandedPaths]);
 
   // 判断是否使用虚拟滚动
-  const shouldUseVirtualization = flattenedNodes.length > VIRTUAL_SCROLL_THRESHOLD;
+  const shouldUseVirtualization =
+    flattenedNodes.length > VIRTUAL_SCROLL_THRESHOLD;
 
   // V6: 根据选中路径找到对应的根路径
   const getRootPathForPath = (path: string | null): string | null => {
@@ -499,7 +500,8 @@ export function Sidebar({
       },
       onNewFile: () => {
         // V6: 使用第一个根路径作为默认创建位置
-        const targetRootPath = rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
+        const targetRootPath =
+          rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
         if (!targetRootPath) return;
         setGhostNode({
           parentPath: null,
@@ -508,7 +510,8 @@ export function Sidebar({
         });
       },
       onNewFolder: () => {
-        const targetRootPath = rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
+        const targetRootPath =
+          rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
         if (!targetRootPath) return;
         setGhostNode({
           parentPath: null,
@@ -692,14 +695,15 @@ export function Sidebar({
         // Handle file drop logic here - future enhancement
       }}
     >
+      {/* 侧边栏头部 - 规范 2.2.1: EXPLORER 标题 + 分隔线 */}
       <div
-        className="h-10 px-3 flex items-center justify-between border-b border-zinc-200/70"
+        className="sidebar-header h-10 px-3 flex items-center justify-between border-b border-zinc-200"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
         role="presentation"
       >
-        <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
-          {t('sidebar.title')}
+        <span className="sidebar-title text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
+          EXPLORER
         </span>
         <div className="flex items-center gap-1">
           <button

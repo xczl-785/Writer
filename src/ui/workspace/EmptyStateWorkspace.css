@@ -1,11 +1,11 @@
-/* EmptyStateWorkspace Styles */
+/* EmptyStateWorkspace Styles - V6 交互设计规范 2.1 */
 
 .empty-state-workspace {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background-color: var(--color-surface);
+  background-color: var(--color-surface, #ffffff);
 }
 
 .empty-state-content {
@@ -13,6 +13,7 @@
   flex-direction: column;
   align-items: center;
   padding: 48px;
+  padding-top: 80px; /* 规范 2.1.2: Logo 距顶部 80px */
   max-width: 480px;
   width: 100%;
   transition: all 0.2s ease;
@@ -21,11 +22,11 @@
 }
 
 .empty-state-content.drag-over {
-  border-color: var(--color-accent);
-  background-color: var(--color-accent-subtle);
+  border-color: var(--color-accent, #2563eb);
+  background-color: var(--color-accent-subtle, #dbeafe);
 }
 
-/* Header */
+/* Header - 规范 2.1.1/2.1.2 */
 .empty-state-header {
   text-align: center;
   margin-bottom: 32px;
@@ -34,17 +35,19 @@
 .empty-state-logo {
   font-size: 32px;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #18181b);
   margin-bottom: 8px;
+  letter-spacing: 0.02em;
 }
 
 .empty-state-tagline {
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #71717a);
   margin: 0;
+  letter-spacing: 0.01em;
 }
 
-/* Actions */
+/* Actions - 规范 2.1.2: 并排居中，间距 16px，最小宽度 140px */
 .empty-state-actions {
   display: flex;
   gap: 16px;
@@ -66,70 +69,60 @@
 }
 
 .empty-state-actions .btn-primary {
-  background-color: var(--color-accent);
+  background-color: var(--color-accent, #2563eb);
   color: white;
   border: none;
 }
 
 .empty-state-actions .btn-primary:hover {
-  background-color: color-mix(in srgb, var(--color-accent) 85%, black);
+  background-color: color-mix(in srgb, var(--color-accent, #2563eb) 85%, black);
 }
 
 .empty-state-actions .btn-secondary {
   background-color: transparent;
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
+  color: var(--color-text-primary, #18181b);
+  border: 1px solid var(--color-border, #e4e4e7);
 }
 
 .empty-state-actions .btn-secondary:hover {
-  background-color: var(--color-surface-hover);
+  background-color: var(--color-surface-hover, #f4f4f5);
 }
 
-/* Recent Items */
+/* Recent Items - 规范 2.1.2: 最多 10 项，垂直排列，间距 8px */
 .empty-state-recent {
   width: 100%;
+  margin-top: 24px; /* 分隔线上方留白 */
   margin-bottom: 24px;
+  padding-top: 24px; /* 分隔线上下留白 24px */
+  border-top: 1px solid var(--color-border, #e4e4e7); /* 规范: 1px solid zinc-200 */
 }
 
 .empty-state-recent-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-tertiary, #a1a1aa);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: center;
   margin-bottom: 16px;
-  position: relative;
-}
-
-.empty-state-recent-title::before,
-.empty-state-recent-title::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 30%;
-  height: 1px;
-  background-color: var(--color-border);
-}
-
-.empty-state-recent-title::before {
-  left: 0;
-}
-
-.empty-state-recent-title::after {
-  right: 0;
 }
 
 .empty-state-recent-group {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+
+.empty-state-recent-group:last-child {
+  margin-bottom: 0;
 }
 
 .empty-state-recent-label {
   display: block;
   font-size: 11px;
   font-weight: 500;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-tertiary, #a1a1aa);
   margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .empty-state-recent-item {
@@ -143,30 +136,35 @@
 }
 
 .empty-state-recent-item:hover {
-  background-color: var(--color-surface-hover);
+  background-color: var(--color-surface-hover, #f4f4f5);
 }
 
 .empty-state-recent-item .item-icon {
-  font-size: 16px;
+  font-size: 16px; /* 规范: 16x16 */
   flex-shrink: 0;
+  line-height: 1;
 }
 
 .empty-state-recent-item .item-name {
   font-size: 13px;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #18181b);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Drag Hint */
+/* Drag Hint - 规范 2.1.2: 斜体，zinc-400 色 */
 .empty-state-drag-hint {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   font-size: 13px;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-tertiary, #a1a1aa); /* zinc-400 */
   font-style: italic;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px dashed var(--color-border, #e4e4e7);
 }
 
 /* Responsive */
@@ -175,7 +173,7 @@
     flex-direction: column;
     width: 100%;
   }
-  
+
   .empty-state-actions .btn {
     width: 100%;
   }
@@ -185,7 +183,7 @@
   .empty-state-tagline {
     display: none;
   }
-  
+
   .empty-state-recent {
     display: none;
   }

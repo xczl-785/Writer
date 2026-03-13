@@ -10,10 +10,12 @@ import { useEditorStore } from '../../state/slices/editorSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { AutosaveService } from '../../services/autosave/AutosaveService';
 import { FsService } from '../../services/fs/FsService';
+import { RecentItemsService } from '../../services/recent/RecentItemsService';
 import { t } from '../../i18n';
 import { openWorkspace } from '../../workspace/WorkspaceManager';
 
 export type CleanupFn = () => void;
+export type OpenRecentCallback = () => void;
 
 const emitSidebarCommand = (id: string) => {
   window.dispatchEvent(
@@ -25,6 +27,7 @@ export function registerFileCommands(
   setIsSidebarVisible: (value: boolean | ((prev: boolean) => boolean)) => void,
   isSidebarVisible: boolean,
   onOpenSettings: () => void,
+  onOpenRecent?: OpenRecentCallback,
 ): CleanupFn {
   const cleanups: CleanupFn[] = [];
 
@@ -114,5 +117,25 @@ export function registerFileCommands(
     }),
   );
 
-  return () => cleanups.forEach((fn) => fn());
+  // Recent items commands
+  cleanups.push(
+    menuCommandBus.register('menu.file.open_recent', () => {
+      if (onOpenRecent) {
+        onOpenRecent();
+      }
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.clear_recent', () => {
+      RecentItemsService.clearAll();
+      useStatusStore.getState().setStatus('idle', t('recent.clearHistory'));
+    }),
+  );
+
+  return () => {
+    for (const fn of cleanups) {
+      fn();
+    }
+  };
 }
