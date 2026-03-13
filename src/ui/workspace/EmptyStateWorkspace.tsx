@@ -111,14 +111,14 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
         {/* 主操作按钮 - 原型图第 133-142 行 */}
         <div className="flex space-x-4 mb-10">
           <button
-            className="px-6 py-2 bg-zinc-900 text-white text-sm font-medium rounded-md hover:bg-zinc-800 transition-colors shadow-sm"
+            className="px-6 py-2 bg-zinc-900 text-white text-sm font-medium rounded-md hover:bg-zinc-800 transition-colors shadow-sm cursor-pointer"
             onClick={onOpenFolder}
             type="button"
           >
             {t('workspace.openFolder')}
           </button>
           <button
-            className="px-6 py-2 border border-zinc-200 text-zinc-600 text-sm font-medium rounded-md hover:bg-zinc-50 transition-colors"
+            className="px-6 py-2 border border-zinc-200 text-zinc-600 text-sm font-medium rounded-md hover:bg-zinc-50 transition-colors cursor-pointer"
             onClick={onOpenWorkspace}
             type="button"
           >

@@ -35,6 +35,10 @@ interface WorkspaceRootHeaderProps {
     workspacePath: string;
     displayName: string;
   };
+  isExpanded: boolean;
+  isSelected?: boolean;
+  onToggle: () => void;
+  onSelect?: () => void;
   /** 文件夹是否缺失（不存在或已移动） */
   isMissing?: boolean;
   onContextMenu?: (event: React.MouseEvent) => void;
@@ -42,18 +46,26 @@ interface WorkspaceRootHeaderProps {
 
 export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   folder,
+  isExpanded,
+  isSelected = false,
+  onToggle,
+  onSelect,
   isMissing = false,
   onContextMenu,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState(folder.displayName);
   const contextMenu = useContextMenu();
 
   const toggleExpanded = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded((prev) => !prev);
-  }, []);
+    onToggle();
+  }, [onToggle]);
+
+  const handleRowClick = useCallback(() => {
+    onSelect?.();
+    onToggle();
+  }, [onSelect, onToggle]);
 
   const handleRemoveFolder = useCallback(async () => {
     const result = await workspaceActions.removeFolderFromWorkspace(
@@ -157,7 +169,10 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   return (
     <>
       <div
-        className="group flex items-center justify-between px-3 py-1.5 cursor-pointer hover:bg-zinc-100/80 transition-colors"
+        className={`group flex items-center justify-between px-3 py-1.5 cursor-pointer transition-colors ${
+          isSelected ? 'bg-zinc-100/80' : 'hover:bg-zinc-100/80'
+        }`}
+        onClick={handleRowClick}
         onContextMenu={handleContextMenu}
         tabIndex={0}
         aria-label={`${t('workspace.rootFolder')}: ${folder.displayName}`}
@@ -170,7 +185,7 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
         }}
       >
         {/* 展开/折叠按钮 */}
-        <div className="flex items-center">
+        <div className="flex items-center min-w-0">
           <button
             className="flex items-center justify-center mr-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={toggleExpanded}

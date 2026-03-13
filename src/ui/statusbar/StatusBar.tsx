@@ -7,6 +7,7 @@ import {
 } from '../../state/slices/workspaceSlice';
 import { FsService } from '../../services/fs/FsService';
 import { countCharacters } from './statusBarUtils';
+import { getWorkspaceIndicatorLabel } from './workspaceIndicator';
 import { t } from '../../i18n';
 import './StatusBar.css';
 
@@ -21,7 +22,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 }) => {
   const { saveStatus, message, saveError, lastSavedAt, setStatus } =
     useStatusStore();
-  const { folders, activeFile } = useWorkspaceStore();
+  const { folders, activeFile, workspaceFile, isDirty } = useWorkspaceStore();
   const { fileStates } = useEditorStore();
   const [isFaded, setIsFaded] = useState(false);
   const [encodingLabel, setEncodingLabel] = useState('UTF-8');
@@ -34,15 +35,16 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   // 计算工作区类型和名称
   const workspaceType = getWorkspaceType({
     folders,
-    workspaceFile: null,
-    isDirty: false,
+    workspaceFile,
+    isDirty,
     openFiles: [],
     activeFile: null,
   });
-  const workspaceName =
-    folders.length > 0
-      ? (folders[0].name ?? folders[0].path.split('/').pop() ?? '')
-      : '';
+  const workspaceName = getWorkspaceIndicatorLabel({
+    folders,
+    workspaceFile,
+    isDirty,
+  });
   const showWorkspace = workspaceType !== 'empty';
 
   useEffect(() => {

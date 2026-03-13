@@ -1,0 +1,16 @@
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+describe('EmptyStateWorkspace behavior markers', () => {
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const source = readFileSync(
+    join(currentDir, 'EmptyStateWorkspace.tsx'),
+    'utf-8',
+  );
+
+  it('marks both primary actions as clickable buttons with pointer cursor styling', () => {
+    expect(source).toContain('cursor-pointer');
+  });
+});

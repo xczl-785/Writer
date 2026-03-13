@@ -157,6 +157,9 @@ export const workspaceActions = {
         tree: nodes,
       },
     ]);
+    useFileTreeStore.setState({
+      expandedPaths: new Set([path]),
+    });
     useFileTreeStore.getState().setSelectedPath(null);
 
     // 启动文件监听
@@ -263,6 +266,9 @@ export const workspaceActions = {
       // 5. 批量更新
       useWorkspaceStore.getState().addFolder(newFolder);
       useFileTreeStore.getState().addRootFolder(newRoot);
+      useFileTreeStore.setState((state) => ({
+        expandedPaths: new Set([...state.expandedPaths, folderPath]),
+      }));
 
       // 6. 标记 isDirty
       useWorkspaceStore.getState().setDirty(true);
@@ -303,6 +309,11 @@ export const workspaceActions = {
       // 3. 更新状态
       useWorkspaceStore.getState().removeFolder(folderPath);
       useFileTreeStore.getState().removeRootFolder(folderPath);
+      useFileTreeStore.setState((state) => {
+        const nextExpandedPaths = new Set(state.expandedPaths);
+        nextExpandedPaths.delete(folderPath);
+        return { expandedPaths: nextExpandedPaths };
+      });
       useWorkspaceStore.getState().setDirty(true);
 
       // 4. 持久化
@@ -586,16 +597,72 @@ export const workspaceActions = {
         }
       }
 
-      const rootFolders: RootFolderNode[] = batchResult
-        .filter((r: FolderPathResult) => r.error === undefined)
-        .map((r: FolderPathResult, index: number) => ({
-          workspacePath: r.path,
-          displayName:
-            absoluteFolderPaths[index]?.name ||
-            r.path.split('/').pop() ||
-            r.path,
-          tree: r.nodes,
-        }));
+      const batchResultByPath = new Map(
+        batchResult.map((result: FolderPathResult) => [result.path, result]),
+      );
+      const failedFolderLoads: Array<{ path: string; error: string }> = [];
+      const rootFolders: RootFolderNode[] = [];
+
+      for (const folder of absoluteFolderPaths) {
+        const batchEntry = batchResultByPath.get(folder.path);
+
+        if (batchEntry && batchEntry.error === undefined) {
+          rootFolders.push({
+            workspacePath: folder.path,
+            displayName: folder.name || folder.path.split('/').pop() || folder.path,
+            tree: batchEntry.nodes,
+          });
+          continue;
+        }
+
+        try {
+          const fallbackNodes = await FsService.listTree(folder.path);
+          rootFolders.push({
+            workspacePath: folder.path,
+            displayName: folder.name || folder.path.split('/').pop() || folder.path,
+            tree: fallbackNodes,
+          });
+        } catch (fallbackError) {
+          failedFolderLoads.push({
+            path: folder.path,
+            error: String(batchEntry?.error ?? fallbackError),
+          });
+        }
+      }
+
+      if (rootFolders.length === 0 && failedFolderLoads.length > 0) {
+        const firstError = failedFolderLoads[0];
+        const errorMsg = firstError.error.toLowerCase();
+
+        if (
+          errorMsg.includes('permission') ||
+          errorMsg.includes('access') ||
+          errorMsg.includes('denied')
+        ) {
+          return createWorkspaceLoadError(
+            'permission-denied',
+            `Permission denied: ${firstError.path}`,
+            firstError.path,
+          );
+        }
+
+        if (
+          errorMsg.includes('not found') ||
+          errorMsg.includes('does not exist')
+        ) {
+          return createWorkspaceLoadError(
+            'folder-not-found',
+            `Folder not found: ${firstError.path}`,
+            firstError.path,
+          );
+        }
+
+        return createWorkspaceLoadError(
+          'unknown',
+          firstError.error,
+          firstError.path,
+        );
+      }
 
       // 解析 openFiles 和 activeFile 的相对路径
       const resolvedOpenFiles =
@@ -621,10 +688,16 @@ export const workspaceActions = {
         activeFile: resolvedActiveFile,
       });
 
+      const allPaths = absoluteFolderPaths.map((f: { path: string }) => f.path);
       useFileTreeStore.getState().setRootFolders(rootFolders);
+      useFileTreeStore.setState({
+        expandedPaths: new Set(allPaths),
+        errorPaths: new Map(
+          failedFolderLoads.map((item) => [item.path, item.error]),
+        ),
+      });
 
       // 启动文件监听
-      const allPaths = absoluteFolderPaths.map((f: { path: string }) => f.path);
       await FileWatcherService.startWatching(allPaths, handleFileChange);
 
       return { ok: true };

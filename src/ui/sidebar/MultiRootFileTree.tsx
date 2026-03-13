@@ -17,7 +17,7 @@ import { useStatusStore } from '../../state/slices/statusSlice';
 import { WorkspaceRootHeader } from './WorkspaceRootHeader';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
-import { openWorkspace } from '../../workspace/WorkspaceManager';
+import { addFolderToWorkspaceByDialog } from '../../workspace/WorkspaceManager';
 import { FsService } from '../../services/fs/FsService';
 import { FsSafety } from '../../services/fs/FsSafety';
 import { fileActions } from '../../state/actions/fileActions';
@@ -507,7 +507,7 @@ export const MultiRootFileTree: React.FC<MultiRootFileTreeProps> = ({
     flattenedNodes.length > VIRTUAL_SCROLL_THRESHOLD;
 
   const handleAddFolderToWorkspace = useCallback(() => {
-    void openWorkspace();
+    void addFolderToWorkspaceByDialog();
   }, []);
 
   const handleNewFile = useCallback(() => {
@@ -709,7 +709,13 @@ export const MultiRootFileTree: React.FC<MultiRootFileTreeProps> = ({
             >
               {/* V6: 多根模式下显示根文件夹标题 */}
               {workspaceType === 'multi' && (
-                <WorkspaceRootHeader folder={rootFolder} />
+                <WorkspaceRootHeader
+                  folder={rootFolder}
+                  isExpanded={expandedPaths.has(rootFolder.workspacePath)}
+                  isSelected={selectedPath === rootFolder.workspacePath}
+                  onToggle={() => toggleNode(rootFolder.workspacePath)}
+                  onSelect={() => handleSelect(rootFolder.workspacePath)}
+                />
               )}
 
               <div className="root-folder-content">

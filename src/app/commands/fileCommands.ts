@@ -12,7 +12,11 @@ import { AutosaveService } from '../../services/autosave/AutosaveService';
 import { FsService } from '../../services/fs/FsService';
 import { RecentItemsService } from '../../services/recent/RecentItemsService';
 import { t } from '../../i18n';
-import { openWorkspace } from '../../workspace/WorkspaceManager';
+import {
+  openWorkspace,
+  saveCurrentWorkspace,
+  saveWorkspaceFileByDialog,
+} from '../../workspace/WorkspaceManager';
 
 export type CleanupFn = () => void;
 export type OpenRecentCallback = () => void;
@@ -84,6 +88,30 @@ export function registerFileCommands(
         setIsSidebarVisible(true);
       }
       emitSidebarCommand('new-file');
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.save_workspace', async () => {
+      const workspace = useWorkspaceStore.getState();
+      if (workspace.folders.length === 0) {
+        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        return;
+      }
+
+      await saveCurrentWorkspace();
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.save_workspace_as', async () => {
+      const workspace = useWorkspaceStore.getState();
+      if (workspace.folders.length === 0) {
+        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        return;
+      }
+
+      await saveWorkspaceFileByDialog();
     }),
   );
 

@@ -162,7 +162,7 @@ pub struct FolderPathResult {
 #[tauri::command]
 pub async fn list_tree_batch(
     paths: Vec<String>,
-    allowlist: State<'_, tokio::sync::Mutex<WorkspaceAllowlist>>,
+    allowlist: State<'_, std::sync::Mutex<WorkspaceAllowlist>>,
 ) -> Result<Vec<FolderPathResult>, String> {
     // 输入验证：限制最大路径数量
     if paths.is_empty() {
@@ -174,13 +174,14 @@ pub async fn list_tree_batch(
     }
 
     // 安全验证：所有路径必须在工作区内
-    let guard = allowlist.lock().await;
-    for path in &paths {
-        if let Err(e) = guard.validate_path(path, true) {
-            return Err(format!("Security: {}", e));
+    {
+        let guard = allowlist.lock().map_err(|e| e.to_string())?;
+        for path in &paths {
+            if let Err(e) = guard.validate_path(path, true) {
+                return Err(format!("Security: {}", e));
+            }
         }
     }
-    drop(guard);
 
     // 受限线程池：最大 8 个并发线程
     let semaphore = std::sync::Arc::new(Semaphore::new(8));
@@ -561,9 +562,13 @@ pub struct WorkspaceFolderConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceStateConfig {
+    #[serde(alias = "open_files")]
     pub open_files: Option<Vec<String>>,
+    #[serde(alias = "active_file")]
     pub active_file: Option<String>,
+    #[serde(alias = "sidebar_visible")]
     pub sidebar_visible: Option<bool>,
 }
 
@@ -571,10 +576,10 @@ pub struct WorkspaceStateConfig {
 #[tauri::command]
 pub async fn parse_workspace_file(
     path: &str,
-    allowlist: State<'_, tokio::sync::Mutex<WorkspaceAllowlist>>,
+    allowlist: State<'_, std::sync::Mutex<WorkspaceAllowlist>>,
 ) -> Result<WorkspaceConfig, String> {
     // 安全验证
-    let guard = allowlist.lock().await;
+    let guard = allowlist.lock().map_err(|e| e.to_string())?;
     guard.validate_path(path, true).map_err(|e| format!("Security: {}", e))?;
     drop(guard);
 
@@ -589,13 +594,13 @@ pub async fn parse_workspace_file(
 pub async fn save_workspace_file(
     path: &str,
     config: WorkspaceConfig,
-    allowlist: State<'_, tokio::sync::Mutex<WorkspaceAllowlist>>,
+    allowlist: State<'_, std::sync::Mutex<WorkspaceAllowlist>>,
 ) -> Result<(), String> {
     use std::io::Write;
     use tempfile::NamedTempFile;
 
     // 安全验证
-    let guard = allowlist.lock().await;
+    let guard = allowlist.lock().map_err(|e| e.to_string())?;
     guard.validate_path(path, false).map_err(|e| format!("Security: {}", e))?;
     drop(guard);
 
@@ -630,7 +635,7 @@ pub async fn save_workspace_file(
 pub fn resolve_relative_path(
     base_path: &str,
     relative_path: &str,
-    allowlist: State<'_, tokio::sync::Mutex<WorkspaceAllowlist>>,
+    allowlist: State<'_, std::sync::Mutex<WorkspaceAllowlist>>,
 ) -> Result<String, String> {
     // 检查路径穿越
     if relative_path.contains("..") {

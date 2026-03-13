@@ -9,12 +9,15 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import {
   useWorkspaceStore,
-  getWorkspaceType,
 } from '../../state/slices/workspaceSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { fileActions } from '../../state/actions/fileActions';
 import { workspaceActions } from '../../state/actions/workspaceActions';
-import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
+import {
+  addFolderToWorkspaceByDialog,
+  openWorkspace,
+  openFile,
+} from '../../workspace/WorkspaceManager';
 import { FsService } from '../../services/fs/FsService';
 import { FsSafety } from '../../services/fs/FsSafety';
 import type { FileNode } from '../../state/types';
@@ -23,6 +26,7 @@ import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
 import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
 import { showDeleteConfirmDialog } from '../components/Dialog';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
+import { WorkspaceRootHeader } from './WorkspaceRootHeader';
 import {
   ensureMarkdownExtension,
   flattenFileNodes,
@@ -149,13 +153,6 @@ export function Sidebar({
 
   // V6 兼容：计算单一工作区路径（用于单文件夹模式的兼容逻辑）
   const currentPath = folders.length > 0 ? folders[0].path : null;
-  const workspaceType = getWorkspaceType({
-    folders,
-    workspaceFile: null,
-    isDirty: false,
-    openFiles: [],
-    activeFile,
-  });
 
   // V6: 将所有根文件夹的树合并为统一的可见节点列表（用于搜索等功能）
   const allVisibleNodes = useMemo(() => {
@@ -522,7 +519,7 @@ export function Sidebar({
 
     const items = getEmptyAreaMenuItems({
       onAddFolderToWorkspace: () => {
-        void openWorkspace();
+        void addFolderToWorkspaceByDialog();
       },
       onNewFile: () => {
         // V6: 使用第一个根路径作为默认创建位置
@@ -825,29 +822,29 @@ export function Sidebar({
   ) => {
     const visibleNodes = filterVisibleNodes(rootFolder.tree);
     const isLoading = loadingPaths.has(rootFolder.workspacePath);
+    const isExpanded = expandedPaths.has(rootFolder.workspacePath);
+    const isSelected = selectedPath === rootFolder.workspacePath;
 
     return (
       <div key={rootFolder.workspacePath} className="root-folder-group">
-        {/* V6: 多根模式下显示根文件夹标题 */}
-        {workspaceType === 'multi' && (
-          <div
-            className="px-2 py-1.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider border-b border-zinc-200/50 mb-1"
-            title={rootFolder.workspacePath}
-          >
-            {rootFolder.displayName}
-          </div>
-        )}
+        <WorkspaceRootHeader
+          folder={rootFolder}
+          isExpanded={isExpanded}
+          isSelected={isSelected}
+          onToggle={() => toggleNode(rootFolder.workspacePath)}
+          onSelect={() => setSelectedPath(rootFolder.workspacePath)}
+        />
 
         {isLoading ? (
           <div className="px-3 py-2 text-xs text-zinc-400">
             {t('sidebar.loading')}
           </div>
-        ) : (
+        ) : isExpanded ? (
           visibleNodes.map((node) => (
             <FileTreeNode
               key={node.path}
               node={node}
-              level={level}
+              level={level + 1}
               selectedPath={selectedPath}
               activeFile={activeFile}
               renamingPath={renamingPath}
@@ -871,7 +868,7 @@ export function Sidebar({
               onDrop={handleDrop}
             />
           ))
-        )}
+        ) : null}
       </div>
     );
   };

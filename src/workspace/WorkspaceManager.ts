@@ -1,7 +1,10 @@
-import { open } from '@tauri-apps/plugin-dialog';
+import { open, save } from '@tauri-apps/plugin-dialog';
 import { workspaceActions } from '../state/actions/workspaceActions';
 import { useStatusStore } from '../state/slices/statusSlice';
 import { ErrorService } from '../services/error/ErrorService';
+import { useWorkspaceStore } from '../state/slices/workspaceSlice';
+import { RecentItemsService } from '../services/recent/RecentItemsService';
+import { buildDefaultWorkspaceFileName, getWorkspaceFileBaseName } from '../ui/statusbar/workspaceIndicator';
 
 const normalizeDialogPath = (selected: unknown): string | null => {
   const pickPath = (value: unknown): string | null => {
@@ -93,6 +96,7 @@ export const openWorkspace = async (): Promise<void> => {
 
     try {
       const nodeCount = await workspaceActions.loadWorkspace(path);
+      await RecentItemsService.addFolder(path);
       useStatusStore
         .getState()
         .setStatus('idle', `Workspace loaded: ${nodeCount} item(s)`);
@@ -108,6 +112,161 @@ export const openWorkspace = async (): Promise<void> => {
       error,
       'Failed to open dialog',
       'Failed to open directory dialog',
+    );
+  }
+};
+
+export const addFolderToWorkspaceByDialog = async (): Promise<void> => {
+  try {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      recursive: false,
+    });
+
+    const path = normalizeDialogPath(selected);
+
+    if (!path) {
+      useStatusStore.getState().setStatus('idle');
+      return;
+    }
+
+    useStatusStore.getState().setStatus('loading', 'Adding folder...');
+
+    const result = await workspaceActions.addFolderToWorkspace(path);
+    if (result.ok) {
+      useStatusStore.getState().setStatus('idle', 'Folder added to workspace');
+      return;
+    }
+
+    useStatusStore.getState().setStatus('error', result.error);
+  } catch (error) {
+    ErrorService.handle(
+      error,
+      'Failed to open add-folder dialog',
+      'Failed to add folder to workspace',
+    );
+  }
+};
+
+export const openWorkspaceFile = async (): Promise<void> => {
+  try {
+    const selected = await open({
+      directory: false,
+      multiple: false,
+      filters: [
+        {
+          name: 'Writer Workspace',
+          extensions: ['writer-workspace'],
+        },
+      ],
+    });
+
+    const path = normalizeDialogPath(selected);
+
+    if (!path) {
+      useStatusStore.getState().setStatus('idle');
+      return;
+    }
+
+    useStatusStore.getState().setStatus('loading', 'Loading workspace...');
+
+    const result = await workspaceActions.loadWorkspaceFile(path);
+    if (result.ok) {
+      await RecentItemsService.addWorkspace(path, getWorkspaceFileBaseName(path));
+      useStatusStore.getState().setStatus('idle');
+      return;
+    }
+
+    useStatusStore.getState().setStatus('error', result.errorMessage);
+  } catch (error) {
+    ErrorService.handle(
+      error,
+      'Failed to open workspace file dialog',
+      'Failed to open workspace file',
+    );
+  }
+};
+
+export const saveWorkspaceFileByDialog = async (): Promise<void> => {
+  try {
+    const workspace = useWorkspaceStore.getState();
+    if (workspace.folders.length === 0) {
+      useStatusStore.getState().setStatus('error', 'No workspace to save');
+      return;
+    }
+
+    const selected = await save({
+      defaultPath: buildDefaultWorkspaceFileName(workspace),
+      filters: [
+        {
+          name: 'Writer Workspace',
+          extensions: ['writer-workspace'],
+        },
+      ],
+    });
+
+    const rawPath = normalizeDialogPath(selected);
+    if (!rawPath) {
+      useStatusStore.getState().setStatus('idle');
+      return;
+    }
+
+    const path = rawPath.endsWith('.writer-workspace')
+      ? rawPath
+      : `${rawPath}.writer-workspace`;
+
+    useStatusStore.getState().setStatus('loading', 'Saving workspace...');
+
+    const result = await workspaceActions.saveWorkspaceFile(path);
+    if (!result.ok) {
+      useStatusStore.getState().setStatus('error', result.error);
+      return;
+    }
+
+    await RecentItemsService.addWorkspace(path, getWorkspaceFileBaseName(path));
+    useStatusStore.getState().setStatus('idle', 'Workspace saved');
+  } catch (error) {
+    ErrorService.handle(
+      error,
+      'Failed to save workspace file',
+      'Failed to save workspace',
+    );
+  }
+};
+
+export const saveCurrentWorkspace = async (): Promise<void> => {
+  try {
+    const workspace = useWorkspaceStore.getState();
+    if (workspace.folders.length === 0) {
+      useStatusStore.getState().setStatus('error', 'No workspace to save');
+      return;
+    }
+
+    const existingPath = workspace.workspaceFile;
+    if (!existingPath) {
+      await saveWorkspaceFileByDialog();
+      return;
+    }
+
+    useStatusStore.getState().setStatus('loading', 'Saving workspace...');
+
+    const result = await workspaceActions.saveWorkspaceFile(existingPath);
+    if (!result.ok) {
+      useStatusStore.getState().setStatus('error', result.error);
+      return;
+    }
+
+    await RecentItemsService.addWorkspace(
+      existingPath,
+      getWorkspaceFileBaseName(existingPath),
+    );
+    useStatusStore.getState().setStatus('idle', 'Workspace saved');
+  } catch (error) {
+    ErrorService.handle(
+      error,
+      'Failed to save current workspace',
+      'Failed to save workspace',
     );
   }
 };
