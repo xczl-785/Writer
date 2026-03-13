@@ -147,12 +147,18 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
                   {t('workspace.workspaces')}
                 </span>
                 {recentWorkspaces.slice(0, 5).map((item) => (
-                  <div key={item.path} className="empty-state-recent-item">
-                    <span className="item-icon">💼</span>
-                    <span className="item-name" title={item.path}>
-                      {item.name}
+                  <button
+                    key={item.path}
+                    type="button"
+                    className="empty-state-recent-item empty-state-recent-item-clickable"
+                    title={item.path}
+                    onClick={() => handleRecentItemClick(item)}
+                  >
+                    <span className="item-icon" aria-hidden="true">
+                      💼
                     </span>
-                  </div>
+                    <span className="item-name">{item.name}</span>
+                  </button>
                 ))}
               </div>
             )}
@@ -163,12 +169,18 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
                   {t('workspace.folders')}
                 </span>
                 {recentFolders.slice(0, 5).map((item) => (
-                  <div key={item.path} className="empty-state-recent-item">
-                    <span className="item-icon">📁</span>
-                    <span className="item-name" title={item.path}>
-                      {item.name}
+                  <button
+                    key={item.path}
+                    type="button"
+                    className="empty-state-recent-item empty-state-recent-item-clickable"
+                    title={item.path}
+                    onClick={() => handleRecentItemClick(item)}
+                  >
+                    <span className="item-icon" aria-hidden="true">
+                      📁
                     </span>
-                  </div>
+                    <span className="item-name">{item.name}</span>
+                  </button>
                 ))}
               </div>
             )}
@@ -179,12 +191,18 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
                   {t('workspace.files')}
                 </span>
                 {recentFiles.slice(0, 5).map((item) => (
-                  <div key={item.path} className="empty-state-recent-item">
-                    <span className="item-icon">📄</span>
-                    <span className="item-name" title={item.path}>
-                      {item.name}
+                  <button
+                    key={item.path}
+                    type="button"
+                    className="empty-state-recent-item empty-state-recent-item-clickable"
+                    title={item.path}
+                    onClick={() => handleRecentItemClick(item)}
+                  >
+                    <span className="item-icon" aria-hidden="true">
+                      📄
                     </span>
-                  </div>
+                    <span className="item-name">{item.name}</span>
+                  </button>
                 ))}
               </div>
             )}
