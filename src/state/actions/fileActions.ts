@@ -5,7 +5,8 @@ import { useWorkspaceStore } from '../slices/workspaceSlice';
 import { isPathMatch } from '../../utils/pathUtils';
 
 const refreshCurrentTree = async (): Promise<void> => {
-  const { currentPath } = useWorkspaceStore.getState();
+  const { folders } = useWorkspaceStore.getState();
+  const currentPath = folders[0]?.path;
   if (!currentPath) return;
 
   const nodes = await FsService.listTree(currentPath);
