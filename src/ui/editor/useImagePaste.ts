@@ -34,7 +34,8 @@ export const generateUniqueFilename = async (
 };
 
 export const useImagePaste = (editor: Editor | null = null) => {
-  const { activeFile, currentPath } = useWorkspaceStore();
+  const { activeFile, folders } = useWorkspaceStore();
+  const currentPath = folders[0]?.path;
 
   const handlePaste = async (
     event: ClipboardEvent,

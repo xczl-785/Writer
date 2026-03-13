@@ -42,7 +42,8 @@ import { useFocusZenWakeup } from '../ui/layout/useFocusZenWakeup';
 import './App.css';
 
 function App() {
-  const { currentPath } = useWorkspaceStore();
+  const { folders } = useWorkspaceStore();
+  const currentPath = folders[0]?.path;
   const { tier } = useViewportTier();
   const isMinTier = tier === 'min';
   const typewriterEnabledByUser = useSettingsStore(
@@ -127,7 +128,7 @@ function App() {
       if (result.ok) {
         useStatusStore.getState().setStatus('idle');
       } else {
-        useStatusStore.getState().setStatus('error', result.error);
+        useStatusStore.getState().setStatus('error', result.message);
       }
     } catch (error) {
       ErrorService.handle(
