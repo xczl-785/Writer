@@ -186,6 +186,114 @@ export const workspaceActions = {
     useFileTreeStore.getState().setRootFolders(reorderedRootFolders);
   },
 
+  moveRootFolderUp: (folderPath: string): void => {
+    useWorkspaceStore.getState().moveFolderUp(folderPath);
+    useFileTreeStore.getState().moveRootFolderUp(folderPath);
+    useWorkspaceStore.getState().setDirty(true);
+  },
+
+  moveRootFolderDown: (folderPath: string): void => {
+    useWorkspaceStore.getState().moveFolderDown(folderPath);
+    useFileTreeStore.getState().moveRootFolderDown(folderPath);
+    useWorkspaceStore.getState().setDirty(true);
+  },
+
+  moveNode: async (
+    sourcePath: string,
+    targetPath: string,
+    dropPosition: 'inside' | 'above' | 'below',
+  ): Promise<Result> => {
+    try {
+      // 获取源节点信息
+      const rootFolders = useFileTreeStore.getState().rootFolders;
+      let sourceRootPath: string | null = null;
+      let targetRootPath: string | null = null;
+
+      // 找到源和目标所属的根文件夹
+      for (const folder of rootFolders) {
+        if (
+          sourcePath === folder.workspacePath ||
+          sourcePath.startsWith(folder.workspacePath + '/')
+        ) {
+          sourceRootPath = folder.workspacePath;
+        }
+        if (
+          targetPath === folder.workspacePath ||
+          targetPath.startsWith(folder.workspacePath + '/')
+        ) {
+          targetRootPath = folder.workspacePath;
+        }
+      }
+
+      if (!sourceRootPath || !targetRootPath) {
+        return { ok: false, error: 'Invalid source or target path' };
+      }
+
+      // 不允许移动到自身或子节点
+      if (
+        sourcePath === targetPath ||
+        targetPath.startsWith(sourcePath + '/')
+      ) {
+        return { ok: false, error: 'Cannot move to self or descendant' };
+      }
+
+      // 计算新路径
+      const sourceName = sourcePath.split('/').pop() || '';
+      let newParentPath: string;
+
+      if (dropPosition === 'inside') {
+        // 移动到文件夹内部
+        newParentPath = targetPath;
+      } else {
+        // 移动到目标节点的上方或下方
+        newParentPath =
+          targetPath.substring(0, targetPath.lastIndexOf('/')) ||
+          targetRootPath;
+        // 注意：文件系统通常按字母排序，所以这里只是移动文件，排序由文件系统决定
+      }
+
+      const newPath = newParentPath
+        ? `${newParentPath}/${sourceName}`
+        : sourceName;
+
+      // 检查是否需要实际移动（同目录不需要移动）
+      const currentParentPath =
+        sourcePath.substring(0, sourcePath.lastIndexOf('/')) || sourceRootPath;
+      if (currentParentPath === newParentPath && dropPosition !== 'inside') {
+        return { ok: true }; // 同目录，无需移动
+      }
+
+      // 刷新相关的文件
+      await FsSafety.flushAffectedFiles(sourcePath);
+
+      // 执行文件系统移动
+      await FsService.renameNode(sourcePath, newPath);
+
+      // 更新状态
+      useWorkspaceStore.getState().renameFile(sourcePath, newPath);
+      useEditorStore.getState().renameFile(sourcePath, newPath);
+
+      // 刷新源和目标根文件夹的树
+      if (sourceRootPath === targetRootPath) {
+        const nodes = await FsService.listTree(sourceRootPath);
+        useFileTreeStore.getState().setNodes(sourceRootPath, nodes);
+      } else {
+        // 跨根文件夹移动
+        const sourceNodes = await FsService.listTree(sourceRootPath);
+        const targetNodes = await FsService.listTree(targetRootPath);
+        useFileTreeStore.getState().setNodes(sourceRootPath, sourceNodes);
+        useFileTreeStore.getState().setNodes(targetRootPath, targetNodes);
+      }
+
+      // 更新选中路径
+      useFileTreeStore.getState().setSelectedPath(newPath);
+
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: String(error) };
+    }
+  },
+
   // ========== 工作区文件操作 ==========
 
   saveWorkspaceFile: async (savePath: string): Promise<Result> => {

@@ -5,7 +5,7 @@
  * @see docs/current/PM/V5 功能清单.md - INT-010: 文件树右键菜单
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
 import {
   useWorkspaceStore,
@@ -13,6 +13,7 @@ import {
 } from '../../state/slices/workspaceSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { fileActions } from '../../state/actions/fileActions';
+import { workspaceActions } from '../../state/actions/workspaceActions';
 import { openWorkspace, openFile } from '../../workspace/WorkspaceManager';
 import { FsService } from '../../services/fs/FsService';
 import { FsSafety } from '../../services/fs/FsSafety';
@@ -54,6 +55,21 @@ type GhostNode = {
   parentPath: string | null;
   type: 'file' | 'directory';
   rootPath: string; // V6: 记录所属根路径
+};
+
+// 拖拽状态类型
+type DropPosition = 'inside' | 'above' | 'below';
+
+type DragState = {
+  isDragging: boolean;
+  dragPath: string | null;
+  dragType: 'file' | 'directory' | null;
+  dragRootPath: string | null;
+};
+
+type DropState = {
+  dropTargetPath: string | null;
+  dropPosition: DropPosition | null;
 };
 
 type FolderIconProps = {
@@ -185,7 +201,18 @@ export function Sidebar({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActiveIndex, setSearchActiveIndex] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    dragPath: null,
+    dragType: null,
+    dragRootPath: null,
+  });
+  const [dropState, setDropState] = useState<DropState>({
+    dropTargetPath: null,
+    dropPosition: null,
+  });
   const collapseClickTimerRef = useRef<number | null>(null);
+  const dragExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedNode = selectedPath
     ? findNodeByPath(allVisibleNodes, selectedPath)
@@ -525,6 +552,198 @@ export function Sidebar({
     contextMenu.open(event.clientX, event.clientY, items);
   };
 
+  // 移动根文件夹（用于快捷键排序）
+  const moveRootFolderUp = useCallback(() => {
+    if (!selectedPath) return;
+    // 检查选中的是否是根文件夹
+    const isRootFolder = rootFolders.some(
+      (f) => f.workspacePath === selectedPath,
+    );
+    if (!isRootFolder) return;
+
+    workspaceActions.moveRootFolderUp(selectedPath);
+  }, [selectedPath, rootFolders]);
+
+  const moveRootFolderDown = useCallback(() => {
+    if (!selectedPath) return;
+    // 检查选中的是否是根文件夹
+    const isRootFolder = rootFolders.some(
+      (f) => f.workspacePath === selectedPath,
+    );
+    if (!isRootFolder) return;
+
+    workspaceActions.moveRootFolderDown(selectedPath);
+  }, [selectedPath, rootFolders]);
+
+  // 拖拽事件处理
+  const handleDragStart = useCallback(
+    (
+      e: React.DragEvent,
+      path: string,
+      type: 'file' | 'directory',
+      rootPath: string,
+    ) => {
+      e.stopPropagation();
+
+      // 设置拖拽数据
+      const dragData = { path, type, rootPath };
+      e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+      e.dataTransfer.effectAllowed = 'move';
+
+      setDragState({
+        isDragging: true,
+        dragPath: path,
+        dragType: type,
+        dragRootPath: rootPath,
+      });
+    },
+    [],
+  );
+
+  const handleDragEnd = useCallback(() => {
+    // 清除定时器
+    if (dragExpandTimerRef.current) {
+      clearTimeout(dragExpandTimerRef.current);
+      dragExpandTimerRef.current = null;
+    }
+
+    setDragState({
+      isDragging: false,
+      dragPath: null,
+      dragType: null,
+      dragRootPath: null,
+    });
+    setDropState({
+      dropTargetPath: null,
+      dropPosition: null,
+    });
+  }, []);
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, targetPath: string, isDirectory: boolean) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!dragState.isDragging || dragState.dragPath === targetPath) {
+        return;
+      }
+
+      // 不允许拖到子节点
+      if (targetPath.startsWith(dragState.dragPath + '/')) {
+        return;
+      }
+
+      // 计算放置位置
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const height = rect.height;
+
+      let dropPosition: DropPosition;
+      if (isDirectory && y > height * 0.25 && y < height * 0.75) {
+        // 拖到文件夹内部
+        dropPosition = 'inside';
+
+        // 自动展开文件夹（悬停 500ms）
+        if (dragExpandTimerRef.current === null) {
+          dragExpandTimerRef.current = setTimeout(() => {
+            toggleNode(targetPath);
+            dragExpandTimerRef.current = null;
+          }, 500);
+        }
+      } else if (y <= height * 0.5) {
+        dropPosition = 'above';
+        // 清除展开定时器
+        if (dragExpandTimerRef.current) {
+          clearTimeout(dragExpandTimerRef.current);
+          dragExpandTimerRef.current = null;
+        }
+      } else {
+        dropPosition = 'below';
+        // 清除展开定时器
+        if (dragExpandTimerRef.current) {
+          clearTimeout(dragExpandTimerRef.current);
+          dragExpandTimerRef.current = null;
+        }
+      }
+
+      setDropState({
+        dropTargetPath: targetPath,
+        dropPosition,
+      });
+
+      // 设置拖拽效果
+      e.dataTransfer.dropEffect = 'move';
+    },
+    [dragState, toggleNode],
+  );
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+
+    // 清除展开定时器
+    if (dragExpandTimerRef.current) {
+      clearTimeout(dragExpandTimerRef.current);
+      dragExpandTimerRef.current = null;
+    }
+
+    // 只有当离开当前元素时才清除状态
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      setDropState({
+        dropTargetPath: null,
+        dropPosition: null,
+      });
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent, targetPath: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // 清除定时器
+      if (dragExpandTimerRef.current) {
+        clearTimeout(dragExpandTimerRef.current);
+        dragExpandTimerRef.current = null;
+      }
+
+      if (!dragState.isDragging || !dragState.dragPath) {
+        return;
+      }
+
+      const sourcePath = dragState.dragPath;
+      const dropPosition = dropState.dropPosition;
+
+      // 重置状态
+      setDragState({
+        isDragging: false,
+        dragPath: null,
+        dragType: null,
+        dragRootPath: null,
+      });
+      setDropState({
+        dropTargetPath: null,
+        dropPosition: null,
+      });
+
+      if (!dropPosition) return;
+
+      // 执行移动操作
+      const result = await workspaceActions.moveNode(
+        sourcePath,
+        targetPath,
+        dropPosition,
+      );
+
+      if (!result.ok) {
+        useStatusStore
+          .getState()
+          .setStatus('error', result.error || t('sidebar.moveFailed'));
+      }
+    },
+    [dragState, dropState, t],
+  );
+
   const commandCtx = {
     hasWorkspace: rootFolders.length > 0,
     hasSelection: Boolean(selectedNode),
@@ -537,6 +756,8 @@ export function Sidebar({
       useStatusStore
         .getState()
         .setStatus('error', t('sidebar.openWorkspaceFirst')),
+    moveSelectionUp: moveRootFolderUp,
+    moveSelectionDown: moveRootFolderDown,
   };
 
   useEffect(() => {
@@ -655,6 +876,14 @@ export function Sidebar({
               onRequestRenameStart={(path) => setRenamingPath(path)}
               onRequestRenameEnd={() => setRenamingPath(null)}
               onSelect={(path) => setSelectedPath(path)}
+              rootPath={rootFolder.workspacePath}
+              dragState={dragState}
+              dropState={dropState}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
             />
           ))
         )}
@@ -999,6 +1228,14 @@ function FileTreeNode({
   onRequestRenameStart,
   onRequestRenameEnd,
   onSelect,
+  rootPath,
+  dragState,
+  dropState,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: {
   node: FileNode;
   level: number;
@@ -1013,6 +1250,23 @@ function FileTreeNode({
   onRequestRenameStart: (path: string) => void;
   onRequestRenameEnd: () => void;
   onSelect: (path: string) => void;
+  rootPath: string;
+  dragState: DragState;
+  dropState: DropState;
+  onDragStart: (
+    e: React.DragEvent,
+    path: string,
+    type: 'file' | 'directory',
+    rootPath: string,
+  ) => void;
+  onDragEnd: () => void;
+  onDragOver: (
+    e: React.DragEvent,
+    targetPath: string,
+    isDirectory: boolean,
+  ) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, targetPath: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -1025,6 +1279,11 @@ function FileTreeNode({
     isDirectory &&
     Boolean(activeFile) &&
     getParentPath(activeFile as string) === node.path;
+
+  // 拖拽状态计算
+  const isDraggingThis = dragState.dragPath === node.path;
+  const isDropTarget = dropState.dropTargetPath === node.path;
+  const dropPosition = isDropTarget ? dropState.dropPosition : null;
 
   useEffect(() => {
     if (renamingPath === node.path) {
@@ -1117,8 +1376,48 @@ function FileTreeNode({
     }
   };
 
+  // 拖拽事件处理
+  const handleDragStart = (e: React.DragEvent) => {
+    onDragStart(e, node.path, node.type, rootPath);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    onDragOver(e, node.path, isDirectory);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    onDragLeave(e);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    onDrop(e, node.path);
+  };
+
+  // 计算拖拽相关样式
+  const getDragClasses = () => {
+    const classes: string[] = [];
+
+    if (isDraggingThis) {
+      classes.push('opacity-50');
+    }
+
+    if (isDropTarget && dropPosition === 'inside') {
+      classes.push('bg-blue-100 ring-2 ring-blue-400');
+    }
+
+    return classes.join(' ');
+  };
+
   return (
     <div>
+      {/* 上方放置指示线 */}
+      {isDropTarget && dropPosition === 'above' && (
+        <div
+          className="h-0.5 bg-blue-500 mx-2 rounded-full"
+          style={{ marginLeft: `${level * 12 + 8}px` }}
+        />
+      )}
+
       <div
         className={`group relative flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer text-sm transition-colors duration-150 ease-in-out ${
           isDirectory
@@ -1132,7 +1431,7 @@ function FileTreeNode({
               : isFocused
                 ? 'bg-zinc-200 text-zinc-800'
                 : 'text-zinc-700 hover:bg-zinc-200/50'
-        }`}
+        } ${getDragClasses()}`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
         onClick={handleClick}
         onKeyDown={(e) => {
@@ -1142,6 +1441,12 @@ function FileTreeNode({
           }
         }}
         onContextMenu={(event) => onOpenContextMenu(event, node)}
+        draggable={true}
+        onDragStart={handleDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         role="button"
         tabIndex={0}
         aria-expanded={isDirectory ? isExpanded : undefined}
@@ -1231,6 +1536,14 @@ function FileTreeNode({
         )}
       </div>
 
+      {/* 下方放置指示线 */}
+      {isDropTarget && dropPosition === 'below' && (
+        <div
+          className="h-0.5 bg-blue-500 mx-2 rounded-full"
+          style={{ marginLeft: `${level * 12 + 8}px` }}
+        />
+      )}
+
       {isDirectory && isExpanded && (
         <div>
           {ghostNode && ghostNode.parentPath === node.path && (
@@ -1258,6 +1571,14 @@ function FileTreeNode({
                 onRequestRenameStart={onRequestRenameStart}
                 onRequestRenameEnd={onRequestRenameEnd}
                 onSelect={onSelect}
+                rootPath={rootPath}
+                dragState={dragState}
+                dropState={dropState}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
               />
             ))}
         </div>

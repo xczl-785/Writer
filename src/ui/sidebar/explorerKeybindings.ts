@@ -40,5 +40,14 @@ export const matchExplorerShortcut = (
     return EXPLORER_COMMANDS.DELETE;
   }
 
+  // Cmd/Ctrl + Shift + Arrow Up/Down for reordering root folders
+  if (primary && event.shiftKey && key === 'ArrowUp' && !event.altKey) {
+    return EXPLORER_COMMANDS.MOVE_UP;
+  }
+
+  if (primary && event.shiftKey && key === 'ArrowDown' && !event.altKey) {
+    return EXPLORER_COMMANDS.MOVE_DOWN;
+  }
+
   return null;
 };

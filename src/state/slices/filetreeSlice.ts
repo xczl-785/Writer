@@ -29,6 +29,8 @@ export interface FileTreeActions {
   addRootFolder: (folder: RootFolderNode) => void;
   removeRootFolder: (path: string) => void;
   updateRootFolderName: (path: string, name: string) => void;
+  moveRootFolderUp: (path: string) => void;
+  moveRootFolderDown: (path: string) => void;
 
   // 树节点操作
   setNodes: (path: string, nodes: FileNode[]) => void;
@@ -81,6 +83,38 @@ export const useFileTreeStore = create<FileTreeState & FileTreeActions>(
           f.workspacePath === path ? { ...f, displayName: name } : f,
         ),
       })),
+
+    moveRootFolderUp: (path) =>
+      set((state) => {
+        const index = state.rootFolders.findIndex(
+          (f) => f.workspacePath === path,
+        );
+        if (index <= 0) return state;
+
+        const newRootFolders = [...state.rootFolders];
+        [newRootFolders[index - 1], newRootFolders[index]] = [
+          newRootFolders[index],
+          newRootFolders[index - 1],
+        ];
+
+        return { rootFolders: newRootFolders };
+      }),
+
+    moveRootFolderDown: (path) =>
+      set((state) => {
+        const index = state.rootFolders.findIndex(
+          (f) => f.workspacePath === path,
+        );
+        if (index < 0 || index >= state.rootFolders.length - 1) return state;
+
+        const newRootFolders = [...state.rootFolders];
+        [newRootFolders[index], newRootFolders[index + 1]] = [
+          newRootFolders[index + 1],
+          newRootFolders[index],
+        ];
+
+        return { rootFolders: newRootFolders };
+      }),
 
     // ========== 树节点操作 ==========
 
