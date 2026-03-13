@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
+import { applyLinkAction } from '../linkActions';
 
 const BUBBLE_MENU_DEBOUNCE_MS = 80;
 
@@ -147,7 +148,11 @@ export function BubbleMenu({
         type="button"
         className="editor-bubble-menu__button"
         onMouseDown={handleMouseDown}
-        onClick={() => onShowStatus('Link editor coming soon')}
+        onClick={() => {
+          if (applyLinkAction(editor) === 'unavailable') {
+            onShowStatus('Link unavailable');
+          }
+        }}
       >
         Link
       </button>
@@ -155,7 +160,7 @@ export function BubbleMenu({
         type="button"
         className="editor-bubble-menu__button"
         onMouseDown={handleMouseDown}
-        onClick={() => onShowStatus('Highlight coming soon')}
+        onClick={() => editor.chain().focus().toggleHighlight().run()}
       >
         Highlight
       </button>

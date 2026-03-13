@@ -46,7 +46,19 @@ fn item<R: Runtime>(
     en: &str,
     accelerator: Option<&str>,
 ) -> Result<MenuItem<R>, tauri::Error> {
-    MenuItem::with_id(app, id, tr(locale, zh, en), true, accelerator)
+    item_with_enabled(app, locale, id, zh, en, accelerator, true)
+}
+
+fn item_with_enabled<R: Runtime>(
+    app: &AppHandle<R>,
+    locale: Locale,
+    id: &str,
+    zh: &str,
+    en: &str,
+    accelerator: Option<&str>,
+    enabled: bool,
+) -> Result<MenuItem<R>, tauri::Error> {
+    MenuItem::with_id(app, id, tr(locale, zh, en), enabled, accelerator)
 }
 
 pub fn build_native_menu<R: Runtime>(app: &AppHandle<R>) -> Result<Menu<R>, tauri::Error> {
@@ -94,17 +106,42 @@ fn build_native_menu_with_locale<R: Runtime>(
                 Some("Shift+CmdOrCtrl+W"),
             )?,
             &item(app, locale, "menu.file.save", "保存", "Save", Some("CmdOrCtrl+S"))?,
-            &item(
+            &item_with_enabled(
                 app,
                 locale,
                 "menu.file.save_as",
                 "另存为",
                 "Save As",
                 Some("Shift+CmdOrCtrl+S"),
+                false,
             )?,
-            &item(app, locale, "menu.file.export_pdf", "导出 PDF", "Export PDF", None)?,
-            &item(app, locale, "menu.file.export_html", "导出 HTML", "Export HTML", None)?,
-            &item(app, locale, "menu.file.export_image", "导出图片", "Export Image", None)?,
+            &item_with_enabled(
+                app,
+                locale,
+                "menu.file.export_pdf",
+                "导出 PDF",
+                "Export PDF",
+                None,
+                false,
+            )?,
+            &item_with_enabled(
+                app,
+                locale,
+                "menu.file.export_html",
+                "导出 HTML",
+                "Export HTML",
+                None,
+                false,
+            )?,
+            &item_with_enabled(
+                app,
+                locale,
+                "menu.file.export_image",
+                "导出图片",
+                "Export Image",
+                None,
+                false,
+            )?,
             &item(app, locale, "menu.file.settings", "设置", "Settings", None)?,
         ],
     )?;
@@ -332,13 +369,14 @@ fn build_native_menu_with_locale<R: Runtime>(
                 "Typewriter Mode",
                 Some("F11"),
             )?,
-            &item(
+            &item_with_enabled(
                 app,
                 locale,
                 "menu.view.source_mode",
                 "源码模式",
                 "Source Mode",
                 Some("CmdOrCtrl+/"),
+                false,
             )?,
         ],
     )?;

@@ -1,5 +1,7 @@
 import { MarkdownManager } from '@tiptap/markdown';
 import StarterKit from '@tiptap/starter-kit';
+import Highlight from '@tiptap/extension-highlight';
+import { TaskItem, TaskList } from '@tiptap/extension-list';
 import Image from '@tiptap/extension-image';
 import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
@@ -11,6 +13,9 @@ export type EditorJSON = Record<string, unknown>;
 const manager = new MarkdownManager({
   extensions: [
     StarterKit,
+    Highlight,
+    TaskList,
+    TaskItem.configure({ nested: true }),
     Image,
     Table.configure({
       resizable: true,

@@ -10,6 +10,7 @@ import type { Editor } from '@tiptap/react';
 import { match } from 'pinyin-pro';
 import { t, getLocale } from '../../../i18n';
 import { isStrictSlashTriggerEligible } from './slashEligibility';
+import { applyImageAction } from '../imageActions';
 import {
   isInsertTextLikeInput,
   isSlashTriggerChar,
@@ -192,21 +193,7 @@ function createSlashCommands(
       hint: '',
       keywords: ['img', 'picture', 'photo'],
       run: (instance) => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = async () => {
-          const file = input.files?.[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const dataUrl = reader.result as string;
-              instance.chain().focus().setImage({ src: dataUrl }).run();
-            };
-            reader.readAsDataURL(file);
-          }
-        };
-        input.click();
+        void applyImageAction(instance);
       },
     },
   ];
