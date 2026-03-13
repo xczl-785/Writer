@@ -187,6 +187,29 @@
   opacity: 0.3;
 }
 
+/* 工作区标识 - V6规范 */
+.status-workspace-indicator {
+  display: flex;
+  align-items: center;
+  border-left: 1px solid #f4f4f5;
+  padding-left: 12px;
+  margin-left: 12px;
+}
+
+.status-workspace-indicator--multi .status-workspace-name {
+  font-style: italic;
+}
+
+.status-workspace-name {
+  color: #a1a1aa;
+  font-weight: 500;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
 .status-bar.dirty .status-indicator {
   background-color: var(--color-warning);
   opacity: 1;
