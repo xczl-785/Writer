@@ -7,10 +7,10 @@ import { useSettingsStore } from './slices/settingsSlice';
 
 test('Workspace State', () => {
   const store = useWorkspaceStore.getState();
-  expect(store.currentPath).toBe(null);
+  expect(store.folders).toEqual([]);
 
-  useWorkspaceStore.getState().setWorkspacePath('/test/path');
-  expect(useWorkspaceStore.getState().currentPath).toBe('/test/path');
+  useWorkspaceStore.getState().addFolder({ path: '/test/path', index: 0 });
+  expect(useWorkspaceStore.getState().folders[0]?.path).toBe('/test/path');
 
   useWorkspaceStore.getState().openFile('file1.txt');
   expect(useWorkspaceStore.getState().openFiles).toContain('file1.txt');

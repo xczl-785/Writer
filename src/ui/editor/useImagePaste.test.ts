@@ -88,12 +88,19 @@ describe('useImagePaste', () => {
     },
   } as unknown as Editor;
 
+  const mockWorkspaceState = {
+    activeFile: '/project/docs/file.md',
+    folders: [{ path: '/project/docs', index: 0 }],
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    vi.mocked(useWorkspaceStore).mockReturnValue({
-      activeFile: '/project/docs/file.md',
-      currentPath: '/project/docs',
+    vi.mocked(useWorkspaceStore).mockImplementation((selector) => {
+      if (selector) {
+        return selector(mockWorkspaceState as any);
+      }
+      return mockWorkspaceState;
     });
     vi.mocked(useStatusStore.getState).mockReturnValue(createStatusState());
     vi.mocked(FsService.saveImage).mockResolvedValue(undefined);

@@ -51,9 +51,10 @@ const createImageFilePicker = (): Promise<File | null> =>
 export async function saveAndInsertImageFile(
   editor: Editor,
   file: File,
-  workspace: { activeFile: string | null; currentPath: string | null },
+  workspace: { activeFile: string | null; folders: { path: string }[] },
 ): Promise<Exclude<ApplyImageActionResult, 'cancelled'>> {
-  const { activeFile, currentPath } = workspace;
+  const { activeFile, folders } = workspace;
+  const currentPath = folders[0]?.path ?? null;
   if (!activeFile || !currentPath) {
     return 'unavailable';
   }
@@ -88,7 +89,11 @@ export async function saveAndInsertImageFile(
 
   const baseName = `image-${timestamp}`;
   const assetsDir = joinPath(currentPath, 'assets');
-  const imagePath = await generateUniqueFilename(assetsDir, baseName, extension);
+  const imagePath = await generateUniqueFilename(
+    assetsDir,
+    baseName,
+    extension,
+  );
 
   try {
     const arrayBuffer = await file.arrayBuffer();

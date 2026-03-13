@@ -105,9 +105,14 @@ type SidebarProps = {
   onToggleFocusZen?: () => void;
 };
 
-export function Sidebar({ onToggleVisibility, onToggleFocusZen }: SidebarProps) {
+export function Sidebar({
+  onToggleVisibility,
+  onToggleFocusZen,
+}: SidebarProps) {
   const { nodes, selectedPath, setSelectedPath } = useFileTreeStore();
-  const { currentPath, activeFile } = useWorkspaceStore();
+  const folders = useWorkspaceStore((state) => state.folders);
+  const currentPath = folders[0]?.path ?? null;
+  const activeFile = useWorkspaceStore((state) => state.activeFile);
   const contextMenu = useContextMenu();
   const visibleNodes = filterVisibleNodes(nodes);
   const [ghostNode, setGhostNode] = useState<GhostNode | null>(null);

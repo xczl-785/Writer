@@ -63,15 +63,19 @@ const mockedWorkspaceStore = useWorkspaceStore as WorkspaceStoreMock;
 const createWorkspaceState = (
   partial: Partial<WorkspaceState>,
 ): WorkspaceState & WorkspaceActions => ({
-  currentPath: null,
+  folders: [],
+  workspaceFile: null,
+  isDirty: false,
   openFiles: [],
   activeFile: null,
-  setWorkspacePath: vi.fn(),
+  addFolder: vi.fn(),
+  removeFolder: vi.fn(),
   openFile: vi.fn(),
   closeFile: vi.fn(),
   setActiveFile: vi.fn(),
   renameFile: vi.fn(),
   removePath: vi.fn(),
+  setDirty: vi.fn(),
   ...partial,
 });
 
@@ -87,10 +91,12 @@ describe('imageActions', () => {
     vi.unstubAllEnvs();
     vi.mocked(FsService.checkExists).mockResolvedValue(false);
     vi.mocked(FsService.saveImage).mockResolvedValue(undefined);
-    mockedWorkspaceStore.getState.mockReturnValue(createWorkspaceState({
-      activeFile: '/project/docs/file.md',
-      currentPath: '/project/docs',
-    }));
+    mockedWorkspaceStore.getState.mockReturnValue(
+      createWorkspaceState({
+        activeFile: '/project/docs/file.md',
+        folders: [{ path: '/project/docs', index: 0 }],
+      }),
+    );
     vi.mocked(useStatusStore.getState).mockReturnValue(createStatusState());
     vi.mocked(ImageResolver.resolve).mockReturnValue(
       'asset:///project/docs/assets/image.png',
@@ -137,7 +143,7 @@ describe('imageActions', () => {
 
     const result = await saveAndInsertImageFile(editor, file, {
       activeFile: '/project/docs/file.md',
-      currentPath: '/project/docs',
+      folders: [{ path: '/project/docs' }],
     });
 
     expect(result).toBe('failed');
@@ -157,7 +163,7 @@ describe('imageActions', () => {
 
     const result = await saveAndInsertImageFile(editor, file, {
       activeFile: null,
-      currentPath: '/project/docs',
+      folders: [{ path: '/project/docs' }],
     });
 
     expect(result).toBe('unavailable');
@@ -168,6 +174,19 @@ describe('imageActions', () => {
 describe('generateUniqueFilename', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
+    vi.mocked(FsService.checkExists).mockResolvedValue(false);
+    vi.mocked(FsService.saveImage).mockResolvedValue(undefined);
+    mockedWorkspaceStore.getState.mockReturnValue(
+      createWorkspaceState({
+        activeFile: '/project/docs/file.md',
+        folders: [{ path: '/project/docs', index: 0 }],
+      }),
+    );
+    vi.mocked(useStatusStore.getState).mockReturnValue(createStatusState());
+    vi.mocked(ImageResolver.resolve).mockReturnValue(
+      'asset:///project/docs/assets/image.png',
+    );
   });
 
   it('returns base name if it does not exist', async () => {

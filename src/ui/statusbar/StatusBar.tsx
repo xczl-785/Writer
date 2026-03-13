@@ -23,7 +23,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 }) => {
   const { saveStatus, message, saveError, lastSavedAt, setStatus } =
     useStatusStore();
-  const { currentPath, activeFile } = useWorkspaceStore();
+  const folders = useWorkspaceStore((state) => state.folders);
+  const currentPath = folders[0]?.path ?? null;
+  const activeFile = useWorkspaceStore((state) => state.activeFile);
   const { fileStates } = useEditorStore();
   const [isFaded, setIsFaded] = useState(false);
   const [gitSync, setGitSync] = useState<GitSyncStatus | null>(null);
