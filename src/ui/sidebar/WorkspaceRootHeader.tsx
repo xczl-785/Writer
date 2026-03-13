@@ -139,7 +139,7 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   return (
     <>
       <div
-        className="workspace-root-header group flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-sm text-zinc-600 hover:bg-zinc-100 transition-colors"
+        className="workspace-root-header group flex items-center justify-between px-3 py-1.5 cursor-pointer text-sm text-zinc-600 hover:bg-zinc-100 transition-colors"
         onContextMenu={handleContextMenu}
         role="button"
         tabIndex={0}
@@ -153,36 +153,38 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
         }}
       >
         {/* 展开/折叠按钮 - 规范 2.2.2: 16x16，hover 显示 */}
-        <button
-          className="expand-button p-1 rounded hover:bg-zinc-200/70 transition-colors opacity-0 group-hover:opacity-100"
-          onClick={toggleExpanded}
-          type="button"
-          aria-label={
-            isExpanded ? t('workspace.collapse') : t('workspace.expand')
-          }
-        >
-          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        </button>
-
-        <Folder size={16} className="folder-icon text-blue-500 flex-shrink-0" />
-
-        {isRenaming ? (
-          <InlineInput
-            value={renameDraft}
-            onCommit={commitRename}
-            onCancel={cancelRename}
-            autoFocus={true}
-          />
-        ) : (
-          <span
-            className="folder-name truncate flex-1 leading-none"
-            title={folder.workspacePath}
+        <div className="flex items-center gap-2">
+          <button
+            className="expand-button p-1 rounded hover:bg-zinc-200/70 transition-colors opacity-0 group-hover:opacity-100"
+            onClick={toggleExpanded}
+            type="button"
+            aria-label={
+              isExpanded ? t('workspace.collapse') : t('workspace.expand')
+            }
           >
-            {folder.displayName}
-          </span>
-        )}
+            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </button>
 
-        {/* 移除按钮 - 规范 2.2.2: 16x16，hover 显示 */}
+          <Folder size={16} className="folder-icon text-zinc-600 flex-shrink-0" />
+
+          {isRenaming ? (
+            <InlineInput
+              value={renameDraft}
+              onCommit={commitRename}
+              onCancel={cancelRename}
+              autoFocus={true}
+            />
+          ) : (
+            <span
+              className="folder-name truncate leading-none font-bold text-zinc-800"
+              title={folder.workspacePath}
+            >
+              {folder.displayName}
+            </span>
+          )}
+        </div>
+
+        {/* 移除按钮 - 规范 2.2.2: 12x12，hover 显示 */}
         <button
           className="remove-button p-1 rounded hover:bg-red-100 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
           onClick={(e) => {
@@ -193,14 +195,12 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
           title={t('workspace.removeFromWorkspace')}
           aria-label={t('workspace.removeFromWorkspace')}
         >
-          <X size={16} />
+          <X size={12} />
         </button>
       </div>
 
-      {/* 根文件夹下分隔线 - 规范 2.2.2: 1px solid zinc-200 */}
-      {isExpanded && (
-        <div className="root-folder-divider h-px bg-zinc-200 mx-2 mt-1" />
-      )}
+      {/* 根文件夹下分隔线 - 规范 2.2.2: 1px solid zinc-200，始终显示 */}
+      <div className="root-folder-divider h-px bg-zinc-200 opacity-70 mx-3 mb-1" />
 
       <ContextMenu
         isOpen={contextMenu.state.isOpen}
