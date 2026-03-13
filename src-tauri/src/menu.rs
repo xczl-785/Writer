@@ -1,5 +1,5 @@
 use serde::Serialize;
-use tauri::menu::{Menu, MenuItem, Submenu};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::{AppHandle, Emitter, Runtime};
 
 #[derive(Clone, Copy)]
@@ -64,6 +64,13 @@ fn build_native_menu_with_locale<R: Runtime>(
     app: &AppHandle<R>,
     locale: Locale,
 ) -> Result<Menu<R>, tauri::Error> {
+    let undo_item = PredefinedMenuItem::undo(app, None)?;
+    let redo_item = PredefinedMenuItem::redo(app, None)?;
+    let cut_item = PredefinedMenuItem::cut(app, None)?;
+    let copy_item = PredefinedMenuItem::copy(app, None)?;
+    let paste_item = PredefinedMenuItem::paste(app, None)?;
+    let select_all_item = PredefinedMenuItem::select_all(app, None)?;
+
     let file_menu = Submenu::with_items(
         app,
         &tr(locale, "文件", "File"),
@@ -107,26 +114,12 @@ fn build_native_menu_with_locale<R: Runtime>(
         &tr(locale, "编辑", "Edit"),
         true,
         &[
-            &item(app, locale, "menu.edit.undo", "撤销", "Undo", Some("CmdOrCtrl+Z"))?,
-            &item(
-                app,
-                locale,
-                "menu.edit.redo",
-                "重做",
-                "Redo",
-                Some("Shift+CmdOrCtrl+Z"),
-            )?,
-            &item(app, locale, "menu.edit.cut", "剪切", "Cut", Some("CmdOrCtrl+X"))?,
-            &item(app, locale, "menu.edit.copy", "复制", "Copy", Some("CmdOrCtrl+C"))?,
-            &item(app, locale, "menu.edit.paste", "粘贴", "Paste", Some("CmdOrCtrl+V"))?,
-            &item(
-                app,
-                locale,
-                "menu.edit.select_all",
-                "全选",
-                "Select All",
-                Some("CmdOrCtrl+A"),
-            )?,
+            &undo_item,
+            &redo_item,
+            &cut_item,
+            &copy_item,
+            &paste_item,
+            &select_all_item,
             &item(app, locale, "menu.edit.find", "查找", "Find", Some("CmdOrCtrl+F"))?,
             &item(
                 app,
@@ -357,6 +350,9 @@ fn build_native_menu_with_locale<R: Runtime>(
 }
 
 pub fn emit_menu_command<R: Runtime>(app: &AppHandle<R>, id: &str) {
+    if matches!(id, "undo" | "redo" | "cut" | "copy" | "paste" | "select_all") {
+        return;
+    }
     let payload = MenuCommandEvent { id: id.to_string() };
     let _ = app.emit("writer://menu-command", payload);
 }

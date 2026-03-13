@@ -15,6 +15,9 @@ export function createMenuCommandHandler(
   setStatus: (status: 'idle' | 'error', message: string) => void,
   setIsOutlineOpen: (value: boolean | ((prev: boolean) => boolean)) => void,
 ): MenuCommandHandler {
+  const execDocumentCommand = (command: 'cut' | 'copy' | 'paste'): boolean =>
+    typeof document.execCommand === 'function' && document.execCommand(command);
+
   const runEditorCommand = (execute: () => boolean): void => {
     const ran = execute();
     if (!ran) {
@@ -22,27 +25,14 @@ export function createMenuCommandHandler(
     }
   };
 
-  const execClipboardCommand = async (
-    command: 'cut' | 'copy' | 'paste',
-  ): Promise<void> => {
+  const execClipboardCommand = (command: 'cut' | 'copy' | 'paste'): void => {
     editor.chain().focus().run();
 
-    if (document.execCommand(command)) {
+    if (execDocumentCommand(command)) {
       return;
     }
 
-    if (command !== 'paste') {
-      setStatus('error', t('status.menu.clipboardDenied'));
-      return;
-    }
-
-    try {
-      const text = await navigator.clipboard.readText();
-      if (!text) return;
-      runEditorCommand(() => editor.chain().focus().insertContent(text).run());
-    } catch {
-      setStatus('error', t('status.menu.clipboardDenied'));
-    }
+    setStatus('error', t('status.menu.clipboardDenied'));
   };
 
   return (event: Event) => {
@@ -58,13 +48,13 @@ export function createMenuCommandHandler(
         runEditorCommand(() => editor.chain().focus().redo().run());
         return;
       case 'edit.cut':
-        void execClipboardCommand('cut');
+        execClipboardCommand('cut');
         return;
       case 'edit.copy':
-        void execClipboardCommand('copy');
+        execClipboardCommand('copy');
         return;
       case 'edit.paste':
-        void execClipboardCommand('paste');
+        execClipboardCommand('paste');
         return;
       case 'edit.select_all':
         runEditorCommand(() => editor.chain().focus().selectAll().run());
