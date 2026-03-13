@@ -2,11 +2,13 @@
  * Recent Items Storage Service
  *
  * Manages persistent storage of recently opened workspaces, folders, and files.
- * Uses localStorage for simplicity; could be migrated to Tauri's store plugin later.
+ * Uses Tauri file system storage (app config directory) for cross-platform persistence.
  *
  * @see docs/current/阶段文档/V6-工作区功能需求文档.md - WS-09, WS-10
  * @see docs/current/阶段文档/V6-工作区交互设计规范.md - 2.5 最近项目菜单
  */
+
+import { FsService } from '../fs/FsService';
 
 export type RecentItemType = 'workspace' | 'folder' | 'file';
 
@@ -48,10 +50,13 @@ interface RecentItemsData {
   files: RecentFile[];
 }
 
-const STORAGE_KEY = 'writer-recent-items';
+const STORAGE_FILENAME = 'recent-items.json';
 const MAX_WORKSPACES = 10;
 const MAX_FOLDERS = 5;
 const MAX_FILES = 20;
+
+// Cache for the storage path
+let cachedStoragePath: string | null = null;
 
 /**
  * Get the default empty data structure
@@ -65,18 +70,37 @@ function getEmptyData(): RecentItemsData {
 }
 
 /**
- * Load recent items from localStorage
+ * Get the storage file path (cached)
  */
-function loadData(): RecentItemsData {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return getEmptyData();
+async function getStoragePath(): Promise<string> {
+  if (cachedStoragePath) {
+    return cachedStoragePath;
+  }
 
-    const parsed = JSON.parse(stored) as Partial<RecentItemsData>;
+  const configDir = await FsService.getAppConfigDir();
+  cachedStoragePath = `${configDir}/${STORAGE_FILENAME}`;
+  return cachedStoragePath;
+}
+
+/**
+ * Load recent items from file system
+ */
+async function loadData(): Promise<RecentItemsData> {
+  try {
+    const storagePath = await getStoragePath();
+    const exists = await FsService.checkExists(storagePath);
+
+    if (!exists) {
+      return getEmptyData();
+    }
+
+    const data = (await FsService.readJsonFile(
+      storagePath,
+    )) as Partial<RecentItemsData>;
     return {
-      workspaces: Array.isArray(parsed.workspaces) ? parsed.workspaces : [],
-      folders: Array.isArray(parsed.folders) ? parsed.folders : [],
-      files: Array.isArray(parsed.files) ? parsed.files : [],
+      workspaces: Array.isArray(data.workspaces) ? data.workspaces : [],
+      folders: Array.isArray(data.folders) ? data.folders : [],
+      files: Array.isArray(data.files) ? data.files : [],
     };
   } catch {
     return getEmptyData();
@@ -84,11 +108,12 @@ function loadData(): RecentItemsData {
 }
 
 /**
- * Save recent items to localStorage
+ * Save recent items to file system
  */
-function saveData(data: RecentItemsData): void {
+async function saveData(data: RecentItemsData): Promise<void> {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const storagePath = await getStoragePath();
+    await FsService.writeJsonFile(storagePath, data);
   } catch (e) {
     console.error('Failed to save recent items:', e);
   }
@@ -114,40 +139,52 @@ function touchItem<T extends RecentItem>(
   return result.slice(0, maxItems);
 }
 
+/**
+ * Check if the service is ready (Tauri runtime available)
+ */
+export async function isRecentItemsServiceReady(): Promise<boolean> {
+  try {
+    await getStoragePath();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const RecentItemsService = {
   /**
    * Get all recent items
    */
-  getAll(): RecentItemsData {
+  async getAll(): Promise<RecentItemsData> {
     return loadData();
   },
 
   /**
    * Get recent workspaces (up to MAX_WORKSPACES)
    */
-  getWorkspaces(): RecentWorkspace[] {
-    return loadData().workspaces;
+  async getWorkspaces(): Promise<RecentWorkspace[]> {
+    return (await loadData()).workspaces;
   },
 
   /**
    * Get recent folders (up to MAX_FOLDERS)
    */
-  getFolders(): RecentFolder[] {
-    return loadData().folders;
+  async getFolders(): Promise<RecentFolder[]> {
+    return (await loadData()).folders;
   },
 
   /**
    * Get recent files (up to MAX_FILES)
    */
-  getFiles(): RecentFile[] {
-    return loadData().files;
+  async getFiles(): Promise<RecentFile[]> {
+    return (await loadData()).files;
   },
 
   /**
    * Add or update a workspace in recent items
    */
-  addWorkspace(path: string, name?: string): void {
-    const data = loadData();
+  async addWorkspace(path: string, name?: string): Promise<void> {
+    const data = await loadData();
     const displayName = name || path.split('/').pop() || path;
 
     data.workspaces = touchItem(
@@ -162,14 +199,14 @@ export const RecentItemsService = {
       MAX_WORKSPACES,
     );
 
-    saveData(data);
+    await saveData(data);
   },
 
   /**
    * Add or update a folder in recent items
    */
-  addFolder(path: string, name?: string): void {
-    const data = loadData();
+  async addFolder(path: string, name?: string): Promise<void> {
+    const data = await loadData();
     const displayName = name || path.split('/').pop() || path;
 
     data.folders = touchItem(
@@ -184,14 +221,14 @@ export const RecentItemsService = {
       MAX_FOLDERS,
     );
 
-    saveData(data);
+    await saveData(data);
   },
 
   /**
    * Add or update a file in recent items
    */
-  addFile(path: string, name?: string): void {
-    const data = loadData();
+  async addFile(path: string, name?: string): Promise<void> {
+    const data = await loadData();
     const displayName = name || path.split('/').pop() || path;
 
     data.files = touchItem(
@@ -206,14 +243,14 @@ export const RecentItemsService = {
       MAX_FILES,
     );
 
-    saveData(data);
+    await saveData(data);
   },
 
   /**
    * Remove a specific item from recent items
    */
-  removeItem(type: RecentItemType, path: string): void {
-    const data = loadData();
+  async removeItem(type: RecentItemType, path: string): Promise<void> {
+    const data = await loadData();
 
     switch (type) {
       case 'workspace':
@@ -227,21 +264,21 @@ export const RecentItemsService = {
         break;
     }
 
-    saveData(data);
+    await saveData(data);
   },
 
   /**
    * Clear all recent items
    */
-  clearAll(): void {
-    saveData(getEmptyData());
+  async clearAll(): Promise<void> {
+    await saveData(getEmptyData());
   },
 
   /**
    * Clear all items of a specific type
    */
-  clearType(type: RecentItemType): void {
-    const data = loadData();
+  async clearType(type: RecentItemType): Promise<void> {
+    const data = await loadData();
 
     switch (type) {
       case 'workspace':
@@ -255,6 +292,6 @@ export const RecentItemsService = {
         break;
     }
 
-    saveData(data);
+    await saveData(data);
   },
 };

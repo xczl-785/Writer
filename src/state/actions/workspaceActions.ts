@@ -9,7 +9,11 @@ import {
   useWorkspaceStore,
   type WorkspaceFolder,
 } from '../slices/workspaceSlice';
+import { useStatusStore } from '../slices/statusSlice';
 import { WorkspaceStatePersistence } from '../../services/workspace/WorkspaceStatePersistence';
+import { getRelativePath, resolvePath } from '../../utils/pathUtils';
+import { showConfirmDialog } from '../../ui/components/Dialog';
+import { t } from '../../i18n';
 
 interface WorkspaceSnapshot {
   folders: WorkspaceFolder[];
@@ -21,6 +25,58 @@ export type OpenFileResult =
   | { ok: false; reason: 'active-flush-failed' | 'target-flush-failed' };
 
 export type Result = { ok: true } | { ok: false; error: string };
+
+export type CloseWorkspaceResult =
+  | { ok: true }
+  | { ok: false; reason: 'cancelled' | 'save-failed' };
+
+/**
+ * 获取所有脏文件路径
+ */
+function getDirtyFiles(): string[] {
+  const { fileStates } = useEditorStore.getState();
+  return Object.entries(fileStates)
+    .filter(([, state]) => state.isDirty)
+    .map(([path]) => path);
+}
+
+/**
+ * 保存所有脏文件
+ */
+async function saveAllDirtyFiles(dirtyFiles: string[]): Promise<boolean> {
+  try {
+    // 先刷新所有待保存的内容
+    for (const path of dirtyFiles) {
+      await FsSafety.flushAffectedFiles(path);
+    }
+    return true;
+  } catch (error) {
+    console.error('Failed to save dirty files:', error);
+    return false;
+  }
+}
+
+/**
+ * 清空工作区状态
+ */
+function clearWorkspaceState(): void {
+  useWorkspaceStore.setState({
+    folders: [],
+    workspaceFile: null,
+    isDirty: false,
+    openFiles: [],
+    activeFile: null,
+  });
+  useEditorStore.setState({ fileStates: {} });
+  useFileTreeStore.setState({
+    rootFolders: [],
+    expandedPaths: new Set(),
+    selectedPath: null,
+    loadingPaths: new Set(),
+    errorPaths: new Map(),
+    deletedPaths: new Set(),
+  });
+}
 
 export const workspaceActions = {
   // ========== 现有方法（兼容 V5）==========
@@ -67,23 +123,66 @@ export const workspaceActions = {
     return nodes.length;
   },
 
-  closeWorkspace(): void {
-    useWorkspaceStore.setState({
-      folders: [],
-      workspaceFile: null,
-      isDirty: false,
-      openFiles: [],
-      activeFile: null,
-    });
-    useEditorStore.setState({ fileStates: {} });
-    useFileTreeStore.setState({
-      rootFolders: [],
-      expandedPaths: new Set(),
-      selectedPath: null,
-      loadingPaths: new Set(),
-      errorPaths: new Map(),
-      deletedPaths: new Set(),
-    });
+  /**
+   * 关闭工作区
+   *
+   * @param forceClose - 是否强制关闭（跳过未保存文件检查）
+   * @returns 关闭结果
+   */
+  async closeWorkspace(forceClose = false): Promise<CloseWorkspaceResult> {
+    const dirtyFiles = getDirtyFiles();
+
+    // 如果有脏文件且非强制关闭，显示确认对话框
+    if (dirtyFiles.length > 0 && !forceClose) {
+      const message = t('workspace.closeDirtyMessage').replace(
+        '{count}',
+        String(dirtyFiles.length),
+      );
+      const description = t('workspace.closeDirtyDescription');
+
+      const confirmed = await showConfirmDialog({
+        title: t('workspace.closeTitle'),
+        message,
+        description,
+        okLabel: t('workspace.saveAndClose'),
+        cancelLabel: t('workspace.closeWithoutSave'),
+        kind: 'warning',
+      });
+
+      if (!confirmed) {
+        // 用户选择不保存关闭 - 直接清空状态
+        clearWorkspaceState();
+        return { ok: true };
+      }
+
+      // 用户选择保存并关闭
+      useStatusStore.getState().setStatus('saving', t('workspace.closing'));
+
+      const saveSuccess = await saveAllDirtyFiles(dirtyFiles);
+      if (!saveSuccess) {
+        useStatusStore.getState().setStatus('error', t('status.saveFailed'));
+        return { ok: false, reason: 'save-failed' };
+      }
+    }
+
+    // 设置状态栏提示
+    useStatusStore.getState().setStatus('loading', t('workspace.closing'));
+
+    // 清空状态
+    clearWorkspaceState();
+
+    // 重置状态栏
+    useStatusStore.getState().setStatus('idle', null);
+
+    return { ok: true };
+  },
+
+  /**
+   * 强制关闭工作区（跳过未保存文件检查）
+   * 保留同步版本以兼容旧代码
+   */
+  closeWorkspaceForce(): void {
+    clearWorkspaceState();
   },
 
   // ========== 多文件夹支持（带快照回滚）==========
@@ -300,12 +399,15 @@ export const workspaceActions = {
     const state = useWorkspaceStore.getState();
 
     try {
+      // 将文件夹路径转换为相对于工作区文件的相对路径
+      const foldersWithRelativePaths = state.folders.map((f) => ({
+        path: getRelativePath(savePath, f.path),
+        name: f.name,
+      }));
+
       const config = {
         version: 1,
-        folders: state.folders.map((f) => ({
-          path: f.path,
-          name: f.name,
-        })),
+        folders: foldersWithRelativePaths,
         state: {
           openFiles: state.openFiles,
           activeFile: state.activeFile ?? undefined,
@@ -327,8 +429,16 @@ export const workspaceActions = {
     try {
       const config = await FsService.parseWorkspaceFile(workspacePath);
 
+      // 将相对路径解析为绝对路径
+      const absoluteFolderPaths = config.folders.map(
+        (f: { path: string; name?: string }) => ({
+          path: resolvePath(workspacePath, f.path),
+          name: f.name,
+        }),
+      );
+
       // 批量加载所有文件夹树
-      const paths = config.folders.map((f: { path: string }) => f.path);
+      const paths = absoluteFolderPaths.map((f) => f.path);
       const batchResult: FolderPathResult[] =
         await FsService.listTreeBatch(paths);
 
@@ -337,13 +447,24 @@ export const workspaceActions = {
         .map((r: FolderPathResult, index: number) => ({
           workspacePath: r.path,
           displayName:
-            config.folders[index]?.name || r.path.split('/').pop() || r.path,
+            absoluteFolderPaths[index]?.name ||
+            r.path.split('/').pop() ||
+            r.path,
           tree: r.nodes,
         }));
 
+      // 解析 openFiles 和 activeFile 的相对路径
+      const resolvedOpenFiles =
+        config.state?.openFiles?.map((p: string) =>
+          resolvePath(workspacePath, p),
+        ) || [];
+      const resolvedActiveFile = config.state?.activeFile
+        ? resolvePath(workspacePath, config.state.activeFile)
+        : null;
+
       // 原子更新所有 store
       useWorkspaceStore.getState().restoreState({
-        folders: config.folders.map(
+        folders: absoluteFolderPaths.map(
           (f: { path: string; name?: string }, i: number) => ({
             path: f.path,
             name: f.name,
@@ -352,8 +473,8 @@ export const workspaceActions = {
         ),
         workspaceFile: workspacePath,
         isDirty: false,
-        openFiles: config.state?.openFiles || [],
-        activeFile: config.state?.activeFile || null,
+        openFiles: resolvedOpenFiles,
+        activeFile: resolvedActiveFile,
       });
 
       useFileTreeStore.getState().setRootFolders(rootFolders);

@@ -191,8 +191,7 @@ export const RecentWorkspacesMenu: React.FC<RecentWorkspacesMenuProps> = ({
   // Load items when menu opens
   useEffect(() => {
     if (isOpen) {
-      const data = RecentItemsService.getAll();
-      setItems(data);
+      RecentItemsService.getAll().then(setItems);
       setFocusedIndex(-1);
     }
   }, [isOpen]);
@@ -239,8 +238,8 @@ export const RecentWorkspacesMenu: React.FC<RecentWorkspacesMenuProps> = ({
   }, [anchorEl]);
 
   // Handle clear history
-  const handleClearHistory = useCallback(() => {
-    RecentItemsService.clearAll();
+  const handleClearHistory = useCallback(async () => {
+    await RecentItemsService.clearAll();
     setItems({ workspaces: [], folders: [], files: [] });
     onClose();
   }, [onClose]);
@@ -338,10 +337,11 @@ export const RecentWorkspacesMenu: React.FC<RecentWorkspacesMenuProps> = ({
 
   // Handle right-click to remove item
   const handleItemContextMenu = useCallback(
-    (e: React.MouseEvent, item: RecentItem) => {
+    async (e: React.MouseEvent, item: RecentItem) => {
       e.preventDefault();
-      RecentItemsService.removeItem(item.type, item.path);
-      setItems(RecentItemsService.getAll());
+      await RecentItemsService.removeItem(item.type, item.path);
+      const data = await RecentItemsService.getAll();
+      setItems(data);
     },
     [],
   );
