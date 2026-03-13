@@ -55,6 +55,10 @@ pub fn run() {
             fs::parse_workspace_file,
             fs::save_workspace_file,
             fs::resolve_relative_path,
+            // App config commands
+            fs::get_app_config_dir,
+            fs::read_json_file,
+            fs::write_json_file,
             // Watcher commands
             watcher::start_watching,
             watcher::stop_watching,

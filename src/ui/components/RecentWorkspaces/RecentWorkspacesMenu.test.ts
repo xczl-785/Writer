@@ -9,16 +9,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock dependencies before import
 vi.mock('../../../services/recent/RecentItemsService', () => ({
   RecentItemsService: {
-    getAll: vi.fn(() => ({ workspaces: [], folders: [], files: [] })),
-    getWorkspaces: vi.fn(() => []),
-    getFolders: vi.fn(() => []),
-    getFiles: vi.fn(() => []),
-    addWorkspace: vi.fn(),
-    addFolder: vi.fn(),
-    addFile: vi.fn(),
-    removeItem: vi.fn(),
-    clearAll: vi.fn(),
-    clearType: vi.fn(),
+    getAll: vi.fn(() =>
+      Promise.resolve({ workspaces: [], folders: [], files: [] }),
+    ),
+    getWorkspaces: vi.fn(() => Promise.resolve([])),
+    getFolders: vi.fn(() => Promise.resolve([])),
+    getFiles: vi.fn(() => Promise.resolve([])),
+    addWorkspace: vi.fn(() => Promise.resolve()),
+    addFolder: vi.fn(() => Promise.resolve()),
+    addFile: vi.fn(() => Promise.resolve()),
+    removeItem: vi.fn(() => Promise.resolve()),
+    clearAll: vi.fn(() => Promise.resolve()),
+    clearType: vi.fn(() => Promise.resolve()),
   },
 }));
 
@@ -48,19 +50,19 @@ describe('RecentWorkspacesMenu Integration', () => {
   });
 
   describe('Service Integration', () => {
-    it('should call getAll when menu opens', () => {
-      mockService.getAll.mockReturnValue({
+    it('should call getAll when menu opens', async () => {
+      mockService.getAll.mockResolvedValue({
         workspaces: [],
         folders: [],
         files: [],
       });
 
-      const result = RecentItemsService.getAll();
+      const result = await RecentItemsService.getAll();
       expect(mockService.getAll).toHaveBeenCalled();
       expect(result.workspaces).toEqual([]);
     });
 
-    it('should receive workspace items from service', () => {
+    it('should receive workspace items from service', async () => {
       const mockWorkspaces = [
         {
           type: 'workspace' as const,
@@ -70,18 +72,18 @@ describe('RecentWorkspacesMenu Integration', () => {
         },
       ];
 
-      mockService.getAll.mockReturnValue({
+      mockService.getAll.mockResolvedValue({
         workspaces: mockWorkspaces,
         folders: [],
         files: [],
       });
 
-      const result = RecentItemsService.getAll();
+      const result = await RecentItemsService.getAll();
       expect(result.workspaces).toHaveLength(1);
       expect(result.workspaces[0].path).toBe('/test/workspace');
     });
 
-    it('should receive folder items from service', () => {
+    it('should receive folder items from service', async () => {
       const mockFolders = [
         {
           type: 'folder' as const,
@@ -91,18 +93,18 @@ describe('RecentWorkspacesMenu Integration', () => {
         },
       ];
 
-      mockService.getAll.mockReturnValue({
+      mockService.getAll.mockResolvedValue({
         workspaces: [],
         folders: mockFolders,
         files: [],
       });
 
-      const result = RecentItemsService.getAll();
+      const result = await RecentItemsService.getAll();
       expect(result.folders).toHaveLength(1);
       expect(result.folders[0].path).toBe('/test/folder');
     });
 
-    it('should receive file items from service', () => {
+    it('should receive file items from service', async () => {
       const mockFiles = [
         {
           type: 'file' as const,
@@ -112,24 +114,24 @@ describe('RecentWorkspacesMenu Integration', () => {
         },
       ];
 
-      mockService.getAll.mockReturnValue({
+      mockService.getAll.mockResolvedValue({
         workspaces: [],
         folders: [],
         files: mockFiles,
       });
 
-      const result = RecentItemsService.getAll();
+      const result = await RecentItemsService.getAll();
       expect(result.files).toHaveLength(1);
       expect(result.files[0].path).toBe('/test/file.md');
     });
 
-    it('should call clearAll when clear history is triggered', () => {
-      RecentItemsService.clearAll();
+    it('should call clearAll when clear history is triggered', async () => {
+      await RecentItemsService.clearAll();
       expect(mockService.clearAll).toHaveBeenCalled();
     });
 
-    it('should call removeItem when item is removed', () => {
-      RecentItemsService.removeItem('workspace', '/test/path');
+    it('should call removeItem when item is removed', async () => {
+      await RecentItemsService.removeItem('workspace', '/test/path');
       expect(mockService.removeItem).toHaveBeenCalledWith(
         'workspace',
         '/test/path',

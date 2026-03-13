@@ -127,8 +127,8 @@ export function registerFileCommands(
   );
 
   cleanups.push(
-    menuCommandBus.register('menu.file.clear_recent', () => {
-      RecentItemsService.clearAll();
+    menuCommandBus.register('menu.file.clear_recent', async () => {
+      await RecentItemsService.clearAll();
       useStatusStore.getState().setStatus('idle', t('recent.clearHistory'));
     }),
   );

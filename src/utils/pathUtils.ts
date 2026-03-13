@@ -102,3 +102,50 @@ export const ensureTrailingSlash = (path: string): string => {
   const normalized = normalizePath(path);
   return normalized.endsWith('/') ? normalized : normalized + '/';
 };
+
+/**
+ * Resolve a relative path from a base path to an absolute path.
+ * @param basePath - The base file path (e.g., workspace file path)
+ * @param relativePath - The relative path to resolve
+ * @returns The resolved absolute path
+ */
+export const resolvePath = (basePath: string, relativePath: string): string => {
+  const normalizedBase = normalizePath(basePath);
+  const normalizedRelative = normalizePath(relativePath);
+
+  // If already absolute, return as-is
+  if (normalizedRelative.startsWith('/')) {
+    return normalizedRelative;
+  }
+
+  // Get the directory of the base path
+  const lastSlash = normalizedBase.lastIndexOf('/');
+  const baseDir = lastSlash > 0 ? normalizedBase.slice(0, lastSlash) : '';
+
+  // Split relative path into parts
+  const relativeParts = normalizedRelative.split('/').filter(Boolean);
+  const baseParts = baseDir.split('/').filter(Boolean);
+
+  // Process each part
+  for (const part of relativeParts) {
+    if (part === '..') {
+      baseParts.pop();
+    } else if (part !== '.') {
+      baseParts.push(part);
+    }
+  }
+
+  return '/' + baseParts.join('/');
+};
+
+/**
+ * Check if a path is relative (starts with ./ or ../ or is a plain relative path)
+ */
+export const isRelativePath = (path: string): boolean => {
+  const normalized = normalizePath(path);
+  return (
+    normalized.startsWith('./') ||
+    normalized.startsWith('../') ||
+    (!normalized.startsWith('/') && normalized.includes('/'))
+  );
+};

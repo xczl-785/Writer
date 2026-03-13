@@ -4,57 +4,69 @@
  * Unit tests for the recent items storage service.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Store for test isolation
-let store: Record<string, string> = {};
+// Mock FsService before importing
+vi.mock('../fs/FsService', () => ({
+  FsService: {
+    getAppConfigDir: vi.fn(() => Promise.resolve('/mock/config/dir')),
+    checkExists: vi.fn(() => Promise.resolve(false)),
+    readJsonFile: vi.fn(() =>
+      Promise.resolve({ workspaces: [], folders: [], files: [] }),
+    ),
+    writeJsonFile: vi.fn(() => Promise.resolve()),
+  },
+}));
 
-// Mock localStorage for Node environment
-const mockLocalStorage = {
-  getItem: (key: string) => store[key] || null,
-  setItem: (key: string, value: string) => {
-    store[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete store[key];
-  },
-  clear: () => {
-    store = {};
-  },
-  get length() {
-    return Object.keys(store).length;
-  },
-  key: (index: number) => Object.keys(store)[index] || null,
-};
-
-// Apply mock before importing
-vi.stubGlobal('localStorage', mockLocalStorage);
-
-import { vi } from 'vitest';
+import { FsService } from '../fs/FsService';
 import { RecentItemsService } from './RecentItemsService';
 
-describe('RecentItemsService', () => {
-  beforeEach(() => {
-    // Clear store before each test
-    store = {};
-  });
+const mockFsService = vi.mocked(FsService);
 
-  afterEach(() => {
-    store = {};
+describe('RecentItemsService', () => {
+  let storedData: {
+    workspaces: unknown[];
+    folders: unknown[];
+    files: unknown[];
+  } = {
+    workspaces: [],
+    folders: [],
+    files: [],
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    storedData = { workspaces: [], folders: [], files: [] };
+
+    // Setup mocks
+    mockFsService.checkExists.mockImplementation(() =>
+      Promise.resolve(
+        storedData.workspaces.length > 0 ||
+          storedData.folders.length > 0 ||
+          storedData.files.length > 0,
+      ),
+    );
+    mockFsService.readJsonFile.mockImplementation(() =>
+      Promise.resolve(storedData),
+    );
+    mockFsService.writeJsonFile.mockImplementation((_path, data) => {
+      storedData = data as typeof storedData;
+      return Promise.resolve();
+    });
   });
 
   describe('getWorkspaces', () => {
-    it('should return empty array when no items stored', () => {
-      const workspaces = RecentItemsService.getWorkspaces();
+    it('should return empty array when no items stored', async () => {
+      const workspaces = await RecentItemsService.getWorkspaces();
       expect(workspaces).toEqual([]);
     });
 
-    it('should return stored workspaces', () => {
-      RecentItemsService.addWorkspace(
+    it('should return stored workspaces', async () => {
+      await RecentItemsService.addWorkspace(
         '/path/to/workspace.writer-workspace',
         'My Workspace',
       );
-      const workspaces = RecentItemsService.getWorkspaces();
+      const workspaces = await RecentItemsService.getWorkspaces();
       expect(workspaces).toHaveLength(1);
       expect(workspaces[0].path).toBe('/path/to/workspace.writer-workspace');
       expect(workspaces[0].name).toBe('My Workspace');
@@ -62,29 +74,31 @@ describe('RecentItemsService', () => {
   });
 
   describe('addWorkspace', () => {
-    it('should add a workspace to the list', () => {
-      RecentItemsService.addWorkspace('/path/to/workspace.writer-workspace');
-      const workspaces = RecentItemsService.getWorkspaces();
+    it('should add a workspace to the list', async () => {
+      await RecentItemsService.addWorkspace(
+        '/path/to/workspace.writer-workspace',
+      );
+      const workspaces = await RecentItemsService.getWorkspaces();
       expect(workspaces).toHaveLength(1);
       expect(workspaces[0].type).toBe('workspace');
     });
 
-    it('should move existing workspace to front', () => {
-      RecentItemsService.addWorkspace('/path/first');
-      RecentItemsService.addWorkspace('/path/second');
-      RecentItemsService.addWorkspace('/path/first');
+    it('should move existing workspace to front', async () => {
+      await RecentItemsService.addWorkspace('/path/first');
+      await RecentItemsService.addWorkspace('/path/second');
+      await RecentItemsService.addWorkspace('/path/first');
 
-      const workspaces = RecentItemsService.getWorkspaces();
+      const workspaces = await RecentItemsService.getWorkspaces();
       expect(workspaces).toHaveLength(2);
       expect(workspaces[0].path).toBe('/path/first');
     });
 
-    it('should limit to MAX_WORKSPACES (10)', () => {
+    it('should limit to MAX_WORKSPACES (10)', async () => {
       for (let i = 0; i < 15; i++) {
-        RecentItemsService.addWorkspace(`/path/${i}`);
+        await RecentItemsService.addWorkspace(`/path/${i}`);
       }
 
-      const workspaces = RecentItemsService.getWorkspaces();
+      const workspaces = await RecentItemsService.getWorkspaces();
       expect(workspaces).toHaveLength(10);
       // Most recent should be first
       expect(workspaces[0].path).toBe('/path/14');
@@ -92,104 +106,104 @@ describe('RecentItemsService', () => {
   });
 
   describe('addFolder', () => {
-    it('should add a folder to the list', () => {
-      RecentItemsService.addFolder('/path/to/folder');
-      const folders = RecentItemsService.getFolders();
+    it('should add a folder to the list', async () => {
+      await RecentItemsService.addFolder('/path/to/folder');
+      const folders = await RecentItemsService.getFolders();
       expect(folders).toHaveLength(1);
       expect(folders[0].type).toBe('folder');
     });
 
-    it('should limit to MAX_FOLDERS (5)', () => {
+    it('should limit to MAX_FOLDERS (5)', async () => {
       for (let i = 0; i < 10; i++) {
-        RecentItemsService.addFolder(`/folder/${i}`);
+        await RecentItemsService.addFolder(`/folder/${i}`);
       }
 
-      const folders = RecentItemsService.getFolders();
+      const folders = await RecentItemsService.getFolders();
       expect(folders).toHaveLength(5);
     });
   });
 
   describe('addFile', () => {
-    it('should add a file to the list', () => {
-      RecentItemsService.addFile('/path/to/file.md');
-      const files = RecentItemsService.getFiles();
+    it('should add a file to the list', async () => {
+      await RecentItemsService.addFile('/path/to/file.md');
+      const files = await RecentItemsService.getFiles();
       expect(files).toHaveLength(1);
       expect(files[0].type).toBe('file');
     });
 
-    it('should limit to MAX_FILES (20)', () => {
+    it('should limit to MAX_FILES (20)', async () => {
       for (let i = 0; i < 25; i++) {
-        RecentItemsService.addFile(`/file/${i}.md`);
+        await RecentItemsService.addFile(`/file/${i}.md`);
       }
 
-      const files = RecentItemsService.getFiles();
+      const files = await RecentItemsService.getFiles();
       expect(files).toHaveLength(20);
     });
   });
 
   describe('removeItem', () => {
-    it('should remove a workspace by path', () => {
-      RecentItemsService.addWorkspace('/path/to/remove');
-      RecentItemsService.addWorkspace('/path/to/keep');
-      RecentItemsService.removeItem('workspace', '/path/to/remove');
+    it('should remove a workspace by path', async () => {
+      await RecentItemsService.addWorkspace('/path/to/remove');
+      await RecentItemsService.addWorkspace('/path/to/keep');
+      await RecentItemsService.removeItem('workspace', '/path/to/remove');
 
-      const workspaces = RecentItemsService.getWorkspaces();
+      const workspaces = await RecentItemsService.getWorkspaces();
       expect(workspaces).toHaveLength(1);
       expect(workspaces[0].path).toBe('/path/to/keep');
     });
 
-    it('should remove a folder by path', () => {
-      RecentItemsService.addFolder('/folder/to/remove');
-      RecentItemsService.removeItem('folder', '/folder/to/remove');
+    it('should remove a folder by path', async () => {
+      await RecentItemsService.addFolder('/folder/to/remove');
+      await RecentItemsService.removeItem('folder', '/folder/to/remove');
 
-      const folders = RecentItemsService.getFolders();
+      const folders = await RecentItemsService.getFolders();
       expect(folders).toHaveLength(0);
     });
 
-    it('should remove a file by path', () => {
-      RecentItemsService.addFile('/file/to/remove.md');
-      RecentItemsService.removeItem('file', '/file/to/remove.md');
+    it('should remove a file by path', async () => {
+      await RecentItemsService.addFile('/file/to/remove.md');
+      await RecentItemsService.removeItem('file', '/file/to/remove.md');
 
-      const files = RecentItemsService.getFiles();
+      const files = await RecentItemsService.getFiles();
       expect(files).toHaveLength(0);
     });
   });
 
   describe('clearAll', () => {
-    it('should clear all items', () => {
-      RecentItemsService.addWorkspace('/workspace');
-      RecentItemsService.addFolder('/folder');
-      RecentItemsService.addFile('/file.md');
+    it('should clear all items', async () => {
+      await RecentItemsService.addWorkspace('/workspace');
+      await RecentItemsService.addFolder('/folder');
+      await RecentItemsService.addFile('/file.md');
 
-      RecentItemsService.clearAll();
+      await RecentItemsService.clearAll();
 
-      expect(RecentItemsService.getWorkspaces()).toHaveLength(0);
-      expect(RecentItemsService.getFolders()).toHaveLength(0);
-      expect(RecentItemsService.getFiles()).toHaveLength(0);
+      expect(await RecentItemsService.getWorkspaces()).toHaveLength(0);
+      expect(await RecentItemsService.getFolders()).toHaveLength(0);
+      expect(await RecentItemsService.getFiles()).toHaveLength(0);
     });
   });
 
   describe('clearType', () => {
-    it('should clear only workspaces', () => {
-      RecentItemsService.addWorkspace('/workspace');
-      RecentItemsService.addFolder('/folder');
-      RecentItemsService.addFile('/file.md');
+    it('should clear only workspaces', async () => {
+      await RecentItemsService.addWorkspace('/workspace');
+      await RecentItemsService.addFolder('/folder');
+      await RecentItemsService.addFile('/file.md');
 
-      RecentItemsService.clearType('workspace');
+      await RecentItemsService.clearType('workspace');
 
-      expect(RecentItemsService.getWorkspaces()).toHaveLength(0);
-      expect(RecentItemsService.getFolders()).toHaveLength(1);
-      expect(RecentItemsService.getFiles()).toHaveLength(1);
+      expect(await RecentItemsService.getWorkspaces()).toHaveLength(0);
+      expect(await RecentItemsService.getFolders()).toHaveLength(1);
+      expect(await RecentItemsService.getFiles()).toHaveLength(1);
     });
   });
 
   describe('getAll', () => {
-    it('should return all items grouped by type', () => {
-      RecentItemsService.addWorkspace('/workspace');
-      RecentItemsService.addFolder('/folder');
-      RecentItemsService.addFile('/file.md');
+    it('should return all items grouped by type', async () => {
+      await RecentItemsService.addWorkspace('/workspace');
+      await RecentItemsService.addFolder('/folder');
+      await RecentItemsService.addFile('/file.md');
 
-      const all = RecentItemsService.getAll();
+      const all = await RecentItemsService.getAll();
 
       expect(all.workspaces).toHaveLength(1);
       expect(all.folders).toHaveLength(1);

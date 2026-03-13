@@ -92,4 +92,17 @@ export const FsService = {
   async detectFileEncoding(path: string): Promise<EncodingStatus> {
     return invoke('detect_file_encoding', { path });
   },
+
+  // App config directory operations
+  async getAppConfigDir(): Promise<string> {
+    return invoke('get_app_config_dir');
+  },
+
+  async readJsonFile(path: string): Promise<unknown> {
+    return invoke('read_json_file', { path });
+  },
+
+  async writeJsonFile(path: string, data: unknown): Promise<void> {
+    return invoke('write_json_file', { path, data });
+  },
 };
