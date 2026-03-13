@@ -59,6 +59,11 @@ pub fn run() {
             fs::get_app_config_dir,
             fs::read_json_file,
             fs::write_json_file,
+            // Workspace lock commands
+            fs::check_workspace_lock,
+            fs::acquire_workspace_lock,
+            fs::release_workspace_lock,
+            fs::force_release_workspace_lock,
             // Watcher commands
             watcher::start_watching,
             watcher::stop_watching,

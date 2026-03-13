@@ -254,6 +254,34 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'errorStates.dropToWorkspace': '拖放到工作区',
     'errorStates.copyFiles': '按住 Ctrl 复制文件',
     'errorStates.moveFiles': '移动文件',
+    // Workspace Error States
+    'errorStates.workspaceCorrupted': '工作区文件已损坏',
+    'errorStates.workspaceCorruptedDesc':
+      '工作区配置文件无法解析，可能已损坏。',
+    'errorStates.permissionDenied': '权限不足',
+    'errorStates.permissionDeniedDesc': '没有足够的权限访问此文件夹。',
+    'errorStates.resetWorkspace': '重置工作区',
+    'errorStates.checkPermissions': '检查权限',
+    // File Conflict Dialog
+    'fileConflict.title': '文件冲突',
+    'fileConflict.message': '文件 "{name}" 在其他位置已被修改。',
+    'fileConflict.description': '选择如何处理此冲突：',
+    'fileConflict.overwrite': '覆盖远程版本',
+    'fileConflict.keepLocal': '保留本地版本',
+    'fileConflict.cancel': '取消',
+    'fileConflict.showDiff': '查看差异',
+    // Workspace Lock
+    'workspaceLock.title': '工作区已被占用',
+    'workspaceLock.message': '该工作区已在其他窗口中打开。',
+    'workspaceLock.description': '同时编辑同一工作区可能导致数据冲突。',
+    'workspaceLock.openAnyway': '强制打开',
+    'workspaceLock.cancel': '取消',
+    // Workspace Load Errors
+    'workspaceError.fileNotFound': '工作区文件不存在',
+    'workspaceError.permissionDenied': '没有权限访问工作区文件',
+    'workspaceError.parseFailed': '工作区文件格式错误',
+    'workspaceError.folderNotFound': '工作区文件夹不存在',
+    'workspaceError.unknown': '加载工作区失败',
     // Recent Items
     'recent.menuLabel': '打开最近',
     'recent.workspaces': '工作区',
@@ -523,6 +551,38 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'errorStates.dropToWorkspace': 'Drop to workspace',
     'errorStates.copyFiles': 'Hold Ctrl to copy files',
     'errorStates.moveFiles': 'Move files',
+    // Workspace Error States
+    'errorStates.workspaceCorrupted': 'Workspace file is corrupted',
+    'errorStates.workspaceCorruptedDesc':
+      'The workspace configuration file cannot be parsed and may be corrupted.',
+    'errorStates.permissionDenied': 'Permission Denied',
+    'errorStates.permissionDeniedDesc':
+      'Insufficient permissions to access this folder.',
+    'errorStates.resetWorkspace': 'Reset Workspace',
+    'errorStates.checkPermissions': 'Check Permissions',
+    // File Conflict Dialog
+    'fileConflict.title': 'File Conflict',
+    'fileConflict.message': 'The file "{name}" has been modified elsewhere.',
+    'fileConflict.description': 'Choose how to resolve this conflict:',
+    'fileConflict.overwrite': 'Overwrite Remote Version',
+    'fileConflict.keepLocal': 'Keep Local Version',
+    'fileConflict.cancel': 'Cancel',
+    'fileConflict.showDiff': 'Show Diff',
+    // Workspace Lock
+    'workspaceLock.title': 'Workspace Already Open',
+    'workspaceLock.message':
+      'This workspace is already open in another window.',
+    'workspaceLock.description':
+      'Editing the same workspace simultaneously may cause data conflicts.',
+    'workspaceLock.openAnyway': 'Open Anyway',
+    'workspaceLock.cancel': 'Cancel',
+    // Workspace Load Errors
+    'workspaceError.fileNotFound': 'Workspace file not found',
+    'workspaceError.permissionDenied':
+      'Permission denied to access workspace file',
+    'workspaceError.parseFailed': 'Workspace file format is invalid',
+    'workspaceError.folderNotFound': 'Workspace folder not found',
+    'workspaceError.unknown': 'Failed to load workspace',
     // Recent Items
     'recent.menuLabel': 'Open Recent',
     'recent.workspaces': 'Workspaces',

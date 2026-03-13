@@ -9,3 +9,9 @@ export type { DeletedFileMarkerProps } from './DeletedFileMarker';
 
 export { DragDropOverlay } from './DragDropOverlay';
 export type { DragDropOverlayProps } from './DragDropOverlay';
+
+export { WorkspaceCorruptedState } from './WorkspaceCorruptedState';
+export type { WorkspaceCorruptedStateProps } from './WorkspaceCorruptedState';
+
+export { PermissionDeniedState } from './PermissionDeniedState';
+export type { PermissionDeniedStateProps } from './PermissionDeniedState';

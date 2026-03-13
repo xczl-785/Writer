@@ -2,7 +2,7 @@
 // V6 工作区事务协调器 - 带快照 - 回滚机制
 
 import { FsSafety } from '../../services/fs/FsSafety';
-import { FsService, type FolderPathResult } from '../../services/fs/FsService';
+import { FsService, type FolderPathResult, type WorkspaceConfig } from '../../services/fs/FsService';
 import { useEditorStore } from '../slices/editorSlice';
 import { useFileTreeStore, type RootFolderNode } from '../slices/filetreeSlice';
 import {
@@ -464,7 +464,7 @@ export const workspaceActions = {
         name: f.name,
       }));
 
-      const config = {
+      const config: WorkspaceConfig = {
         version: 1,
         folders: foldersWithRelativePaths,
         state: {
@@ -474,7 +474,7 @@ export const workspaceActions = {
         },
       };
 
-      await FsService.saveWorkspaceFile(savePath, config as any);
+      await FsService.saveWorkspaceFile(savePath, config);
       useWorkspaceStore.getState().setWorkspaceFile(savePath);
       useWorkspaceStore.getState().setDirty(false);
 
@@ -499,7 +499,7 @@ export const workspaceActions = {
       }
 
       // 解析工作区文件
-      let config;
+      let config: WorkspaceConfig;
       try {
         config = await FsService.parseWorkspaceFile(workspacePath);
       } catch (parseError) {
