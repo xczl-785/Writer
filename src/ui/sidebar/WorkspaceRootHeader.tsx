@@ -2,7 +2,7 @@
 // V6 根文件夹头部组件 - 支持右键菜单和缺失状态
 
 import React, { useState, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Folder, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { t } from '../../i18n';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getWorkspaceRootMenuItems } from '../components/ContextMenu/workspaceRootMenu';
@@ -11,6 +11,24 @@ import { FsService } from '../../services/fs/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import { FolderMissingState } from '../components/ErrorStates';
+
+// 纯线框风格的根文件夹图标组件
+const FolderOutlineIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    className={className}
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+  </svg>
+);
 
 interface WorkspaceRootHeaderProps {
   folder: {
@@ -139,9 +157,8 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   return (
     <>
       <div
-        className="workspace-root-header group flex items-center justify-between px-3 py-1.5 cursor-pointer text-sm text-zinc-600 hover:bg-zinc-100 transition-colors"
+        className="group flex items-center justify-between px-3 py-1.5 cursor-pointer hover:bg-zinc-100/80 transition-colors"
         onContextMenu={handleContextMenu}
-        role="button"
         tabIndex={0}
         aria-label={`${t('workspace.rootFolder')}: ${folder.displayName}`}
         aria-expanded={isExpanded}
@@ -152,20 +169,25 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
           }
         }}
       >
-        {/* 展开/折叠按钮 - 规范 2.2.2: 16x16，hover 显示 */}
-        <div className="flex items-center gap-2">
+        {/* 展开/折叠按钮 */}
+        <div className="flex items-center">
           <button
-            className="expand-button p-1 rounded hover:bg-zinc-200/70 transition-colors opacity-0 group-hover:opacity-100"
+            className="flex items-center justify-center mr-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={toggleExpanded}
             type="button"
             aria-label={
               isExpanded ? t('workspace.collapse') : t('workspace.expand')
             }
           >
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            {isExpanded ? (
+              <ChevronDown size={16} className="text-zinc-400" />
+            ) : (
+              <ChevronRight size={16} className="text-zinc-300" />
+            )}
           </button>
 
-          <Folder size={16} className="folder-icon text-zinc-600 flex-shrink-0" />
+          {/* 纯线框根文件夹图标 */}
+          <FolderOutlineIcon className="w-4 h-4 mr-2 text-zinc-600 shrink-0" />
 
           {isRenaming ? (
             <InlineInput
@@ -175,18 +197,15 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
               autoFocus={true}
             />
           ) : (
-            <span
-              className="folder-name truncate leading-none font-bold text-zinc-800"
-              title={folder.workspacePath}
-            >
+            <span className="text-sm font-bold text-zinc-800 truncate">
               {folder.displayName}
             </span>
           )}
         </div>
 
-        {/* 移除按钮 - 规范 2.2.2: 12x12，hover 显示 */}
+        {/* 移除按钮 */}
         <button
-          className="remove-button p-1 rounded hover:bg-red-100 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
+          className="flex items-center justify-center p-1 opacity-0 group-hover:opacity-100 hover:text-red-500 text-zinc-300 transition-all shrink-0"
           onClick={(e) => {
             e.stopPropagation();
             void handleRemoveFolder();
@@ -199,8 +218,8 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
         </button>
       </div>
 
-      {/* 根文件夹下分隔线 - 规范 2.2.2: 1px solid zinc-200，始终显示 */}
-      <div className="root-folder-divider h-px bg-zinc-200 opacity-70 mx-3 mb-1" />
+      {/* 分隔线 */}
+      <div className="h-px bg-zinc-200 mx-3 mb-1 opacity-70" />
 
       <ContextMenu
         isOpen={contextMenu.state.isOpen}
