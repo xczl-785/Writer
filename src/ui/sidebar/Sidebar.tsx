@@ -808,24 +808,12 @@ export function Sidebar({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- commandCtx is an object literal recreated every render
   }, [currentPath, selectedNode, ghostNode, renamingPath]);
 
-  // V6: 渲染空状态
+  // V6: 渲染空状态 - 极简样式
   const renderEmptyState = () => (
-    <div className="flex flex-col items-center justify-center h-32 text-zinc-400 text-sm">
-      <FolderIcon className="mb-2 h-6 w-6 opacity-20 text-zinc-500" />
-      <span>
-        {rootFolders.length > 0
-          ? t('sidebar.noMarkdown')
-          : t('sidebar.noFolder')}
-      </span>
-      {rootFolders.length === 0 && (
-        <button
-          type="button"
-          onClick={openWorkspace}
-          className="mt-2 text-blue-500 hover:text-blue-600 text-xs font-medium"
-        >
-          {t('sidebar.openFolderBtn')}
-        </button>
-      )}
+    <div className="px-3 py-10 text-center text-[11px] text-zinc-300 italic">
+      {rootFolders.length > 0
+        ? t('sidebar.noMarkdown')
+        : t('sidebar.noFolder')}
     </div>
   );
 
@@ -926,13 +914,13 @@ export function Sidebar({
     >
       {/* 侧边栏头部 - 规范 2.2.1: EXPLORER 标题 + 分隔线 */}
       <div
-        className="sidebar-header h-10 px-3 flex items-center justify-between border-b border-zinc-200"
+        className="sidebar-header h-10 px-3 flex items-center justify-between border-transparent"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
         role="presentation"
       >
         <span className="sidebar-title text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
-          EXPLORER
+          {rootFolders.length > 1 ? 'EXPLORER' : 'FILES'}
         </span>
         <div className="flex items-center gap-1">
           <button
@@ -1048,7 +1036,7 @@ export function Sidebar({
       </div>
 
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-1.5"
+        className="flex-1 overflow-y-auto overflow-x-hidden py-2"
         onClick={(e) => {
           if (e.currentTarget === e.target) {
             setSelectedPath(null);
@@ -1423,11 +1411,9 @@ function FileTreeNode({
           isDirectory
             ? isFocused
               ? 'bg-zinc-200 text-zinc-800'
-              : isActiveParent
-                ? 'text-zinc-500'
-                : 'text-zinc-300 hover:bg-zinc-200/40'
-            : isActiveFile && isFocused
-              ? 'bg-blue-50 text-zinc-900'
+              : 'text-zinc-500 hover:bg-zinc-200/40'
+            : isActiveFile
+              ? 'bg-blue-50/50 text-zinc-900'
               : isFocused
                 ? 'bg-zinc-200 text-zinc-800'
                 : 'text-zinc-700 hover:bg-zinc-200/50'
