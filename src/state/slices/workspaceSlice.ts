@@ -49,6 +49,8 @@ export interface WorkspaceActions {
   removeFolder: (path: string) => void;
   renameFolder: (path: string, name: string) => void;
   reorderFolders: (fromIndex: number, toIndex: number) => void;
+  moveFolderUp: (path: string) => void;
+  moveFolderDown: (path: string) => void;
 
   // 文件操作
   openFile: (path: string) => void;
@@ -112,6 +114,50 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
         // 更新索引
         newFolders.forEach((folder, index) => {
           folder.index = index;
+        });
+
+        return {
+          folders: newFolders,
+          isDirty: true,
+        };
+      }),
+
+    moveFolderUp: (path) =>
+      set((state) => {
+        const index = state.folders.findIndex((f) => f.path === path);
+        if (index <= 0) return state;
+
+        const newFolders = [...state.folders];
+        [newFolders[index - 1], newFolders[index]] = [
+          newFolders[index],
+          newFolders[index - 1],
+        ];
+
+        // 更新索引
+        newFolders.forEach((folder, idx) => {
+          folder.index = idx;
+        });
+
+        return {
+          folders: newFolders,
+          isDirty: true,
+        };
+      }),
+
+    moveFolderDown: (path) =>
+      set((state) => {
+        const index = state.folders.findIndex((f) => f.path === path);
+        if (index < 0 || index >= state.folders.length - 1) return state;
+
+        const newFolders = [...state.folders];
+        [newFolders[index], newFolders[index + 1]] = [
+          newFolders[index + 1],
+          newFolders[index],
+        ];
+
+        // 更新索引
+        newFolders.forEach((folder, idx) => {
+          folder.index = idx;
         });
 
         return {

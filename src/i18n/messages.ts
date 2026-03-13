@@ -87,6 +87,7 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'sidebar.copyFailed': '复制路径失败',
     'sidebar.revealFailed': '无法在文件管理器中显示',
     'sidebar.loading': '加载中...',
+    'sidebar.moveFailed': '移动失败',
     // Workspace context menu
     'workspace.addFolderToWorkspace': '添加文件夹到工作区',
     'workspace.removeFromWorkspace': '从工作区移除',
@@ -340,6 +341,7 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'sidebar.copyFailed': 'Failed to copy path',
     'sidebar.revealFailed': 'Failed to reveal in file manager',
     'sidebar.loading': 'Loading...',
+    'sidebar.moveFailed': 'Failed to move',
     // Workspace context menu
     'workspace.addFolderToWorkspace': 'Add Folder to Workspace',
     'workspace.removeFromWorkspace': 'Remove from Workspace',
