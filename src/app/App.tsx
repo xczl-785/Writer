@@ -128,7 +128,7 @@ function App() {
       if (result.ok) {
         useStatusStore.getState().setStatus('idle');
       } else {
-        useStatusStore.getState().setStatus('error', result.message);
+        useStatusStore.getState().setStatus('error', result.errorMessage);
       }
     } catch (error) {
       ErrorService.handle(
