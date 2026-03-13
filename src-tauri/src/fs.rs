@@ -5,7 +5,7 @@ use std::io::Read;
 use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::process::Command;
-use tauri::State;
+use tauri::{Manager, State};
 use tokio::sync::Semaphore;
 
 use crate::security::WorkspaceAllowlist;
