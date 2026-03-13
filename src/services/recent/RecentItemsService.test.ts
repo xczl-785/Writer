@@ -50,7 +50,10 @@ describe('RecentItemsService', () => {
     });
 
     it('should return stored workspaces', () => {
-      RecentItemsService.addWorkspace('/path/to/workspace.writer-workspace', 'My Workspace');
+      RecentItemsService.addWorkspace(
+        '/path/to/workspace.writer-workspace',
+        'My Workspace',
+      );
       const workspaces = RecentItemsService.getWorkspaces();
       expect(workspaces).toHaveLength(1);
       expect(workspaces[0].path).toBe('/path/to/workspace.writer-workspace');

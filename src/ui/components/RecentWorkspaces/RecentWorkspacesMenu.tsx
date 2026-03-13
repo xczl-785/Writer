@@ -8,7 +8,13 @@
  * @see docs/current/阶段文档/V6-工作区功能需求文档.md - WS-09, WS-10
  */
 
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 import { createPortal } from 'react-dom';
 import {
   RecentItemsService,
@@ -194,7 +200,10 @@ export const RecentWorkspacesMenu: React.FC<RecentWorkspacesMenuProps> = ({
   // Build flat list of items for keyboard navigation (memoized)
   const flatItems: Array<{ item: RecentItem; section: string }> = useMemo(
     () => [
-      ...items.workspaces.map((item) => ({ item, section: 'workspace' as const })),
+      ...items.workspaces.map((item) => ({
+        item,
+        section: 'workspace' as const,
+      })),
       ...items.folders.map((item) => ({ item, section: 'folder' as const })),
       ...items.files.map((item) => ({ item, section: 'file' as const })),
     ],
@@ -221,7 +230,10 @@ export const RecentWorkspacesMenu: React.FC<RecentWorkspacesMenuProps> = ({
       ),
       y: Math.max(
         margin,
-        Math.min(rect.bottom + 4, window.innerHeight - menuEstimatedHeight - margin),
+        Math.min(
+          rect.bottom + 4,
+          window.innerHeight - menuEstimatedHeight - margin,
+        ),
       ),
     };
   }, [anchorEl]);
@@ -297,7 +309,16 @@ export const RecentWorkspacesMenu: React.FC<RecentWorkspacesMenuProps> = ({
         }
       }
     },
-    [flatItems, focusedIndex, hasItems, onSelectWorkspace, onSelectFolder, onSelectFile, onClose, handleClearHistory],
+    [
+      flatItems,
+      focusedIndex,
+      hasItems,
+      onSelectWorkspace,
+      onSelectFolder,
+      onSelectFile,
+      onClose,
+      handleClearHistory,
+    ],
   );
 
   // Handle item click
@@ -316,11 +337,14 @@ export const RecentWorkspacesMenu: React.FC<RecentWorkspacesMenuProps> = ({
   );
 
   // Handle right-click to remove item
-  const handleItemContextMenu = useCallback((e: React.MouseEvent, item: RecentItem) => {
-    e.preventDefault();
-    RecentItemsService.removeItem(item.type, item.path);
-    setItems(RecentItemsService.getAll());
-  }, []);
+  const handleItemContextMenu = useCallback(
+    (e: React.MouseEvent, item: RecentItem) => {
+      e.preventDefault();
+      RecentItemsService.removeItem(item.type, item.path);
+      setItems(RecentItemsService.getAll());
+    },
+    [],
+  );
 
   if (!isOpen) return null;
 

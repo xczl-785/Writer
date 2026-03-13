@@ -3,7 +3,13 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { flattenTreeWithState, flattenMultipleRoots, getItemSize, DEFAULT_ROW_HEIGHT, GHOST_NODE_HEIGHT } from './flattenTree';
+import {
+  flattenTreeWithState,
+  flattenMultipleRoots,
+  getItemSize,
+  DEFAULT_ROW_HEIGHT,
+  GHOST_NODE_HEIGHT,
+} from './flattenTree';
 import type { FileNode } from '../../../state/types';
 import type { FlattenedNode } from './types';
 
@@ -29,7 +35,10 @@ describe('flattenTreeWithState', () => {
     ];
 
     const expandedPaths = new Set<string>();
-    const result = flattenTreeWithState(nodes, { expandedPaths, rootPath: '/root' });
+    const result = flattenTreeWithState(nodes, {
+      expandedPaths,
+      rootPath: '/root',
+    });
 
     expect(result).toHaveLength(2); // 折叠状态下只显示根级别的节点
     expect(result[0].node.name).toBe('file1.md');
@@ -44,13 +53,20 @@ describe('flattenTreeWithState', () => {
       createMockNode('folder1', '/root/folder1', 'directory', [
         createMockNode('file2.md', '/root/folder1/file2.md', 'file'),
         createMockNode('subfolder', '/root/folder1/subfolder', 'directory', [
-          createMockNode('file3.md', '/root/folder1/subfolder/file3.md', 'file'),
+          createMockNode(
+            'file3.md',
+            '/root/folder1/subfolder/file3.md',
+            'file',
+          ),
         ]),
       ]),
     ];
 
     const expandedPaths = new Set<string>(['/root/folder1']);
-    const result = flattenTreeWithState(nodes, { expandedPaths, rootPath: '/root' });
+    const result = flattenTreeWithState(nodes, {
+      expandedPaths,
+      rootPath: '/root',
+    });
 
     // folder1 展开后显示：folder1 + file2 + subfolder（subfolder 未展开，所以 file3 不显示）
     expect(result).toHaveLength(3);
@@ -67,13 +83,23 @@ describe('flattenTreeWithState', () => {
     const nodes: FileNode[] = [
       createMockNode('folder1', '/root/folder1', 'directory', [
         createMockNode('subfolder', '/root/folder1/subfolder', 'directory', [
-          createMockNode('file1.md', '/root/folder1/subfolder/file1.md', 'file'),
+          createMockNode(
+            'file1.md',
+            '/root/folder1/subfolder/file1.md',
+            'file',
+          ),
         ]),
       ]),
     ];
 
-    const expandedPaths = new Set<string>(['/root/folder1', '/root/folder1/subfolder']);
-    const result = flattenTreeWithState(nodes, { expandedPaths, rootPath: '/root' });
+    const expandedPaths = new Set<string>([
+      '/root/folder1',
+      '/root/folder1/subfolder',
+    ]);
+    const result = flattenTreeWithState(nodes, {
+      expandedPaths,
+      rootPath: '/root',
+    });
 
     expect(result).toHaveLength(3);
     expect(result[0].depth).toBe(0);
@@ -84,7 +110,10 @@ describe('flattenTreeWithState', () => {
   it('should handle empty tree', () => {
     const nodes: FileNode[] = [];
     const expandedPaths = new Set<string>();
-    const result = flattenTreeWithState(nodes, { expandedPaths, rootPath: '/root' });
+    const result = flattenTreeWithState(nodes, {
+      expandedPaths,
+      rootPath: '/root',
+    });
 
     expect(result).toHaveLength(0);
   });
@@ -108,16 +137,12 @@ describe('flattenMultipleRoots', () => {
       {
         workspacePath: '/root1',
         displayName: 'Root 1',
-        tree: [
-          createMockNode('file1.md', '/root1/file1.md', 'file'),
-        ],
+        tree: [createMockNode('file1.md', '/root1/file1.md', 'file')],
       },
       {
         workspacePath: '/root2',
         displayName: 'Root 2',
-        tree: [
-          createMockNode('file2.md', '/root2/file2.md', 'file'),
-        ],
+        tree: [createMockNode('file2.md', '/root2/file2.md', 'file')],
       },
     ];
 

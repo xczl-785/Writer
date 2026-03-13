@@ -14,11 +14,7 @@ import { FsSafety } from '../../../services/fs/FsSafety';
 import { fileActions } from '../../../state/actions/fileActions';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { joinPath } from '../../../utils/pathUtils';
-import {
-  ChevronDown,
-  ChevronRight,
-  File,
-} from 'lucide-react';
+import { ChevronDown, ChevronRight, File } from 'lucide-react';
 import { t } from '../../../i18n';
 import {
   getDisplayName,
@@ -26,10 +22,19 @@ import {
   getParentPath,
   hasInvalidNodeName,
 } from '../../sidebar/pathing';
-import { InlineInput, type InlineCommitTrigger } from '../../sidebar/InlineInput';
+import {
+  InlineInput,
+  type InlineCommitTrigger,
+} from '../../sidebar/InlineInput';
 
 // 文件夹图标组件
-function FolderIcon({ className, filled = false }: { className?: string; filled?: boolean }) {
+function FolderIcon({
+  className,
+  filled = false,
+}: {
+  className?: string;
+  filled?: boolean;
+}) {
   if (filled) {
     return (
       <svg
@@ -76,7 +81,11 @@ interface RowProps {
   ghostNode: GhostNodeType;
   onToggleExpand: (path: string) => void;
   onSelect: (path: string) => void;
-  onOpenContextMenu: (event: React.MouseEvent, node: FileNode, rootPath: string) => void;
+  onOpenContextMenu: (
+    event: React.MouseEvent,
+    node: FileNode,
+    rootPath: string,
+  ) => void;
   onGhostCommit: (name: string, trigger: InlineCommitTrigger) => Promise<void>;
   onGhostCancel: () => void;
   onRequestRenameEnd: () => void;
@@ -85,7 +94,10 @@ interface RowProps {
 // List API 类型
 interface ListImperativeAPI {
   readonly element: HTMLDivElement | null;
-  scrollToRow(config: { index: number; align?: 'auto' | 'center' | 'end' | 'smart' | 'start' }): void;
+  scrollToRow(config: {
+    index: number;
+    align?: 'auto' | 'center' | 'end' | 'smart' | 'start';
+  }): void;
 }
 
 /**
@@ -121,7 +133,7 @@ function TreeNodeRow({
   const prevNodePathRef = useRef('');
 
   const item = flattenedNodes[index];
-  
+
   // 使用 useEffect 更新状态
   useEffect(() => {
     if (item) {
@@ -397,7 +409,11 @@ interface VirtualizedFileTreeProps {
   ghostNode: GhostNodeType;
   onToggleExpand: (path: string) => void;
   onSelect: (path: string) => void;
-  onOpenContextMenu: (event: React.MouseEvent, node: FileNode, rootPath: string) => void;
+  onOpenContextMenu: (
+    event: React.MouseEvent,
+    node: FileNode,
+    rootPath: string,
+  ) => void;
   onGhostCommit: (name: string, trigger: InlineCommitTrigger) => Promise<void>;
   onGhostCancel: () => void;
   onRequestRenameStart: (path: string) => void;
@@ -429,7 +445,7 @@ export function VirtualizedFileTree({
   // 计算行高
   const rowHeight = useCallback(
     (index: number): number => getItemSize(flattenedNodes, ghostNode)(index),
-    [flattenedNodes, ghostNode]
+    [flattenedNodes, ghostNode],
   );
 
   // 传递给行的数据
@@ -451,7 +467,9 @@ export function VirtualizedFileTree({
   // 滚动到选中项
   useEffect(() => {
     if (selectedPath && listRef.current) {
-      const index = flattenedNodes.findIndex((item) => item.id === selectedPath);
+      const index = flattenedNodes.findIndex(
+        (item) => item.id === selectedPath,
+      );
       if (index >= 0) {
         listRef.current.scrollToRow({ index, align: 'smart' });
       }

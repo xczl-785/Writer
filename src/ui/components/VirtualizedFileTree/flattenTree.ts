@@ -17,7 +17,8 @@ function flattenNode(
   result: FlattenedNode[],
 ): void {
   const isExpanded = expandedPaths.has(node.path);
-  const hasChildren = node.type === 'directory' && node.children && node.children.length > 0;
+  const hasChildren =
+    node.type === 'directory' && node.children && node.children.length > 0;
 
   result.push({
     id: node.path,
@@ -103,7 +104,11 @@ export const GHOST_NODE_HEIGHT = 32;
 
 export function getItemSize(
   flattenedNodes: FlattenedNode[],
-  ghostNode: { parentPath: string | null; type: 'file' | 'directory'; rootPath: string } | null,
+  ghostNode: {
+    parentPath: string | null;
+    type: 'file' | 'directory';
+    rootPath: string;
+  } | null,
 ): (index: number) => number {
   return (index: number): number => {
     const item = flattenedNodes[index];

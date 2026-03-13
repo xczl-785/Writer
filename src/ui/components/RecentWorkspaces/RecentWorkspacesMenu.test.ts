@@ -130,7 +130,10 @@ describe('RecentWorkspacesMenu Integration', () => {
 
     it('should call removeItem when item is removed', () => {
       RecentItemsService.removeItem('workspace', '/test/path');
-      expect(mockService.removeItem).toHaveBeenCalledWith('workspace', '/test/path');
+      expect(mockService.removeItem).toHaveBeenCalledWith(
+        'workspace',
+        '/test/path',
+      );
     });
   });
 

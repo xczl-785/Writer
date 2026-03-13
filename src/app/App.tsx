@@ -15,6 +15,8 @@ import { FsService } from '../services/fs/FsService';
 import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
 import { ErrorService } from '../services/error/ErrorService';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
+import { RecentWorkspacesMenu } from '../ui/components/RecentWorkspaces/RecentWorkspacesMenu';
+import { workspaceActions } from '../state/actions/workspaceActions';
 import {
   t,
   getLocale,
@@ -65,6 +67,7 @@ function App() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const isOverlaySidebar = isMinTier && isSidebarVisible;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isRecentMenuOpen, setIsRecentMenuOpen] = useState(false);
   const [localePreference, setLocalePreferenceState] =
     useState<LocalePreference>(() => getLocalePreference());
   const { isHeaderAwake, isFooterAwake } = useFocusZenWakeup({
@@ -113,6 +116,56 @@ function App() {
   }, [applyFocusZen, isFocusZen]);
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
+  const openRecentMenu = useCallback(() => setIsRecentMenuOpen(true), []);
+  const closeRecentMenu = useCallback(() => setIsRecentMenuOpen(false), []);
+
+  // Handle selection from recent menu
+  const handleSelectWorkspace = useCallback(async (path: string) => {
+    try {
+      useStatusStore.getState().setStatus('loading', 'Loading workspace...');
+      const result = await workspaceActions.loadWorkspaceFile(path);
+      if (result.ok) {
+        useStatusStore.getState().setStatus('idle');
+      } else {
+        useStatusStore.getState().setStatus('error', result.error);
+      }
+    } catch (error) {
+      ErrorService.handle(
+        error,
+        'Failed to load workspace',
+        'Failed to load workspace',
+      );
+    }
+  }, []);
+
+  const handleSelectFolder = useCallback(async (path: string) => {
+    try {
+      useStatusStore.getState().setStatus('loading', 'Loading folder...');
+      await workspaceActions.loadWorkspace(path);
+      useStatusStore.getState().setStatus('idle');
+    } catch (error) {
+      ErrorService.handle(
+        error,
+        'Failed to load folder',
+        'Failed to load folder',
+      );
+    }
+  }, []);
+
+  const handleSelectFile = useCallback(async (path: string) => {
+    try {
+      useStatusStore.getState().setStatus('loading', 'Opening file...');
+      const result = await workspaceActions.openFile(path);
+      if (result.ok) {
+        useStatusStore.getState().setStatus('idle');
+      } else {
+        useStatusStore.getState().setStatus('error', result.reason);
+      }
+    } catch (error) {
+      ErrorService.handle(error, 'Failed to open file', 'Failed to open file');
+    }
+  }, []);
+
   const handleLocalePreferenceChange = useCallback(
     (preference: LocalePreference) => {
       setLocalePreference(preference);
@@ -188,7 +241,12 @@ function App() {
   // Register menu commands
   useEffect(() => {
     const unregister = [
-      registerFileCommands(setIsSidebarVisible, isSidebarVisible, openSettings),
+      registerFileCommands(
+        setIsSidebarVisible,
+        isSidebarVisible,
+        openSettings,
+        openRecentMenu,
+      ),
       registerEditCommands(),
       registerFormatCommands(),
       registerParagraphCommands(),
@@ -198,7 +256,7 @@ function App() {
     return () => {
       unregister.forEach((fn) => fn());
     };
-  }, [isSidebarVisible, openSettings, toggleSidebar]);
+  }, [isSidebarVisible, openSettings, toggleSidebar, openRecentMenu]);
 
   // Handle window close requests (Tauri)
   useEffect(() => {
@@ -352,6 +410,13 @@ function App() {
         localePreference={localePreference}
         onLocalePreferenceChange={handleLocalePreferenceChange}
         onClose={closeSettings}
+      />
+      <RecentWorkspacesMenu
+        isOpen={isRecentMenuOpen}
+        onSelectWorkspace={handleSelectWorkspace}
+        onSelectFolder={handleSelectFolder}
+        onSelectFile={handleSelectFile}
+        onClose={closeRecentMenu}
       />
     </div>
   );
