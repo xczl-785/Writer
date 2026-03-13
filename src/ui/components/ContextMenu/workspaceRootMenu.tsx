@@ -73,7 +73,9 @@ export interface EmptyAreaMenuContext {
   hasWorkspace: boolean;
 }
 
-export function getEmptyAreaMenuItems(context: EmptyAreaMenuContext): MenuItem[] {
+export function getEmptyAreaMenuItems(
+  context: EmptyAreaMenuContext,
+): MenuItem[] {
   const items: MenuItem[] = [
     {
       id: 'add-folder-to-workspace',

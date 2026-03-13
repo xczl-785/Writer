@@ -3,7 +3,10 @@
 
 import React, { useCallback } from 'react';
 import { useFileTreeStore } from '../../state/slices/filetreeSlice';
-import { useWorkspaceStore, getWorkspaceType } from '../../state/slices/workspaceSlice';
+import {
+  useWorkspaceStore,
+  getWorkspaceType,
+} from '../../state/slices/workspaceSlice';
 import { WorkspaceRootHeader } from './WorkspaceRootHeader';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
@@ -25,7 +28,11 @@ interface MultiRootFileTreeProps {
   activeFile?: string | null;
   renamingPath?: string | null;
   renameTrigger?: number;
-  onOpenContextMenu?: (event: React.MouseEvent, node: FileNode, rootPath: string) => void;
+  onOpenContextMenu?: (
+    event: React.MouseEvent,
+    node: FileNode,
+    rootPath: string,
+  ) => void;
   onRequestRenameStart?: (path: string) => void;
   onRequestRenameEnd?: () => void;
   onSelect?: (path: string) => void;
@@ -54,7 +61,8 @@ export const MultiRootFileTree: React.FC<MultiRootFileTreeProps> = ({
   const hasWorkspace = rootFolders.length > 0;
 
   // 获取第一个根路径作为默认创建位置
-  const firstRootPath = rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
+  const firstRootPath =
+    rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
 
   const handleAddFolderToWorkspace = useCallback(() => {
     void openWorkspace();
@@ -92,7 +100,13 @@ export const MultiRootFileTree: React.FC<MultiRootFileTreeProps> = ({
 
       contextMenu.open(event.clientX, event.clientY, items);
     },
-    [handleAddFolderToWorkspace, handleNewFile, handleNewFolder, hasWorkspace, contextMenu],
+    [
+      handleAddFolderToWorkspace,
+      handleNewFile,
+      handleNewFolder,
+      hasWorkspace,
+      contextMenu,
+    ],
   );
 
   if (rootFolders.length === 0) {
@@ -106,7 +120,10 @@ export const MultiRootFileTree: React.FC<MultiRootFileTreeProps> = ({
         onContextMenu={handleEmptyAreaContextMenu}
       >
         {rootFolders.map((rootFolder) => (
-          <div key={rootFolder.workspacePath} className="root-folder-group mb-2">
+          <div
+            key={rootFolder.workspacePath}
+            className="root-folder-group mb-2"
+          >
             {/* V6: 多根模式下显示根文件夹标题 */}
             {workspaceType === 'multi' && (
               <WorkspaceRootHeader folder={rootFolder} />
@@ -122,13 +139,15 @@ export const MultiRootFileTree: React.FC<MultiRootFileTreeProps> = ({
                   {errorPaths.get(rootFolder.workspacePath)}
                 </div>
               ) : (
-                rootFolder.tree.map((node) => (
-                  renderTreeNode ? renderTreeNode(node, rootFolder.workspacePath) : (
+                rootFolder.tree.map((node) =>
+                  renderTreeNode ? (
+                    renderTreeNode(node, rootFolder.workspacePath)
+                  ) : (
                     <div key={node.path} className="text-xs text-zinc-500">
                       {node.name}
                     </div>
-                  )
-                ))
+                  ),
+                )
               )}
             </div>
           </div>

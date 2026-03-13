@@ -4,23 +4,23 @@
 import React, { useState, useCallback } from 'react';
 import { FolderOpen, FileText, Upload } from 'lucide-react';
 import { t } from '../../i18n';
+import { type RecentItem } from '../../services/recent/RecentItemsService';
 
 interface EmptyStateWorkspaceProps {
   onOpenFolder: () => void;
   onOpenWorkspace: () => void;
+  /** Callback when a file/folder is dropped onto the workspace */
+  onDropItem?: (path: string) => void;
+  /** Callback when a recent item is clicked */
+  onSelectRecentItem?: (item: RecentItem) => void;
   recentItems?: RecentItem[];
-}
-
-interface RecentItem {
-  type: 'workspace' | 'folder' | 'file';
-  path: string;
-  name: string;
-  lastOpened: number;
 }
 
 export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
   onOpenFolder,
   onOpenWorkspace,
+  onDropItem,
+  onSelectRecentItem,
   recentItems = [],
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -35,19 +35,33 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
     setIsDragOver(false);
   }, []);
 
+  /**
+   * Handle file/folder drop event
+   * In Tauri, the dropped file's path can be accessed via file.path
+   * @see https://tauri.app/v2/guides/features/drag-and-drop/
+   */
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragOver(false);
 
       const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        // 简化处理：只要有文件拖入就调用 onOpenFolder
-        // 实际路径获取需要 Tauri API 支持
+      if (files.length > 0 && onDropItem) {
+        // In Tauri, the File object has a `path` property
+        const file = files[0] as File & { path?: string };
+        const path = file.path;
+        if (path) {
+          onDropItem(path);
+        } else {
+          // Fallback: if path is not available, open folder dialog
+          onOpenFolder();
+        }
+      } else if (files.length > 0) {
+        // No onDropItem callback provided, fallback to open folder dialog
         onOpenFolder();
       }
     },
-    [onOpenFolder],
+    [onDropItem, onOpenFolder],
   );
 
   // 按类型分组最近项目
@@ -65,6 +79,18 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
   const recentWorkspaces = groupedItems.workspace || [];
   const recentFolders = groupedItems.folder || [];
   const recentFiles = groupedItems.file || [];
+
+  /**
+   * Handle recent item click
+   */
+  const handleRecentItemClick = useCallback(
+    (item: RecentItem) => {
+      if (onSelectRecentItem) {
+        onSelectRecentItem(item);
+      }
+    },
+    [onSelectRecentItem],
+  );
 
   return (
     <div

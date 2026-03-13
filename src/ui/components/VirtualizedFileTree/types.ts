@@ -26,7 +26,11 @@ export interface VirtualizedTreeProps {
   containerHeight: number;
   onToggleExpand: (path: string) => void;
   onSelect: (path: string) => void;
-  onOpenContextMenu: (event: React.MouseEvent, node: import('../../../state/types').FileNode, rootPath: string) => void;
+  onOpenContextMenu: (
+    event: React.MouseEvent,
+    node: import('../../../state/types').FileNode,
+    rootPath: string,
+  ) => void;
   onGhostCommit: (name: string, trigger: 'enter' | 'blur') => Promise<void>;
   onGhostCancel: () => void;
   onRequestRenameStart: (path: string) => void;
