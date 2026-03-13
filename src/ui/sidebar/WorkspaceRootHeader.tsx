@@ -32,13 +32,10 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   const [renameDraft, setRenameDraft] = useState(folder.displayName);
   const contextMenu = useContextMenu();
 
-  const toggleExpanded = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setIsExpanded((prev) => !prev);
-    },
-    [],
-  );
+  const toggleExpanded = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExpanded((prev) => !prev);
+  }, []);
 
   const handleRemoveFolder = useCallback(async () => {
     const result = await workspaceActions.removeFolderFromWorkspace(
@@ -57,12 +54,15 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   }, [folder.displayName]);
 
   const commitRename = useCallback(
-    async (nameRaw: string, _trigger: InlineCommitTrigger) => {
+    async (nameRaw: string, trigger: InlineCommitTrigger) => {
       const newName = nameRaw.trim();
       if (!newName || newName === folder.displayName) {
         setIsRenaming(false);
         return;
       }
+
+      // trigger 用于区分提交方式（enter 或 blur），此处统一处理
+      void trigger;
 
       workspaceActions.renameWorkspaceFolder(folder.workspacePath, newName);
       setIsRenaming(false);
@@ -79,9 +79,7 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
     try {
       await FsService.revealInFileManager(folder.workspacePath);
     } catch {
-      useStatusStore
-        .getState()
-        .setStatus('error', t('sidebar.revealFailed'));
+      useStatusStore.getState().setStatus('error', t('sidebar.revealFailed'));
     }
   }, [folder.workspacePath]);
 
@@ -141,16 +139,29 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   return (
     <>
       <div
-        className="workspace-root-header group flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer text-sm text-zinc-600 hover:bg-zinc-200/50 transition-colors"
+        className="workspace-root-header group flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-sm text-zinc-600 hover:bg-zinc-100 transition-colors"
         onContextMenu={handleContextMenu}
+        role="button"
+        tabIndex={0}
+        aria-label={`${t('workspace.rootFolder')}: ${folder.displayName}`}
+        aria-expanded={isExpanded}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleExpanded(e as unknown as React.MouseEvent);
+          }
+        }}
       >
+        {/* 展开/折叠按钮 - 规范 2.2.2: 16x16，hover 显示 */}
         <button
-          className="expand-button p-0.5 rounded hover:bg-zinc-300/50 transition-colors"
+          className="expand-button p-1 rounded hover:bg-zinc-200/70 transition-colors opacity-0 group-hover:opacity-100"
           onClick={toggleExpanded}
           type="button"
-          aria-label={isExpanded ? t('workspace.collapse') : t('workspace.expand')}
+          aria-label={
+            isExpanded ? t('workspace.collapse') : t('workspace.expand')
+          }
         >
-          {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
 
         <Folder size={16} className="folder-icon text-blue-500 flex-shrink-0" />
@@ -171,6 +182,7 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
           </span>
         )}
 
+        {/* 移除按钮 - 规范 2.2.2: 16x16，hover 显示 */}
         <button
           className="remove-button p-1 rounded hover:bg-red-100 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
           onClick={(e) => {
@@ -181,9 +193,14 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
           title={t('workspace.removeFromWorkspace')}
           aria-label={t('workspace.removeFromWorkspace')}
         >
-          <X size={12} />
+          <X size={16} />
         </button>
       </div>
+
+      {/* 根文件夹下分隔线 - 规范 2.2.2: 1px solid zinc-200 */}
+      {isExpanded && (
+        <div className="root-folder-divider h-px bg-zinc-200 mx-2 mt-1" />
+      )}
 
       <ContextMenu
         isOpen={contextMenu.state.isOpen}

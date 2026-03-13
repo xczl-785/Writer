@@ -79,10 +79,10 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
         className={`empty-state-content ${isDragOver ? 'drag-over' : ''}`}
         tabIndex={-1}
       >
-        {/* Logo 区域 */}
+        {/* Logo 区域 - 规范 2.1.1 */}
         <div className="empty-state-header">
-          <div className="empty-state-logo">✦ Writer</div>
-          <p className="empty-state-tagline">Writing, Flow</p>
+          <div className="empty-state-logo">✦ Writer ✦</div>
+          <p className="empty-state-tagline">写作，心流</p>
         </div>
 
         {/* 主操作按钮 */}

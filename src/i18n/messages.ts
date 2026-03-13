@@ -247,6 +247,14 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'errorStates.dropToWorkspace': '拖放到工作区',
     'errorStates.copyFiles': '按住 Ctrl 复制文件',
     'errorStates.moveFiles': '移动文件',
+    // Recent Items
+    'recent.menuLabel': '打开最近',
+    'recent.workspaces': '工作区',
+    'recent.folders': '文件夹',
+    'recent.files': '文件',
+    'recent.workspace': '工作区',
+    'recent.clearHistory': '清除所有历史记录',
+    'recent.empty': '无最近项目',
   },
   'en-US': {
     'menu.file': 'File',
@@ -499,5 +507,13 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'errorStates.dropToWorkspace': 'Drop to workspace',
     'errorStates.copyFiles': 'Hold Ctrl to copy files',
     'errorStates.moveFiles': 'Move files',
+    // Recent Items
+    'recent.menuLabel': 'Open Recent',
+    'recent.workspaces': 'Workspaces',
+    'recent.folders': 'Folders',
+    'recent.files': 'Files',
+    'recent.workspace': 'Workspace',
+    'recent.clearHistory': 'Clear All History',
+    'recent.empty': 'No recent items',
   },
 };
