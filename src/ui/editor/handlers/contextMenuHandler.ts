@@ -23,6 +23,9 @@ export function createContextMenuOpener(
   copyText: (text: string, successMessage: string) => Promise<void>,
   setStatus: (status: 'idle' | 'error', message: string) => void,
 ): ContextMenuOpener {
+  const execDocumentCommand = (command: 'copy' | 'paste'): boolean =>
+    typeof document.execCommand === 'function' && document.execCommand(command);
+
   const getActiveCodeBlockText = (instance: Editor) => {
     const { $from } = instance.state.selection;
     for (let depth = $from.depth; depth > 0; depth -= 1) {
@@ -178,14 +181,10 @@ export function createContextMenuOpener(
           })
         : getEditorContextMenuItems({
             onPaste: () => {
-              void navigator.clipboard
-                .readText()
-                .then((text) => {
-                  editor.chain().focus().insertContent(text).run();
-                })
-                .catch(() => {
-                  setStatus('error', 'Paste requires clipboard permission');
-                });
+              editor.chain().focus().run();
+              if (!execDocumentCommand('paste')) {
+                setStatus('error', 'Paste requires clipboard permission');
+              }
             },
             onSelectAll: () => {
               editor.chain().focus().selectAll().run();
