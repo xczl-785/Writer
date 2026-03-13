@@ -16,6 +16,11 @@ import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
 import { ErrorService } from '../services/error/ErrorService';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
 import { RecentWorkspacesMenu } from '../ui/components/RecentWorkspaces/RecentWorkspacesMenu';
+import { EmptyStateWorkspace } from '../ui/workspace/EmptyStateWorkspace';
+import {
+  RecentItemsService,
+  type RecentItem,
+} from '../services/recent/RecentItemsService';
 import { workspaceActions } from '../state/actions/workspaceActions';
 import {
   t,
@@ -39,10 +44,16 @@ import {
 import { SettingsPanel } from '../ui/components/Settings';
 import { useViewportTier } from '../ui/layout/useViewportTier';
 import { useFocusZenWakeup } from '../ui/layout/useFocusZenWakeup';
+import { openWorkspace, openWorkspaceFile } from '../workspace/WorkspaceManager';
 import './App.css';
+
+function flattenRecentItems(data: Awaited<ReturnType<typeof RecentItemsService.getAll>>): RecentItem[] {
+  return [...data.workspaces, ...data.folders, ...data.files];
+}
 
 function App() {
   const { folders } = useWorkspaceStore();
+  const hasWorkspace = folders.length > 0;
   const currentPath = folders[0]?.path;
   const { tier } = useViewportTier();
   const isMinTier = tier === 'min';
@@ -69,6 +80,7 @@ function App() {
   const isOverlaySidebar = isMinTier && isSidebarVisible;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRecentMenuOpen, setIsRecentMenuOpen] = useState(false);
+  const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
   const [localePreference, setLocalePreferenceState] =
     useState<LocalePreference>(() => getLocalePreference());
   const { isHeaderAwake, isFooterAwake } = useFocusZenWakeup({
@@ -119,6 +131,18 @@ function App() {
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
   const openRecentMenu = useCallback(() => setIsRecentMenuOpen(true), []);
   const closeRecentMenu = useCallback(() => setIsRecentMenuOpen(false), []);
+  const refreshRecentItems = useCallback(async () => {
+    const data = await RecentItemsService.getAll();
+    setRecentItems(flattenRecentItems(data));
+  }, []);
+  const handleOpenFolder = useCallback(async () => {
+    await openWorkspace();
+    await refreshRecentItems();
+  }, [refreshRecentItems]);
+  const handleOpenWorkspaceFile = useCallback(async () => {
+    await openWorkspaceFile();
+    await refreshRecentItems();
+  }, [refreshRecentItems]);
 
   // Handle selection from recent menu
   const handleSelectWorkspace = useCallback(async (path: string) => {
@@ -166,6 +190,19 @@ function App() {
       ErrorService.handle(error, 'Failed to open file', 'Failed to open file');
     }
   }, []);
+  const handleSelectRecentItem = useCallback(
+    async (item: RecentItem) => {
+      if (item.type === 'workspace') {
+        await handleSelectWorkspace(item.path);
+      } else if (item.type === 'folder') {
+        await handleSelectFolder(item.path);
+      } else {
+        await handleSelectFile(item.path);
+      }
+      await refreshRecentItems();
+    },
+    [handleSelectFile, handleSelectFolder, handleSelectWorkspace, refreshRecentItems],
+  );
 
   const handleLocalePreferenceChange = useCallback(
     (preference: LocalePreference) => {
@@ -196,6 +233,10 @@ function App() {
   useEffect(() => {
     setFocusZen(focusZenEnabledByUser);
   }, [focusZenEnabledByUser, setFocusZen]);
+
+  useEffect(() => {
+    void refreshRecentItems();
+  }, [refreshRecentItems]);
 
   useEffect(() => {
     const previousIsMinTier = previousIsMinTierRef.current;
@@ -386,15 +427,25 @@ function App() {
 
         {/* Main Editor Area */}
         <main className="flex-1 flex flex-col relative min-w-0 h-full">
-          <Editor
-            isSidebarVisible={isSidebarVisible}
-            onToggleSidebar={toggleSidebar}
-            isTypewriterActive={isTypewriterActive}
-            viewportTier={tier}
-            isFocusZen={isFocusZen}
-            isHeaderAwake={isHeaderAwake}
-            onSetFocusZen={applyFocusZen}
-          />
+          {!hasWorkspace ? (
+            <EmptyStateWorkspace
+              onOpenFolder={handleOpenFolder}
+              onOpenWorkspace={handleOpenWorkspaceFile}
+              onDropItem={handleSelectFolder}
+              onSelectRecentItem={handleSelectRecentItem}
+              recentItems={recentItems}
+            />
+          ) : (
+            <Editor
+              isSidebarVisible={isSidebarVisible}
+              onToggleSidebar={toggleSidebar}
+              isTypewriterActive={isTypewriterActive}
+              viewportTier={tier}
+              isFocusZen={isFocusZen}
+              isHeaderAwake={isHeaderAwake}
+              onSetFocusZen={applyFocusZen}
+            />
+          )}
         </main>
 
         {/* Debug Sidebar (opt-in): set VITE_SHOW_STATE_DEBUG=1 */}

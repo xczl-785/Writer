@@ -4,8 +4,8 @@ pub mod security;
 pub mod watcher;
 
 use security::WorkspaceAllowlist;
+use std::sync::Mutex;
 use tauri::AppHandle;
-use tokio::sync::Mutex;
 use watcher::WatcherState;
 
 #[tauri::command]

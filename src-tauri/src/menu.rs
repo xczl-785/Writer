@@ -90,6 +90,22 @@ fn build_native_menu_with_locale<R: Runtime>(
             &item(
                 app,
                 locale,
+                "menu.file.save_workspace",
+                "保存工作区",
+                "Save Workspace",
+                None,
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.file.save_workspace_as",
+                "工作区另存为...",
+                "Save Workspace As...",
+                None,
+            )?,
+            &item(
+                app,
+                locale,
                 "menu.file.save_as",
                 "另存为",
                 "Save As",
