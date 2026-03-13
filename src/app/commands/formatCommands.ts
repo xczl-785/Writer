@@ -4,8 +4,6 @@
  * Handles text formatting operations like bold, italic, code, strike, link.
  */
 import { menuCommandBus } from '../../ui/commands/menuCommandBus';
-import { useStatusStore } from '../../state/slices/statusSlice';
-import { t } from '../../i18n';
 
 export type CleanupFn = () => void;
 
@@ -55,15 +53,15 @@ export function registerFormatCommands(): CleanupFn {
   );
 
   cleanups.push(
-    menuCommandBus.register('menu.format.underline', () => {
-      useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
-    }),
+    menuCommandBus.register('menu.format.underline', () =>
+      emitEditorCommand('format.underline'),
+    ),
   );
 
   cleanups.push(
-    menuCommandBus.register('menu.format.highlight', () => {
-      useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
-    }),
+    menuCommandBus.register('menu.format.highlight', () =>
+      emitEditorCommand('format.highlight'),
+    ),
   );
 
   return () => cleanups.forEach((fn) => fn());

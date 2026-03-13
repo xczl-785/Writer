@@ -39,6 +39,16 @@ describe('MarkdownService Roundtrip', () => {
         '| Name | Age | City |\n| --- | ---: | --- |\n| Alice | 30 | Paris |\n| Bob | 25 | Berlin |',
       mustContain: ['| Name', '| -', '| Alice', '| Bob'],
     },
+    {
+      name: 'task list (gfm)',
+      input: '- [ ] todo item\n- [x] done item',
+      mustContain: ['- [ ] todo item', '- [x] done item'],
+    },
+    {
+      name: 'highlight (gfm)',
+      input: 'This is ==highlighted== text.',
+      mustContain: ['==highlighted=='],
+    },
   ];
 
   it.each(cases)(

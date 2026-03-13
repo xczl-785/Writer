@@ -1,37 +1,11 @@
 import { Editor } from '@tiptap/react';
 import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
-import { FsService } from '../../services/fs/FsService';
-import { useStatusStore } from '../../state/slices/statusSlice';
-import { ImageResolver } from '../../services/images/ImageResolver';
 import { ErrorService } from '../../services/error/ErrorService';
+import { useStatusStore } from '../../state/slices/statusSlice';
 import { EDITOR_CONFIG } from '../../config/editor';
-import { joinPath, getRelativePath } from '../../utils/pathUtils';
+import { generateUniqueFilename, saveAndInsertImageFile } from './imageActions';
 
-const shouldShowImageRenderDiagnostic = (): boolean =>
-  import.meta.env?.VITE_SHOW_IMAGE_DIAGNOSTIC === '1';
-
-export const generateUniqueFilename = async (
-  baseDir: string,
-  baseName: string,
-  extension: string,
-): Promise<string> => {
-  const fullPath = joinPath(baseDir, `${baseName}.${extension}`);
-  const exists = await FsService.checkExists(fullPath);
-
-  if (!exists) {
-    return fullPath;
-  }
-
-  let i = 1;
-  while (true) {
-    const newPath = joinPath(baseDir, `${baseName}-${i}.${extension}`);
-    const newExists = await FsService.checkExists(newPath);
-    if (!newExists) {
-      return newPath;
-    }
-    i++;
-  }
-};
+export { generateUniqueFilename };
 
 export const useImagePaste = (editor: Editor | null = null) => {
   const { activeFile, currentPath } = useWorkspaceStore();
@@ -75,50 +49,10 @@ export const useImagePaste = (editor: Editor | null = null) => {
 
         event.preventDefault();
 
-        const extension = file.type.split('/')[1] || 'png';
-        const now = new Date();
-        const timestamp =
-          now.getFullYear().toString() +
-          (now.getMonth() + 1).toString().padStart(2, '0') +
-          now.getDate().toString().padStart(2, '0') +
-          '-' +
-          now.getHours().toString().padStart(2, '0') +
-          now.getMinutes().toString().padStart(2, '0') +
-          now.getSeconds().toString().padStart(2, '0');
-
-        const baseName = `image-${timestamp}`;
-        const assetsDir = joinPath(currentPath, 'assets');
-        const imagePath = await generateUniqueFilename(
-          assetsDir,
-          baseName,
-          extension,
-        );
-
-        try {
-          const arrayBuffer = await file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-          await FsService.saveImage(imagePath, uint8Array);
-
-          const relativePath = getRelativePath(activeFile, imagePath);
-          const resolvedPath = ImageResolver.resolve(relativePath, activeFile);
-
-          targetEditor.commands.setImage({ src: relativePath });
-
-          if (shouldShowImageRenderDiagnostic()) {
-            useStatusStore
-              .getState()
-              .setStatus(
-                'idle',
-                `Image src: ${relativePath} -> ${resolvedPath}`,
-              );
-          }
-        } catch (error) {
-          ErrorService.handle(
-            error,
-            'Failed to save image',
-            'Failed to save image',
-          );
-        }
+        await saveAndInsertImageFile(targetEditor, file, {
+          activeFile,
+          currentPath,
+        });
       }
     }
 

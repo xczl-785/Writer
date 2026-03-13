@@ -6,6 +6,8 @@
 import type { Editor } from '@tiptap/react';
 import { t } from '../../../i18n';
 import { DEFAULT_TABLE_INSERT } from '../constants';
+import { applyLinkAction } from '../linkActions';
+import { applyImageAction } from '../imageActions';
 
 export type MenuCommandHandler = (event: Event) => void;
 
@@ -77,9 +79,23 @@ export function createMenuCommandHandler(
       case 'format.strike':
         runEditorCommand(() => editor.chain().focus().toggleStrike().run());
         return;
+      case 'format.underline':
+        runEditorCommand(() => editor.chain().focus().toggleUnderline().run());
+        return;
+      case 'format.highlight':
+        runEditorCommand(() => editor.chain().focus().toggleHighlight().run());
+        return;
       case 'format.link':
+        if (applyLinkAction(editor) === 'unavailable') {
+          setStatus('error', t('status.menu.unavailable'));
+        }
+        return;
       case 'format.image':
-        setStatus('idle', t('status.menu.todo'));
+        void applyImageAction(editor).then((result) => {
+          if (result === 'unavailable') {
+            setStatus('error', t('status.menu.unavailable'));
+          }
+        });
         return;
       case 'paragraph.heading_1':
         runEditorCommand(() =>

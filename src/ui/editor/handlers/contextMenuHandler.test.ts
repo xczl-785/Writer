@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Editor } from '@tiptap/react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { createContextMenuOpener } from './contextMenuHandler';
-import type { MenuItem } from '../../components/ContextMenu/contextMenuRegistry';
+import {
+  isMenuItem,
+  type MenuItem,
+} from '../../components/ContextMenu/contextMenuRegistry';
 
 describe('createContextMenuOpener', () => {
   const chain = {
@@ -62,7 +65,10 @@ describe('createContextMenuOpener', () => {
       clientY: 20,
     } as unknown as ReactMouseEvent);
 
-    const pasteItem = capturedItems.find((item) => item.id === 'paste');
+    const pasteItem = capturedItems.find(
+      (item): item is Extract<MenuItem, { id: string }> =>
+        isMenuItem(item) && item.id === 'paste',
+    );
     expect(pasteItem).toBeDefined();
 
     pasteItem?.action();

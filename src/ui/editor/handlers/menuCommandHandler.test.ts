@@ -11,6 +11,8 @@ describe('createMenuCommandHandler', () => {
     redo: vi.fn(),
     insertContent: vi.fn(),
     selectAll: vi.fn(),
+    toggleUnderline: vi.fn(),
+    toggleHighlight: vi.fn(),
   };
 
   const editor = {
@@ -25,6 +27,8 @@ describe('createMenuCommandHandler', () => {
     chain.redo.mockReturnValue(chain);
     chain.insertContent.mockReturnValue(chain);
     chain.selectAll.mockReturnValue(chain);
+    chain.toggleUnderline.mockReturnValue(chain);
+    chain.toggleHighlight.mockReturnValue(chain);
   });
 
   it('uses document paste command without clipboard read fallback', () => {
@@ -82,5 +86,30 @@ describe('createMenuCommandHandler', () => {
       'error',
       t('status.menu.clipboardDenied'),
     );
+  });
+
+  it('runs underline and highlight commands through editor chain', () => {
+    const setStatus = vi.fn();
+    const handler = createMenuCommandHandler(
+      editor,
+      { openFindPanel: vi.fn() },
+      setStatus,
+      vi.fn(),
+    );
+
+    handler(
+      new CustomEvent('writer:editor-command', {
+        detail: { id: 'format.underline' },
+      }),
+    );
+    handler(
+      new CustomEvent('writer:editor-command', {
+        detail: { id: 'format.highlight' },
+      }),
+    );
+
+    expect(chain.toggleUnderline).toHaveBeenCalled();
+    expect(chain.toggleHighlight).toHaveBeenCalled();
+    expect(setStatus).not.toHaveBeenCalled();
   });
 });
