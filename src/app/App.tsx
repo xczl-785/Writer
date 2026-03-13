@@ -40,7 +40,8 @@ import { useFocusZenWakeup } from '../ui/layout/useFocusZenWakeup';
 import './App.css';
 
 function App() {
-  const { currentPath } = useWorkspaceStore();
+  const folders = useWorkspaceStore((state) => state.folders);
+  const currentPath = folders[0]?.path ?? null;
   const { tier } = useViewportTier();
   const isMinTier = tier === 'min';
   const typewriterEnabledByUser = useSettingsStore(

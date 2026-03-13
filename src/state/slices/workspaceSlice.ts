@@ -1,28 +1,74 @@
 import { create } from 'zustand';
 import { isChildPath, isPathMatch } from '../../utils/pathUtils';
 
+export interface WorkspaceFolder {
+  path: string;
+  name?: string;
+  index: number;
+}
+
 export interface WorkspaceState {
-  currentPath: string | null;
+  folders: WorkspaceFolder[];
+  workspaceFile: string | null;
+  isDirty: boolean;
   openFiles: string[];
   activeFile: string | null;
 }
 
 export interface WorkspaceActions {
-  setWorkspacePath: (path: string | null) => void;
+  addFolder: (folder: WorkspaceFolder) => void;
+  removeFolder: (path: string) => void;
   openFile: (path: string) => void;
   closeFile: (path: string) => void;
   setActiveFile: (path: string | null) => void;
   renameFile: (oldPath: string, newPath: string) => void;
   removePath: (path: string) => void;
+  setDirty: (dirty: boolean) => void;
 }
+
+// 计算属性（通过 selector）
+export const getWorkspaceType = (
+  state: WorkspaceState,
+): 'empty' | 'single' | 'multi' => {
+  if (state.folders.length === 0) return 'empty';
+  if (state.folders.length === 1) return 'single';
+  return 'multi';
+};
+
+export const isUntitledWorkspace = (state: WorkspaceState): boolean => {
+  return state.folders.length > 1 && state.workspaceFile === null;
+};
+
+// 获取第一个文件夹路径（向后兼容）
+export const getCurrentPath = (state: WorkspaceState): string | null => {
+  return state.folders[0]?.path ?? null;
+};
 
 export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
   (set) => ({
-    currentPath: null,
+    folders: [],
+    workspaceFile: null,
+    isDirty: false,
     openFiles: [],
     activeFile: null,
 
-    setWorkspacePath: (path) => set({ currentPath: path }),
+    addFolder: (folder) =>
+      set((state) => {
+        if (state.folders.some((f) => f.path === folder.path)) {
+          return state;
+        }
+        return {
+          folders: [
+            ...state.folders,
+            { ...folder, index: folder.index ?? state.folders.length },
+          ],
+        };
+      }),
+
+    removeFolder: (path) =>
+      set((state) => ({
+        folders: state.folders.filter((f) => f.path !== path),
+      })),
 
     openFile: (path) =>
       set((state) => {
@@ -85,5 +131,7 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
           activeFile: newActiveFile,
         };
       }),
+
+    setDirty: (dirty) => set({ isDirty: dirty }),
   }),
 );

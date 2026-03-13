@@ -23,13 +23,12 @@ export const StateDebug: React.FC = () => {
 
       <section style={{ marginBottom: '20px' }}>
         <h3>Workspace</h3>
-        <div>Path: {workspace.currentPath || 'None'}</div>
+        <div>
+          Folders: {workspace.folders.map((f) => f.path).join(', ') || 'None'}
+        </div>
         <div>Active: {workspace.activeFile || 'None'}</div>
         <div>Open Files: {workspace.openFiles.join(', ')}</div>
         <div style={{ marginTop: '10px' }}>
-          <button onClick={() => workspace.setWorkspacePath('/test/path')}>
-            Set Path
-          </button>
           <button
             onClick={() => workspace.openFile('file1.txt')}
             style={{ marginLeft: '10px' }}

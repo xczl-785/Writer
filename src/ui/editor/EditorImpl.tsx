@@ -115,7 +115,9 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
     },
     ref,
   ) => {
-    const { activeFile, currentPath } = useWorkspaceStore();
+    const folders = useWorkspaceStore((state) => state.folders);
+    const currentPath = folders[0]?.path ?? null;
+    const activeFile = useWorkspaceStore((state) => state.activeFile);
     const { setStatus } = useStatusStore();
     const { setSelectedPath, expandNode } = useFileTreeStore();
     const { fileStates, updateFileContent, setDirty } = useEditorStore();

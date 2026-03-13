@@ -8,7 +8,9 @@ import { generateUniqueFilename, saveAndInsertImageFile } from './imageActions';
 export { generateUniqueFilename };
 
 export const useImagePaste = (editor: Editor | null = null) => {
-  const { activeFile, currentPath } = useWorkspaceStore();
+  const activeFile = useWorkspaceStore((state) => state.activeFile);
+  const folders = useWorkspaceStore((state) => state.folders);
+  const currentPath = folders[0]?.path ?? null;
 
   const handlePaste = async (
     event: ClipboardEvent,
@@ -51,7 +53,7 @@ export const useImagePaste = (editor: Editor | null = null) => {
 
         await saveAndInsertImageFile(targetEditor, file, {
           activeFile,
-          currentPath,
+          folders,
         });
       }
     }

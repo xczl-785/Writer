@@ -21,7 +21,11 @@ vi.mock('../services/autosave/AutosaveService', () => ({
 describe('WorkspaceManager - openFile', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useWorkspaceStore.setState({ activeFile: null, openFiles: [] });
+    useWorkspaceStore.setState({
+      activeFile: null,
+      openFiles: [],
+      folders: [],
+    });
     useEditorStore.setState({ fileStates: {} });
     useStatusStore.setState({
       status: 'idle',
@@ -55,7 +59,11 @@ describe('WorkspaceManager - openFile', () => {
     const oldContent = 'Old Content';
     const newContent = 'New Content';
 
-    useWorkspaceStore.setState({ activeFile: oldPath, openFiles: [oldPath] });
+    useWorkspaceStore.setState({
+      activeFile: oldPath,
+      openFiles: [oldPath],
+      folders: [],
+    });
     useEditorStore.setState({
       fileStates: {
         [oldPath]: {
