@@ -11,9 +11,16 @@ import {
 } from '../slices/workspaceSlice';
 import { useStatusStore } from '../slices/statusSlice';
 import { WorkspaceStatePersistence } from '../../services/workspace/WorkspaceStatePersistence';
+import { FileWatcherService } from '../../services/filewatcher';
+import type { FileChangeEvent } from '../../services/filewatcher';
 import { getRelativePath, resolvePath } from '../../utils/pathUtils';
 import { showConfirmDialog } from '../../ui/components/Dialog';
 import { t } from '../../i18n';
+import {
+  type WorkspaceLoadResult,
+  createWorkspaceLoadError,
+  inferErrorType,
+} from '../../types/WorkspaceErrors';
 
 interface WorkspaceSnapshot {
   folders: WorkspaceFolder[];
@@ -78,6 +85,37 @@ function clearWorkspaceState(): void {
   });
 }
 
+/**
+ * 处理文件变化事件（来自 FileWatcherService）
+ */
+async function handleFileChange(event: FileChangeEvent): Promise<void> {
+  const rootFolders = useFileTreeStore.getState().rootFolders;
+
+  // 找到变化文件所属的根文件夹
+  const affectedRoot = rootFolders.find(
+    (folder) =>
+      event.path === folder.workspacePath ||
+      event.path.startsWith(folder.workspacePath + '/'),
+  );
+
+  if (!affectedRoot) return;
+
+  // 刷新受影响的根文件夹树
+  try {
+    const refreshedNodes = await FsService.listTree(affectedRoot.workspacePath);
+    useFileTreeStore
+      .getState()
+      .setNodes(affectedRoot.workspacePath, refreshedNodes);
+
+    // 如果是删除事件，标记删除
+    if (event.type === 'unlink' || event.type === 'unlinkDir') {
+      useFileTreeStore.getState().markAsDeleted(event.path);
+    }
+  } catch (error) {
+    console.error('Failed to refresh file tree:', error);
+  }
+}
+
 export const workspaceActions = {
   // ========== 现有方法（兼容 V5）==========
 
@@ -120,6 +158,10 @@ export const workspaceActions = {
       },
     ]);
     useFileTreeStore.getState().setSelectedPath(null);
+
+    // 启动文件监听
+    await FileWatcherService.startWatching([path], handleFileChange);
+
     return nodes.length;
   },
 
@@ -167,6 +209,9 @@ export const workspaceActions = {
 
     // 设置状态栏提示
     useStatusStore.getState().setStatus('loading', t('workspace.closing'));
+
+    // 停止文件监听
+    await FileWatcherService.stopWatching();
 
     // 清空状态
     clearWorkspaceState();
@@ -225,6 +270,10 @@ export const workspaceActions = {
       // 7. 持久化状态
       await WorkspaceStatePersistence.saveCurrentState();
 
+      // 8. 更新文件监听路径
+      const allPaths = useWorkspaceStore.getState().folders.map((f) => f.path);
+      await FileWatcherService.updateWatchPaths(allPaths);
+
       return { ok: true };
     } catch (error) {
       // 8. 回滚
@@ -258,6 +307,16 @@ export const workspaceActions = {
 
       // 4. 持久化
       await WorkspaceStatePersistence.saveCurrentState();
+
+      // 5. 更新文件监听路径
+      const remainingPaths = useWorkspaceStore
+        .getState()
+        .folders.map((f) => f.path);
+      if (remainingPaths.length > 0) {
+        await FileWatcherService.updateWatchPaths(remainingPaths);
+      } else {
+        await FileWatcherService.stopWatching();
+      }
 
       return { ok: true };
     } catch (error) {
@@ -425,9 +484,44 @@ export const workspaceActions = {
     }
   },
 
-  loadWorkspaceFile: async (workspacePath: string): Promise<Result> => {
+  loadWorkspaceFile: async (
+    workspacePath: string,
+  ): Promise<WorkspaceLoadResult> => {
     try {
-      const config = await FsService.parseWorkspaceFile(workspacePath);
+      // 先检查工作区文件是否存在
+      const exists = await FsService.checkExists(workspacePath);
+      if (!exists) {
+        return createWorkspaceLoadError(
+          'file-not-found',
+          `Workspace file not found: ${workspacePath}`,
+          workspacePath,
+        );
+      }
+
+      // 解析工作区文件
+      let config;
+      try {
+        config = await FsService.parseWorkspaceFile(workspacePath);
+      } catch (parseError) {
+        const errorMsg = String(parseError).toLowerCase();
+        // 区分权限错误和解析错误
+        if (
+          errorMsg.includes('permission') ||
+          errorMsg.includes('access') ||
+          errorMsg.includes('denied')
+        ) {
+          return createWorkspaceLoadError(
+            'permission-denied',
+            `Permission denied: ${workspacePath}`,
+            workspacePath,
+          );
+        }
+        return createWorkspaceLoadError(
+          'parse-failed',
+          `Failed to parse workspace file: ${parseError}`,
+          workspacePath,
+        );
+      }
 
       // 将相对路径解析为绝对路径
       const absoluteFolderPaths = config.folders.map(
@@ -439,8 +533,58 @@ export const workspaceActions = {
 
       // 批量加载所有文件夹树
       const paths = absoluteFolderPaths.map((f) => f.path);
-      const batchResult: FolderPathResult[] =
-        await FsService.listTreeBatch(paths);
+      let batchResult: FolderPathResult[];
+      try {
+        batchResult = await FsService.listTreeBatch(paths);
+      } catch (batchError) {
+        const errorMsg = String(batchError).toLowerCase();
+        if (
+          errorMsg.includes('permission') ||
+          errorMsg.includes('access') ||
+          errorMsg.includes('denied')
+        ) {
+          return createWorkspaceLoadError(
+            'permission-denied',
+            `Permission denied to access workspace folders`,
+            workspacePath,
+          );
+        }
+        throw batchError; // 重新抛出其他错误
+      }
+
+      // 检查是否有文件夹加载失败
+      const failedFolders = batchResult.filter(
+        (r: FolderPathResult) => r.error !== undefined,
+      );
+
+      // 如果有文件夹加载失败，返回第一个错误
+      if (failedFolders.length > 0) {
+        const firstError = failedFolders[0];
+        const errorMsg = firstError.error?.toLowerCase() || '';
+
+        if (
+          errorMsg.includes('permission') ||
+          errorMsg.includes('access') ||
+          errorMsg.includes('denied')
+        ) {
+          return createWorkspaceLoadError(
+            'permission-denied',
+            `Permission denied: ${firstError.path}`,
+            firstError.path,
+          );
+        }
+
+        if (
+          errorMsg.includes('not found') ||
+          errorMsg.includes('does not exist')
+        ) {
+          return createWorkspaceLoadError(
+            'folder-not-found',
+            `Folder not found: ${firstError.path}`,
+            firstError.path,
+          );
+        }
+      }
 
       const rootFolders: RootFolderNode[] = batchResult
         .filter((r: FolderPathResult) => r.error === undefined)
@@ -479,9 +623,16 @@ export const workspaceActions = {
 
       useFileTreeStore.getState().setRootFolders(rootFolders);
 
+      // 启动文件监听
+      const allPaths = absoluteFolderPaths.map((f: { path: string }) => f.path);
+      await FileWatcherService.startWatching(allPaths, handleFileChange);
+
       return { ok: true };
     } catch (error) {
-      return { ok: false, error: String(error) };
+      // 对于未知错误，推断错误类型
+      const errorMsg = String(error);
+      const errorType = inferErrorType(errorMsg);
+      return createWorkspaceLoadError(errorType, errorMsg, workspacePath);
     }
   },
 };
