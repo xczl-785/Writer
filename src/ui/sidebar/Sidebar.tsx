@@ -22,7 +22,6 @@ import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
 import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
 import { showDeleteConfirmDialog } from '../components/Dialog';
-import { DragDropOverlay } from '../components/ErrorStates';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import {
   ensureMarkdownExtension,
@@ -811,9 +810,7 @@ export function Sidebar({
   // V6: 渲染空状态 - 极简样式
   const renderEmptyState = () => (
     <div className="px-3 py-10 text-center text-[11px] text-zinc-300 italic">
-      {rootFolders.length > 0
-        ? t('sidebar.noMarkdown')
-        : t('sidebar.noFolder')}
+      {rootFolders.length > 0 ? t('sidebar.noMarkdown') : t('sidebar.noFolder')}
     </div>
   );
 
@@ -1036,7 +1033,7 @@ export function Sidebar({
       </div>
 
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden py-2"
+        className="flex-1 overflow-y-auto overflow-x-hidden py-2 relative"
         onClick={(e) => {
           if (e.currentTarget === e.target) {
             setSelectedPath(null);
@@ -1046,6 +1043,21 @@ export function Sidebar({
         onKeyDown={() => {}}
         role="presentation"
       >
+        {/* 外部文件拖拽遮罩层 */}
+        {isDragOver && (
+          <div className="absolute inset-0 z-10 pointer-events-none">
+            {/* 半透明背景 */}
+            <div className="absolute inset-0 bg-blue-50/80 backdrop-blur-sm" />
+            {/* 虚线边框容器 */}
+            <div className="absolute inset-4 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center">
+              {/* 提示文字 */}
+              <span className="text-sm font-medium text-blue-600">
+                释放以添加到工作区
+              </span>
+            </div>
+          </div>
+        )}
+
         {isSearchActive ? (
           <div>
             {searchMatches.length === 0 ? (
@@ -1152,12 +1164,6 @@ export function Sidebar({
         y={contextMenu.state.y}
         items={contextMenu.state.items}
         onClose={contextMenu.close}
-      />
-
-      <DragDropOverlay
-        isVisible={isDragOver}
-        dragType="copy"
-        onDrop={() => setIsDragOver(false)}
       />
     </div>
   );
