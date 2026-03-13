@@ -10,7 +10,7 @@ const refreshCurrentTree = async (): Promise<void> => {
   if (!currentPath) return;
 
   const nodes = await FsService.listTree(currentPath);
-  useFileTreeStore.getState().setNodes(nodes);
+  useFileTreeStore.getState().setNodes(currentPath, nodes);
 };
 
 export const fileActions = {
