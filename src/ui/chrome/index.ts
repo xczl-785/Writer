@@ -1,0 +1,1 @@
+export { PlatformTitleBar } from './PlatformTitleBar';

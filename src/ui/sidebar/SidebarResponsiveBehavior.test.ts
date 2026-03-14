@@ -49,18 +49,17 @@ describe('sidebar responsive behavior', () => {
 
   it('wires sidebar button double-click for focus zen and single-click delay handling', () => {
     const sidebarTsx = readFileSync(join(currentDir, 'Sidebar.tsx'), 'utf-8');
-    expect(sidebarTsx).toContain('onToggleFocusZen?: () => void;');
-    expect(sidebarTsx).toContain('onDoubleClick');
-    expect(sidebarTsx).toContain('onToggleFocusZen?.()');
-    expect(sidebarTsx).toContain(
-      'const collapseClickTimerRef = useRef<number | null>(null)',
+    const titleBarTsx = readFileSync(
+      join(currentDir, '..', 'chrome', 'WindowsTitleBar.tsx'),
+      'utf-8',
     );
-    expect(sidebarTsx).toContain('const handleCollapseButtonClick = () =>');
-    expect(sidebarTsx).toContain('const handleCollapseButtonDoubleClick = (');
-    expect(sidebarTsx).toContain('onClick={handleCollapseButtonClick}');
-    expect(sidebarTsx).toContain(
-      'onDoubleClick={handleCollapseButtonDoubleClick}',
-    );
+    expect(sidebarTsx).not.toContain('onToggleFocusZen?: () => void;');
+    expect(sidebarTsx).not.toContain('handleCollapseButtonClick');
+    expect(sidebarTsx).not.toContain('handleCollapseButtonDoubleClick');
+    expect(sidebarTsx).not.toContain("t('sidebar.collapse')");
+    expect(titleBarTsx).toContain('onToggleSidebar');
+    expect(titleBarTsx).toContain('PanelLeftClose');
+    expect(titleBarTsx).toContain('PanelLeftOpen');
     expect(editorTsx).toContain(
       'const sidebarClickTimerRef = useRef<number | null>(null)',
     );

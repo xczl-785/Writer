@@ -397,9 +397,86 @@ fn build_native_menu_with_locale<R: Runtime>(
         ],
     )?;
 
+    let tools_menu = Submenu::with_items(
+        app,
+        &tr(locale, "工具", "Tools"),
+        true,
+        &[
+            &item(
+                app,
+                locale,
+                "menu.file.open_recent",
+                "打开最近",
+                "Open Recent",
+                None,
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.file.clear_recent",
+                "清除所有历史记录",
+                "Clear All History",
+                None,
+            )?,
+            &item(app, locale, "menu.file.settings", "设置", "Settings", None)?,
+            &item_with_enabled(
+                app,
+                locale,
+                "menu.tools.command_palette",
+                "命令面板",
+                "Command Palette",
+                None,
+                false,
+            )?,
+        ],
+    )?;
+
+    let help_menu = Submenu::with_items(
+        app,
+        &tr(locale, "帮助", "Help"),
+        true,
+        &[
+            &item_with_enabled(
+                app,
+                locale,
+                "menu.help.documentation",
+                "使用文档",
+                "Documentation",
+                None,
+                false,
+            )?,
+            &item_with_enabled(
+                app,
+                locale,
+                "menu.help.release_notes",
+                "版本说明",
+                "Release Notes",
+                None,
+                false,
+            )?,
+            &item_with_enabled(
+                app,
+                locale,
+                "menu.help.about",
+                "关于 Writer",
+                "About Writer",
+                None,
+                false,
+            )?,
+        ],
+    )?;
+
     Menu::with_items(
         app,
-        &[&file_menu, &edit_menu, &paragraph_menu, &format_menu, &view_menu],
+        &[
+            &file_menu,
+            &edit_menu,
+            &paragraph_menu,
+            &format_menu,
+            &view_menu,
+            &tools_menu,
+            &help_menu,
+        ],
     )
 }
 
