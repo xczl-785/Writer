@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { t, type LocalePreference } from '../../../i18n';
-import { useSettingsStore } from '../../../state/slices/settingsSlice';
+import { useSettingsStore } from '../../domains/settings/state/settingsStore';
 
 export type SettingsPanelProps = {
   isOpen: boolean;

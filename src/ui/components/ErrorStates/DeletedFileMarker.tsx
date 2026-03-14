@@ -3,9 +3,9 @@
 
 import React, { useCallback } from 'react';
 import { AlertCircle, RotateCcw, Trash2 } from 'lucide-react';
-import { t } from '../../../i18n';
-import { useFileTreeStore } from '../../../state/slices/filetreeSlice';
-import { workspaceActions } from '../../../state/actions/workspaceActions';
+import { t } from '../../../shared/i18n';
+import { useFileTreeStore } from '../../domains/file/state/fileStore';
+import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 
 export interface DeletedFileMarkerProps {
   /** 被删除文件的路径 */

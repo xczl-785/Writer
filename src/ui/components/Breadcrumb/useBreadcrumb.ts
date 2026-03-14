@@ -3,7 +3,7 @@ import {
   splitPath,
   trimTrailingSeparator,
   joinPath,
-} from '../../../utils/pathUtils';
+} from '../../../shared/utils/pathUtils';
 
 export interface BreadcrumbItem {
   id: string;

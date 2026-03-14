@@ -5,7 +5,7 @@
  */
 import { menuCommandBus } from '../../ui/commands/menuCommandBus';
 import { useStatusStore } from '../../state/slices/statusSlice';
-import { t } from '../../i18n';
+import { t } from '../../shared/i18n';
 
 export type CleanupFn = () => void;
 

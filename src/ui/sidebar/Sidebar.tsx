@@ -6,10 +6,10 @@
  */
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useFileTreeStore } from '../../state/slices/filetreeSlice';
+import { useFileTreeStore } from '../domains/file/state/fileStore';
 import {
   useWorkspaceStore,
-} from '../../state/slices/workspaceSlice';
+} from '../domains/workspace/state/workspaceStore';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { fileActions } from '../../state/actions/fileActions';
 import { workspaceActions } from '../../state/actions/workspaceActions';
@@ -25,7 +25,7 @@ import { FsSafety } from '../../services/fs/FsSafety';
 import {
   classifyDroppedPaths,
   extractDroppedPaths,
-} from '../../workspace/droppedPaths';
+} from '../../domains/workspace/services/droppedPaths';
 import type { FileNode } from '../../state/types';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
@@ -59,7 +59,7 @@ import {
   FolderDown,
   X,
 } from 'lucide-react';
-import { t } from '../../i18n';
+import { t } from '../../shared/i18n';
 
 type GhostNode = {
   parentPath: string | null;
