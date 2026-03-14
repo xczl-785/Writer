@@ -26,4 +26,3 @@ describe('Editor find and replace contracts', () => {
     expect(matches[0]).toEqual({ from: 0, to: 1 });
   });
 });
-

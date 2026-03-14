@@ -21,4 +21,3 @@ describe('window spec', () => {
     expect(firstWindow.minHeight).toBe(480);
   });
 });
-

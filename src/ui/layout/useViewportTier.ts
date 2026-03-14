@@ -26,7 +26,9 @@ export const createViewportTierDebouncer = (
 
 export const useViewportTier = (debounceMs = 200) => {
   const initialWidth = typeof window === 'undefined' ? 1180 : window.innerWidth;
-  const [tier, setTier] = useState<ViewportTier>(resolveViewportTier(initialWidth));
+  const [tier, setTier] = useState<ViewportTier>(
+    resolveViewportTier(initialWidth),
+  );
 
   const onResize = useMemo(
     () => createViewportTierDebouncer(setTier, debounceMs),
@@ -44,4 +46,3 @@ export const useViewportTier = (debounceMs = 200) => {
 
   return { tier };
 };
-

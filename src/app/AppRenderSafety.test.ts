@@ -9,7 +9,9 @@ describe('App render safety', () => {
 
   it('keeps toggleSidebar updater pure and moves zen updates outside setState updater', () => {
     expect(appTsx).not.toContain('setIsSidebarVisible((prev) => {');
-    expect(appTsx).toContain('const nextVisible = !sidebarVisibilityRef.current;');
+    expect(appTsx).toContain(
+      'const nextVisible = !sidebarVisibilityRef.current;',
+    );
     expect(appTsx).toContain('setIsSidebarVisible(nextVisible);');
     expect(appTsx).toContain('if (nextVisible) {');
     expect(appTsx).toContain('exitZen();');

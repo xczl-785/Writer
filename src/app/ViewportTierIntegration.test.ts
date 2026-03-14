@@ -12,4 +12,3 @@ describe('viewport tier integration', () => {
     expect(appTsx).toContain('const { tier } = useViewportTier()');
   });
 });
-

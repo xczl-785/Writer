@@ -31,9 +31,9 @@ export const isMovementPayload = (
 } =>
   Boolean(
     payload &&
-      'previousCaretTop' in payload &&
-      'nextCaretTop' in payload &&
-      'thresholdY' in payload,
+    'previousCaretTop' in payload &&
+    'nextCaretTop' in payload &&
+    'thresholdY' in payload,
   );
 
 export const shouldDowngradeLockedStateForExternalUpwardCompensation = ({
@@ -49,4 +49,3 @@ export const shouldDowngradeLockedStateForExternalUpwardCompensation = ({
   state.dynamicAnchorY !== null &&
   source === 'external' &&
   caretTop < state.dynamicAnchorY;
-

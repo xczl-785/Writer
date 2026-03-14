@@ -53,23 +53,24 @@ export function EditorShell({
     };
 
     document.addEventListener('pointerdown', onPointerDown, true);
-    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+    return () =>
+      document.removeEventListener('pointerdown', onPointerDown, true);
   }, [isOutlineOpen, onCloseOutline]);
 
   useLayoutEffect(() => {
     const root = containerRef.current;
     if (!root) return;
 
-    const scrollContainer = root.querySelector('.editor-content-area') as
-      | HTMLElement
-      | null;
+    const scrollContainer = root.querySelector(
+      '.editor-content-area',
+    ) as HTMLElement | null;
     if (!scrollContainer) return;
 
     let rafId: number | null = null;
     const syncOffsetVariable = () => {
-      const findPanel = root.querySelector('.editor-find-panel') as
-        | HTMLElement
-        | null;
+      const findPanel = root.querySelector(
+        '.editor-find-panel',
+      ) as HTMLElement | null;
 
       let offsetTop = 0;
       if (findPanel) {
@@ -94,9 +95,9 @@ export function EditorShell({
 
     const observer = new ResizeObserver(() => scheduleSync());
     observer.observe(scrollContainer);
-    const findPanel = root.querySelector('.editor-find-panel') as
-      | HTMLElement
-      | null;
+    const findPanel = root.querySelector(
+      '.editor-find-panel',
+    ) as HTMLElement | null;
     if (findPanel) {
       observer.observe(findPanel);
     }

@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { menuCommandBus, type MenuCommandPayload } from '../ui/commands/menuCommandBus';
+import {
+  menuCommandBus,
+  type MenuCommandPayload,
+} from '../ui/commands/menuCommandBus';
 
 export function useNativeMenuBridge(onUnknownCommand: (id: string) => void) {
   useEffect(() => {

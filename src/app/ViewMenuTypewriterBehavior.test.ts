@@ -13,7 +13,10 @@ describe('View menu typewriter behavior', () => {
     join(currentDir, 'commands', 'viewCommands.ts'),
     'utf-8',
   );
-  const messagesTs = readFileSync(join(currentDir, '..', 'i18n', 'messages.ts'), 'utf-8');
+  const messagesTs = readFileSync(
+    join(currentDir, '..', 'i18n', 'messages.ts'),
+    'utf-8',
+  );
 
   it('renames view menu item to typewriter mode', () => {
     expect(menuRs).toContain('"menu.view.focus_mode"');
@@ -22,7 +25,9 @@ describe('View menu typewriter behavior', () => {
   });
 
   it('wires focus_mode command to toggle typewriter preference', () => {
-    expect(viewCommandsTs).toContain("menuCommandBus.register('menu.view.focus_mode'");
+    expect(viewCommandsTs).toContain(
+      "menuCommandBus.register('menu.view.focus_mode'",
+    );
     expect(viewCommandsTs).toContain('typewriterEnabledByUser');
     expect(viewCommandsTs).toContain('setTypewriterEnabledByUser');
   });
@@ -32,4 +37,3 @@ describe('View menu typewriter behavior', () => {
     expect(messagesTs).toContain("'status.menu.typewriterOff'");
   });
 });
-

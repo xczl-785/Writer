@@ -8,3 +8,12 @@
 
 export { showConfirmDialog, showDeleteConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogOptions } from './ConfirmDialog';
+
+export { showFileConflictDialog } from './FileConflictDialog';
+export type { FileConflictDialogOptions } from './FileConflictDialog';
+
+export { showWorkspaceLockDialog } from './WorkspaceLockDialog';
+export type {
+  WorkspaceLockDialogOptions,
+  WorkspaceLockDialogResult,
+} from './WorkspaceLockDialog';

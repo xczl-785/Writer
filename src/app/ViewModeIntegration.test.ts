@@ -6,7 +6,10 @@ import { fileURLToPath } from 'node:url';
 describe('View mode integration', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const appTsx = readFileSync(join(currentDir, 'App.tsx'), 'utf-8');
-  const editorTsx = readFileSync(join(currentDir, '..', 'ui', 'editor', 'Editor.tsx'), 'utf-8');
+  const editorTsx = readFileSync(
+    join(currentDir, '..', 'ui', 'editor', 'Editor.tsx'),
+    'utf-8',
+  );
 
   it('uses view mode slice to drive zen transitions in app shell', () => {
     expect(appTsx).toContain('useViewModeStore');
@@ -20,4 +23,3 @@ describe('View mode integration', () => {
     expect(editorTsx).toContain('isTypewriterActive?: boolean');
   });
 });
-
