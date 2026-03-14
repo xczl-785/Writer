@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies before import
-vi.mock('../../../services/recent/RecentItemsService', () => ({
+vi.mock('../../../domains/workspace/services/RecentItemsService', () => ({
   RecentItemsService: {
     getAll: vi.fn(() =>
       Promise.resolve({ workspaces: [], folders: [], files: [] }),
@@ -37,7 +37,7 @@ vi.mock('react-dom', async () => {
 });
 
 import React from 'react';
-import { RecentItemsService } from '../../../services/recent/RecentItemsService';
+import { RecentItemsService } from '../../../domains/workspace/services/RecentItemsService';
 
 // Simple render test - we test the service logic primarily
 // Component rendering tests would require @testing-library/react

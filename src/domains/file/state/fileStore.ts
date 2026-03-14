@@ -1,4 +1,4 @@
-// src/state/slices/filetreeSlice.ts
+// File tree store for the file domain
 // V6 文件树状态模型 - 支持多根文件夹
 
 import { create } from 'zustand';

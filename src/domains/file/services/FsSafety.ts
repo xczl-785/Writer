@@ -1,4 +1,4 @@
-import { useEditorStore } from '../../../state/slices/editorSlice';
+import { useEditorStore } from '../../editor/state/editorStore';
 import { AutosaveService } from './AutosaveService';
 import { ErrorService } from '../../../services/error/ErrorService';
 import { isPathMatch } from '../../../utils/pathUtils';

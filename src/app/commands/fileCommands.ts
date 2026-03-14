@@ -10,7 +10,7 @@ import { useEditorStore } from '../../domains/editor/state/editorStore';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { AutosaveService } from '../../domains/file/services/AutosaveService';
 import { FsService } from '../../domains/file/services/FsService';
-import { RecentItemsService } from '../../services/recent/RecentItemsService';
+import { RecentItemsService } from '../../domains/workspace/services/RecentItemsService';
 import { t } from '../../shared/i18n';
 import {
   openWorkspace,

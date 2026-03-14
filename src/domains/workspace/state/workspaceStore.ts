@@ -1,4 +1,4 @@
-// src/state/slices/workspaceSlice.ts
+// Workspace store for the workspace domain
 // V6 工作区状态模型 - 支持多文件夹工作区
 
 import { create } from 'zustand';
