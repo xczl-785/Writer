@@ -5,7 +5,7 @@ import React from 'react';
 import type { FileNode } from '../../../state/types';
 import { useFileTreeStore } from '../state/fileStore';
 import { useWorkspaceStore } from '../../../state/slices/workspaceSlice';
-import { workspaceActions } from '../../../state/actions/workspaceActions';
+import { workspaceActions } from '../../workspace/services/workspaceActions';
 import { FileIcon } from 'lucide-react';
 import { DeletedFileMarker } from '../../../ui/components/ErrorStates';
 

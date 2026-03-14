@@ -20,7 +20,7 @@ import { getEmptyAreaMenuItems } from '../../../ui/components/ContextMenu/worksp
 import { addFolderToWorkspaceByDialog } from '../../workspace/services/WorkspaceManager';
 import { FsService } from '../services/FsService';
 import { FsSafety } from '../services/FsSafety';
-import { fileActions } from '../../../state/actions/fileActions';
+import { fileActions } from '../services/fileActions';
 import { t } from '../../../shared/i18n';
 import type { FileNode } from '../../../state/types';
 import {

@@ -19,8 +19,8 @@ import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
 import { addFolderToWorkspaceByDialog } from '../../domains/workspace/services/WorkspaceManager';
 import { FsService } from '../../domains/file/services/FsService';
-import { FsSafety } from '../../services/fs/FsSafety';
-import { fileActions } from '../../state/actions/fileActions';
+import { FsSafety } from '../../domains/file/services/FsSafety';
+import { fileActions } from '../../domains/file/services/fileActions';
 import { t } from '../../shared/i18n';
 import type { FileNode } from '../../state/types';
 import {
