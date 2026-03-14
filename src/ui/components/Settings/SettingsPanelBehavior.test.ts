@@ -14,7 +14,7 @@ describe('Settings panel behavior', () => {
     'utf-8',
   );
   const messagesTs = readFileSync(
-    join(currentDir, '..', '..', '..', 'i18n', 'messages.ts'),
+    join(currentDir, '..', '..', '..', 'shared', 'i18n', 'messages.ts'),
     'utf-8',
   );
 

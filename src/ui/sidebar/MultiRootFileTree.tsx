@@ -8,20 +8,20 @@ import React, {
   useState,
   useEffect,
 } from 'react';
-import { useFileTreeStore } from '../domains/file/state/fileStore';
+import { useFileTreeStore } from '../../domains/file/state/fileStore';
 import {
   useWorkspaceStore,
   getWorkspaceType,
-} from '../domains/workspace/state/workspaceStore';
+} from '../../domains/workspace/state/workspaceStore';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { WorkspaceRootHeader } from './WorkspaceRootHeader';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
 import { addFolderToWorkspaceByDialog } from '../../domains/workspace/services/WorkspaceManager';
-import { FsService } from '../domains/file/services/FsService';
+import { FsService } from '../../domains/file/services/FsService';
 import { FsSafety } from '../../services/fs/FsSafety';
-import { fileActions } from '../domains/file/services/fileActions';
-import { t } from '../../i18n';
+import { fileActions } from '../../state/actions/fileActions';
+import { t } from '../../shared/i18n';
 import type { FileNode } from '../../state/types';
 import {
   VirtualizedFileTree,

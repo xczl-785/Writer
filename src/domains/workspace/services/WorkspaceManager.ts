@@ -3,7 +3,7 @@ import { workspaceActions } from './workspaceActions';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { ErrorService } from '../../../services/error/ErrorService';
 import { useWorkspaceStore } from '../state/workspaceStore';
-import { RecentItemsService } from '../../../services/recent/RecentItemsService';
+import { RecentItemsService } from './RecentItemsService';
 import { buildDefaultWorkspaceFileName, getWorkspaceFileBaseName } from '../../../ui/statusbar/workspaceIndicator';
 import { t } from '../../../shared/i18n';
 

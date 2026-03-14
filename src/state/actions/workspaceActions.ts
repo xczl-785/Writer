@@ -1,8 +1,12 @@
 // src/state/actions/workspaceActions.ts
 // V6 工作区事务协调器 - 带快照 - 回滚机制
 
-import { FsSafety } from '../domains/file/services/FsSafety';
-import { FsService, type FolderPathResult, type WorkspaceConfig } from '../domains/file/services/FsService';
+import { FsSafety } from '../../domains/file/services/FsSafety';
+import {
+  FsService,
+  type FolderPathResult,
+  type WorkspaceConfig,
+} from '../../domains/file/services/FsService';
 import { useEditorStore } from '../slices/editorSlice';
 import { useFileTreeStore, type RootFolderNode } from '../slices/filetreeSlice';
 import {

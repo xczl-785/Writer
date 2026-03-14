@@ -11,11 +11,11 @@ describe('Outline behavior', () => {
     'utf-8',
   );
   const editorTsx = readFileSync(
-    join(currentDir, '..', '..', 'editor', 'Editor.tsx'),
+    join(currentDir, '..', '..', '..', 'domains', 'editor', 'core', 'Editor.tsx'),
     'utf-8',
   );
   const editorShellTsx = readFileSync(
-    join(currentDir, '..', '..', 'editor', 'components', 'EditorShell.tsx'),
+    join(currentDir, '..', '..', '..', 'domains', 'editor', 'ui', 'components', 'EditorShell.tsx'),
     'utf-8',
   );
 

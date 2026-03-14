@@ -1,7 +1,7 @@
 // src/ui/components/Dialog/FileConflictDialog.ts
 // V6 文件冲突对话框 - 用于处理文件保存冲突
 
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 import type {
   FileConflictInfo,
   FileConflictResolution,

@@ -5,29 +5,32 @@ import { fileURLToPath } from 'node:url';
 
 describe('Editor architecture skeleton', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
+  // currentDir is src/domains/editor/core/
+  const editorDir = join(currentDir, '..'); // src/domains/editor/
 
   it('declares core modules for orchestrator/layout/state facade', () => {
-    const coreDir = join(currentDir, 'core');
+    // Core modules are in the current directory (core/)
     expect(
-      readFileSync(join(coreDir, 'EditorOrchestrator.tsx'), 'utf-8'),
+      readFileSync(join(currentDir, 'EditorOrchestrator.tsx'), 'utf-8'),
     ).toContain('export');
     expect(
-      readFileSync(join(coreDir, 'EditorLayoutModel.ts'), 'utf-8'),
+      readFileSync(join(currentDir, 'EditorLayoutModel.ts'), 'utf-8'),
     ).toContain('export');
     expect(
-      readFileSync(join(coreDir, 'EditorStateFacade.ts'), 'utf-8'),
+      readFileSync(join(currentDir, 'EditorStateFacade.ts'), 'utf-8'),
     ).toContain('export');
   });
 
   it('declares integration/domain and view modules', () => {
+    // These are sibling directories to core/
     expect(
-      readFileSync(join(currentDir, 'integration', 'index.ts'), 'utf-8'),
+      readFileSync(join(editorDir, 'integration', 'index.ts'), 'utf-8'),
     ).toContain('export');
     expect(
-      readFileSync(join(currentDir, 'domain', 'index.ts'), 'utf-8'),
+      readFileSync(join(editorDir, 'domain', 'index.ts'), 'utf-8'),
     ).toContain('export');
     expect(
-      readFileSync(join(currentDir, 'view', 'EditorView.tsx'), 'utf-8'),
+      readFileSync(join(editorDir, 'view', 'EditorView.tsx'), 'utf-8'),
     ).toContain('export');
   });
 });

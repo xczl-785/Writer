@@ -1,9 +1,9 @@
 import { expect, test } from 'vitest';
-import { useWorkspaceStore, getWorkspaceType } from './slices/workspaceSlice';
-import { useFileTreeStore } from './slices/filetreeSlice';
-import { useEditorStore } from './slices/editorSlice';
+import { useWorkspaceStore, getWorkspaceType } from '../domains/workspace/state/workspaceStore';
+import { useFileTreeStore } from '../domains/file/state/fileStore';
+import { useEditorStore } from '../domains/editor/state/editorStore';
 import { useStatusStore } from './slices/statusSlice';
-import { useSettingsStore } from './slices/settingsSlice';
+import { useSettingsStore } from '../domains/settings/state/settingsStore';
 
 test('Workspace State', () => {
   const store = useWorkspaceStore.getState();

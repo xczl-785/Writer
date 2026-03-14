@@ -3,17 +3,17 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Editor as TiptapEditor } from '@tiptap/react';
-import { persistEditorUpdate } from './integration/persistenceBridge';
-import { MarkdownService } from '../../services/markdown/MarkdownService';
-import { ErrorService } from '../../services/error/ErrorService';
+import { persistEditorUpdate } from '../integration/persistenceBridge';
+import { MarkdownService } from '../../../services/markdown/MarkdownService';
+import { ErrorService } from '../../../services/error/ErrorService';
 
-vi.mock('../../services/markdown/MarkdownService', () => ({
+vi.mock('../../../services/markdown/MarkdownService', () => ({
   MarkdownService: {
     serialize: vi.fn(),
   },
 }));
 
-vi.mock('../../services/error/ErrorService', () => ({
+vi.mock('../../../services/error/ErrorService', () => ({
   ErrorService: {
     handle: vi.fn(),
   },

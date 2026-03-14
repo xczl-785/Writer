@@ -5,13 +5,13 @@
  */
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { Editor } from '@tiptap/react';
-import type { MenuItem } from '../../components/ContextMenu/contextMenuRegistry';
+import type { MenuItem } from '../../../shared/components/ContextMenu/contextMenuRegistry';
 import {
   getCodeBlockContextMenuItems,
   getEditorContextMenuItems,
   getTableContextMenuItems,
-} from '../../components/ContextMenu/editorMenu';
-import { DEFAULT_TABLE_INSERT } from '../constants';
+} from '../../../shared/components/ContextMenu/editorMenu';
+import { DEFAULT_TABLE_INSERT } from '../core/constants';
 
 export type ContextMenuOpener = (event: ReactMouseEvent) => void;
 

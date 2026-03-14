@@ -6,11 +6,11 @@ import { fileURLToPath } from 'node:url';
 describe('Editor link behavior', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const bubbleMenuTs = readFileSync(
-    join(currentDir, 'menus', 'BubbleMenu.tsx'),
+    join(currentDir, '..', 'ui', 'menus', 'BubbleMenu.tsx'),
     'utf-8',
   );
   const menuHandlerTs = readFileSync(
-    join(currentDir, 'handlers', 'menuCommandHandler.ts'),
+    join(currentDir, '..', 'handlers', 'menuCommandHandler.ts'),
     'utf-8',
   );
 

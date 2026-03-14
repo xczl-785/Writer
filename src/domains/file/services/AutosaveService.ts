@@ -1,6 +1,6 @@
 import { FsService } from './FsService';
 import { useStatusStore } from '../../../state/slices/statusSlice';
-import { useEditorStore } from '../../../state/slices/editorSlice';
+import { useEditorStore } from '../../editor/state/editorStore';
 import { EDITOR_CONFIG } from '../../../config/editor';
 import { ErrorService } from '../../../services/error/ErrorService';
 

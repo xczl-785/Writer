@@ -6,11 +6,11 @@ import { fileURLToPath } from 'node:url';
 describe('Editor image behavior', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const slashMenuTs = readFileSync(
-    join(currentDir, 'menus', 'useSlashMenu.ts'),
+    join(currentDir, '..', 'ui', 'menus', 'useSlashMenu.ts'),
     'utf-8',
   );
   const menuHandlerTs = readFileSync(
-    join(currentDir, 'handlers', 'menuCommandHandler.ts'),
+    join(currentDir, '..', 'handlers', 'menuCommandHandler.ts'),
     'utf-8',
   );
 

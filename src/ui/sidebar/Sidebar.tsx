@@ -6,10 +6,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useFileTreeStore } from '../domains/file/state/fileStore';
-import {
-  useWorkspaceStore,
-} from '../domains/workspace/state/workspaceStore';
+import { useFileTreeStore } from '../../domains/file/state/fileStore';
+import { useWorkspaceStore } from '../../domains/workspace/state/workspaceStore';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { fileActions } from '../../state/actions/fileActions';
 import { workspaceActions } from '../../state/actions/workspaceActions';

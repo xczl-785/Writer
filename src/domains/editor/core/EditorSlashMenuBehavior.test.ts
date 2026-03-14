@@ -5,27 +5,29 @@ import { fileURLToPath } from 'node:url';
 
 describe('Editor slash menu behavior', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
+  const editorDir = join(currentDir, '..'); // src/domains/editor/
+
   const readSlashMenu = () =>
-    readFileSync(join(currentDir, 'menus', 'SlashMenu.tsx'), 'utf-8');
+    readFileSync(join(editorDir, 'ui', 'menus', 'SlashMenu.tsx'), 'utf-8');
   const readUseSlashMenu = () =>
-    readFileSync(join(currentDir, 'menus', 'useSlashMenu.ts'), 'utf-8');
+    readFileSync(join(editorDir, 'ui', 'menus', 'useSlashMenu.ts'), 'utf-8');
   const readSlashEligibility = () =>
-    readFileSync(join(currentDir, 'menus', 'slashEligibility.ts'), 'utf-8');
+    readFileSync(join(editorDir, 'ui', 'menus', 'slashEligibility.ts'), 'utf-8');
   const readSlashDomain = () =>
     readFileSync(
-      join(currentDir, 'domain', 'slash', 'slashDomain.ts'),
+      join(editorDir, 'domain', 'slash', 'slashDomain.ts'),
       'utf-8',
     );
   const readSafeCoords = () =>
-    readFileSync(join(currentDir, 'hooks', 'useSafeCoords.ts'), 'utf-8');
+    readFileSync(join(editorDir, 'hooks', 'useSafeCoords.ts'), 'utf-8');
   const readGhostHintHook = () =>
-    readFileSync(join(currentDir, 'hooks', 'useGhostHint.ts'), 'utf-8');
+    readFileSync(join(editorDir, 'hooks', 'useGhostHint.ts'), 'utf-8');
   const readGhostHint = () =>
-    readFileSync(join(currentDir, 'menus', 'GhostHint.tsx'), 'utf-8');
+    readFileSync(join(editorDir, 'ui', 'menus', 'GhostHint.tsx'), 'utf-8');
   const readEditorImpl = () =>
     readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
   const readMessages = () =>
-    readFileSync(join(currentDir, '../../i18n/messages.ts'), 'utf-8');
+    readFileSync(join(editorDir, '..', '..', 'shared', 'i18n', 'messages.ts'), 'utf-8');
 
   it('supports slash trigger chars for Latin and full-width input', () => {
     const slashDomainTs = readSlashDomain();
@@ -116,7 +118,7 @@ describe('Editor slash menu behavior', () => {
 
   it('keeps slash inline query vertically aligned to anchor top', () => {
     const slashMenuViewTsx = readFileSync(
-      join(currentDir, 'menus', 'SlashMenuView.tsx'),
+      join(editorDir, 'ui', 'menus', 'SlashMenuView.tsx'),
       'utf-8',
     );
     expect(slashMenuViewTsx).toContain('top: anchorRect.top - 1');

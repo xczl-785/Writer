@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { EditorView } from '@tiptap/pm/view';
 import { TOOLBAR_COMMANDS } from './constants';
-import { createEditorKeyDownHandler } from './extensions/keydownHandler';
+import { createEditorKeyDownHandler } from '../extensions/keydownHandler';
 
 describe('Editor table controls contracts', () => {
   it('keeps table operations out of toolbar command registry', () => {

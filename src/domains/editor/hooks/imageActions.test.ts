@@ -5,29 +5,29 @@ import {
   generateUniqueFilename,
   saveAndInsertImageFile,
 } from './imageActions';
-import { FsService } from '../../services/fs/FsService';
-import { useStatusStore } from '../../state/slices/statusSlice';
-import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
-import { ImageResolver } from '../../services/images/ImageResolver';
+import { FsService } from '../../file/services/FsService';
+import { useStatusStore } from '../../../state/slices/statusSlice';
+import { useWorkspaceStore } from '../../workspace/state/workspaceStore';
+import { ImageResolver } from '../../../services/images/ImageResolver';
 import type {
   WorkspaceActions,
   WorkspaceState,
-} from '../../state/slices/workspaceSlice';
+} from '../../workspace/state/workspaceStore';
 
-vi.mock('../../services/fs/FsService', () => ({
+vi.mock('../../file/services/FsService', () => ({
   FsService: {
     saveImage: vi.fn(),
     checkExists: vi.fn(),
   },
 }));
 
-vi.mock('../../state/slices/statusSlice', () => ({
+vi.mock('../../../state/slices/statusSlice', () => ({
   useStatusStore: {
     getState: vi.fn(),
   },
 }));
 
-vi.mock('../../state/slices/workspaceSlice', () => {
+vi.mock('../../workspace/state/workspaceStore', () => {
   const store = vi.fn() as ReturnType<typeof vi.fn> & {
     getState: ReturnType<typeof vi.fn>;
   };
@@ -35,7 +35,7 @@ vi.mock('../../state/slices/workspaceSlice', () => {
   return { useWorkspaceStore: store };
 });
 
-vi.mock('../../services/images/ImageResolver', () => ({
+vi.mock('../../../services/images/ImageResolver', () => ({
   ImageResolver: {
     resolve: vi.fn(),
   },

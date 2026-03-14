@@ -1,4 +1,4 @@
-import { FsService } from '../domains/file/services/FsService';
+import { FsService } from '../../domains/file/services/FsService';
 import { useEditorStore } from '../slices/editorSlice';
 import { useFileTreeStore } from '../slices/filetreeSlice';
 import { useWorkspaceStore } from '../slices/workspaceSlice';

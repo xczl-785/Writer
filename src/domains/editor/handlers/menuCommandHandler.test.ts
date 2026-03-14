@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Editor } from '@tiptap/react';
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 import { createMenuCommandHandler } from './menuCommandHandler';
 
 describe('createMenuCommandHandler', () => {

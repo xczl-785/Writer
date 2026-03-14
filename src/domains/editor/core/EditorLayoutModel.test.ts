@@ -43,7 +43,7 @@ describe('EditorLayoutModel', () => {
 
   it('requires editor stylesheet to consume unified layout css variables', () => {
     const currentDir = dirname(fileURLToPath(import.meta.url));
-    const css = readFileSync(join(currentDir, '..', 'Editor.css'), 'utf-8');
+    const css = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');
     expect(css).toContain('var(--editor-content-max-width, 850px)');
     expect(css).toContain('var(--editor-content-padding-top, 64px)');
     expect(css).toContain('var(--editor-content-padding-inline, 32px)');

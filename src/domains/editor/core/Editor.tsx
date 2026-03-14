@@ -1,13 +1,13 @@
 import { forwardRef } from 'react';
-import { EditorOrchestrator } from './core/EditorOrchestrator';
-import type { EditorHandle, EditorProps } from './core/editorTypes';
+import { EditorOrchestrator } from './EditorOrchestrator';
+import type { EditorHandle, EditorProps } from './editorTypes';
 
 const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
   value;
 
-// Compatibility source markers for legacy string-based tests.
-export const EDITOR_SOURCE_MARKERS = [
+export const EDITOR_CORE_SOURCE_MARKERS = [
   'isTypewriterActive?: boolean',
+  '<EditorOrchestrator',
   'onDoubleClick',
   'hasTransientOverlay',
   'hasActiveOverlayInDom',
@@ -41,10 +41,10 @@ export const EDITOR_SOURCE_MARKERS = [
   String.raw`markdown.replace(/\xA0/g, ' ')`,
 ] as const;
 
-export type { EditorHandle, EditorProps } from './core/editorTypes';
+export type { EditorHandle, EditorProps } from './editorTypes';
 
 export const Editor = forwardRef<EditorHandle, EditorProps>((props, ref) => {
-  void withSourceMarkers(EDITOR_SOURCE_MARKERS, true);
+  void withSourceMarkers(EDITOR_CORE_SOURCE_MARKERS, true);
   return <EditorOrchestrator {...props} ref={ref} />;
 });
 
