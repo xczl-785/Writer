@@ -1,12 +1,21 @@
-import { useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Copy, Minus, PanelLeftClose, PanelLeftOpen, Square, X } from 'lucide-react';
+import { Copy, Minus, Square, X } from 'lucide-react';
 import { WindowsMenuBar } from './WindowsMenuBar';
+import { SidebarToggleIcon } from './SidebarToggleIcon';
 
 type WindowsTitleBarProps = {
   hasRecentItems: boolean;
   isSidebarVisible: boolean;
+  isFocusZen: boolean;
+  isHeaderAwake: boolean;
   onToggleSidebar: () => void;
+  onSetFocusZen: (enabled: boolean) => void;
 };
 
 const SIDEBAR_WIDTH = 256;
@@ -60,10 +69,14 @@ function isInteractiveTarget(target: HTMLElement | null): boolean {
 export function WindowsTitleBar({
   hasRecentItems,
   isSidebarVisible,
+  isFocusZen,
+  isHeaderAwake,
   onToggleSidebar,
+  onSetFocusZen,
 }: WindowsTitleBarProps) {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isWindowFocused, setIsWindowFocused] = useState(true);
+  const sidebarClickTimerRef = useRef<number | null>(null);
   const leftWidth = isSidebarVisible ? SIDEBAR_WIDTH : 0;
   const rootInsetClass = isMaximized ? 'px-[8px] pt-[8px]' : '';
   const sidebarSurfaceClass = isMaximized ? 'rounded-tl-[10px]' : '';
@@ -117,6 +130,16 @@ export function WindowsTitleBar({
     };
   }, []);
 
+  useEffect(
+    () => () => {
+      if (sidebarClickTimerRef.current !== null) {
+        window.clearTimeout(sidebarClickTimerRef.current);
+        sidebarClickTimerRef.current = null;
+      }
+    },
+    [],
+  );
+
   function handleTitleBarDoubleClick(
     event: ReactMouseEvent<HTMLDivElement>,
   ): void {
@@ -146,9 +169,33 @@ export function WindowsTitleBar({
     });
   }
 
+  function handleSidebarButtonDoubleClick(): void {
+    if (sidebarClickTimerRef.current !== null) {
+      window.clearTimeout(sidebarClickTimerRef.current);
+      sidebarClickTimerRef.current = null;
+    }
+    onSetFocusZen(!isFocusZen);
+  }
+
+  function handleSidebarButtonClick(): void {
+    if (sidebarClickTimerRef.current !== null) {
+      window.clearTimeout(sidebarClickTimerRef.current);
+    }
+    sidebarClickTimerRef.current = window.setTimeout(() => {
+      sidebarClickTimerRef.current = null;
+      if (isFocusZen) {
+        onSetFocusZen(false);
+        return;
+      }
+      onToggleSidebar();
+    }, 220);
+  }
+
   return (
     <div
-      className={`flex shrink-0 select-none bg-white transition-[padding,background-color] duration-150 ${rootInsetClass}`}
+      className={`flex shrink-0 select-none bg-white transition-[padding,background-color,opacity] duration-150 ${
+        isFocusZen && !isHeaderAwake ? 'opacity-0 pointer-events-none' : ''
+      } ${rootInsetClass}`}
       data-window-focused={isWindowFocused}
       data-window-maximized={isMaximized}
       onDoubleClick={handleTitleBarDoubleClick}
@@ -188,16 +235,13 @@ export function WindowsTitleBar({
             <div className="flex items-center gap-2 px-2 pointer-events-auto">
               <button
                 type="button"
-                onClick={onToggleSidebar}
+                onClick={handleSidebarButtonClick}
+                onDoubleClick={handleSidebarButtonDoubleClick}
                 className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
                 aria-label="Toggle Sidebar"
                 title="Toggle Sidebar"
               >
-                {isSidebarVisible ? (
-                  <PanelLeftClose className="h-[18px] w-[18px]" />
-                ) : (
-                  <PanelLeftOpen className="h-[18px] w-[18px]" />
-                )}
+                <SidebarToggleIcon />
               </button>
               <WindowsMenuBar
                 hasRecentItems={hasRecentItems}

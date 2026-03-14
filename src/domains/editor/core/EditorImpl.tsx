@@ -103,8 +103,6 @@ const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
 export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
   (
     {
-      isSidebarVisible = true,
-      onToggleSidebar,
       isTypewriterActive = false,
       viewportTier = 'default',
       isFocusZen = false,
@@ -130,7 +128,6 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
     const [hasEditorWidgetFocus, setHasEditorWidgetFocus] = useState(false);
     const [editorRevision, forceRerender] = useState(0);
     const [isOutlineOpen, setIsOutlineOpen] = useState(false);
-    const sidebarClickTimerRef = useRef<number | null>(null);
 
     // Custom hooks
     const { getSafeCoordsAtPos } = useSafeCoords();
@@ -322,37 +319,6 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       window.addEventListener('keydown', onKeyDown, true);
       return () => window.removeEventListener('keydown', onKeyDown, true);
     }, [hasTransientOverlay, isFocusZen, onSetFocusZen]);
-
-    useEffect(
-      () => () => {
-        if (sidebarClickTimerRef.current !== null) {
-          window.clearTimeout(sidebarClickTimerRef.current);
-          sidebarClickTimerRef.current = null;
-        }
-      },
-      [],
-    );
-
-    const handleSidebarButtonDoubleClick = () => {
-      if (sidebarClickTimerRef.current !== null) {
-        window.clearTimeout(sidebarClickTimerRef.current);
-        sidebarClickTimerRef.current = null;
-      }
-      onSetFocusZen?.(!isFocusZen);
-    };
-    const handleSidebarButtonClick = () => {
-      if (sidebarClickTimerRef.current !== null) {
-        window.clearTimeout(sidebarClickTimerRef.current);
-      }
-      sidebarClickTimerRef.current = window.setTimeout(() => {
-        sidebarClickTimerRef.current = null;
-        if (isFocusZen) {
-          onSetFocusZen?.(false);
-          return;
-        }
-        onToggleSidebar?.();
-      }, 220);
-    };
 
     // Update toolbar command runner
     useEffect(() => {

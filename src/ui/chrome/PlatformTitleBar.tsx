@@ -5,13 +5,19 @@ import { WindowsTitleBar } from './WindowsTitleBar';
 type PlatformTitleBarProps = {
   hasRecentItems: boolean;
   isSidebarVisible: boolean;
+  isFocusZen: boolean;
+  isHeaderAwake: boolean;
   onToggleSidebar: () => void;
+  onSetFocusZen: (enabled: boolean) => void;
 };
 
 export function PlatformTitleBar({
   hasRecentItems,
   isSidebarVisible,
+  isFocusZen,
+  isHeaderAwake,
   onToggleSidebar,
+  onSetFocusZen,
 }: PlatformTitleBarProps) {
   const platform = detectPlatformChrome();
 
@@ -20,7 +26,10 @@ export function PlatformTitleBar({
       <MacTitleBar
         hasRecentItems={hasRecentItems}
         isSidebarVisible={isSidebarVisible}
+        isFocusZen={isFocusZen}
+        isHeaderAwake={isHeaderAwake}
         onToggleSidebar={onToggleSidebar}
+        onSetFocusZen={onSetFocusZen}
       />
     );
   }
@@ -29,7 +38,10 @@ export function PlatformTitleBar({
     <WindowsTitleBar
       hasRecentItems={hasRecentItems}
       isSidebarVisible={isSidebarVisible}
+      isFocusZen={isFocusZen}
+      isHeaderAwake={isHeaderAwake}
       onToggleSidebar={onToggleSidebar}
+      onSetFocusZen={onSetFocusZen}
     />
   );
 }

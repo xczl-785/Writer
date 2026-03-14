@@ -47,10 +47,14 @@ describe('sidebar responsive behavior', () => {
     expect(editorTsx).toContain('... /');
   });
 
-  it('wires sidebar button double-click for focus zen and single-click delay handling', () => {
+  it('moves legacy sidebar toggle behavior into the platform title bars', () => {
     const sidebarTsx = readFileSync(join(currentDir, 'Sidebar.tsx'), 'utf-8');
     const titleBarTsx = readFileSync(
       join(currentDir, '..', 'chrome', 'WindowsTitleBar.tsx'),
+      'utf-8',
+    );
+    const macTitleBarTsx = readFileSync(
+      join(currentDir, '..', 'chrome', 'MacTitleBar.tsx'),
       'utf-8',
     );
     const editorImplTsx = readFileSync(
@@ -62,14 +66,19 @@ describe('sidebar responsive behavior', () => {
     expect(sidebarTsx).not.toContain('handleCollapseButtonDoubleClick');
     expect(sidebarTsx).not.toContain("t('sidebar.collapse')");
     expect(titleBarTsx).toContain('onToggleSidebar');
-    expect(titleBarTsx).toContain('PanelLeftClose');
-    expect(titleBarTsx).toContain('PanelLeftOpen');
-    expect(editorTsx).toContain(
-      'const sidebarClickTimerRef = useRef<number | null>(null)',
-    );
-    expect(editorTsx).toContain('window.setTimeout(() =>');
-    expect(editorTsx).toContain('handleSidebarButtonDoubleClick');
+    expect(titleBarTsx).toContain('const sidebarClickTimerRef = useRef<number | null>(null)');
+    expect(titleBarTsx).toContain('handleSidebarButtonDoubleClick');
+    expect(titleBarTsx).toContain('handleSidebarButtonClick');
+    expect(titleBarTsx).toContain('onSetFocusZen(!isFocusZen)');
+    expect(titleBarTsx).toContain('if (isFocusZen) {');
+    expect(titleBarTsx).toContain('<SidebarToggleIcon />');
+    expect(macTitleBarTsx).toContain('handleSidebarButtonDoubleClick');
+    expect(macTitleBarTsx).toContain('handleSidebarButtonClick');
+    expect(macTitleBarTsx).toContain('<SidebarToggleIcon />');
     expect(editorImplTsx).not.toContain('className="editor-header__sidebar-btn"');
     expect(editorImplTsx).not.toContain('aria-label="Expand sidebar"');
+    expect(editorImplTsx).not.toContain('const sidebarClickTimerRef = useRef<number | null>(null);');
+    expect(editorImplTsx).not.toContain('handleSidebarButtonDoubleClick');
+    expect(editorImplTsx).not.toContain('handleSidebarButtonClick');
   });
 });

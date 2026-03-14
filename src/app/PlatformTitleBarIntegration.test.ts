@@ -17,7 +17,10 @@ describe('platform title bar integration', () => {
     expect(appTsx).toContain("import { PlatformTitleBar } from '../ui/chrome'");
     expect(appTsx).toContain('<PlatformTitleBar');
     expect(appTsx).toContain('isSidebarVisible={isSidebarVisible}');
+    expect(appTsx).toContain('isFocusZen={isFocusZen}');
+    expect(appTsx).toContain('isHeaderAwake={isHeaderAwake}');
     expect(appTsx).toContain('onToggleSidebar={toggleSidebar}');
+    expect(appTsx).toContain('onSetFocusZen={applyFocusZen}');
   });
 
   it('defines a shared menu schema with windows-only tools and help groups', () => {
