@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
+import { FolderDown } from 'lucide-react';
 import { Editor } from '../ui/editor/Editor';
 import { StateDebug } from '../ui/StateDebug';
 import { Sidebar } from '../ui/sidebar/Sidebar';
@@ -44,11 +45,32 @@ import {
 import { SettingsPanel } from '../ui/components/Settings';
 import { useViewportTier } from '../ui/layout/useViewportTier';
 import { useFocusZenWakeup } from '../ui/layout/useFocusZenWakeup';
-import { openWorkspace, openWorkspaceFile } from '../workspace/WorkspaceManager';
+import {
+  handleDroppedFolderPaths,
+  openWorkspace,
+  openWorkspaceFile,
+} from '../workspace/WorkspaceManager';
+import {
+  classifyDroppedPaths,
+  extractDroppedPaths,
+} from '../workspace/droppedPaths';
 import './App.css';
 
 function flattenRecentItems(data: Awaited<ReturnType<typeof RecentItemsService.getAll>>): RecentItem[] {
   return [...data.workspaces, ...data.folders, ...data.files];
+}
+
+function isPointInsideElement(
+  element: HTMLElement | null,
+  x: number,
+  y: number,
+): boolean {
+  if (!element) {
+    return false;
+  }
+
+  const rect = element.getBoundingClientRect();
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 
 function App() {
@@ -80,6 +102,9 @@ function App() {
   const isOverlaySidebar = isMinTier && isSidebarVisible;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRecentMenuOpen, setIsRecentMenuOpen] = useState(false);
+  const [isEditorDragOver, setIsEditorDragOver] = useState(false);
+  const [isEditorDropBlocked, setIsEditorDropBlocked] = useState(false);
+  const [isSidebarDragOver, setIsSidebarDragOver] = useState(false);
   const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
   const [localePreference, setLocalePreferenceState] =
     useState<LocalePreference>(() => getLocalePreference());
@@ -93,6 +118,8 @@ function App() {
   const sidebarVisibilityRef = useRef<boolean>(isSidebarVisible);
   const sidebarVisibilityBeforeMinRef = useRef<boolean | null>(null);
   const currentPathRef = useRef(currentPath);
+  const mainDropZoneRef = useRef<HTMLElement | null>(null);
+  const sidebarDropZoneRef = useRef<HTMLDivElement | null>(null);
   const showStateDebug =
     import.meta.env.DEV && import.meta.env.VITE_SHOW_STATE_DEBUG === '1';
 
@@ -143,6 +170,30 @@ function App() {
     await openWorkspaceFile();
     await refreshRecentItems();
   }, [refreshRecentItems]);
+  const handleDroppedFolders = useCallback(
+    async (paths: string[], openInNewWorkspace: boolean) => {
+      const droppedPaths = extractDroppedPaths(
+        paths.map((path) => ({ path })),
+      );
+      const classification = await classifyDroppedPaths(
+        droppedPaths,
+        FsService.getPathKind,
+      );
+
+      if (classification.directories.length === 0) {
+        useStatusStore
+          .getState()
+          .setStatus('error', t('workspace.dragFoldersOnly'));
+        return;
+      }
+
+      await handleDroppedFolderPaths(classification.directories, {
+        openInNewWorkspace,
+      });
+      await refreshRecentItems();
+    },
+    [refreshRecentItems],
+  );
 
   // Handle selection from recent menu
   const handleSelectWorkspace = useCallback(async (path: string) => {
@@ -274,6 +325,112 @@ function App() {
     }
     enterZen(typewriterEnabledByUser);
   }, [enterZen, exitZen, isMinTier, typewriterEnabledByUser]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let mounted = true;
+
+    const clearDragState = () => {
+      if (!mounted) {
+        return;
+      }
+      setIsSidebarDragOver(false);
+      setIsEditorDragOver(false);
+      setIsEditorDropBlocked(false);
+    };
+
+    const updateDragTarget = async (paths: string[], x: number, y: number) => {
+      const classification = await classifyDroppedPaths(paths, FsService.getPathKind);
+      if (!mounted || classification.directories.length === 0) {
+        clearDragState();
+        return;
+      }
+
+      const sidebarTarget = isPointInsideElement(sidebarDropZoneRef.current, x, y);
+      const mainTarget = isPointInsideElement(mainDropZoneRef.current, x, y);
+
+      setIsSidebarDragOver(sidebarTarget);
+      setIsEditorDragOver(!hasWorkspace && !sidebarTarget && mainTarget);
+      setIsEditorDropBlocked(hasWorkspace && !sidebarTarget && mainTarget);
+    };
+
+    const registerDragDrop = async () => {
+      try {
+        unlisten = await getCurrentWindow().onDragDropEvent(async (event) => {
+          if (event.payload.type === 'leave') {
+            clearDragState();
+            return;
+          }
+
+          const scale = window.devicePixelRatio || 1;
+          const x = event.payload.position.x / scale;
+          const y = event.payload.position.y / scale;
+
+          if (event.payload.type === 'enter') {
+            await updateDragTarget(event.payload.paths, x, y);
+            return;
+          }
+
+          if (event.payload.type === 'over') {
+            const sidebarTarget = isPointInsideElement(sidebarDropZoneRef.current, x, y);
+            const mainTarget = isPointInsideElement(mainDropZoneRef.current, x, y);
+            if (!mounted) {
+              return;
+            }
+            setIsSidebarDragOver(sidebarTarget);
+            setIsEditorDragOver(!hasWorkspace && !sidebarTarget && mainTarget);
+            setIsEditorDropBlocked(hasWorkspace && !sidebarTarget && mainTarget);
+            return;
+          }
+
+          const classification = await classifyDroppedPaths(
+            event.payload.paths,
+            FsService.getPathKind,
+          );
+
+          clearDragState();
+
+          if (!mounted) {
+            return;
+          }
+
+          if (classification.directories.length === 0) {
+            useStatusStore
+              .getState()
+              .setStatus('error', t('workspace.dragFoldersOnly'));
+            return;
+          }
+
+          const droppedInSidebar = isPointInsideElement(sidebarDropZoneRef.current, x, y);
+          const droppedInMain = isPointInsideElement(mainDropZoneRef.current, x, y);
+          if (!droppedInSidebar && !droppedInMain) {
+            return;
+          }
+
+          if (hasWorkspace && droppedInMain) {
+            useStatusStore
+              .getState()
+              .setStatus('error', t('workspace.dropInEditorDisabled'));
+            return;
+          }
+
+          await handleDroppedFolderPaths(classification.directories, {
+            openInNewWorkspace: true,
+          });
+          await refreshRecentItems();
+        });
+      } catch {
+        // Ignore in non-Tauri runtimes.
+      }
+    };
+
+    void registerDragDrop();
+
+    return () => {
+      mounted = false;
+      unlisten?.();
+    };
+  }, [hasWorkspace, refreshRecentItems]);
 
   // Warm up Tauri IPC on idle time to reduce first native dialog latency.
   useEffect(() => {
@@ -411,40 +568,114 @@ function App() {
               className="fixed inset-0 z-30 bg-black/10"
               onClick={() => setIsSidebarVisible(false)}
             />
-            <div className="fixed inset-y-0 left-0 z-40">
+            <div ref={sidebarDropZoneRef} className="fixed inset-y-0 left-0 z-40">
               <Sidebar
                 onToggleVisibility={toggleSidebar}
                 onToggleFocusZen={toggleFocusZenBySidebarButton}
+                isExternalDragOver={isSidebarDragOver}
               />
             </div>
           </>
         ) : isSidebarVisible ? (
-          <Sidebar
-            onToggleVisibility={toggleSidebar}
-            onToggleFocusZen={toggleFocusZenBySidebarButton}
-          />
+          <div ref={sidebarDropZoneRef}>
+            <Sidebar
+              onToggleVisibility={toggleSidebar}
+              onToggleFocusZen={toggleFocusZenBySidebarButton}
+              isExternalDragOver={isSidebarDragOver}
+            />
+          </div>
         ) : null}
 
         {/* Main Editor Area */}
-        <main className="flex-1 flex flex-col relative min-w-0 h-full">
+        <main
+          ref={mainDropZoneRef}
+          className="flex-1 flex flex-col relative min-w-0 h-full"
+        >
           {!hasWorkspace ? (
             <EmptyStateWorkspace
               onOpenFolder={handleOpenFolder}
               onOpenWorkspace={handleOpenWorkspaceFile}
-              onDropItem={handleSelectFolder}
+              onDropItem={(paths) => {
+                void handleDroppedFolders(paths, true);
+              }}
               onSelectRecentItem={handleSelectRecentItem}
               recentItems={recentItems}
+              isDragOver={isEditorDragOver}
             />
           ) : (
-            <Editor
-              isSidebarVisible={isSidebarVisible}
-              onToggleSidebar={toggleSidebar}
-              isTypewriterActive={isTypewriterActive}
-              viewportTier={tier}
-              isFocusZen={isFocusZen}
-              isHeaderAwake={isHeaderAwake}
-              onSetFocusZen={applyFocusZen}
-            />
+            <div
+              className={`flex-1 flex flex-col min-h-0 transition-colors ${
+                isEditorDragOver ? 'bg-zinc-50' : ''
+              }`}
+              onDragEnter={(e) => {
+                if (!e.dataTransfer.types.includes('Files')) {
+                  return;
+                }
+                e.preventDefault();
+                setIsEditorDragOver(true);
+              }}
+              onDragOver={(e) => {
+                if (!e.dataTransfer.types.includes('Files')) {
+                  return;
+                }
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                setIsEditorDragOver(true);
+              }}
+              onDragLeave={(e) => {
+                if (e.currentTarget === e.target) {
+                  setIsEditorDragOver(false);
+                }
+              }}
+              onDrop={(e) => {
+                if (!e.dataTransfer.types.includes('Files')) {
+                  return;
+                }
+                e.preventDefault();
+                setIsEditorDragOver(false);
+                const paths = extractDroppedPaths(
+                  e.dataTransfer.files as FileList & {
+                    [index: number]: File & { path?: string };
+                  },
+                );
+                void handleDroppedFolders(paths, e.metaKey || e.ctrlKey);
+              }}
+            >
+              {isEditorDropBlocked ? (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white/45 backdrop-blur-[1px]">
+                  <div className="flex w-full max-w-[560px] flex-col items-center rounded-2xl border border-zinc-300 bg-white/92 px-8 py-16 shadow-sm">
+                    <div className="mb-4 rounded-full border border-zinc-300 bg-zinc-100 px-4 py-1 text-[12px] font-medium tracking-[0.08em] text-zinc-500">
+                      WORKSPACE ONLY
+                    </div>
+                    <div className="text-[26px] font-semibold text-zinc-700">
+                      {t('workspace.dropBlockedTitle')}
+                    </div>
+                    <div className="mt-3 text-[16px] text-zinc-500">
+                      {t('workspace.dropBlockedHint')}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              {isEditorDragOver ? (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/90">
+                  <div className="flex w-full max-w-[640px] flex-col items-center rounded-2xl border border-zinc-300 bg-zinc-50 px-8 py-20">
+                    <FolderDown className="mb-5 h-14 w-14 text-zinc-400" />
+                    <div className="text-[18px] font-medium text-zinc-600">
+                      添加到工作区
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              <Editor
+                isSidebarVisible={isSidebarVisible}
+                onToggleSidebar={toggleSidebar}
+                isTypewriterActive={isTypewriterActive}
+                viewportTier={tier}
+                isFocusZen={isFocusZen}
+                isHeaderAwake={isHeaderAwake}
+                onSetFocusZen={applyFocusZen}
+              />
+            </div>
           )}
         </main>
 

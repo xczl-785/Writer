@@ -13,4 +13,11 @@ describe('EmptyStateWorkspace behavior markers', () => {
   it('marks both primary actions as clickable buttons with pointer cursor styling', () => {
     expect(source).toContain('cursor-pointer');
   });
+
+  it('passes all dropped native file-system paths upstream instead of only the first item', () => {
+    expect(source).toContain('onDropItem?: (paths: string[]) => void;');
+    expect(source).toContain('isDragOver?: boolean;');
+    expect(source).toContain('const paths: string[] = [];');
+    expect(source).toContain('onDropItem(paths);');
+  });
 });

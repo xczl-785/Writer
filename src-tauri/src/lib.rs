@@ -49,6 +49,7 @@ pub fn run() {
             fs::reveal_in_file_manager,
             fs::save_image,
             fs::check_exists,
+            fs::get_path_kind,
             fs::get_git_sync_status,
             fs::detect_file_encoding,
             // Workspace commands

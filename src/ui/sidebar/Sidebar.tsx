@@ -15,11 +15,17 @@ import { fileActions } from '../../state/actions/fileActions';
 import { workspaceActions } from '../../state/actions/workspaceActions';
 import {
   addFolderToWorkspaceByDialog,
+  addFolderPathToWorkspace,
+  openWorkspaceAtPath,
   openWorkspace,
   openFile,
 } from '../../workspace/WorkspaceManager';
 import { FsService } from '../../services/fs/FsService';
 import { FsSafety } from '../../services/fs/FsSafety';
+import {
+  classifyDroppedPaths,
+  extractDroppedPaths,
+} from '../../workspace/droppedPaths';
 import type { FileNode } from '../../state/types';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
@@ -50,6 +56,7 @@ import {
   File,
   FilePlus,
   FolderPlus,
+  FolderDown,
   X,
 } from 'lucide-react';
 import { t } from '../../i18n';
@@ -131,11 +138,13 @@ function FolderIcon({ className, filled = false }: FolderIconProps) {
 type SidebarProps = {
   onToggleVisibility?: () => void;
   onToggleFocusZen?: () => void;
+  isExternalDragOver?: boolean;
 };
 
 export function Sidebar({
   onToggleVisibility,
   onToggleFocusZen,
+  isExternalDragOver = false,
 }: SidebarProps) {
   // V6 状态获取 - 使用 selector 模式
   const rootFolders = useFileTreeStore((state) => state.rootFolders);
@@ -931,7 +940,48 @@ export function Sidebar({
       onDrop={(e) => {
         e.preventDefault();
         setIsDragOver(false);
-        // Handle file drop logic here - future enhancement
+        const paths = extractDroppedPaths(
+          e.dataTransfer.files as FileList & {
+            [index: number]: File & { path?: string };
+          },
+        );
+
+        void (async () => {
+          const classification = await classifyDroppedPaths(
+            paths,
+            FsService.getPathKind,
+          );
+
+          if (classification.directories.length === 0) {
+            useStatusStore
+              .getState()
+              .setStatus('error', t('workspace.dragFoldersOnly'));
+            return;
+          }
+
+          if (rootFolders.length === 0) {
+            const [firstPath, ...restPaths] = classification.directories;
+            const opened = await openWorkspaceAtPath(firstPath);
+            if (!opened) {
+              return;
+            }
+
+            for (const path of restPaths) {
+              const added = await addFolderPathToWorkspace(path);
+              if (!added) {
+                break;
+              }
+            }
+            return;
+          }
+
+          for (const path of classification.directories) {
+            const added = await addFolderPathToWorkspace(path);
+            if (!added) {
+              break;
+            }
+          }
+        })();
       }}
     >
       {/* 侧边栏头部 - 规范 2.2.1: EXPLORER 标题 + 分隔线 */}
@@ -1071,16 +1121,16 @@ export function Sidebar({
         role="presentation"
       >
         {/* 外部文件拖拽遮罩层 */}
-        {isDragOver && (
+        {(isDragOver || isExternalDragOver) && (
           <div className="absolute inset-0 z-10 pointer-events-none">
-            {/* 半透明背景 */}
-            <div className="absolute inset-0 bg-blue-50/80 backdrop-blur-sm" />
-            {/* 虚线边框容器 */}
-            <div className="absolute inset-4 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center">
-              {/* 提示文字 */}
-              <span className="text-sm font-medium text-blue-600">
-                释放以添加到工作区
-              </span>
+            <div className="absolute inset-0 bg-zinc-50/85" />
+            <div className="absolute inset-3 flex items-center justify-center rounded-xl border border-zinc-300 bg-zinc-50">
+              <div className="flex flex-col items-center gap-3 text-zinc-500">
+                <FolderDown className="h-10 w-10 text-zinc-400" />
+                <span className="text-sm font-medium text-zinc-600">
+                  添加到工作区
+                </span>
+              </div>
             </div>
           </div>
         )}

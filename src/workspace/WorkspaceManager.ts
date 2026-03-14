@@ -5,6 +5,7 @@ import { ErrorService } from '../services/error/ErrorService';
 import { useWorkspaceStore } from '../state/slices/workspaceSlice';
 import { RecentItemsService } from '../services/recent/RecentItemsService';
 import { buildDefaultWorkspaceFileName, getWorkspaceFileBaseName } from '../ui/statusbar/workspaceIndicator';
+import { t } from '../i18n';
 
 const normalizeDialogPath = (selected: unknown): string | null => {
   const pickPath = (value: unknown): string | null => {
@@ -116,6 +117,26 @@ export const openWorkspace = async (): Promise<void> => {
   }
 };
 
+export const openWorkspaceAtPath = async (path: string): Promise<boolean> => {
+  try {
+    useStatusStore.getState().setStatus('loading', 'Loading workspace...');
+
+    const nodeCount = await workspaceActions.loadWorkspace(path);
+    await RecentItemsService.addFolder(path);
+    useStatusStore
+      .getState()
+      .setStatus('idle', `Workspace loaded: ${nodeCount} item(s)`);
+    return true;
+  } catch (error) {
+    ErrorService.handle(
+      error,
+      'Failed to load file tree',
+      'Failed to load workspace files',
+    );
+    return false;
+  }
+};
+
 export const addFolderToWorkspaceByDialog = async (): Promise<void> => {
   try {
     const selected = await open({
@@ -146,6 +167,70 @@ export const addFolderToWorkspaceByDialog = async (): Promise<void> => {
       'Failed to open add-folder dialog',
       'Failed to add folder to workspace',
     );
+  }
+};
+
+export const addFolderPathToWorkspace = async (
+  path: string,
+): Promise<boolean> => {
+  try {
+    useStatusStore.getState().setStatus('loading', 'Adding folder...');
+
+    const result = await workspaceActions.addFolderToWorkspace(path);
+    if (result.ok) {
+      await RecentItemsService.addFolder(path);
+      useStatusStore.getState().setStatus('idle', 'Folder added to workspace');
+      return true;
+    }
+
+    useStatusStore.getState().setStatus('error', result.error);
+    return false;
+  } catch (error) {
+    ErrorService.handle(
+      error,
+      'Failed to add folder to workspace',
+      'Failed to add folder to workspace',
+    );
+    return false;
+  }
+};
+
+export const handleDroppedFolderPaths = async (
+  paths: string[],
+  options: {
+    openInNewWorkspace: boolean;
+  },
+): Promise<void> => {
+  const uniquePaths = Array.from(new Set(paths));
+
+  if (uniquePaths.length === 0) {
+    useStatusStore
+      .getState()
+      .setStatus('error', t('workspace.dragFoldersOnly'));
+    return;
+  }
+
+  if (options.openInNewWorkspace) {
+    const [firstPath, ...restPaths] = uniquePaths;
+    const opened = await openWorkspaceAtPath(firstPath);
+    if (!opened) {
+      return;
+    }
+
+    for (const path of restPaths) {
+      const added = await addFolderPathToWorkspace(path);
+      if (!added) {
+        break;
+      }
+    }
+    return;
+  }
+
+  for (const path of uniquePaths) {
+    const added = await addFolderPathToWorkspace(path);
+    if (!added) {
+      break;
+    }
   }
 };
 

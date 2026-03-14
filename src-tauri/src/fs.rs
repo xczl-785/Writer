@@ -432,6 +432,25 @@ pub fn check_exists(path: &str) -> Result<bool, String> {
     Ok(Path::new(path).exists())
 }
 
+#[tauri::command]
+pub fn get_path_kind(path: &str) -> Result<String, String> {
+    let path_obj = Path::new(path);
+
+    if !path_obj.exists() {
+        return Ok("missing".to_string());
+    }
+
+    if path_obj.is_dir() {
+        return Ok("directory".to_string());
+    }
+
+    if path_obj.is_file() {
+        return Ok("file".to_string());
+    }
+
+    Ok("other".to_string())
+}
+
 fn run_git(path: &str, args: &[&str]) -> Result<String, String> {
     let mut command = Command::new("git");
     command.args(["-C", path]).args(args);

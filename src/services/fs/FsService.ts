@@ -13,6 +13,8 @@ export interface EncodingStatus {
   label: string;
 }
 
+export type PathKind = 'file' | 'directory' | 'missing' | 'other';
+
 export interface FolderPathResult {
   path: string;
   nodes: FileNode[];
@@ -83,6 +85,10 @@ export const FsService = {
 
   async checkExists(path: string): Promise<boolean> {
     return invoke('check_exists', { path });
+  },
+
+  async getPathKind(path: string): Promise<PathKind> {
+    return invoke('get_path_kind', { path });
   },
 
   async getGitSyncStatus(path: string): Promise<GitSyncStatus> {
