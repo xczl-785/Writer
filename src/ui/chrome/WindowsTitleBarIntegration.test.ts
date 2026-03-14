@@ -13,6 +13,10 @@ describe('WindowsTitleBar integration', () => {
     expect(source).toContain('data-window-focused={isWindowFocused}');
     expect(source).toContain('function BrandIcon()');
     expect(source).toContain('src="/icon.svg"');
+    expect(source).toContain('isHeaderAwake: boolean;');
+    expect(source).toContain(
+      "isFocusZen && !isHeaderAwake ? 'opacity-0 pointer-events-none' : ''",
+    );
     expect(source).toContain('windowHandle.isMaximized()');
     expect(source).toContain('windowHandle.onResized');
     expect(source).toContain('windowHandle.onFocusChanged');

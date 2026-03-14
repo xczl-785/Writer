@@ -559,7 +559,10 @@ function App() {
       <PlatformTitleBar
         hasRecentItems={recentItems.length > 0}
         isSidebarVisible={isSidebarVisible}
+        isFocusZen={isFocusZen}
+        isHeaderAwake={isHeaderAwake}
         onToggleSidebar={toggleSidebar}
+        onSetFocusZen={applyFocusZen}
       />
       <div className="flex-grow flex overflow-hidden">
         {isOverlaySidebar ? (
