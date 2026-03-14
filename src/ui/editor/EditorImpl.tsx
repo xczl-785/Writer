@@ -11,8 +11,6 @@ import {
 } from 'react';
 import { useEditor, type Editor as TiptapEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Highlight from '@tiptap/extension-highlight';
-import { TaskItem, TaskList } from '@tiptap/extension-list';
 import Image from '@tiptap/extension-image';
 import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
@@ -115,9 +113,8 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
     },
     ref,
   ) => {
-    const folders = useWorkspaceStore((state) => state.folders);
-    const currentPath = folders[0]?.path ?? null;
-    const activeFile = useWorkspaceStore((state) => state.activeFile);
+    const { activeFile, folders } = useWorkspaceStore();
+    const currentPath = folders[0]?.path;
     const { setStatus } = useStatusStore();
     const { setSelectedPath, expandNode } = useFileTreeStore();
     const { fileStates, updateFileContent, setDirty } = useEditorStore();
@@ -200,9 +197,6 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         findReplaceShortcutExtension,
         BlockBoundaryExtension.configure({ showCodeBlock: false }),
         StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
-        Highlight,
-        TaskList,
-        TaskItem.configure({ nested: true }),
         Table.configure({ resizable: true, allowTableNodeSelection: false }),
         TableRow,
         BaseTableHeader.extend({

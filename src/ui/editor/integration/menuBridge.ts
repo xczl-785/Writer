@@ -36,7 +36,10 @@ export function attachEditorMenuBridge({
     setStatus,
     setOutlineOpen,
   );
-  window.addEventListener('writer:editor-command', onMenuCommand as EventListener);
+  window.addEventListener(
+    'writer:editor-command',
+    onMenuCommand as EventListener,
+  );
 
   return () => {
     window.removeEventListener(
@@ -45,4 +48,3 @@ export function attachEditorMenuBridge({
     );
   };
 }
-

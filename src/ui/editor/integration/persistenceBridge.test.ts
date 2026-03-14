@@ -51,4 +51,3 @@ describe('persistenceBridge', () => {
     expect(AutosaveService.flush).toHaveBeenCalledWith('/a.md');
   });
 });
-

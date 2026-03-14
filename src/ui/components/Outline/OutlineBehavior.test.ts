@@ -26,7 +26,9 @@ describe('Outline behavior', () => {
   });
 
   it('clamps heading position before text selection jump', () => {
-    expect(extractorTs).toContain('const maxPos = editor.state.doc.content.size');
+    expect(extractorTs).toContain(
+      'const maxPos = editor.state.doc.content.size',
+    );
     expect(extractorTs).toContain(
       'const safePos = Math.min(Math.max(item.position, 1), Math.max(1, maxPos));',
     );

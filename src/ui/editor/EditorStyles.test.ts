@@ -119,7 +119,10 @@ describe('Editor toolbar MVP', () => {
   });
 
   it('does not force editor content to fixed full height', () => {
-    const editorImplTsx = readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
+    const editorImplTsx = readFileSync(
+      join(currentDir, 'EditorImpl.tsx'),
+      'utf-8',
+    );
     expect(editorImplTsx).toContain(
       "attributes: { class: 'editor-content focus:outline-none' }",
     );

@@ -4,6 +4,8 @@ export const EXPLORER_COMMANDS = {
   RENAME: 'explorer.rename',
   DELETE: 'explorer.delete',
   OPEN_WORKSPACE: 'explorer.openWorkspace',
+  MOVE_UP: 'explorer.moveUp',
+  MOVE_DOWN: 'explorer.moveDown',
 } as const;
 
 export type ExplorerCommandId =
@@ -18,6 +20,8 @@ interface ExplorerCommandContext {
   beginRenameSelection: () => void;
   requestDeleteSelection: () => void;
   showWorkspaceRequiredAlert: () => void;
+  moveSelectionUp?: () => void;
+  moveSelectionDown?: () => void;
 }
 
 export const dispatchExplorerCommand = (
@@ -53,6 +57,18 @@ export const dispatchExplorerCommand = (
         return;
       }
       ctx.requestDeleteSelection();
+      return;
+    case EXPLORER_COMMANDS.MOVE_UP:
+      if (!ctx.hasWorkspace || !ctx.hasSelection) {
+        return;
+      }
+      ctx.moveSelectionUp?.();
+      return;
+    case EXPLORER_COMMANDS.MOVE_DOWN:
+      if (!ctx.hasWorkspace || !ctx.hasSelection) {
+        return;
+      }
+      ctx.moveSelectionDown?.();
       return;
     default:
       return;

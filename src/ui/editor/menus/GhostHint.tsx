@@ -27,7 +27,9 @@ export function GhostHint({ position }: GhostHintProps) {
       }}
     >
       <span className="editor-ghost-slash__text">{t('ghostHint.prefix')}</span>
-      <kbd className="editor-ghost-slash__trigger">{t('ghostHint.trigger')}</kbd>
+      <kbd className="editor-ghost-slash__trigger">
+        {t('ghostHint.trigger')}
+      </kbd>
       <span className="editor-ghost-slash__text">{t('ghostHint.suffix')}</span>
     </div>
   );

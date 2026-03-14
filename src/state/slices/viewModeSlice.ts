@@ -14,47 +14,48 @@ export interface ViewModeActions {
   syncTypewriterFromUserPreference: (enabledByUser: boolean) => void;
 }
 
-export const useViewModeStore = create<ViewModeState & ViewModeActions>((set) => ({
-  isZen: false,
-  isFocusZen: false,
-  isTypewriterActive: false,
-  typewriterRestoreSnapshot: null,
+export const useViewModeStore = create<ViewModeState & ViewModeActions>(
+  (set) => ({
+    isZen: false,
+    isFocusZen: false,
+    isTypewriterActive: false,
+    typewriterRestoreSnapshot: null,
 
-  enterZen: (userTypewriterPreference) =>
-    set((state) => {
-      if (state.isZen) {
-        return state;
-      }
-      return {
-        isZen: true,
+    enterZen: (userTypewriterPreference) =>
+      set((state) => {
+        if (state.isZen) {
+          return state;
+        }
+        return {
+          isZen: true,
+          isFocusZen: false,
+          isTypewriterActive: true,
+          typewriterRestoreSnapshot: userTypewriterPreference,
+        };
+      }),
+
+    exitZen: () =>
+      set((state) => ({
+        isZen: false,
         isFocusZen: false,
-        isTypewriterActive: true,
-        typewriterRestoreSnapshot: userTypewriterPreference,
-      };
-    }),
+        isTypewriterActive: state.typewriterRestoreSnapshot ?? false,
+        typewriterRestoreSnapshot: null,
+      })),
 
-  exitZen: () =>
-    set((state) => ({
-      isZen: false,
-      isFocusZen: false,
-      isTypewriterActive: state.typewriterRestoreSnapshot ?? false,
-      typewriterRestoreSnapshot: null,
-    })),
+    setFocusZen: (enabled) =>
+      set((state) =>
+        state.isFocusZen === enabled ? state : { isFocusZen: enabled },
+      ),
 
-  setFocusZen: (enabled) =>
-    set((state) =>
-      state.isFocusZen === enabled ? state : { isFocusZen: enabled },
-    ),
-
-  syncTypewriterFromUserPreference: (enabledByUser) =>
-    set((state) => {
-      if (state.isZen) {
-        return state;
-      }
-      if (state.isTypewriterActive === enabledByUser) {
-        return state;
-      }
-      return { isTypewriterActive: enabledByUser };
-    }),
-}));
-
+    syncTypewriterFromUserPreference: (enabledByUser) =>
+      set((state) => {
+        if (state.isZen) {
+          return state;
+        }
+        if (state.isTypewriterActive === enabledByUser) {
+          return state;
+        }
+        return { isTypewriterActive: enabledByUser };
+      }),
+  }),
+);

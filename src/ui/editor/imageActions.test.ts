@@ -68,6 +68,11 @@ const createWorkspaceState = (
   isDirty: false,
   openFiles: [],
   activeFile: null,
+  setWorkspaceFile: vi.fn(),
+  renameFolder: vi.fn(),
+  reorderFolders: vi.fn(),
+  moveFolderUp: vi.fn(),
+  moveFolderDown: vi.fn(),
   addFolder: vi.fn(),
   removeFolder: vi.fn(),
   openFile: vi.fn(),
@@ -76,6 +81,8 @@ const createWorkspaceState = (
   renameFile: vi.fn(),
   removePath: vi.fn(),
   setDirty: vi.fn(),
+  restoreState: vi.fn(),
+  clearState: vi.fn(),
   ...partial,
 });
 

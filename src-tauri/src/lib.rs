@@ -1,6 +1,12 @@
 pub mod fs;
 pub mod menu;
+pub mod security;
+pub mod watcher;
+
+use security::WorkspaceAllowlist;
+use std::sync::Mutex;
 use tauri::AppHandle;
+use watcher::WatcherState;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -18,7 +24,11 @@ fn set_menu_locale(app: AppHandle, locale: String) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
+    let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        // 注册全局状态管理
+        .manage(Mutex::new(WorkspaceAllowlist::default())) // WorkspaceAllowlist 安全守卫
+        .manage(Mutex::new(WatcherState::default())); // 文件监听器状态
 
     builder = builder.on_menu_event(|app, event| {
         menu::emit_menu_command(app, event.id().as_ref());
@@ -29,6 +39,7 @@ pub fn run() {
             greet,
             set_menu_locale,
             fs::list_tree,
+            fs::list_tree_batch,
             fs::read_file,
             fs::write_file_atomic,
             fs::create_file,
@@ -38,8 +49,27 @@ pub fn run() {
             fs::reveal_in_file_manager,
             fs::save_image,
             fs::check_exists,
+            fs::get_path_kind,
             fs::get_git_sync_status,
-            fs::detect_file_encoding
+            fs::detect_file_encoding,
+            // Workspace commands
+            fs::parse_workspace_file,
+            fs::save_workspace_file,
+            fs::resolve_relative_path,
+            // App config commands
+            fs::get_app_config_dir,
+            fs::read_json_file,
+            fs::write_json_file,
+            // Workspace lock commands
+            fs::check_workspace_lock,
+            fs::acquire_workspace_lock,
+            fs::release_workspace_lock,
+            fs::force_release_workspace_lock,
+            // Watcher commands
+            watcher::start_watching,
+            watcher::stop_watching,
+            watcher::update_watch_paths,
+            watcher::get_watcher_status,
         ])
         .setup(|app| {
             let native_menu = menu::build_native_menu(&app.handle())?;

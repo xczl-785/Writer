@@ -6,7 +6,10 @@ import { fileURLToPath } from 'node:url';
 describe('StatusBar visual spec', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const statusCss = readFileSync(join(currentDir, 'StatusBar.css'), 'utf-8');
-  const indexCss = readFileSync(join(currentDir, '..', '..', 'index.css'), 'utf-8');
+  const indexCss = readFileSync(
+    join(currentDir, '..', '..', 'index.css'),
+    'utf-8',
+  );
 
   it('uses hairline token and dpr>=2 override', () => {
     expect(statusCss).toContain('border-top: var(--hairline-width) solid');

@@ -22,7 +22,8 @@ describe('Editor slash menu behavior', () => {
     readFileSync(join(currentDir, 'hooks', 'useGhostHint.ts'), 'utf-8');
   const readGhostHint = () =>
     readFileSync(join(currentDir, 'menus', 'GhostHint.tsx'), 'utf-8');
-  const readEditorImpl = () => readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
+  const readEditorImpl = () =>
+    readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
   const readMessages = () =>
     readFileSync(join(currentDir, '../../i18n/messages.ts'), 'utf-8');
 
@@ -36,7 +37,9 @@ describe('Editor slash menu behavior', () => {
     const slashEligibilityTs = readSlashEligibility();
     expect(slashEligibilityTs).toContain('isStrictSlashTriggerEligible');
     expect(slashEligibilityTs).toContain('$from.depth !== 1');
-    expect(slashEligibilityTs).toContain("$from.parent.type.name !== 'paragraph'");
+    expect(slashEligibilityTs).toContain(
+      "$from.parent.type.name !== 'paragraph'",
+    );
     expect(slashEligibilityTs).toContain('$from.parent.content.size === 0');
   });
 
