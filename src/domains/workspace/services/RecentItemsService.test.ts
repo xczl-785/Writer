@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock FsService before importing
-vi.mock('../fs/FsService', () => ({
+vi.mock('../../file/services/FsService', () => ({
   FsService: {
     getAppConfigDir: vi.fn(() => Promise.resolve('/mock/config/dir')),
     checkExists: vi.fn(() => Promise.resolve(false)),
@@ -18,7 +18,7 @@ vi.mock('../fs/FsService', () => ({
   },
 }));
 
-import { FsService } from '../fs/FsService';
+import { FsService } from '../../file/services/FsService';
 import { RecentItemsService } from './RecentItemsService';
 
 const mockFsService = vi.mocked(FsService);

@@ -6,12 +6,12 @@ import { fileURLToPath } from 'node:url';
 describe('Typewriter fallback integration', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const hookTs = readFileSync(
-    join(currentDir, 'hooks', 'useTypewriterAnchor.ts'),
+    join(currentDir, '..', 'hooks', 'useTypewriterAnchor.ts'),
     'utf-8',
   );
-  const findTs = readFileSync(join(currentDir, 'useFindReplace.ts'), 'utf-8');
+  const findTs = readFileSync(join(currentDir, '..', 'hooks', 'useFindReplace.ts'), 'utf-8');
   const outlineExtractorTs = readFileSync(
-    join(currentDir, '..', 'components', 'Outline', 'useOutlineExtractor.ts'),
+    join(currentDir, '..', '..', '..', 'shared', 'components', 'Outline', 'useOutlineExtractor.ts'),
     'utf-8',
   );
 

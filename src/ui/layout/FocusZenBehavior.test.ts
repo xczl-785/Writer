@@ -10,13 +10,15 @@ describe('focus zen behavior wiring', () => {
     'utf-8',
   );
   const editorTsx = readFileSync(
-    join(currentDir, '..', 'editor', 'Editor.tsx'),
+    join(currentDir, '..', '..', 'domains', 'editor', 'core', 'Editor.tsx'),
     'utf-8',
   );
   const focusZenDomainTs = readFileSync(
     join(
       currentDir,
       '..',
+      '..',
+      'domains',
       'editor',
       'domain',
       'focusZen',
@@ -25,7 +27,7 @@ describe('focus zen behavior wiring', () => {
     'utf-8',
   );
   const shellTsx = readFileSync(
-    join(currentDir, '..', 'editor', 'components', 'EditorShell.tsx'),
+    join(currentDir, '..', '..', 'domains', 'editor', 'ui', 'components', 'EditorShell.tsx'),
     'utf-8',
   );
   const statusTsx = readFileSync(
@@ -33,7 +35,7 @@ describe('focus zen behavior wiring', () => {
     'utf-8',
   );
   const editorCss = readFileSync(
-    join(currentDir, '..', 'editor', 'Editor.css'),
+    join(currentDir, '..', '..', 'domains', 'editor', 'core', 'Editor.css'),
     'utf-8',
   );
   const statusCss = readFileSync(

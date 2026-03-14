@@ -1,4 +1,4 @@
-import { FIND_MATCH_LIMIT } from '../../constants';
+import { FIND_MATCH_LIMIT } from '../../core/constants';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 
 export type FindTextMatch = {

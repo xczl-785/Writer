@@ -68,9 +68,7 @@ export function EditorShell({
 
     let rafId: number | null = null;
     const syncOffsetVariable = () => {
-      const findPanel = root.querySelector(
-        '.editor-find-panel',
-      ) as HTMLElement | null;
+      const findPanel = root.querySelector('.editor-find-panel') as HTMLElement | null;
 
       let offsetTop = 0;
       if (findPanel) {
@@ -95,9 +93,7 @@ export function EditorShell({
 
     const observer = new ResizeObserver(() => scheduleSync());
     observer.observe(scrollContainer);
-    const findPanel = root.querySelector(
-      '.editor-find-panel',
-    ) as HTMLElement | null;
+    const findPanel = root.querySelector('.editor-find-panel') as HTMLElement | null;
     if (findPanel) {
       observer.observe(findPanel);
     }

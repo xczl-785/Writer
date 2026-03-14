@@ -1,7 +1,7 @@
 import React from 'react';
-import { useWorkspaceStore } from '../state/slices/workspaceSlice';
-import { useFileTreeStore } from '../state/slices/filetreeSlice';
-import { useEditorStore } from '../state/slices/editorSlice';
+import { useWorkspaceStore } from '../domains/workspace/state/workspaceStore';
+import { useFileTreeStore } from '../domains/file/state/fileStore';
+import { useEditorStore } from '../domains/editor/state/editorStore';
 import { useStatusStore } from '../state/slices/statusSlice';
 
 export const StateDebug: React.FC = () => {

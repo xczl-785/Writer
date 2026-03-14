@@ -4,7 +4,7 @@ import {
   createContextMenuOpener,
   type ContextMenuOpener,
 } from '../handlers/contextMenuHandler';
-import type { MenuItem } from '../../components/ContextMenu/contextMenuRegistry';
+import type { MenuItem } from '../../../shared/components/ContextMenu/contextMenuRegistry';
 
 type ContextMenuPort = {
   open: (x: number, y: number, items: MenuItem[]) => void;

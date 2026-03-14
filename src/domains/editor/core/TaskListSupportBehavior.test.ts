@@ -5,12 +5,16 @@ import { fileURLToPath } from 'node:url';
 
 describe('Task list editor support', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const editorImplTs = readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
+  // TaskList and TaskItem extensions are registered in MarkdownService
+  const markdownServiceTs = readFileSync(
+    join(currentDir, '../../../services/markdown/MarkdownService.ts'),
+    'utf-8',
+  );
 
   it('registers task list extensions in the editor runtime', () => {
-    expect(editorImplTs).toContain('@tiptap/extension-list');
-    expect(editorImplTs).toContain('TaskList');
-    expect(editorImplTs).toContain('TaskItem');
-    expect(editorImplTs).toContain('TaskItem.configure({ nested: true })');
+    expect(markdownServiceTs).toContain('@tiptap/extension-list');
+    expect(markdownServiceTs).toContain('TaskList');
+    expect(markdownServiceTs).toContain('TaskItem');
+    expect(markdownServiceTs).toContain('TaskItem.configure({ nested: true })');
   });
 });

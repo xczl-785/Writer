@@ -2,8 +2,8 @@ import {
   getWorkspaceType,
   isUntitledWorkspace,
   type WorkspaceState,
-} from '../domains/workspace/state/workspaceStore';
-import { t } from '../../i18n';
+} from '../../domains/workspace/state/workspaceStore';
+import { t } from '../../shared/i18n';
 
 const WORKSPACE_FILE_SUFFIX = '.writer-workspace';
 

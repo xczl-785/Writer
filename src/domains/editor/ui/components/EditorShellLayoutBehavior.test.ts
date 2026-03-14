@@ -6,7 +6,10 @@ import { fileURLToPath } from 'node:url';
 describe('EditorShell layout behavior', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const shellTsx = readFileSync(join(currentDir, 'EditorShell.tsx'), 'utf-8');
-  const editorCss = readFileSync(join(currentDir, '..', 'Editor.css'), 'utf-8');
+  const editorCss = readFileSync(
+    join(currentDir, '..', '..', 'core', 'Editor.css'),
+    'utf-8',
+  );
 
   it('keeps find panel in normal flow ahead of editor content', () => {
     const findPanelIndex = shellTsx.indexOf('{findReplacePanel}');

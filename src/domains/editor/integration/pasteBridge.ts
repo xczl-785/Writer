@@ -1,5 +1,5 @@
 import type { Editor as TiptapEditor } from '@tiptap/react';
-import { createHandleDOMEvents } from '../pasteHandler';
+import { createHandleDOMEvents } from '../hooks/pasteHandler';
 
 type EditorRef = { current: TiptapEditor | null };
 type EditorAwarePasteHandler = (

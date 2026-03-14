@@ -2,7 +2,7 @@ import { MESSAGES, type AppLocale } from './messages';
 import {
   useSettingsStore,
   type SettingsLocalePreference,
-} from '../state/slices/settingsSlice';
+} from '../../domains/settings/state/settingsStore';
 
 const DEFAULT_LOCALE: AppLocale = 'zh-CN';
 

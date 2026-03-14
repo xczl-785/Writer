@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { openFile } from './WorkspaceManager';
 import { useWorkspaceStore } from '../state/workspaceStore';
-import { useEditorStore } from '../../../state/slices/editorSlice';
+import { useEditorStore } from '../../editor/state/editorStore';
 import { useStatusStore } from '../../../state/slices/statusSlice';
-import { FsService } from '../../../services/fs/FsService';
-import { AutosaveService } from '../../../services/autosave/AutosaveService';
+import { FsService } from '../../file/services/FsService';
+import { AutosaveService } from '../../file/services/AutosaveService';
 
-vi.mock('../../../services/fs/FsService', () => ({
+vi.mock('../../file/services/FsService', () => ({
   FsService: {
     readFile: vi.fn(),
   },
 }));
 
-vi.mock('../../../services/autosave/AutosaveService', () => ({
+vi.mock('../../file/services/AutosaveService', () => ({
   AutosaveService: {
     flush: vi.fn(),
   },

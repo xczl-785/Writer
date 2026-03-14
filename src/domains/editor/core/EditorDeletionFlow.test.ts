@@ -8,7 +8,7 @@ describe('Deletion flow boundaries', () => {
   const readEditor = () =>
     readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
   const readSidebar = () =>
-    readFileSync(join(currentDir, '../sidebar/Sidebar.tsx'), 'utf-8');
+    readFileSync(join(currentDir, '..', '..', '..', 'ui', 'sidebar', 'Sidebar.tsx'), 'utf-8');
 
   it('uses confirm dialog in file-tree deletion path', () => {
     const sidebarTsx = readSidebar();

@@ -489,10 +489,7 @@ export function useSlashMenu({
     dom.addEventListener('keydown', handleKeyDown, true);
     dom.addEventListener('beforeinput', handleBeforeInput as EventListener);
     dom.addEventListener('compositionstart', handleCompositionStart);
-    dom.addEventListener(
-      'compositionend',
-      handleCompositionEnd as EventListener,
-    );
+    dom.addEventListener('compositionend', handleCompositionEnd as EventListener);
     window.addEventListener('mousedown', handlePointerDown);
     editor.on('blur', handleBlur);
 
@@ -503,10 +500,10 @@ export function useSlashMenu({
         handleBeforeInput as EventListener,
       );
       dom?.removeEventListener('compositionstart', handleCompositionStart);
-      dom?.removeEventListener(
-        'compositionend',
-        handleCompositionEnd as EventListener,
-      );
+        dom?.removeEventListener(
+          'compositionend',
+          handleCompositionEnd as EventListener,
+        );
       window.removeEventListener('mousedown', handlePointerDown);
       editor.off('blur', handleBlur);
     };

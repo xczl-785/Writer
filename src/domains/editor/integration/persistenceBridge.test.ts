@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { flushEditorOnBlur, persistEditorUpdate } from './persistenceBridge';
 import { MarkdownService } from '../../../services/markdown/MarkdownService';
-import { AutosaveService } from '../../../services/autosave/AutosaveService';
+import { AutosaveService } from '../../file/services/AutosaveService';
 
 vi.mock('../../../services/markdown/MarkdownService', () => ({
   MarkdownService: {
@@ -10,7 +10,7 @@ vi.mock('../../../services/markdown/MarkdownService', () => ({
   },
 }));
 
-vi.mock('../../../services/autosave/AutosaveService', () => ({
+vi.mock('../../file/services/AutosaveService', () => ({
   AutosaveService: {
     schedule: vi.fn(),
     flush: vi.fn(),

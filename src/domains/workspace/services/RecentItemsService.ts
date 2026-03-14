@@ -8,7 +8,7 @@
  * @see docs/current/阶段文档/V6-工作区交互设计规范.md - 2.5 最近项目菜单
  */
 
-import { FsService } from '../fs/FsService';
+import { FsService } from '../../file/services/FsService';
 
 export type RecentItemType = 'workspace' | 'folder' | 'file';
 

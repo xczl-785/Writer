@@ -5,7 +5,7 @@ import { createContextMenuOpener } from './contextMenuHandler';
 import {
   isMenuItem,
   type MenuItem,
-} from '../../components/ContextMenu/contextMenuRegistry';
+} from '../../../shared/components/ContextMenu/contextMenuRegistry';
 
 describe('createContextMenuOpener', () => {
   const chain = {

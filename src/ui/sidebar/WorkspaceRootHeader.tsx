@@ -6,7 +6,7 @@ import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { t } from '../../shared/i18n';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { getWorkspaceRootMenuItems } from '../components/ContextMenu/workspaceRootMenu';
-import { workspaceActions } from '../domains/workspace/services/workspaceActions';
+import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 import { FsService } from '../../services/fs/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';

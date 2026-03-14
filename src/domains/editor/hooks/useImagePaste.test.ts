@@ -1,30 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Editor } from '@tiptap/react';
 import { useImagePaste, generateUniqueFilename } from './useImagePaste';
-import { getRelativePath } from '../../utils/pathUtils';
-import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
-import { FsService } from '../../services/fs/FsService';
-import { useStatusStore } from '../../state/slices/statusSlice';
-import { ImageResolver } from '../../services/images/ImageResolver';
+import { getRelativePath } from '../../../shared/utils/pathUtils';
+import { useWorkspaceStore } from '../../workspace/state/workspaceStore';
+import { FsService } from '../../file/services/FsService';
+import { useStatusStore } from '../../../state/slices/statusSlice';
+import { ImageResolver } from '../../../services/images/ImageResolver';
 
-vi.mock('../../state/slices/workspaceSlice', () => ({
+vi.mock('../../workspace/state/workspaceStore', () => ({
   useWorkspaceStore: vi.fn(),
 }));
 
-vi.mock('../../state/slices/statusSlice', () => ({
+vi.mock('../../../state/slices/statusSlice', () => ({
   useStatusStore: {
     getState: vi.fn(),
   },
 }));
 
-vi.mock('../../services/fs/FsService', () => ({
+vi.mock('../../file/services/FsService', () => ({
   FsService: {
     saveImage: vi.fn(),
     checkExists: vi.fn(),
   },
 }));
 
-vi.mock('../../services/images/ImageResolver', () => ({
+vi.mock('../../../services/images/ImageResolver', () => ({
   ImageResolver: {
     resolve: vi.fn(),
   },
