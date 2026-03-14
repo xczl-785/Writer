@@ -11,11 +11,14 @@ type WindowsTitleBarProps = {
 
 const SIDEBAR_WIDTH = 256;
 
-function PlaceholderBrandIcon() {
+function BrandIcon() {
   return (
-    <div className="flex h-6 w-6 items-center justify-center rounded-md border border-zinc-300 bg-white/80">
-      <div className="h-2.5 w-2.5 rounded-[3px] bg-zinc-900" />
-    </div>
+    <img
+      src="/icon.svg"
+      alt="Writer"
+      className="h-6 w-6 object-contain"
+      draggable={false}
+    />
   );
 }
 
@@ -43,6 +46,17 @@ async function closeWindow(): Promise<void> {
   }
 }
 
+function isInteractiveTarget(target: HTMLElement | null): boolean {
+  if (target?.closest('button')) {
+    return true;
+  }
+
+  return (
+    target?.closest('[role="button"], a, input, textarea, select, [data-no-drag]') !==
+    null
+  );
+}
+
 export function WindowsTitleBar({
   hasRecentItems,
   isSidebarVisible,
@@ -51,6 +65,9 @@ export function WindowsTitleBar({
   const [isMaximized, setIsMaximized] = useState(false);
   const [isWindowFocused, setIsWindowFocused] = useState(true);
   const leftWidth = isSidebarVisible ? SIDEBAR_WIDTH : 0;
+  const rootInsetClass = isMaximized ? 'px-[8px] pt-[8px]' : '';
+  const sidebarSurfaceClass = isMaximized ? 'rounded-tl-[10px]' : '';
+  const mainSurfaceClass = isMaximized ? 'rounded-tr-[10px]' : '';
 
   useEffect(() => {
     let mounted = true;
@@ -104,93 +121,127 @@ export function WindowsTitleBar({
     event: ReactMouseEvent<HTMLDivElement>,
   ): void {
     const target = event.target as HTMLElement | null;
-    if (target?.closest('button')) {
+    if (isInteractiveTarget(target)) {
       return;
     }
 
     void toggleMaximizeWindow();
   }
 
+  function beginWindowDrag(
+    event: ReactMouseEvent<HTMLDivElement>,
+  ): void {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (isInteractiveTarget(target)) {
+      return;
+    }
+
+    const windowHandle = getCurrentWindow();
+    void windowHandle.startDragging().catch(() => {
+      // Ignore outside Tauri runtime.
+    });
+  }
+
   return (
     <div
-      className={`flex h-10 shrink-0 select-none border-b bg-white transition-colors ${
-        isWindowFocused ? 'border-zinc-200' : 'border-zinc-100'
-      }`}
+      className={`flex shrink-0 select-none bg-white transition-[padding,background-color] duration-150 ${rootInsetClass}`}
+      data-window-focused={isWindowFocused}
+      data-window-maximized={isMaximized}
       onDoubleClick={handleTitleBarDoubleClick}
     >
       <div
-        className={`flex items-center gap-3 overflow-hidden bg-zinc-50 px-3 transition-[width,padding,border,background-color] duration-300 ${
-          isWindowFocused ? 'border-r border-zinc-200' : 'border-r border-zinc-100 bg-zinc-50/80'
+        className={`flex h-10 min-w-0 flex-1 border-b bg-white transition-colors ${
+          isWindowFocused ? 'border-zinc-200' : 'border-zinc-100'
         }`}
-        data-tauri-drag-region
-        style={{
-          width: leftWidth,
-          paddingLeft: isSidebarVisible ? 12 : 0,
-          paddingRight: isSidebarVisible ? 12 : 0,
-          borderRightWidth: isSidebarVisible ? 1 : 0,
-        }}
       >
-        <PlaceholderBrandIcon />
-        <span className="text-[13px] font-semibold tracking-tight text-zinc-900">
-          Writer
-        </span>
-      </div>
+        <div
+          className={`flex items-center gap-3 overflow-hidden bg-zinc-50 px-3 transition-[width,padding,border,background-color,border-radius] duration-300 ${sidebarSurfaceClass} ${
+            isWindowFocused
+              ? 'border-r border-zinc-200'
+              : 'border-r border-zinc-100 bg-zinc-50/80'
+          }`}
+          data-tauri-drag-region
+          onMouseDown={beginWindowDrag}
+          style={{
+            width: leftWidth,
+            paddingLeft: isSidebarVisible ? 12 : 0,
+            paddingRight: isSidebarVisible ? 12 : 0,
+            borderRightWidth: isSidebarVisible ? 1 : 0,
+          }}
+        >
+          <BrandIcon />
+          <span className="text-[13px] font-semibold tracking-tight text-zinc-900">
+            Writer
+          </span>
+        </div>
 
-      <div className="relative flex min-w-0 flex-1 items-center bg-white">
-        <div className="absolute inset-0" data-tauri-drag-region />
-        <div className="relative z-10 flex min-w-0 flex-1 items-center pointer-events-none">
-          <div className="flex items-center gap-2 px-2 pointer-events-auto">
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-              aria-label="Toggle Sidebar"
-              title="Toggle Sidebar"
-            >
-              {isSidebarVisible ? (
-                <PanelLeftClose className="h-[18px] w-[18px]" />
-              ) : (
-                <PanelLeftOpen className="h-[18px] w-[18px]" />
-              )}
-            </button>
-            <WindowsMenuBar
-              hasRecentItems={hasRecentItems}
-              isSidebarVisible={isSidebarVisible}
-              platform="windows"
+        <div
+          className={`relative flex min-w-0 flex-1 items-center bg-white transition-[border-radius] duration-150 ${mainSurfaceClass}`}
+          data-tauri-drag-region
+          onMouseDown={beginWindowDrag}
+        >
+          <div className="relative z-10 flex min-w-0 flex-1 items-center pointer-events-none">
+            <div className="flex items-center gap-2 px-2 pointer-events-auto">
+              <button
+                type="button"
+                onClick={onToggleSidebar}
+                className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                aria-label="Toggle Sidebar"
+                title="Toggle Sidebar"
+              >
+                {isSidebarVisible ? (
+                  <PanelLeftClose className="h-[18px] w-[18px]" />
+                ) : (
+                  <PanelLeftOpen className="h-[18px] w-[18px]" />
+                )}
+              </button>
+              <WindowsMenuBar
+                hasRecentItems={hasRecentItems}
+                isSidebarVisible={isSidebarVisible}
+                platform="windows"
+              />
+            </div>
+
+            <div
+              className="min-w-0 flex-1 self-stretch"
+              data-tauri-drag-region
+              onMouseDown={beginWindowDrag}
             />
-          </div>
 
-          <div className="min-w-0 flex-1" />
-
-          <div className="flex items-center pointer-events-auto">
-            <button
-              type="button"
-              className="flex h-10 w-[46px] items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-100 active:bg-zinc-200"
-              onClick={() => void minimizeWindow()}
-              aria-label="Minimize"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              className="flex h-10 w-[46px] items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-100 active:bg-zinc-200"
-              onClick={() => void toggleMaximizeWindow()}
-              aria-label="Toggle Maximize"
-            >
-              {isMaximized ? (
-                <Copy className="h-[13px] w-[13px]" />
-              ) : (
-                <Square className="h-[13px] w-[13px]" />
-              )}
-            </button>
-            <button
-              type="button"
-              className="flex h-10 w-[46px] items-center justify-center text-zinc-600 transition-colors hover:bg-red-500 hover:text-white active:bg-red-600"
-              onClick={() => void closeWindow()}
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center pointer-events-auto">
+              <button
+                type="button"
+                className="flex h-10 w-[46px] items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-100 active:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                onClick={() => void minimizeWindow()}
+                aria-label="Minimize"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                className="flex h-10 w-[46px] items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-100 active:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                onClick={() => void toggleMaximizeWindow()}
+                aria-label="Toggle Maximize"
+              >
+                {isMaximized ? (
+                  <Copy className="h-[13px] w-[13px]" />
+                ) : (
+                  <Square className="h-[13px] w-[13px]" />
+                )}
+              </button>
+              <button
+                type="button"
+                className="flex h-10 w-[46px] items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-red-500 hover:text-white active:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+                onClick={() => void closeWindow()}
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
