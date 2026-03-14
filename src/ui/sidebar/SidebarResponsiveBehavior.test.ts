@@ -53,6 +53,10 @@ describe('sidebar responsive behavior', () => {
       join(currentDir, '..', 'chrome', 'WindowsTitleBar.tsx'),
       'utf-8',
     );
+    const editorImplTsx = readFileSync(
+      join(currentDir, '..', '..', 'domains', 'editor', 'core', 'EditorImpl.tsx'),
+      'utf-8',
+    );
     expect(sidebarTsx).not.toContain('onToggleFocusZen?: () => void;');
     expect(sidebarTsx).not.toContain('handleCollapseButtonClick');
     expect(sidebarTsx).not.toContain('handleCollapseButtonDoubleClick');
@@ -65,5 +69,7 @@ describe('sidebar responsive behavior', () => {
     );
     expect(editorTsx).toContain('window.setTimeout(() =>');
     expect(editorTsx).toContain('handleSidebarButtonDoubleClick');
+    expect(editorImplTsx).not.toContain('className="editor-header__sidebar-btn"');
+    expect(editorImplTsx).not.toContain('aria-label="Expand sidebar"');
   });
 });
