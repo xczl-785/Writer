@@ -10,10 +10,11 @@ interface EmptyStateWorkspaceProps {
   onOpenFolder: () => void;
   onOpenWorkspace: () => void;
   /** Callback when a file/folder is dropped onto the workspace */
-  onDropItem?: (path: string) => void;
+  onDropItem?: (paths: string[]) => void;
   /** Callback when a recent item is clicked */
   onSelectRecentItem?: (item: RecentItem) => void;
   recentItems?: RecentItem[];
+  isDragOver?: boolean;
 }
 
 /**
@@ -37,17 +38,18 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
   onDropItem,
   onSelectRecentItem,
   recentItems = [],
+  isDragOver = false,
 }) => {
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [isLocalDragOver, setIsLocalDragOver] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(true);
+    setIsLocalDragOver(true);
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
+    setIsLocalDragOver(false);
   }, []);
 
   /**
@@ -58,15 +60,23 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      setIsDragOver(false);
+      setIsLocalDragOver(false);
 
-      const files = e.dataTransfer.files;
+      const files = e.dataTransfer.files as FileList & {
+        [index: number]: File & { path?: string };
+      };
       if (files.length > 0 && onDropItem) {
-        // In Tauri, the File object has a `path` property
-        const file = files[0] as File & { path?: string };
-        const path = file.path;
-        if (path) {
-          onDropItem(path);
+        const paths: string[] = [];
+
+        for (let index = 0; index < files.length; index += 1) {
+          const path = files[index]?.path;
+          if (path) {
+            paths.push(path);
+          }
+        }
+
+        if (paths.length > 0) {
+          onDropItem(paths);
         } else {
           // Fallback: if path is not available, open folder dialog
           onOpenFolder();
@@ -93,7 +103,7 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
 
   return (
     <div
-      className={`absolute inset-0 flex flex-col items-center justify-center bg-white z-20 ${isDragOver ? 'bg-zinc-50' : ''}`}
+      className={`absolute inset-0 flex flex-col items-center justify-center bg-white z-20 ${isLocalDragOver || isDragOver ? 'bg-zinc-50 ring-1 ring-inset ring-zinc-300' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

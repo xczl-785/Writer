@@ -22,6 +22,19 @@ describe('WorkspaceManager behaviors', () => {
     expect(source).toContain('workspaceActions.addFolderToWorkspace(path)');
   });
 
+  it('reuses the same folder-loading helpers for drag-and-drop workspace assembly', () => {
+    expect(source).toContain(
+      'export const openWorkspaceAtPath = async (path: string): Promise<boolean> => {',
+    );
+    expect(source).toContain(
+      'export const addFolderPathToWorkspace = async (',
+    );
+    expect(source).toContain(
+      'export const handleDroppedFolderPaths = async (',
+    );
+    expect(source).toContain('const [firstPath, ...restPaths] = uniquePaths;');
+  });
+
   it('saves workspaces through a file save dialog and records them in recent items', () => {
     expect(source).toContain(
       'export const saveWorkspaceFileByDialog = async (): Promise<void> => {',
