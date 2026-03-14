@@ -700,7 +700,58 @@ git commit -m "docs: 更新 AGENTS.md 反映新架构"
 - [x] 无 Git 相关代码残留
 - [x] 所有改动已提交 (6 commits)
 
-### Phase 2-4 待验收
-- [ ] 前端测试通过：`npm test`（允许快照测试失败）
-- [ ] 文档已更新
-- [ ] 所有改动已提交
+### Phase 2 验收 ✅
+- [x] domains 目录结构创建完成
+- [x] File 领域代码迁移完成
+- [x] Editor 领域代码迁移完成
+- [x] Workspace 领域代码迁移完成
+- [x] Settings 领域代码迁移完成
+- [x] shared 共享目录创建完成
+- [x] 所有导入路径更新
+- [x] TypeScript 编译通过
+- [x] 提交完成 (7591c20, 197 files changed)
+
+### Phase 3 验收 ✅
+- [x] 旧目录清理完成
+- [x] Git 相关代码移除
+- [x] 测试运行: 212 passed, 19 failed (快照测试)
+- [x] 提交完成 (3a59738)
+
+### Phase 4 验收 ✅
+- [x] 前端架构文档更新
+- [x] 后端架构文档更新
+- [x] 实施计划更新
+- [x] 提交完成 (b449f31)
+
+---
+
+## 重构总结
+
+### 完成内容
+1. **后端重构**: 拆分为 fs.rs / workspace.rs / config.rs，移除 Git 功能
+2. **前端重构**: 创建 domains/ 和 shared/ 目录，迁移核心领域代码
+3. **清理测试**: 移除旧目录和 Git 相关代码
+4. **文档更新**: 更新技术架构文档反映新结构
+
+### 目录结构变化
+```
+src/
+├── domains/          # 新增：领域层
+│   ├── file/         # 文件领域
+│   ├── editor/       # 编辑器领域
+│   ├── workspace/    # 工作区领域
+│   └── settings/     # 设置领域
+├── shared/           # 新增：共享层
+│   ├── components/   # 共享组件
+│   ├── i18n/         # 国际化
+│   └── utils/        # 工具函数
+├── services/         # 保留：基础设施层
+├── state/            # 保留：全局状态
+└── ui/               # 保留：UI 组件
+```
+
+### 提交记录
+- Phase 1: b3318b6, b6de999, 39dd831, 0491cd5, 5401c79, 54c24d9
+- Phase 2: 7591c20
+- Phase 3: 3a59738
+- Phase 4: b449f31
