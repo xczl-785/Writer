@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { emitTypewriterForceFree } from '../../editor/domain';
+import { emitTypewriterForceFree } from '../../../domains/editor/domain';
 
 export interface OutlineItem {
   /** Unique identifier */

@@ -5,7 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { applyLinkAction } from '../linkActions';
+import { applyLinkAction } from '../../hooks/linkActions';
 
 const BUBBLE_MENU_DEBOUNCE_MS = 80;
 

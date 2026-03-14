@@ -1,11 +1,11 @@
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FIND_MATCH_LIMIT } from './constants';
+import { FIND_MATCH_LIMIT } from '../core/constants';
 import {
   collectFindTextMatches,
   getActiveFindMatchIndex,
   emitTypewriterForceFree,
-} from './domain';
+} from '../domain';
 
 type UseFindReplaceArgs = {
   editor: TiptapEditor | null;
