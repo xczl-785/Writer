@@ -132,4 +132,85 @@ describe('build warning regression', () => {
       "import { FsSafety } from '../../../domains/file/services/FsSafety';",
     );
   });
+
+  it('keeps domain internals and recent-item consumers off legacy facades', () => {
+    const fsSafety = readFileSync(
+      join(srcRoot, 'domains', 'file', 'services', 'FsSafety.ts'),
+      'utf-8',
+    );
+    const domainFileTreeNode = readFileSync(
+      join(srcRoot, 'domains', 'file', 'ui', 'FileTreeNode.tsx'),
+      'utf-8',
+    );
+    const domainMultiRootTree = readFileSync(
+      join(srcRoot, 'domains', 'file', 'ui', 'MultiRootFileTree.tsx'),
+      'utf-8',
+    );
+    const workspaceActions = readFileSync(
+      join(srcRoot, 'domains', 'workspace', 'services', 'workspaceActions.ts'),
+      'utf-8',
+    );
+    const recentMenu = readFileSync(
+      join(
+        srcRoot,
+        'ui',
+        'components',
+        'RecentWorkspaces',
+        'RecentWorkspacesMenu.tsx',
+      ),
+      'utf-8',
+    );
+    const recentMenuTest = readFileSync(
+      join(
+        srcRoot,
+        'ui',
+        'components',
+        'RecentWorkspaces',
+        'RecentWorkspacesMenu.test.ts',
+      ),
+      'utf-8',
+    );
+    const emptyStateWorkspace = readFileSync(
+      join(srcRoot, 'ui', 'workspace', 'EmptyStateWorkspace.tsx'),
+      'utf-8',
+    );
+    const fileCommands = readFileSync(
+      join(srcRoot, 'app', 'commands', 'fileCommands.ts'),
+      'utf-8',
+    );
+
+    expect(fsSafety).toContain(
+      "import { useEditorStore } from '../../editor/state/editorStore';",
+    );
+    expect(domainFileTreeNode).toContain(
+      "import { useWorkspaceStore } from '../../workspace/state/workspaceStore';",
+    );
+    expect(domainMultiRootTree).toContain(
+      "} from '../../workspace/state/workspaceStore';",
+    );
+    expect(domainMultiRootTree).toContain(
+      "import { addFolderToWorkspaceByDialog } from '../../workspace/services/WorkspaceManager';",
+    );
+    expect(workspaceActions).toContain(
+      "import { useEditorStore } from '../../editor/state/editorStore';",
+    );
+    expect(workspaceActions).toContain(
+      "import { useFileTreeStore, type RootFolderNode } from '../../file/state/fileStore';",
+    );
+    expect(recentMenu).toContain(
+      "} from '../../../domains/workspace/services/RecentItemsService';",
+    );
+    expect(recentMenuTest).toContain(
+      "vi.mock('../../../domains/workspace/services/RecentItemsService'",
+    );
+    expect(recentMenuTest).toContain(
+      "import { RecentItemsService } from '../../../domains/workspace/services/RecentItemsService';",
+    );
+    expect(emptyStateWorkspace).toContain(
+      "import { type RecentItem } from '../../domains/workspace/services/RecentItemsService';",
+    );
+    expect(fileCommands).toContain(
+      "import { RecentItemsService } from '../../domains/workspace/services/RecentItemsService';",
+    );
+  });
 });

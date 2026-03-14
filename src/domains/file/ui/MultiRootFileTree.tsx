@@ -12,7 +12,7 @@ import { useFileTreeStore } from '../state/fileStore';
 import {
   useWorkspaceStore,
   getWorkspaceType,
-} from '../../../state/slices/workspaceSlice';
+} from '../../workspace/state/workspaceStore';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { WorkspaceRootHeader } from '../../../ui/sidebar/WorkspaceRootHeader';
 import { ContextMenu, useContextMenu } from '../../../ui/components/ContextMenu';

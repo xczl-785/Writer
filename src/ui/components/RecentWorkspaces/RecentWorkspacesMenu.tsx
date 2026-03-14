@@ -22,7 +22,7 @@ import {
   type RecentWorkspace,
   type RecentFolder,
   type RecentFile,
-} from '../../../services/recent/RecentItemsService';
+} from '../../../domains/workspace/services/RecentItemsService';
 import { t } from '../../../shared/i18n';
 
 interface RecentWorkspacesMenuProps {

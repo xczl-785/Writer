@@ -4,7 +4,7 @@
 import React, { useState, useCallback } from 'react';
 import { Sparkles, Briefcase, Folder, FileText } from 'lucide-react';
 import { t } from '../../i18n';
-import { type RecentItem } from '../../services/recent/RecentItemsService';
+import { type RecentItem } from '../../domains/workspace/services/RecentItemsService';
 
 interface EmptyStateWorkspaceProps {
   onOpenFolder: () => void;

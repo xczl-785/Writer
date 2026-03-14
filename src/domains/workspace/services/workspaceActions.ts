@@ -7,8 +7,8 @@ import {
   type FolderPathResult,
   type WorkspaceConfig,
 } from '../../file/services/FsService';
-import { useEditorStore } from '../../../state/slices/editorSlice';
-import { useFileTreeStore, type RootFolderNode } from '../../../state/slices/filetreeSlice';
+import { useEditorStore } from '../../editor/state/editorStore';
+import { useFileTreeStore, type RootFolderNode } from '../../file/state/fileStore';
 import {
   useWorkspaceStore,
   type WorkspaceFolder,

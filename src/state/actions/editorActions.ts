@@ -1,4 +1,4 @@
-import { useEditorStore } from '../slices/editorSlice';
+import { useEditorStore } from '../../domains/editor/state/editorStore';
 
 export const editorActions = {
   initializeFile(path: string, content: string): void {
