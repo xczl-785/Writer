@@ -13,13 +13,14 @@ describe('WindowsTitleBar integration', () => {
     expect(source).toContain('data-window-focused={isWindowFocused}');
     expect(source).toContain('function BrandIcon()');
     expect(source).toContain('src="/icon.svg"');
-    expect(source).toContain('isHeaderAwake: boolean;');
+    expect(source).toContain('type { AppChromeModel }');
+    expect(source).toContain('useSidebarToggleBehavior');
     expect(source).toContain(
-      "isFocusZen && !isHeaderAwake ? 'opacity-0 pointer-events-none' : ''",
+      "!isVisible ? 'opacity-0 pointer-events-none' : ''",
     );
     expect(source).toContain('windowHandle.isMaximized()');
-    expect(source).toContain('windowHandle.onResized');
-    expect(source).toContain('windowHandle.onFocusChanged');
+    expect(source).toContain('.onResized(() => {');
+    expect(source).toContain('.onFocusChanged((event) => {');
   });
 
   it('supports title-bar double click maximize without hijacking interactive controls', () => {
@@ -28,6 +29,8 @@ describe('WindowsTitleBar integration', () => {
     expect(source).toContain('windowHandle.startDragging()');
     expect(source).toContain("closest('button')");
     expect(source).toContain('toggleMaximizeWindow');
-    expect(source.match(/onMouseDown=\{beginWindowDrag\}/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
+    expect(
+      source.match(/onMouseDown=\{beginWindowDrag\}/g)?.length ?? 0,
+    ).toBeGreaterThanOrEqual(3);
   });
 });

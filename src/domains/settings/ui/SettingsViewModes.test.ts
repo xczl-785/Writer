@@ -30,7 +30,8 @@ describe('Settings editor view modes', () => {
     expect(appTsx).toContain('const applyFocusZen = useCallback');
     expect(appTsx).toContain('setFocusZenEnabledByUser');
     expect(appTsx).toContain('setFocusZen(focusZenEnabledByUser)');
-    expect(appTsx).toContain('onSetFocusZen={applyFocusZen}');
+    expect(appTsx).toContain('onSetFocusZen: applyFocusZen');
+    expect(appTsx).toContain('onSetFocusZen={chrome.actions.setFocusZen}');
   });
 
   it('ships localized copy for editor mode switches', () => {

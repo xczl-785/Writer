@@ -3,8 +3,6 @@ export type EditorHandle = {
 };
 
 export type EditorProps = {
-  isSidebarVisible?: boolean;
-  onToggleSidebar?: () => void;
   isTypewriterActive?: boolean;
   viewportTier?: 'min' | 'default' | 'airy';
   isFocusZen?: boolean;

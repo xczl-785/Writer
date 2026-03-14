@@ -4,7 +4,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { FolderDown } from 'lucide-react';
 import { Editor } from '../domains/editor/core/Editor';
 import { StateDebug } from '../ui/StateDebug';
-import { PlatformTitleBar } from '../ui/chrome';
 import { Sidebar } from '../ui/sidebar/Sidebar';
 import { useWorkspaceStore } from '../domains/workspace/state/workspaceStore';
 import { useEditorStore } from '../domains/editor/state/editorStore';
@@ -47,6 +46,8 @@ import {
 import { SettingsPanel } from '../ui/components/Settings';
 import { useViewportTier } from '../ui/layout/useViewportTier';
 import { useFocusZenWakeup } from '../ui/layout/useFocusZenWakeup';
+import { AppChrome } from './AppChrome';
+import { createAppChromeModel } from '../ui/chrome/chromeState';
 import {
   handleDroppedFolderPaths,
   openWorkspace,
@@ -58,7 +59,9 @@ import {
 } from '../domains/workspace/services/droppedPaths';
 import './App.css';
 
-function flattenRecentItems(data: Awaited<ReturnType<typeof RecentItemsService.getAll>>): RecentItem[] {
+function flattenRecentItems(
+  data: Awaited<ReturnType<typeof RecentItemsService.getAll>>,
+): RecentItem[] {
   return [...data.workspaces, ...data.folders, ...data.files];
 }
 
@@ -149,6 +152,15 @@ function App() {
     },
     [enterZen, setFocusZen, setFocusZenEnabledByUser, typewriterEnabledByUser],
   );
+  const chrome = createAppChromeModel({
+    hasRecentItems: recentItems.length > 0,
+    isSidebarVisible,
+    isFocusZen,
+    isHeaderAwake,
+    onToggleSidebar: toggleSidebar,
+    onSetSidebarVisible: setIsSidebarVisible,
+    onSetFocusZen: applyFocusZen,
+  });
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
   const openRecentMenu = useCallback(() => setIsRecentMenuOpen(true), []);
@@ -167,9 +179,7 @@ function App() {
   }, [refreshRecentItems]);
   const handleDroppedFolders = useCallback(
     async (paths: string[], openInNewWorkspace: boolean) => {
-      const droppedPaths = extractDroppedPaths(
-        paths.map((path) => ({ path })),
-      );
+      const droppedPaths = extractDroppedPaths(paths.map((path) => ({ path })));
       const classification = await classifyDroppedPaths(
         droppedPaths,
         FsService.getPathKind,
@@ -247,7 +257,12 @@ function App() {
       }
       await refreshRecentItems();
     },
-    [handleSelectFile, handleSelectFolder, handleSelectWorkspace, refreshRecentItems],
+    [
+      handleSelectFile,
+      handleSelectFolder,
+      handleSelectWorkspace,
+      refreshRecentItems,
+    ],
   );
 
   const handleLocalePreferenceChange = useCallback(
@@ -335,13 +350,20 @@ function App() {
     };
 
     const updateDragTarget = async (paths: string[], x: number, y: number) => {
-      const classification = await classifyDroppedPaths(paths, FsService.getPathKind);
+      const classification = await classifyDroppedPaths(
+        paths,
+        FsService.getPathKind,
+      );
       if (!mounted || classification.directories.length === 0) {
         clearDragState();
         return;
       }
 
-      const sidebarTarget = isPointInsideElement(sidebarDropZoneRef.current, x, y);
+      const sidebarTarget = isPointInsideElement(
+        sidebarDropZoneRef.current,
+        x,
+        y,
+      );
       const mainTarget = isPointInsideElement(mainDropZoneRef.current, x, y);
 
       setIsSidebarDragOver(sidebarTarget);
@@ -367,14 +389,24 @@ function App() {
           }
 
           if (event.payload.type === 'over') {
-            const sidebarTarget = isPointInsideElement(sidebarDropZoneRef.current, x, y);
-            const mainTarget = isPointInsideElement(mainDropZoneRef.current, x, y);
+            const sidebarTarget = isPointInsideElement(
+              sidebarDropZoneRef.current,
+              x,
+              y,
+            );
+            const mainTarget = isPointInsideElement(
+              mainDropZoneRef.current,
+              x,
+              y,
+            );
             if (!mounted) {
               return;
             }
             setIsSidebarDragOver(sidebarTarget);
             setIsEditorDragOver(!hasWorkspace && !sidebarTarget && mainTarget);
-            setIsEditorDropBlocked(hasWorkspace && !sidebarTarget && mainTarget);
+            setIsEditorDropBlocked(
+              hasWorkspace && !sidebarTarget && mainTarget,
+            );
             return;
           }
 
@@ -396,8 +428,16 @@ function App() {
             return;
           }
 
-          const droppedInSidebar = isPointInsideElement(sidebarDropZoneRef.current, x, y);
-          const droppedInMain = isPointInsideElement(mainDropZoneRef.current, x, y);
+          const droppedInSidebar = isPointInsideElement(
+            sidebarDropZoneRef.current,
+            x,
+            y,
+          );
+          const droppedInMain = isPointInsideElement(
+            mainDropZoneRef.current,
+            x,
+            y,
+          );
           if (!droppedInSidebar && !droppedInMain) {
             return;
           }
@@ -556,22 +596,18 @@ function App() {
       data-viewport-tier={tier}
       data-overlay-mode={isOverlaySidebar}
     >
-      <PlatformTitleBar
-        hasRecentItems={recentItems.length > 0}
-        isSidebarVisible={isSidebarVisible}
-        isFocusZen={isFocusZen}
-        isHeaderAwake={isHeaderAwake}
-        onToggleSidebar={toggleSidebar}
-        onSetFocusZen={applyFocusZen}
-      />
+      <AppChrome chrome={chrome} />
       <div className="flex-grow flex overflow-hidden">
         {isOverlaySidebar ? (
           <>
             <div
               className="fixed inset-0 z-30 bg-black/10"
-              onClick={() => setIsSidebarVisible(false)}
+              onClick={() => chrome.actions.setSidebarVisible(false)}
             />
-            <div ref={sidebarDropZoneRef} className="fixed inset-y-0 left-0 z-40">
+            <div
+              ref={sidebarDropZoneRef}
+              className="fixed inset-y-0 left-0 z-40"
+            >
               <Sidebar isExternalDragOver={isSidebarDragOver} />
             </div>
           </>
@@ -648,13 +684,11 @@ function App() {
                 </div>
               ) : null}
               <Editor
-                isSidebarVisible={isSidebarVisible}
-                onToggleSidebar={toggleSidebar}
                 isTypewriterActive={isTypewriterActive}
                 viewportTier={tier}
                 isFocusZen={isFocusZen}
                 isHeaderAwake={isHeaderAwake}
-                onSetFocusZen={applyFocusZen}
+                onSetFocusZen={chrome.actions.setFocusZen}
               />
             </div>
           )}

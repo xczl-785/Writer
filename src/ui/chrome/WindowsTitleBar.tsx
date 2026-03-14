@@ -1,21 +1,13 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type MouseEvent as ReactMouseEvent,
-} from 'react';
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Copy, Minus, Square, X } from 'lucide-react';
 import { WindowsMenuBar } from './WindowsMenuBar';
 import { SidebarToggleIcon } from './SidebarToggleIcon';
+import type { AppChromeModel } from './chromeState';
+import { useSidebarToggleBehavior } from './useSidebarToggleBehavior';
 
 type WindowsTitleBarProps = {
-  hasRecentItems: boolean;
-  isSidebarVisible: boolean;
-  isFocusZen: boolean;
-  isHeaderAwake: boolean;
-  onToggleSidebar: () => void;
-  onSetFocusZen: (enabled: boolean) => void;
+  chrome: AppChromeModel;
 };
 
 const SIDEBAR_WIDTH = 256;
@@ -61,26 +53,27 @@ function isInteractiveTarget(target: HTMLElement | null): boolean {
   }
 
   return (
-    target?.closest('[role="button"], a, input, textarea, select, [data-no-drag]') !==
-    null
+    target?.closest(
+      '[role="button"], a, input, textarea, select, [data-no-drag]',
+    ) !== null
   );
 }
 
-export function WindowsTitleBar({
-  hasRecentItems,
-  isSidebarVisible,
-  isFocusZen,
-  isHeaderAwake,
-  onToggleSidebar,
-  onSetFocusZen,
-}: WindowsTitleBarProps) {
+export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
+  const { hasRecentItems, isSidebarVisible, isFocusZen, isVisible } =
+    chrome.state;
+  const { toggleSidebar, setFocusZen } = chrome.actions;
   const [isMaximized, setIsMaximized] = useState(false);
   const [isWindowFocused, setIsWindowFocused] = useState(true);
-  const sidebarClickTimerRef = useRef<number | null>(null);
   const leftWidth = isSidebarVisible ? SIDEBAR_WIDTH : 0;
   const rootInsetClass = isMaximized ? 'px-[8px] pt-[8px]' : '';
   const sidebarSurfaceClass = isMaximized ? 'rounded-tl-[10px]' : '';
   const mainSurfaceClass = isMaximized ? 'rounded-tr-[10px]' : '';
+  const sidebarToggleBehavior = useSidebarToggleBehavior({
+    isFocusZen,
+    onToggleSidebar: toggleSidebar,
+    onSetFocusZen: setFocusZen,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -101,7 +94,8 @@ export function WindowsTitleBar({
 
     void refreshWindowState();
 
-    void windowHandle.onResized(() => {
+    void windowHandle
+      .onResized(() => {
         void refreshWindowState();
       })
       .then((unlisten) => {
@@ -111,7 +105,8 @@ export function WindowsTitleBar({
         // Ignore outside Tauri runtime.
       });
 
-    void windowHandle.onFocusChanged((event) => {
+    void windowHandle
+      .onFocusChanged((event) => {
         if (mounted) {
           setIsWindowFocused(event.payload);
         }
@@ -130,16 +125,6 @@ export function WindowsTitleBar({
     };
   }, []);
 
-  useEffect(
-    () => () => {
-      if (sidebarClickTimerRef.current !== null) {
-        window.clearTimeout(sidebarClickTimerRef.current);
-        sidebarClickTimerRef.current = null;
-      }
-    },
-    [],
-  );
-
   function handleTitleBarDoubleClick(
     event: ReactMouseEvent<HTMLDivElement>,
   ): void {
@@ -151,9 +136,7 @@ export function WindowsTitleBar({
     void toggleMaximizeWindow();
   }
 
-  function beginWindowDrag(
-    event: ReactMouseEvent<HTMLDivElement>,
-  ): void {
+  function beginWindowDrag(event: ReactMouseEvent<HTMLDivElement>): void {
     if (event.button !== 0) {
       return;
     }
@@ -169,32 +152,10 @@ export function WindowsTitleBar({
     });
   }
 
-  function handleSidebarButtonDoubleClick(): void {
-    if (sidebarClickTimerRef.current !== null) {
-      window.clearTimeout(sidebarClickTimerRef.current);
-      sidebarClickTimerRef.current = null;
-    }
-    onSetFocusZen(!isFocusZen);
-  }
-
-  function handleSidebarButtonClick(): void {
-    if (sidebarClickTimerRef.current !== null) {
-      window.clearTimeout(sidebarClickTimerRef.current);
-    }
-    sidebarClickTimerRef.current = window.setTimeout(() => {
-      sidebarClickTimerRef.current = null;
-      if (isFocusZen) {
-        onSetFocusZen(false);
-        return;
-      }
-      onToggleSidebar();
-    }, 220);
-  }
-
   return (
     <div
       className={`flex shrink-0 select-none bg-white transition-[padding,background-color,opacity] duration-150 ${
-        isFocusZen && !isHeaderAwake ? 'opacity-0 pointer-events-none' : ''
+        !isVisible ? 'opacity-0 pointer-events-none' : ''
       } ${rootInsetClass}`}
       data-window-focused={isWindowFocused}
       data-window-maximized={isMaximized}
@@ -235,8 +196,8 @@ export function WindowsTitleBar({
             <div className="flex items-center gap-2 px-2 pointer-events-auto">
               <button
                 type="button"
-                onClick={handleSidebarButtonClick}
-                onDoubleClick={handleSidebarButtonDoubleClick}
+                onClick={sidebarToggleBehavior.onClick}
+                onDoubleClick={sidebarToggleBehavior.onDoubleClick}
                 className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
                 aria-label="Toggle Sidebar"
                 title="Toggle Sidebar"

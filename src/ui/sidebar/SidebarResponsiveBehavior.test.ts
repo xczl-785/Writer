@@ -20,7 +20,9 @@ describe('sidebar responsive behavior', () => {
       'const isOverlaySidebar = isMinTier && isSidebarVisible',
     );
     expect(appTsx).toContain('data-overlay-mode={isOverlaySidebar}');
-    expect(appTsx).toContain('onClick={() => setIsSidebarVisible(false)}');
+    expect(appTsx).toContain(
+      'onClick={() => chrome.actions.setSidebarVisible(false)}',
+    );
     expect(appTsx).toContain(
       'const previousIsMinTierRef = useRef<boolean | null>(null)',
     );
@@ -58,27 +60,41 @@ describe('sidebar responsive behavior', () => {
       'utf-8',
     );
     const editorImplTsx = readFileSync(
-      join(currentDir, '..', '..', 'domains', 'editor', 'core', 'EditorImpl.tsx'),
+      join(
+        currentDir,
+        '..',
+        '..',
+        'domains',
+        'editor',
+        'core',
+        'EditorImpl.tsx',
+      ),
       'utf-8',
     );
     expect(sidebarTsx).not.toContain('onToggleFocusZen?: () => void;');
     expect(sidebarTsx).not.toContain('handleCollapseButtonClick');
     expect(sidebarTsx).not.toContain('handleCollapseButtonDoubleClick');
     expect(sidebarTsx).not.toContain("t('sidebar.collapse')");
-    expect(titleBarTsx).toContain('onToggleSidebar');
-    expect(titleBarTsx).toContain('const sidebarClickTimerRef = useRef<number | null>(null)');
-    expect(titleBarTsx).toContain('handleSidebarButtonDoubleClick');
-    expect(titleBarTsx).toContain('handleSidebarButtonClick');
-    expect(titleBarTsx).toContain('onSetFocusZen(!isFocusZen)');
-    expect(titleBarTsx).toContain('if (isFocusZen) {');
+    const sharedBehaviorTs = readFileSync(
+      join(currentDir, '..', 'chrome', 'useSidebarToggleBehavior.ts'),
+      'utf-8',
+    );
+    expect(titleBarTsx).toContain('useSidebarToggleBehavior');
+    expect(sharedBehaviorTs).toContain(
+      'const clickTimerRef = useRef<number | null>(null);',
+    );
+    expect(sharedBehaviorTs).toContain('onSetFocusZen(!isFocusZen)');
+    expect(sharedBehaviorTs).toContain('if (isFocusZen) {');
+    expect(sharedBehaviorTs).toContain('onToggleSidebar();');
     expect(titleBarTsx).toContain('<SidebarToggleIcon />');
-    expect(macTitleBarTsx).toContain('handleSidebarButtonDoubleClick');
-    expect(macTitleBarTsx).toContain('handleSidebarButtonClick');
+    expect(macTitleBarTsx).toContain('useSidebarToggleBehavior');
     expect(macTitleBarTsx).toContain('<SidebarToggleIcon />');
-    expect(editorImplTsx).not.toContain('className="editor-header__sidebar-btn"');
+    expect(editorImplTsx).not.toContain(
+      'className="editor-header__sidebar-btn"',
+    );
     expect(editorImplTsx).not.toContain('aria-label="Expand sidebar"');
-    expect(editorImplTsx).not.toContain('const sidebarClickTimerRef = useRef<number | null>(null);');
-    expect(editorImplTsx).not.toContain('handleSidebarButtonDoubleClick');
-    expect(editorImplTsx).not.toContain('handleSidebarButtonClick');
+    expect(editorImplTsx).not.toContain('useSidebarToggleBehavior');
+    expect(editorTsx).not.toContain('isSidebarVisible?: boolean');
+    expect(editorTsx).not.toContain('onToggleSidebar?: () => void');
   });
 });

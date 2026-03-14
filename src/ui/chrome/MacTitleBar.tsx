@@ -1,14 +1,10 @@
-import { useEffect, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { SidebarToggleIcon } from './SidebarToggleIcon';
+import type { AppChromeModel } from './chromeState';
+import { useSidebarToggleBehavior } from './useSidebarToggleBehavior';
 
 type MacTitleBarProps = {
-  hasRecentItems: boolean;
-  isSidebarVisible: boolean;
-  isFocusZen: boolean;
-  isHeaderAwake: boolean;
-  onToggleSidebar: () => void;
-  onSetFocusZen: (enabled: boolean) => void;
+  chrome: AppChromeModel;
 };
 
 async function minimizeWindow(): Promise<void> {
@@ -53,53 +49,20 @@ function TrafficLight({
   );
 }
 
-export function MacTitleBar({
-  hasRecentItems: _hasRecentItems,
-  isSidebarVisible,
-  isFocusZen,
-  isHeaderAwake,
-  onToggleSidebar,
-  onSetFocusZen,
-}: MacTitleBarProps) {
-  const sidebarClickTimerRef = useRef<number | null>(null);
+export function MacTitleBar({ chrome }: MacTitleBarProps) {
+  const { isSidebarVisible, isFocusZen, isVisible } = chrome.state;
+  const { toggleSidebar, setFocusZen } = chrome.actions;
   const leftWidth = isSidebarVisible ? 256 : 72;
-
-  useEffect(
-    () => () => {
-      if (sidebarClickTimerRef.current !== null) {
-        window.clearTimeout(sidebarClickTimerRef.current);
-        sidebarClickTimerRef.current = null;
-      }
-    },
-    [],
-  );
-
-  function handleSidebarButtonDoubleClick(): void {
-    if (sidebarClickTimerRef.current !== null) {
-      window.clearTimeout(sidebarClickTimerRef.current);
-      sidebarClickTimerRef.current = null;
-    }
-    onSetFocusZen(!isFocusZen);
-  }
-
-  function handleSidebarButtonClick(): void {
-    if (sidebarClickTimerRef.current !== null) {
-      window.clearTimeout(sidebarClickTimerRef.current);
-    }
-    sidebarClickTimerRef.current = window.setTimeout(() => {
-      sidebarClickTimerRef.current = null;
-      if (isFocusZen) {
-        onSetFocusZen(false);
-        return;
-      }
-      onToggleSidebar();
-    }, 220);
-  }
+  const sidebarToggleBehavior = useSidebarToggleBehavior({
+    isFocusZen,
+    onToggleSidebar: toggleSidebar,
+    onSetFocusZen: setFocusZen,
+  });
 
   return (
     <div
       className={`flex h-10 shrink-0 select-none border-b border-zinc-200 bg-white transition-opacity duration-150 ${
-        isFocusZen && !isHeaderAwake ? 'opacity-0 pointer-events-none' : ''
+        !isVisible ? 'opacity-0 pointer-events-none' : ''
       }`}
     >
       <div
@@ -113,7 +76,10 @@ export function MacTitleBar({
         <div className="flex items-center gap-2 pl-4">
           <TrafficLight className="bg-[#ff5f57]" onClick={closeWindow} />
           <TrafficLight className="bg-[#febc2e]" onClick={minimizeWindow} />
-          <TrafficLight className="bg-[#28c840]" onClick={toggleMaximizeWindow} />
+          <TrafficLight
+            className="bg-[#28c840]"
+            onClick={toggleMaximizeWindow}
+          />
         </div>
       </div>
       <div className="relative flex min-w-0 flex-1 items-center bg-white">
@@ -122,8 +88,8 @@ export function MacTitleBar({
           <div className="flex items-center gap-2 px-3 pointer-events-auto">
             <button
               type="button"
-              onClick={handleSidebarButtonClick}
-              onDoubleClick={handleSidebarButtonDoubleClick}
+              onClick={sidebarToggleBehavior.onClick}
+              onDoubleClick={sidebarToggleBehavior.onDoubleClick}
               className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
               aria-label="Toggle Sidebar"
               title="Toggle Sidebar"

@@ -1,47 +1,18 @@
 import { detectPlatformChrome } from './platform';
 import { MacTitleBar } from './MacTitleBar';
 import { WindowsTitleBar } from './WindowsTitleBar';
+import type { AppChromeModel } from './chromeState';
 
 type PlatformTitleBarProps = {
-  hasRecentItems: boolean;
-  isSidebarVisible: boolean;
-  isFocusZen: boolean;
-  isHeaderAwake: boolean;
-  onToggleSidebar: () => void;
-  onSetFocusZen: (enabled: boolean) => void;
+  chrome: AppChromeModel;
 };
 
-export function PlatformTitleBar({
-  hasRecentItems,
-  isSidebarVisible,
-  isFocusZen,
-  isHeaderAwake,
-  onToggleSidebar,
-  onSetFocusZen,
-}: PlatformTitleBarProps) {
+export function PlatformTitleBar({ chrome }: PlatformTitleBarProps) {
   const platform = detectPlatformChrome();
 
   if (platform === 'macos') {
-    return (
-      <MacTitleBar
-        hasRecentItems={hasRecentItems}
-        isSidebarVisible={isSidebarVisible}
-        isFocusZen={isFocusZen}
-        isHeaderAwake={isHeaderAwake}
-        onToggleSidebar={onToggleSidebar}
-        onSetFocusZen={onSetFocusZen}
-      />
-    );
+    return <MacTitleBar chrome={chrome} />;
   }
 
-  return (
-    <WindowsTitleBar
-      hasRecentItems={hasRecentItems}
-      isSidebarVisible={isSidebarVisible}
-      isFocusZen={isFocusZen}
-      isHeaderAwake={isHeaderAwake}
-      onToggleSidebar={onToggleSidebar}
-      onSetFocusZen={onSetFocusZen}
-    />
-  );
+  return <WindowsTitleBar chrome={chrome} />;
 }

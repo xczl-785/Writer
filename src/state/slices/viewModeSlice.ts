@@ -7,11 +7,31 @@ export interface ViewModeState {
   typewriterRestoreSnapshot: boolean | null;
 }
 
+export type ViewModeKind = 'normal' | 'zen' | 'focus-zen';
+
 export interface ViewModeActions {
   enterZen: (userTypewriterPreference: boolean) => void;
   exitZen: () => void;
   setFocusZen: (enabled: boolean) => void;
   syncTypewriterFromUserPreference: (enabledByUser: boolean) => void;
+}
+
+export function getViewModeKind(
+  state: Pick<ViewModeState, 'isZen' | 'isFocusZen'>,
+): ViewModeKind {
+  if (state.isFocusZen) {
+    return 'focus-zen';
+  }
+  if (state.isZen) {
+    return 'zen';
+  }
+  return 'normal';
+}
+
+export function isZenPresentationActive(
+  state: Pick<ViewModeState, 'isZen' | 'isFocusZen'>,
+): boolean {
+  return getViewModeKind(state) !== 'normal';
 }
 
 export const useViewModeStore = create<ViewModeState & ViewModeActions>(
