@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -35,10 +35,6 @@ describe('build warning regression', () => {
   });
 
   it('keeps workspace actions on a single domain source', () => {
-    const legacyActions = readFileSync(
-      join(srcRoot, 'state', 'actions', 'workspaceActions.ts'),
-      'utf-8',
-    );
     const sidebar = readFileSync(
       join(srcRoot, 'ui', 'sidebar', 'Sidebar.tsx'),
       'utf-8',
@@ -58,9 +54,9 @@ describe('build warning regression', () => {
       'utf-8',
     );
 
-    expect(legacyActions.trim()).toBe(
-      "export * from '../../domains/workspace/services/workspaceActions';",
-    );
+    expect(
+      existsSync(join(srcRoot, 'state', 'actions', 'workspaceActions.ts')),
+    ).toBe(false);
     expect(sidebar).toContain(
       "import { workspaceActions } from '../../domains/workspace/services/workspaceActions';",
     );
@@ -73,10 +69,6 @@ describe('build warning regression', () => {
   });
 
   it('keeps file actions and fs/workspace entrypoints aligned to domains', () => {
-    const legacyFileActions = readFileSync(
-      join(srcRoot, 'state', 'actions', 'fileActions.ts'),
-      'utf-8',
-    );
     const domainFileActions = readFileSync(
       join(srcRoot, 'domains', 'file', 'services', 'fileActions.ts'),
       'utf-8',
@@ -101,9 +93,9 @@ describe('build warning regression', () => {
     );
 
     expect(domainFileActions).toContain('export const fileActions = {');
-    expect(legacyFileActions.trim()).toBe(
-      "export * from '../../domains/file/services/fileActions';",
-    );
+    expect(
+      existsSync(join(srcRoot, 'state', 'actions', 'fileActions.ts')),
+    ).toBe(false);
     expect(sidebar).toContain(
       "import { fileActions } from '../../domains/file/services/fileActions';",
     );
@@ -212,5 +204,20 @@ describe('build warning regression', () => {
     expect(fileCommands).toContain(
       "import { RecentItemsService } from '../../domains/workspace/services/RecentItemsService';",
     );
+  });
+
+  it('drops the state action facade layer entirely', () => {
+    expect(
+      existsSync(join(srcRoot, 'state', 'actions', 'workspaceActions.ts')),
+    ).toBe(false);
+    expect(
+      existsSync(join(srcRoot, 'state', 'actions', 'fileActions.ts')),
+    ).toBe(false);
+    expect(
+      existsSync(join(srcRoot, 'state', 'actions', 'editorActions.ts')),
+    ).toBe(false);
+    expect(
+      existsSync(join(srcRoot, 'state', 'actions', 'index.ts')),
+    ).toBe(false);
   });
 });
