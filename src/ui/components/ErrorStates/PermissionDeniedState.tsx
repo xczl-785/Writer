@@ -4,7 +4,7 @@
 import React, { useCallback } from 'react';
 import { Lock, ExternalLink, X } from 'lucide-react';
 import { t } from '../../../shared/i18n';
-import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
+import { workspaceActions } from '../../../domains/workspace/services/workspaceActions';
 
 export interface PermissionDeniedStateProps {
   /** 相关路径 */

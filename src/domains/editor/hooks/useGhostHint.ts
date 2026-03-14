@@ -3,8 +3,8 @@
  */
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import type { SlashPhase } from '../menus/SlashMenu';
-import { isStrictSlashTriggerEligible } from '../menus/slashEligibility';
+import type { SlashPhase } from '../domain';
+import { isStrictSlashTriggerEligible } from '../ui/menus/slashEligibility';
 
 export type GhostHintPosition = {
   open: boolean;

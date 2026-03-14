@@ -4,7 +4,7 @@
 import React, { useCallback } from 'react';
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { t } from '../../../shared/i18n';
-import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
+import { workspaceActions } from '../../../domains/workspace/services/workspaceActions';
 import { openWorkspace } from '../../../domains/workspace/services/WorkspaceManager';
 
 export interface WorkspaceCorruptedStateProps {

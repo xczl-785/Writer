@@ -3,7 +3,7 @@
  */
 import { Extension } from '@tiptap/core';
 import type { Editor as TiptapEditor } from '@tiptap/react';
-import { TOOLBAR_COMMANDS, type ToolbarCommandId } from '../constants';
+import { TOOLBAR_COMMANDS, type ToolbarCommandId } from '../core/constants';
 
 type EditorRef = { current: TiptapEditor | null };
 

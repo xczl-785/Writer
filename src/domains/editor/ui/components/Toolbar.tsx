@@ -1,6 +1,6 @@
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import type { RefObject } from 'react';
-import { TOOLBAR_COMMANDS, type ToolbarCommandId } from '../constants';
+import { TOOLBAR_COMMANDS, type ToolbarCommandId } from '../../core/constants';
 import { FindReplacePanel } from './FindReplacePanel';
 
 type Props = {

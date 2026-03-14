@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import type { EditorHandle, EditorProps } from './editorTypes';
-import { EditorImpl } from '../EditorImpl';
+import { EditorImpl } from './EditorImpl';
 
 /**
  * Temporary orchestration entry for phased refactor.

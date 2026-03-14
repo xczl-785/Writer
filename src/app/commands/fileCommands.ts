@@ -4,12 +4,12 @@
  * Handles file operations like open, close, save, new, export.
  */
 import { menuCommandBus } from '../../ui/commands/menuCommandBus';
-import { workspaceActions } from '../domains/workspace/services/workspaceActions';
-import { useWorkspaceStore } from '../domains/workspace/state/workspaceStore';
-import { useEditorStore } from '../domains/editor/state/editorStore';
+import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
+import { useWorkspaceStore } from '../../domains/workspace/state/workspaceStore';
+import { useEditorStore } from '../../domains/editor/state/editorStore';
 import { useStatusStore } from '../../state/slices/statusSlice';
-import { AutosaveService } from '../domains/file/services/AutosaveService';
-import { FsService } from '../domains/file/services/FsService';
+import { AutosaveService } from '../../domains/file/services/AutosaveService';
+import { FsService } from '../../domains/file/services/FsService';
 import { RecentItemsService } from '../../services/recent/RecentItemsService';
 import { t } from '../../shared/i18n';
 import {

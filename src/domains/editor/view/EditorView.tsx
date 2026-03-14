@@ -1,6 +1,6 @@
 import type { MouseEvent as ReactMouseEvent, ReactNode } from 'react';
 import type { Editor as TiptapEditor } from '@tiptap/react';
-import { EditorShell } from '../components/EditorShell';
+import { EditorShell } from '../ui/components/EditorShell';
 
 type EditorViewProps = {
   editor: TiptapEditor;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EDITOR_CONFIG } from '../../config/editor';
+import { EDITOR_CONFIG } from '../../../config/editor';
 
 export function useTransientStatus() {
   const [statusText, setStatusText] = useState('');

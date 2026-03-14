@@ -4,7 +4,7 @@ import {
   TOOLBAR_COMMANDS,
   type ToolbarCommandId,
   type ToolbarCommandSpec,
-} from './constants';
+} from '../core/constants';
 
 type UseToolbarCommandsArgs = {
   hasEditorWidgetFocus: boolean;

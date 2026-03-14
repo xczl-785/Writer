@@ -1,6 +1,6 @@
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EDITOR_CONFIG } from '../../config/editor';
+import { EDITOR_CONFIG } from '../../../config/editor';
 
 type UseInsertTableArgs = {
   setTransientStatus: (message: string) => void;

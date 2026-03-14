@@ -2,9 +2,10 @@
 // 工作区状态持久化服务 - 使用 Tauri API 实现
 
 import { invoke } from '@tauri-apps/api/core';
-import type {
-  WorkspaceState,
-  WorkspaceFolder,
+import {
+  useWorkspaceStore,
+  type WorkspaceState,
+  type WorkspaceFolder,
 } from '../state/workspaceStore';
 
 export interface PersistedWorkspaceState {
@@ -108,8 +109,6 @@ export const WorkspaceStatePersistence = {
 
   // 保存当前状态（供 actions 调用）
   async saveCurrentState(): Promise<void> {
-    const { useWorkspaceStore } =
-      await import('../state/workspaceStore');
     const state = useWorkspaceStore.getState();
 
     // 如果没有打开的文件夹，不需要保存
