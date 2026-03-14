@@ -9,17 +9,17 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useFileTreeStore } from '../../domains/file/state/fileStore';
 import { useWorkspaceStore } from '../../domains/workspace/state/workspaceStore';
 import { useStatusStore } from '../../state/slices/statusSlice';
-import { fileActions } from '../../state/actions/fileActions';
-import { workspaceActions } from '../../state/actions/workspaceActions';
+import { fileActions } from '../../domains/file/services/fileActions';
+import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 import {
   addFolderToWorkspaceByDialog,
   addFolderPathToWorkspace,
   openWorkspaceAtPath,
   openWorkspace,
   openFile,
-} from '../../workspace/WorkspaceManager';
-import { FsService } from '../../services/fs/FsService';
-import { FsSafety } from '../../services/fs/FsSafety';
+} from '../../domains/workspace/services/WorkspaceManager';
+import { FsService } from '../../domains/file/services/FsService';
+import { FsSafety } from '../../domains/file/services/FsSafety';
 import {
   classifyDroppedPaths,
   extractDroppedPaths,

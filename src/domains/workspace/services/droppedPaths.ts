@@ -1,4 +1,4 @@
-import type { PathKind } from '../../../services/fs/FsService';
+import type { PathKind } from '../../file/services/FsService';
 
 export interface DroppedPathLike {
   path?: string;
