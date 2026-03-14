@@ -331,6 +331,29 @@ export function Sidebar({
     });
   };
 
+  const getCreateGhostTarget = useCallback(
+    (
+      type: 'file' | 'directory',
+      rootPath: string,
+      targetPath: string | null,
+      targetType: FileNode['type'] | null,
+    ): GhostNode => {
+      const basePath = resolveCreateBasePath({
+        currentPath: rootPath,
+        selectedPath: targetPath,
+        selectedType: targetType,
+        activeFile,
+      });
+
+      return {
+        parentPath: basePath === rootPath ? null : basePath,
+        type,
+        rootPath,
+      };
+    },
+    [activeFile],
+  );
+
   const cancelCreate = () => {
     setGhostNode(null);
   };
@@ -474,19 +497,13 @@ export function Sidebar({
       isReservedPath,
       onNewFile: () => {
         setSelectedPath(node.path);
-        setGhostNode({
-          parentPath: node.path,
-          type: 'file',
-          rootPath,
-        });
+        setGhostNode(getCreateGhostTarget('file', rootPath, node.path, node.type));
       },
       onNewFolder: () => {
         setSelectedPath(node.path);
-        setGhostNode({
-          parentPath: node.path,
-          type: 'directory',
-          rootPath,
-        });
+        setGhostNode(
+          getCreateGhostTarget('directory', rootPath, node.path, node.type),
+        );
       },
       onRename: () => {
         setSelectedPath(node.path);
@@ -835,6 +852,17 @@ export function Sidebar({
           onSelect={() => setSelectedPath(rootFolder.workspacePath)}
         />
 
+        {ghostNode &&
+        ghostNode.rootPath === rootFolder.workspacePath &&
+        ghostNode.parentPath === null ? (
+          <GhostRow
+            level={level + 1}
+            type={ghostNode.type}
+            onCommit={commitCreate}
+            onCancel={cancelCreate}
+          />
+        ) : null}
+
         {isLoading ? (
           <div className="px-3 py-2 text-xs text-zinc-400">
             {t('sidebar.loading')}
@@ -922,7 +950,8 @@ export function Sidebar({
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx)
             }
-            className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
+            disabled={rootFolders.length === 0}
+            className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-zinc-500 disabled:hover:bg-transparent"
             title={t('sidebar.newFile')}
           >
             <FilePlus size={16} />
@@ -932,7 +961,8 @@ export function Sidebar({
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx)
             }
-            className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
+            disabled={rootFolders.length === 0}
+            className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-zinc-500 disabled:hover:bg-transparent"
             title={t('sidebar.newFolder')}
           >
             <FolderPlus size={16} />
@@ -1137,16 +1167,6 @@ export function Sidebar({
           />
         ) : (
           <div className="space-y-0.5">
-            {/* V6: 顶层 ghost 节点（根级别创建） */}
-            {ghostNode && ghostNode.parentPath === null && (
-              <GhostRow
-                level={0}
-                type={ghostNode.type}
-                onCommit={commitCreate}
-                onCancel={cancelCreate}
-              />
-            )}
-
             {/* V6: 渲染所有根文件夹 */}
             {rootFolders.map((rootFolder) =>
               renderRootFolderTree(rootFolder, 0),

@@ -22,6 +22,10 @@ export const resolveCreateBasePath = ({
   selectedType,
   activeFile,
 }: ResolveCreateBasePathInput): string => {
+  if (selectedPath && selectedType === null && selectedPath === currentPath) {
+    return currentPath;
+  }
+
   if (selectedPath) {
     if (selectedType === 'directory') {
       return selectedPath;
@@ -32,11 +36,10 @@ export const resolveCreateBasePath = ({
   }
 
   if (selectedPath === null) {
+    if (activeFile) {
+      return getParentPath(activeFile) || currentPath;
+    }
     return currentPath;
-  }
-
-  if (activeFile) {
-    return getParentPath(activeFile) || currentPath;
   }
 
   return currentPath;
