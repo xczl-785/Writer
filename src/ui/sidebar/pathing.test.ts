@@ -33,7 +33,7 @@ describe('sidebar pathing', () => {
     expect(base).toBe('/ws/notes');
   });
 
-  it('resolves to workspace root when no node is selected (explicit no-selection)', () => {
+  it('uses active file parent when no node is selected but an active file exists', () => {
     const base = resolveCreateBasePath({
       currentPath: '/ws',
       selectedPath: null,
@@ -41,9 +41,7 @@ describe('sidebar pathing', () => {
       activeFile: '/ws/drafts/a.md',
     });
 
-    // S2-V3-02: When no node is selected, creation should resolve to workspace root
-    // instead of active file parent, aligning with root-selection semantics.
-    expect(base).toBe('/ws');
+    expect(base).toBe('/ws/drafts');
   });
 
   it('falls back to workspace root when nothing selected and no active file', () => {
@@ -55,6 +53,17 @@ describe('sidebar pathing', () => {
     });
 
     expect(base).toBe('/ws');
+  });
+
+  it('treats a selected root path as the workspace root create target', () => {
+    const base = resolveCreateBasePath({
+      currentPath: '/ws-b',
+      selectedPath: '/ws-b',
+      selectedType: null,
+      activeFile: '/ws-a/note.md',
+    });
+
+    expect(base).toBe('/ws-b');
   });
 
   it('validates invalid node names', () => {

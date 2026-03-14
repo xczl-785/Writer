@@ -8,7 +8,7 @@ describe('ConfirmDialog safety contract', () => {
   const source = readFileSync(join(currentDir, 'ConfirmDialog.ts'), 'utf-8');
 
   it('uses custom web dialog instead of tauri ask', () => {
-    expect(source).not.toContain("@tauri-apps/plugin-dialog");
+    expect(source).not.toContain('@tauri-apps/plugin-dialog');
     expect(source).not.toContain('ask(');
     expect(source).toContain("setAttribute('role', 'alertdialog')");
   });

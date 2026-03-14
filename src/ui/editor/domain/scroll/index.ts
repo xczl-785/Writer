@@ -20,4 +20,7 @@ export {
   shouldSkipScrollAdjustment,
 } from './scrollUtils';
 
-export { createScrollCoordinator, type ScrollCoordinator } from './scrollCoordinator';
+export {
+  createScrollCoordinator,
+  type ScrollCoordinator,
+} from './scrollCoordinator';

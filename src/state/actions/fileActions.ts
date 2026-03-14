@@ -1,15 +1,16 @@
 import { FsService } from '../../services/fs/FsService';
 import { useEditorStore } from '../slices/editorSlice';
 import { useFileTreeStore } from '../slices/filetreeSlice';
-import { useWorkspaceStore, getCurrentPath } from '../slices/workspaceSlice';
+import { useWorkspaceStore } from '../slices/workspaceSlice';
 import { isPathMatch } from '../../utils/pathUtils';
 
 const refreshCurrentTree = async (): Promise<void> => {
-  const currentPath = getCurrentPath(useWorkspaceStore.getState());
+  const { folders } = useWorkspaceStore.getState();
+  const currentPath = folders[0]?.path;
   if (!currentPath) return;
 
   const nodes = await FsService.listTree(currentPath);
-  useFileTreeStore.getState().setNodes(nodes);
+  useFileTreeStore.getState().setNodes(currentPath, nodes);
 };
 
 export const fileActions = {
