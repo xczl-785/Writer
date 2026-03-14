@@ -1,14 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { FileNode } from '../../state/types';
 
-export interface GitSyncStatus {
-  isRepo: boolean;
-  hasRemote: boolean;
-  dirty: boolean;
-  ahead: number;
-  behind: number;
-}
-
 export interface EncodingStatus {
   label: string;
 }
@@ -89,10 +81,6 @@ export const FsService = {
 
   async getPathKind(path: string): Promise<PathKind> {
     return invoke('get_path_kind', { path });
-  },
-
-  async getGitSyncStatus(path: string): Promise<GitSyncStatus> {
-    return invoke('get_git_sync_status', { path });
   },
 
   async detectFileEncoding(path: string): Promise<EncodingStatus> {
