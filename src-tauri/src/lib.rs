@@ -40,7 +40,7 @@ pub fn run() {
             greet,
             set_menu_locale,
             fs::list_tree,
-            fs::list_tree_batch,
+            workspace::list_tree_batch,
             fs::read_file,
             fs::write_file_atomic,
             fs::create_file,
@@ -54,9 +54,9 @@ pub fn run() {
             fs::get_git_sync_status,
             fs::detect_file_encoding,
             // Workspace commands
-            fs::parse_workspace_file,
-            fs::save_workspace_file,
-            fs::resolve_relative_path,
+            workspace::parse_workspace_file,
+            workspace::save_workspace_file,
+            workspace::resolve_relative_path,
             // App config commands
             fs::get_app_config_dir,
             fs::read_json_file,
