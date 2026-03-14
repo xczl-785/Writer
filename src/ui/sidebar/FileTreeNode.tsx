@@ -3,8 +3,8 @@
 
 import React from 'react';
 import type { FileNode } from '../../state/types';
-import { useFileTreeStore } from '../../state/slices/filetreeSlice';
-import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
+import { useFileTreeStore } from '../domains/file/state/fileStore';
+import { useWorkspaceStore } from '../domains/workspace/state/workspaceStore';
 import { workspaceActions } from '../../state/actions/workspaceActions';
 import { FileIcon } from 'lucide-react';
 import { DeletedFileMarker } from '../components/ErrorStates';

@@ -5,7 +5,7 @@
  * This implementation guarantees safe default focus behavior for destructive actions.
  */
 
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 
 export interface ConfirmDialogOptions {
   /** Dialog title */

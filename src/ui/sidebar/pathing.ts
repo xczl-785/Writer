@@ -3,7 +3,7 @@ import {
   getParentPath as getParentPathBase,
   getFileExtension as getFileExtensionBase,
   isMarkdownFile as isMarkdownFileBase,
-} from '../../utils/pathUtils';
+} from '../../shared/utils/pathUtils';
 
 type NodeType = FileNode['type'] | null;
 

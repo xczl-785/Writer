@@ -12,7 +12,7 @@ import type { Editor } from '@tiptap/react';
 import { useOutlineExtractor, type OutlineItem } from './useOutlineExtractor';
 import { OutlineItemComponent } from './OutlineItem';
 import { computeOutlineWindow, findActiveOutlineIndex } from './outlineUtils';
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 
 export interface OutlineProps {
   /** TipTap editor instance */

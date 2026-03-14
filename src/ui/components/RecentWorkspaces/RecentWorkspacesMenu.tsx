@@ -23,7 +23,7 @@ import {
   type RecentFolder,
   type RecentFile,
 } from '../../../services/recent/RecentItemsService';
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 
 interface RecentWorkspacesMenuProps {
   /** Whether the menu is visible */

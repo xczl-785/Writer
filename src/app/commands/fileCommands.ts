@@ -4,19 +4,19 @@
  * Handles file operations like open, close, save, new, export.
  */
 import { menuCommandBus } from '../../ui/commands/menuCommandBus';
-import { workspaceActions } from '../../state/actions/workspaceActions';
-import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
-import { useEditorStore } from '../../state/slices/editorSlice';
+import { workspaceActions } from '../domains/workspace/services/workspaceActions';
+import { useWorkspaceStore } from '../domains/workspace/state/workspaceStore';
+import { useEditorStore } from '../domains/editor/state/editorStore';
 import { useStatusStore } from '../../state/slices/statusSlice';
-import { AutosaveService } from '../../services/autosave/AutosaveService';
-import { FsService } from '../../services/fs/FsService';
+import { AutosaveService } from '../domains/file/services/AutosaveService';
+import { FsService } from '../domains/file/services/FsService';
 import { RecentItemsService } from '../../services/recent/RecentItemsService';
-import { t } from '../../i18n';
+import { t } from '../../shared/i18n';
 import {
   openWorkspace,
   saveCurrentWorkspace,
   saveWorkspaceFileByDialog,
-} from '../../workspace/WorkspaceManager';
+} from '../../domains/workspace/services/WorkspaceManager';
 
 export type CleanupFn = () => void;
 export type OpenRecentCallback = () => void;

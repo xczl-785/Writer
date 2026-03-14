@@ -1,6 +1,6 @@
 import type { GitSyncStatus } from '../../services/fs/FsService';
 import type { SaveStatus } from '../../state/slices/statusSlice';
-import { t } from '../../i18n';
+import { t } from '../../shared/i18n';
 
 export function countCharacters(value: string): number {
   return Array.from(value).filter((char) => !/\s/u.test(char)).length;
