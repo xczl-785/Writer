@@ -15,7 +15,7 @@ import { fileActions } from '../../../state/actions/fileActions';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { joinPath } from '../../../utils/pathUtils';
 import { ChevronDown, ChevronRight, File } from 'lucide-react';
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 import {
   getDisplayName,
   getFileExtension,

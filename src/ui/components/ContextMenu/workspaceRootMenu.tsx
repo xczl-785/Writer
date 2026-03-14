@@ -9,7 +9,7 @@
 import { Pencil, FolderMinus, Folder, Copy } from 'lucide-react';
 import type { MenuItem } from '../ContextMenu/contextMenuRegistry';
 import { divider } from '../ContextMenu/contextMenuRegistry';
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 
 export interface WorkspaceRootMenuContext {
   folderPath: string;

@@ -10,7 +10,7 @@ describe('sidebar responsive behavior', () => {
     'utf-8',
   );
   const editorTsx = readFileSync(
-    join(currentDir, '..', 'editor', 'Editor.tsx'),
+    join(currentDir, '..', '..', 'domains', 'editor', 'core', 'Editor.tsx'),
     'utf-8',
   );
 

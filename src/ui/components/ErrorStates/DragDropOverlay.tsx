@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { FolderPlus, ArrowDownToLine } from 'lucide-react';
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 
 export interface DragDropOverlayProps {
   /** 是否显示覆盖层 */

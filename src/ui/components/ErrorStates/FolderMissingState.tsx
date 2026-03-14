@@ -3,9 +3,9 @@
 
 import React, { useCallback } from 'react';
 import { AlertTriangle, FolderOpen, X } from 'lucide-react';
-import { t } from '../../../i18n';
-import { openWorkspace } from '../../../workspace/WorkspaceManager';
-import { workspaceActions } from '../../../state/actions/workspaceActions';
+import { t } from '../../../shared/i18n';
+import { openWorkspace } from '../../../domains/workspace/services/WorkspaceManager';
+import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 
 export interface FolderMissingStateProps {
   /** 缺失文件夹的路径 */

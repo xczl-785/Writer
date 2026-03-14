@@ -2,17 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
 import { FolderDown } from 'lucide-react';
-import { Editor } from '../ui/editor/Editor';
+import { Editor } from '../domains/editor/core/Editor';
 import { StateDebug } from '../ui/StateDebug';
 import { Sidebar } from '../ui/sidebar/Sidebar';
-import { useWorkspaceStore } from '../state/slices/workspaceSlice';
-import { useEditorStore } from '../state/slices/editorSlice';
+import { useWorkspaceStore } from '../domains/workspace/state/workspaceStore';
+import { useEditorStore } from '../domains/editor/state/editorStore';
 import { useStatusStore } from '../state/slices/statusSlice';
-import { useSettingsStore } from '../state/slices/settingsSlice';
+import { useSettingsStore } from '../domains/settings/state/settingsStore';
 import { useViewModeStore } from '../state/slices/viewModeSlice';
 import { StatusBar } from '../ui/statusbar/StatusBar';
-import { AutosaveService } from '../services/autosave/AutosaveService';
-import { FsService } from '../services/fs/FsService';
+import { AutosaveService } from '../domains/file/services/AutosaveService';
+import { FsService } from '../domains/file/services/FsService';
 import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
 import { ErrorService } from '../services/error/ErrorService';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
@@ -21,15 +21,15 @@ import { EmptyStateWorkspace } from '../ui/workspace/EmptyStateWorkspace';
 import {
   RecentItemsService,
   type RecentItem,
-} from '../services/recent/RecentItemsService';
-import { workspaceActions } from '../state/actions/workspaceActions';
+} from '../domains/workspace/services/RecentItemsService';
+import { workspaceActions } from '../domains/workspace/services/workspaceActions';
 import {
   t,
   getLocale,
   getLocalePreference,
   setLocalePreference,
   type LocalePreference,
-} from '../i18n';
+} from '../shared/i18n';
 import {
   filterSavableDirtyPaths,
   getCloseAction,
@@ -49,11 +49,11 @@ import {
   handleDroppedFolderPaths,
   openWorkspace,
   openWorkspaceFile,
-} from '../workspace/WorkspaceManager';
+} from '../domains/workspace/services/WorkspaceManager';
 import {
   classifyDroppedPaths,
   extractDroppedPaths,
-} from '../workspace/droppedPaths';
+} from '../domains/workspace/services/droppedPaths';
 import './App.css';
 
 function flattenRecentItems(data: Awaited<ReturnType<typeof RecentItemsService.getAll>>): RecentItem[] {

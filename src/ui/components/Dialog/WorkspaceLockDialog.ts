@@ -1,7 +1,7 @@
 // src/ui/components/Dialog/WorkspaceLockDialog.ts
 // V6 工作区锁对话框 - 显示工作区已在其他窗口打开的提示
 
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 import type { WorkspaceLockStatus } from '../../../services/workspace/WorkspaceLockService';
 
 export interface WorkspaceLockDialogOptions {

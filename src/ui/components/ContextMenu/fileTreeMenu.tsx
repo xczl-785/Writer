@@ -17,7 +17,7 @@ import {
 import type { MenuItem } from '../ContextMenu/contextMenuRegistry';
 import { divider } from '../ContextMenu/contextMenuRegistry';
 import type { FileNode } from '../../../state/types';
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 
 export interface FileTreeMenuContext {
   node: FileNode;

@@ -1,7 +1,9 @@
+pub mod config;
 pub mod fs;
 pub mod menu;
 pub mod security;
 pub mod watcher;
+pub mod workspace;
 
 use security::WorkspaceAllowlist;
 use std::sync::Mutex;
@@ -39,7 +41,7 @@ pub fn run() {
             greet,
             set_menu_locale,
             fs::list_tree,
-            fs::list_tree_batch,
+            workspace::list_tree_batch,
             fs::read_file,
             fs::write_file_atomic,
             fs::create_file,
@@ -50,21 +52,20 @@ pub fn run() {
             fs::save_image,
             fs::check_exists,
             fs::get_path_kind,
-            fs::get_git_sync_status,
             fs::detect_file_encoding,
             // Workspace commands
-            fs::parse_workspace_file,
-            fs::save_workspace_file,
-            fs::resolve_relative_path,
+            workspace::parse_workspace_file,
+            workspace::save_workspace_file,
+            workspace::resolve_relative_path,
             // App config commands
-            fs::get_app_config_dir,
-            fs::read_json_file,
-            fs::write_json_file,
+            config::get_app_config_dir,
+            config::read_json_file,
+            config::write_json_file,
             // Workspace lock commands
-            fs::check_workspace_lock,
-            fs::acquire_workspace_lock,
-            fs::release_workspace_lock,
-            fs::force_release_workspace_lock,
+            workspace::check_workspace_lock,
+            workspace::acquire_workspace_lock,
+            workspace::release_workspace_lock,
+            workspace::force_release_workspace_lock,
             // Watcher commands
             watcher::start_watching,
             watcher::stop_watching,

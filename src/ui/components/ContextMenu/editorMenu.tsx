@@ -1,7 +1,7 @@
 import { Copy, Quote, Rows3, Table2, Type } from 'lucide-react';
 import type { MenuItem } from './contextMenuRegistry';
 import { divider } from './contextMenuRegistry';
-import { t } from '../../../i18n';
+import { t } from '../../../shared/i18n';
 
 export interface EditorContextMenuActions {
   onPaste: () => void;
