@@ -1,0 +1,7 @@
+# Build outputs
+dist/
+src-tauri/target/
+coverage/
+
+# Generated files
+*.min.js
