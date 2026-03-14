@@ -2,6 +2,7 @@ pub mod fs;
 pub mod menu;
 pub mod security;
 pub mod watcher;
+pub mod workspace;
 
 use security::WorkspaceAllowlist;
 use std::sync::Mutex;
