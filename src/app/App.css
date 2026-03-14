@@ -335,3 +335,18 @@
   font-size: 13px;
   line-height: 1.45;
 }
+
+.editor-drop-blocked-overlay__arrow {
+  animation: editor-drop-blocked-arrow 1.5s infinite;
+}
+
+@keyframes editor-drop-blocked-arrow {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(-15px);
+  }
+}

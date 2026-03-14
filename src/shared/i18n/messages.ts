@@ -106,7 +106,7 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'workspace.recent': '最近打开',
     'workspace.dragHint': '或拖拽文件夹到此处',
     'workspace.dragFoldersOnly': '当前仅支持拖拽文件夹',
-    'workspace.dropInEditorDisabled': '请拖到左侧文件树以添加到工作区',
+    'workspace.dropInEditorDisabled': '请拖放到左侧面板以加入工作区',
     'workspace.dropBlockedTitle': '此区域不接受拖放',
     'workspace.dropBlockedHint': '请拖到左侧文件树以添加到工作区',
     'workspace.rootFolder': '工作区根目录',
@@ -408,7 +408,7 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'workspace.dragHint': 'Or drag a folder here',
     'workspace.dragFoldersOnly': 'Only folder drag-and-drop is supported for now',
     'workspace.dropInEditorDisabled':
-      'Drop folders into the sidebar to add them to the workspace',
+      'Drop folders into the left panel to add them to the workspace',
     'workspace.dropBlockedTitle': 'Drop is not accepted here',
     'workspace.dropBlockedHint':
       'Drop folders into the sidebar to add them to the workspace',

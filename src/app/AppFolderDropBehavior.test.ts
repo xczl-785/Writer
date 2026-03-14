@@ -17,9 +17,9 @@ describe('App folder-drop wiring', () => {
     expect(source).toContain('openInNewWorkspace: true');
     expect(source).toContain('isExternalDragOver={isSidebarDragOver}');
     expect(source).toContain('isDragOver={isEditorDragOver}');
-    expect(source).toContain("t('workspace.dropBlockedTitle')");
-    expect(source).toContain("t('workspace.dropBlockedHint')");
-    expect(source).toContain('WORKSPACE ONLY');
-    expect(source).toContain('bg-white/45 backdrop-blur-[1px]');
+    expect(source).toContain("import { EditorDropBlockedOverlay } from '../ui/components/ErrorStates'");
+    expect(source).toContain('<EditorDropBlockedOverlay');
+    expect(source).not.toContain("t('workspace.dropBlockedTitle')");
+    expect(source).not.toContain('WORKSPACE ONLY');
   });
 });

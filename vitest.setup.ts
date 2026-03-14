@@ -14,3 +14,4 @@ global.HTMLElement = dom.window.HTMLElement;
 global.MutationObserver = dom.window.MutationObserver;
 global.Range = dom.window.Range;
 global.Selection = dom.window.Selection;
+Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });

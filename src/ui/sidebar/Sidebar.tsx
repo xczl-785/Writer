@@ -85,24 +85,6 @@ type FolderIconProps = {
   filled?: boolean;
 };
 
-function CollapseSidebarIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-      <line x1="9" y1="3" x2="9" y2="21" />
-    </svg>
-  );
-}
-
 function FolderIcon({ className, filled = false }: FolderIconProps) {
   if (filled) {
     return (
@@ -134,16 +116,10 @@ function FolderIcon({ className, filled = false }: FolderIconProps) {
 }
 
 type SidebarProps = {
-  onToggleVisibility?: () => void;
-  onToggleFocusZen?: () => void;
   isExternalDragOver?: boolean;
 };
 
-export function Sidebar({
-  onToggleVisibility,
-  onToggleFocusZen,
-  isExternalDragOver = false,
-}: SidebarProps) {
+export function Sidebar({ isExternalDragOver = false }: SidebarProps) {
   // V6 状态获取 - 使用 selector 模式
   const rootFolders = useFileTreeStore((state) => state.rootFolders);
   const selectedPath = useFileTreeStore((state) => state.selectedPath);
@@ -214,7 +190,6 @@ export function Sidebar({
     dropTargetPath: null,
     dropPosition: null,
   });
-  const collapseClickTimerRef = useRef<number | null>(null);
   const dragExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedNode = selectedPath
@@ -278,44 +253,12 @@ export function Sidebar({
     });
   }, [isSearchActive, searchMatches.length]);
 
-  useEffect(
-    () => () => {
-      if (collapseClickTimerRef.current !== null) {
-        window.clearTimeout(collapseClickTimerRef.current);
-        collapseClickTimerRef.current = null;
-      }
-    },
-    [],
-  );
-
   const openSearchMatch = (match: FileNode | undefined): void => {
     if (!match) {
       return;
     }
     setSelectedPath(match.path);
     void openFile(match.path);
-  };
-
-  const handleCollapseButtonClick = () => {
-    if (collapseClickTimerRef.current !== null) {
-      window.clearTimeout(collapseClickTimerRef.current);
-    }
-    collapseClickTimerRef.current = window.setTimeout(() => {
-      collapseClickTimerRef.current = null;
-      onToggleVisibility?.();
-    }, 220);
-  };
-
-  const handleCollapseButtonDoubleClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (collapseClickTimerRef.current !== null) {
-      window.clearTimeout(collapseClickTimerRef.current);
-      collapseClickTimerRef.current = null;
-    }
-    onToggleFocusZen?.();
   };
 
   const startCreate = (type: 'file' | 'directory') => {
@@ -1014,15 +957,6 @@ export function Sidebar({
             title={t('sidebar.newFolder')}
           >
             <FolderPlus size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={handleCollapseButtonClick}
-            onDoubleClick={handleCollapseButtonDoubleClick}
-            className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors"
-            title={t('sidebar.collapse')}
-          >
-            <CollapseSidebarIcon className="h-4 w-4" />
           </button>
         </div>
       </div>

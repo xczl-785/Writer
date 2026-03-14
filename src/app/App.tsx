@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { FolderDown } from 'lucide-react';
 import { Editor } from '../domains/editor/core/Editor';
 import { StateDebug } from '../ui/StateDebug';
+import { PlatformTitleBar } from '../ui/chrome';
 import { Sidebar } from '../ui/sidebar/Sidebar';
 import { useWorkspaceStore } from '../domains/workspace/state/workspaceStore';
 import { useEditorStore } from '../domains/editor/state/editorStore';
@@ -17,6 +18,7 @@ import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
 import { ErrorService } from '../services/error/ErrorService';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
 import { RecentWorkspacesMenu } from '../ui/components/RecentWorkspaces/RecentWorkspacesMenu';
+import { EditorDropBlockedOverlay } from '../ui/components/ErrorStates';
 import { EmptyStateWorkspace } from '../ui/workspace/EmptyStateWorkspace';
 import {
   RecentItemsService,
@@ -147,13 +149,6 @@ function App() {
     },
     [enterZen, setFocusZen, setFocusZenEnabledByUser, typewriterEnabledByUser],
   );
-  const toggleFocusZenBySidebarButton = useCallback(() => {
-    if (isFocusZen) {
-      applyFocusZen(false);
-      return;
-    }
-    applyFocusZen(true);
-  }, [applyFocusZen, isFocusZen]);
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
   const openRecentMenu = useCallback(() => setIsRecentMenuOpen(true), []);
@@ -561,6 +556,11 @@ function App() {
       data-viewport-tier={tier}
       data-overlay-mode={isOverlaySidebar}
     >
+      <PlatformTitleBar
+        hasRecentItems={recentItems.length > 0}
+        isSidebarVisible={isSidebarVisible}
+        onToggleSidebar={toggleSidebar}
+      />
       <div className="flex-grow flex overflow-hidden">
         {isOverlaySidebar ? (
           <>
@@ -569,20 +569,12 @@ function App() {
               onClick={() => setIsSidebarVisible(false)}
             />
             <div ref={sidebarDropZoneRef} className="fixed inset-y-0 left-0 z-40">
-              <Sidebar
-                onToggleVisibility={toggleSidebar}
-                onToggleFocusZen={toggleFocusZenBySidebarButton}
-                isExternalDragOver={isSidebarDragOver}
-              />
+              <Sidebar isExternalDragOver={isSidebarDragOver} />
             </div>
           </>
         ) : isSidebarVisible ? (
           <div ref={sidebarDropZoneRef}>
-            <Sidebar
-              onToggleVisibility={toggleSidebar}
-              onToggleFocusZen={toggleFocusZenBySidebarButton}
-              isExternalDragOver={isSidebarDragOver}
-            />
+            <Sidebar isExternalDragOver={isSidebarDragOver} />
           </div>
         ) : null}
 
@@ -641,21 +633,7 @@ function App() {
                 void handleDroppedFolders(paths, e.metaKey || e.ctrlKey);
               }}
             >
-              {isEditorDropBlocked ? (
-                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-white/45 backdrop-blur-[1px]">
-                  <div className="flex w-full max-w-[560px] flex-col items-center rounded-2xl border border-zinc-300 bg-white/92 px-8 py-16 shadow-sm">
-                    <div className="mb-4 rounded-full border border-zinc-300 bg-zinc-100 px-4 py-1 text-[12px] font-medium tracking-[0.08em] text-zinc-500">
-                      WORKSPACE ONLY
-                    </div>
-                    <div className="text-[26px] font-semibold text-zinc-700">
-                      {t('workspace.dropBlockedTitle')}
-                    </div>
-                    <div className="mt-3 text-[16px] text-zinc-500">
-                      {t('workspace.dropBlockedHint')}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
+              <EditorDropBlockedOverlay isVisible={isEditorDropBlocked} />
               {isEditorDragOver ? (
                 <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/90">
                   <div className="flex w-full max-w-[640px] flex-col items-center rounded-2xl border border-zinc-300 bg-zinc-50 px-8 py-20">
