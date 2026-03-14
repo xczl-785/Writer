@@ -292,7 +292,9 @@ git commit -m "refactor(frontend): 从 FsService 移除 Git 功能"
 
 ---
 
-## Phase 2: 前端目录重组
+## Phase 2: 前端目录重组 ✅ 已完成 (2026-03-14)
+
+> **完成提交:** 7591c20 (197 files changed)
 
 ### Task 2.1: 创建 domains 目录结构
 
