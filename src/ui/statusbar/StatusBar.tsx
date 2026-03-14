@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useStatusStore } from '../../state/slices/statusSlice';
-import { useEditorStore } from '../../state/slices/editorSlice';
+import { useEditorStore } from '../../domains/editor/state/editorStore';
 import {
   useWorkspaceStore,
   getWorkspaceType,
-} from '../../state/slices/workspaceSlice';
-import { FsService } from '../../services/fs/FsService';
+} from '../../domains/workspace/state/workspaceStore';
+import { FsService } from '../../domains/file/services/FsService';
 import { countCharacters } from './statusBarUtils';
 import { getWorkspaceIndicatorLabel } from './workspaceIndicator';
-import { t } from '../../i18n';
+import { t } from '../../shared/i18n';
 import './StatusBar.css';
 
 type StatusBarProps = {

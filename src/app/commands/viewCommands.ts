@@ -5,8 +5,8 @@
  */
 import { menuCommandBus } from '../../ui/commands/menuCommandBus';
 import { useStatusStore } from '../../state/slices/statusSlice';
-import { useSettingsStore } from '../../state/slices/settingsSlice';
-import { t } from '../../i18n';
+import { useSettingsStore } from '../domains/settings/state/settingsStore';
+import { t } from '../../shared/i18n';
 
 export type CleanupFn = () => void;
 

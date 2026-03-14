@@ -3,7 +3,7 @@ import {
   type SaveErrorAction,
   type SaveErrorCategory,
 } from '../../state/slices/statusSlice';
-import { t } from '../../i18n';
+import { t } from '../../shared/i18n';
 
 /**
  * Error classification for user-friendly messages

@@ -1,5 +1,5 @@
-import { isPathMatch } from '../utils/pathUtils';
-import { t } from '../i18n';
+import { isPathMatch } from '../shared/utils/pathUtils';
+import { t } from '../shared/i18n';
 
 export type CloseAction = 'save_then_close' | 'close_now';
 

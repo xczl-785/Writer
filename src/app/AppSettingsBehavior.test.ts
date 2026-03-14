@@ -11,11 +11,11 @@ describe('App settings integration', () => {
     'utf-8',
   );
   const messagesTs = readFileSync(
-    join(currentDir, '..', 'i18n', 'messages.ts'),
+    join(currentDir, '..', 'shared', 'i18n', 'messages.ts'),
     'utf-8',
   );
   const i18nIndexTs = readFileSync(
-    join(currentDir, '..', 'i18n', 'index.ts'),
+    join(currentDir, '..', 'shared', 'i18n', 'index.ts'),
     'utf-8',
   );
   const appLibRs = readFileSync(

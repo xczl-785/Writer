@@ -7,7 +7,7 @@ describe('View mode integration', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const appTsx = readFileSync(join(currentDir, 'App.tsx'), 'utf-8');
   const editorTsx = readFileSync(
-    join(currentDir, '..', 'ui', 'editor', 'Editor.tsx'),
+    join(currentDir, '..', 'domains', 'editor', 'core', 'Editor.tsx'),
     'utf-8',
   );
 
