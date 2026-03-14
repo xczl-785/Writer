@@ -1,3 +1,4 @@
+pub mod config;
 pub mod fs;
 pub mod menu;
 pub mod security;
@@ -58,9 +59,9 @@ pub fn run() {
             workspace::save_workspace_file,
             workspace::resolve_relative_path,
             // App config commands
-            fs::get_app_config_dir,
-            fs::read_json_file,
-            fs::write_json_file,
+            config::get_app_config_dir,
+            config::read_json_file,
+            config::write_json_file,
             // Workspace lock commands
             workspace::check_workspace_lock,
             workspace::acquire_workspace_lock,
