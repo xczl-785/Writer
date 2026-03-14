@@ -39,9 +39,9 @@
 
 ### 当前架构提醒
 
-- 编辑器相关实现已迁移到 `src/domains/editor/`
+- 编辑器相关实现已收敛到 `src/domains/editor/`
 - 文件、工作区、设置分别收敛到 `src/domains/file/`、`src/domains/workspace/`、`src/domains/settings/`
-- `src/i18n/`、`src/utils/`、`src/state/slices/` 中仍保留兼容导出，供迁移期代码与测试复用
+- `src/i18n/`、`src/utils/` 仍保留少量兼容导出；`src/state/slices/` 仅保留应用级运行时 store
 
 ---
 
