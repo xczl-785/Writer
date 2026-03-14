@@ -6,21 +6,30 @@ import { describe, expect, it } from 'vitest';
 describe('platform title bar integration', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const appTsx = readFileSync(join(currentDir, 'App.tsx'), 'utf-8');
+  const appChromeTsx = readFileSync(join(currentDir, 'AppChrome.tsx'), 'utf-8');
   const chromeDir = join(currentDir, '..', 'ui', 'chrome');
   const menuSchemaPath = join(chromeDir, 'menuSchema.ts');
   const windowsTitleBarTsx = readFileSync(
     join(chromeDir, 'WindowsTitleBar.tsx'),
     'utf-8',
   );
+  const platformTitleBarTsx = readFileSync(
+    join(chromeDir, 'PlatformTitleBar.tsx'),
+    'utf-8',
+  );
+  const chromeStateTs = readFileSync(
+    join(chromeDir, 'chromeState.ts'),
+    'utf-8',
+  );
 
   it('renders a platform title bar above the shared app content', () => {
-    expect(appTsx).toContain("import { PlatformTitleBar } from '../ui/chrome'");
-    expect(appTsx).toContain('<PlatformTitleBar');
-    expect(appTsx).toContain('isSidebarVisible={isSidebarVisible}');
-    expect(appTsx).toContain('isFocusZen={isFocusZen}');
-    expect(appTsx).toContain('isHeaderAwake={isHeaderAwake}');
-    expect(appTsx).toContain('onToggleSidebar={toggleSidebar}');
-    expect(appTsx).toContain('onSetFocusZen={applyFocusZen}');
+    expect(appTsx).toContain("import { AppChrome } from './AppChrome'");
+    expect(appTsx).toContain('createAppChromeModel');
+    expect(appTsx).toContain('<AppChrome chrome={chrome} />');
+    expect(appChromeTsx).toContain('<PlatformTitleBar chrome={chrome} />');
+    expect(platformTitleBarTsx).toContain('chrome: AppChromeModel;');
+    expect(chromeStateTs).toContain('export type AppChromeModel');
+    expect(chromeStateTs).toContain('createAppChromeModel');
   });
 
   it('defines a shared menu schema with windows-only tools and help groups', () => {

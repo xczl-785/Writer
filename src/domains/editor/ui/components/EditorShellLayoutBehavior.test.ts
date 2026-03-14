@@ -29,7 +29,7 @@ describe('EditorShell layout behavior', () => {
   it('maintains explicit top offset variable with runtime measurement chain', () => {
     expect(shellTsx).toContain('ResizeObserver');
     expect(shellTsx).toContain("'--editor-content-offset-top'");
-    expect(shellTsx).toContain("root.querySelector('.editor-find-panel')");
+    expect(shellTsx).toContain("'.editor-find-panel',");
     expect(editorCss).toContain('--editor-content-offset-top: 0px;');
     expect(editorCss).toContain('--editor-content-padding-top-effective');
   });

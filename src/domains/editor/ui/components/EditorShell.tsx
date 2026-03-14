@@ -6,6 +6,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
+import { isEditorHeaderVisible } from '../../../../ui/chrome/headerVisibilityPolicy';
 
 type Props = {
   editor: TiptapEditor;
@@ -42,6 +43,7 @@ export function EditorShell({
 }: Props) {
   const outlineAreaRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isHeaderVisible = isEditorHeaderVisible({ isFocusZen, isHeaderAwake });
 
   useEffect(() => {
     if (!isOutlineOpen) return;
@@ -68,7 +70,9 @@ export function EditorShell({
 
     let rafId: number | null = null;
     const syncOffsetVariable = () => {
-      const findPanel = root.querySelector('.editor-find-panel') as HTMLElement | null;
+      const findPanel = root.querySelector(
+        '.editor-find-panel',
+      ) as HTMLElement | null;
 
       let offsetTop = 0;
       if (findPanel) {
@@ -93,7 +97,9 @@ export function EditorShell({
 
     const observer = new ResizeObserver(() => scheduleSync());
     observer.observe(scrollContainer);
-    const findPanel = root.querySelector('.editor-find-panel') as HTMLElement | null;
+    const findPanel = root.querySelector(
+      '.editor-find-panel',
+    ) as HTMLElement | null;
     if (findPanel) {
       observer.observe(findPanel);
     }
@@ -124,7 +130,7 @@ export function EditorShell({
     >
       <header
         className={`editor-header ${
-          isFocusZen && !isHeaderAwake ? 'editor-header--focus-zen-hidden' : ''
+          !isHeaderVisible ? 'editor-header--focus-zen-hidden' : ''
         }`}
       >
         <div className="editor-header__breadcrumb">{breadcrumb}</div>
