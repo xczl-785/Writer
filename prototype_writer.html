@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Writer Prototype</title>
+    <style>
+        :root {
+            --bg-sidebar: #f8f9fa;
+            --bg-main: #ffffff;
+            --border-color: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-placeholder: #adb5bd;
+            --hover-bg: #e9ecef;
+            --selected-bg: #e7f1ff;
+            --selected-border: #0d6efd;
+            --icon-color: #6c757d;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #f0f0f0; /* Simulate desktop background */
+        }
+
+        /* 优化点3: 整合标题栏与菜单，节省垂直空间 */
+        .title-bar {
+            height: 40px;
+            background-color: var(--bg-main);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 13px;
+            user-select: none;
+            -webkit-app-region: drag;
+        }
+
+        .title-bar-icon {
+            width: 16px;
+            height: 16px;
+            background-color: #212529;
+            border-radius: 4px;
+            margin-right: 12px;
+        }
+
+        .title-bar-title {
+            font-weight: 600;
+            margin-right: 24px;
+        }
+
+        .menu-items {
+            display: flex;
+            gap: 16px;
+            color: var(--text-secondary);
+        }
+
+        .menu-item {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .menu-item:hover {
+            background-color: var(--hover-bg);
+            color: var(--text-primary);
+        }
+        
+        /* Window controls mock */
+        .window-controls {
+            margin-left: auto;
+            display: flex;
+            gap: 16px;
+            color: var(--text-secondary);
+        }
+
+        .window-controls svg {
+            cursor: pointer;
+            width: 14px; 
+            height: 14px;
+        }
+        .window-controls svg:hover {
+            color: var(--text-primary);
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: calc(100vh - 40px);
+            background-color: var(--bg-main);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: width 0.3s ease;
+        }
+
+        /* 优化点4: 增加侧边栏折叠把手 */
+        .resize-handle {
+            position: absolute;
+            right: -3px;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: col-resize;
+            z-index: 10;
+        }
+        
+        .resize-handle:hover {
+            background-color: rgba(13, 110, 253, 0.2);
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            /* 优化点2: 增大操作图标的间距和点击热区 */
+            gap: 8px; 
+        }
+
+        .icon-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--icon-color);
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background-color: #e2e6ea;
+            color: var(--text-primary);
+        }
+
+        .search-container {
+            padding: 0 16px 16px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-main);
+            /* 优化点1: 基础对比度提升 */
+            border: 1px solid #ced4da; 
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: var(--text-secondary);
+            transition: border-color 0.2s;
+        }
+        
+        .search-box:focus-within {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            margin-left: 8px;
+            width: 100%;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        /* 优化点1: 提高占位符可见度 */
+        .search-box input::placeholder {
+            color: #868e96; 
+        }
+
+        .file-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 8px;
+            font-size: 14px;
+        }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #495057; /* 优化对比度 */
+            margin-bottom: 2px;
+            position: relative;
+        }
+
+        .tree-item:hover {
+            background-color: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+        .tree-item.active {
+            background-color: var(--selected-bg);
+            color: #084298; /* Darker blue for text */
+            font-weight: 500;
+        }
+
+        /* The vertical active indicator line */
+        .tree-item.active::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 4px;
+            bottom: 4px;
+            width: 4px;
+            background-color: var(--selected-border);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .tree-item-icon {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tree-item-icon svg {
+            width: 16px;
+            height: 16px;
+            /* 优化点1: 增加图标对比度 */
+            stroke: currentColor; 
+        }
+
+        .tree-item-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-bar {
+            height: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+            background-color: #f8f9fa; /* slightly off-white */
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #198754;
+            border-radius: 50%;
+            margin-right: 8px;
+            box-shadow: 0 0 0 2px rgba(25, 135, 84, 0.2);
+            /* 呼吸动画 */
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.4); }
+            70% { box-shadow: 0 0 0 4px rgba(25, 135, 84, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+        }
+
+        /* Main Editor Area */
+        .main-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-main);
+        }
+
+        .editor-header {
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            border-bottom: 1px solid transparent; 
+        }
+
+        .breadcrumb {
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+        }
+
+        .breadcrumb-item {
+            cursor: pointer;
+        }
+
+        .breadcrumb-item:hover {
+            color: var(--text-primary);
+        }
+
+        .breadcrumb-separator {
+            margin: 0 8px;
+            color: #dee2e6;
+        }
+
+        .editor-actions {
+            display: flex;
+        }
+
+        .editor-content {
+            flex: 1;
+            padding: 40px 60px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* 优化点5: 添加空状态提示 */
+        .empty-state {
+            max-width: 600px;
+            margin: 0 auto;
+            color: var(--text-placeholder);
+            font-weight: 300;
+            pointer-events: none; /* Don't block clicks */
+        }
+        
+        .empty-title {
+            font-size: 40px;
+            color: #212529;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        
+        .empty-subtitle {
+            font-size: 16px;
+            color: var(--text-placeholder);
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .empty-subtitle kbd {
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 13px;
+            font-family: monospace;
+            color: #495057;
+        }
+
+        /* Moved to status-bar */
+
+        .footer-info {
+            display: flex;
+            gap: 16px;
+        }
+        
+        /* Icons */
+        svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶栏：整合了原菜单栏，提供更沉浸的空间 -->
+    <div class="title-bar">
+        <div class="title-bar-icon"></div>
+        <div class="title-bar-title">Writer</div>
+        <div class="menu-items">
+            <div class="menu-item">文件</div>
+            <div class="menu-item">编辑</div>
+            <div class="menu-item">段落</div>
+            <div class="menu-item">格式</div>
+            <div class="menu-item">视图</div>
+        </div>
+        <div class="window-controls">
+            <!-- Mock window controls -->
+            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <div class="content-wrapper">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="resize-handle"></div>
+            
+            <div class="sidebar-header">
+                <div class="sidebar-title">文件</div>
+                <div class="sidebar-actions">
+                    <!-- 新建文件 -->
+                    <div class="icon-btn" title="新建文件">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                    </div>
+                    <!-- 新建文件夹 -->
+                    <div class="icon-btn" title="新建文件夹">
+                        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+                    </div>
+                    <!-- 极简收起图标 (新增) -->
+                    <div class="icon-btn" title="收起侧边栏" style="margin-left: 4px;">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke-width: 2.5;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" placeholder="搜索文件...">
+                </div>
+            </div>
+
+            <div class="file-tree">
+                <!-- 文件夹 -->
+                <div class="tree-item" style="color: var(--text-primary);">
+                    <div class="tree-item-icon">
+                        <svg viewBox="0 0 24 24" style="width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="tree-item-icon" style="margin-right: 6px; color: var(--icon-color);">
+                        <svg viewBox="0 0 24 24" stroke="none" fill="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <div class="tree-item-text">test</div>
+                </div>
+
+                <!-- 文件列表 -->
+                <div class="tree-item" style="padding-left: 32px;">
+                    <div class="tree-item-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
+                    <div class="tree-item-text">RectangleGate_耗时分析...</div>
+                </div>
+
+                <!-- 选中的文件 -->
+                <div class="tree-item active" style="padding-left: 32px;">
+                    <div class="tree-item-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
+                    <div class="tree-item-text">临时报告</div>
+                </div>
+
+                <div class="tree-item" style="padding-left: 32px;">
+                    <div class="tree-item-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
+                    <div class="tree-item-text">发现的问题</div>
+                </div>
+
+                <div class="tree-item" style="padding-left: 32px;">
+                    <div class="tree-item-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
+                    <div class="tree-item-text">备忘录</div>
+                </div>
+
+                <div class="tree-item" style="padding-left: 32px;">
+                    <div class="tree-item-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
+                    <div class="tree-item-text">操作卡顿问题统计报告</div>
+                </div>
+
+                <div class="tree-item" style="padding-left: 32px;">
+                    <div class="tree-item-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
+                    <div class="tree-item-text">日常</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-editor">
+            <div class="editor-header">
+                <div class="breadcrumb">
+                    <span class="breadcrumb-item">temp</span>
+                    <span class="breadcrumb-separator">/</span>
+                    <span class="breadcrumb-item" style="color: var(--text-primary); font-weight: 500;">临时报告.md</span>
+                </div>
+                <div class="editor-actions">
+                    <!-- 带有Hover提示的按钮 -->
+                    <div class="icon-btn" title="显示大纲与目录">
+                        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-content">
+                <!-- 空状态提示，增强引导与沉浸感 -->
+                <div class="empty-state">
+                    <div class="empty-title">临时报告</div>
+                    <div class="empty-subtitle">开始输入文本，或输入 <kbd>/</kbd> 呼出命令菜单</div>
+                </div>
+            </div>
+
+        </div> <!-- end main-editor -->
+        </div> <!-- end content-wrapper -->
+
+        <!-- 全局状态栏 -->
+        <div class="status-bar">
+            <div style="display: flex; align-items: center;">
+                <div class="status-dot"></div>
+                <span>已保存</span>
+            </div>
+            <div class="footer-info">
+                <span>0 chars</span>
+                <span>UTF-8</span>
+                <span>SYNC</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
