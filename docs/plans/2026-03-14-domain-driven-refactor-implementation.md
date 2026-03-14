@@ -10,9 +10,11 @@
 
 ---
 
-## Phase 1: 后端重构
+## Phase 1: 后端重构 ✅ 已完成 (2026-03-14)
 
-### Task 1.1: 创建 workspace.rs 模块
+> **完成提交:** b3318b6, b6de999, 39dd831, 0491cd5, 5401c79, 54c24d9
+
+### Task 1.1: 创建 workspace.rs 模块 ✅
 
 **Files:**
 - Create: `src-tauri/src/workspace.rs`
@@ -113,7 +115,7 @@ git commit -m "refactor(backend): 创建 workspace.rs 模块骨架"
 
 ---
 
-### Task 1.2: 迁移工作区文件操作到 workspace.rs
+### Task 1.2: 迁移工作区文件操作到 workspace.rs ✅
 
 **Files:**
 - Modify: `src-tauri/src/workspace.rs`
@@ -158,7 +160,7 @@ git commit -m "refactor(backend): 迁移工作区文件操作到 workspace.rs"
 
 ---
 
-### Task 1.3: 迁移工作区锁功能到 workspace.rs
+### Task 1.3: 迁移工作区锁功能到 workspace.rs ✅
 
 **Files:**
 - Modify: `src-tauri/src/workspace.rs`
@@ -194,7 +196,7 @@ git commit -m "refactor(backend): 迁移工作区锁功能到 workspace.rs"
 
 ---
 
-### Task 1.4: 创建 config.rs 模块
+### Task 1.4: 创建 config.rs 模块 ✅
 
 **Files:**
 - Create: `src-tauri/src/config.rs`
@@ -230,7 +232,7 @@ git commit -m "refactor(backend): 创建 config.rs 模块"
 
 ---
 
-### Task 1.5: 移除 Git 相关代码
+### Task 1.5: 移除 Git 相关代码 ✅
 
 **Files:**
 - Modify: `src-tauri/src/fs.rs`
@@ -265,7 +267,7 @@ git commit -m "refactor(backend): 移除 Git 相关功能"
 
 ---
 
-### Task 1.6: 更新前端 FsService
+### Task 1.6: 更新前端 FsService ✅
 
 **Files:**
 - Modify: `src/services/fs/FsService.ts`
@@ -687,10 +689,14 @@ git commit -m "docs: 更新 AGENTS.md 反映新架构"
 
 ## 验收清单
 
-- [ ] 后端编译通过：`cd src-tauri && cargo check`
-- [ ] 后端测试通过：`cd src-tauri && cargo test`
-- [ ] 前端编译通过：`npx tsc --noEmit`
+### Phase 1 验收 ✅
+- [x] 后端编译通过：`cd src-tauri && cargo check`
+- [x] 后端测试通过：`cd src-tauri && cargo test` (12 tests passed)
+- [x] 前端编译通过：`npx tsc --noEmit`
+- [x] 无 Git 相关代码残留
+- [x] 所有改动已提交 (6 commits)
+
+### Phase 2-4 待验收
 - [ ] 前端测试通过：`npm test`（允许快照测试失败）
-- [ ] 无 Git 相关代码残留
 - [ ] 文档已更新
 - [ ] 所有改动已提交
