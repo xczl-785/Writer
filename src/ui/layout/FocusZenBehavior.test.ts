@@ -5,7 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 describe('focus zen behavior wiring', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const appTsx = readFileSync(join(currentDir, '..', '..', 'app', 'App.tsx'), 'utf-8');
+  const appTsx = readFileSync(
+    join(currentDir, '..', '..', 'app', 'App.tsx'),
+    'utf-8',
+  );
   const editorTsx = readFileSync(
     join(currentDir, '..', 'editor', 'Editor.tsx'),
     'utf-8',
@@ -29,7 +32,10 @@ describe('focus zen behavior wiring', () => {
     join(currentDir, '..', 'statusbar', 'StatusBar.tsx'),
     'utf-8',
   );
-  const editorCss = readFileSync(join(currentDir, '..', 'editor', 'Editor.css'), 'utf-8');
+  const editorCss = readFileSync(
+    join(currentDir, '..', 'editor', 'Editor.css'),
+    'utf-8',
+  );
   const statusCss = readFileSync(
     join(currentDir, '..', 'statusbar', 'StatusBar.css'),
     'utf-8',
@@ -50,8 +56,12 @@ describe('focus zen behavior wiring', () => {
     expect(editorTsx).toContain('hasActiveOverlayInDom');
     expect(focusZenDomainTs).toContain('.editor-find-panel');
     expect(editorTsx).toContain("if (event.key !== 'Escape')");
-    expect(editorTsx).toContain('if (hasTransientOverlay || hasActiveOverlayInDom(event.target)) return');
-    expect(editorTsx).toContain("window.addEventListener('keydown', onKeyDown, true)");
+    expect(editorTsx).toContain(
+      'if (hasTransientOverlay || hasActiveOverlayInDom(event.target)) return',
+    );
+    expect(editorTsx).toContain(
+      "window.addEventListener('keydown', onKeyDown, true)",
+    );
   });
 
   it('defines focus zen hide/reveal classes with 200ms transition', () => {

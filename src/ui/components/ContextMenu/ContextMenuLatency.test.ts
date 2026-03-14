@@ -7,7 +7,10 @@ describe('ContextMenu latency contract', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
 
   it('opens context menu synchronously without debounce delay', () => {
-    const hookSrc = readFileSync(join(currentDir, 'useContextMenu.ts'), 'utf-8');
+    const hookSrc = readFileSync(
+      join(currentDir, 'useContextMenu.ts'),
+      'utf-8',
+    );
 
     expect(hookSrc).toContain('const open = useCallback');
     expect(hookSrc).toContain('setState({ isOpen: true, x, y, items });');

@@ -19,7 +19,9 @@ describe('Typewriter fallback integration', () => {
     expect(hookTs).toContain("editorDom?.addEventListener('mousedown'");
     expect(hookTs).toContain("document.addEventListener('selectionchange'");
     expect(hookTs).toContain('shouldForceFreeOnMouseCaretPlacement');
-    expect(hookTs).toContain('typewriterState = createInitialTypewriterState()');
+    expect(hookTs).toContain(
+      'typewriterState = createInitialTypewriterState()',
+    );
   });
 
   it('forces free mode for find navigation and outline jumps', () => {

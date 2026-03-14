@@ -10,10 +10,16 @@ import { useEditorStore } from '../../state/slices/editorSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { AutosaveService } from '../../services/autosave/AutosaveService';
 import { FsService } from '../../services/fs/FsService';
+import { RecentItemsService } from '../../services/recent/RecentItemsService';
 import { t } from '../../i18n';
-import { openWorkspace } from '../../workspace/WorkspaceManager';
+import {
+  openWorkspace,
+  saveCurrentWorkspace,
+  saveWorkspaceFileByDialog,
+} from '../../workspace/WorkspaceManager';
 
 export type CleanupFn = () => void;
+export type OpenRecentCallback = () => void;
 
 const emitSidebarCommand = (id: string) => {
   window.dispatchEvent(
@@ -25,6 +31,7 @@ export function registerFileCommands(
   setIsSidebarVisible: (value: boolean | ((prev: boolean) => boolean)) => void,
   isSidebarVisible: boolean,
   onOpenSettings: () => void,
+  onOpenRecent?: OpenRecentCallback,
 ): CleanupFn {
   const cleanups: CleanupFn[] = [];
 
@@ -85,6 +92,30 @@ export function registerFileCommands(
   );
 
   cleanups.push(
+    menuCommandBus.register('menu.file.save_workspace', async () => {
+      const workspace = useWorkspaceStore.getState();
+      if (workspace.folders.length === 0) {
+        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        return;
+      }
+
+      await saveCurrentWorkspace();
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.save_workspace_as', async () => {
+      const workspace = useWorkspaceStore.getState();
+      if (workspace.folders.length === 0) {
+        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        return;
+      }
+
+      await saveWorkspaceFileByDialog();
+    }),
+  );
+
+  cleanups.push(
     menuCommandBus.register('menu.file.save_as', () => {
       useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
     }),
@@ -114,5 +145,25 @@ export function registerFileCommands(
     }),
   );
 
-  return () => cleanups.forEach((fn) => fn());
+  // Recent items commands
+  cleanups.push(
+    menuCommandBus.register('menu.file.open_recent', () => {
+      if (onOpenRecent) {
+        onOpenRecent();
+      }
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.clear_recent', async () => {
+      await RecentItemsService.clearAll();
+      useStatusStore.getState().setStatus('idle', t('recent.clearHistory'));
+    }),
+  );
+
+  return () => {
+    for (const fn of cleanups) {
+      fn();
+    }
+  };
 }

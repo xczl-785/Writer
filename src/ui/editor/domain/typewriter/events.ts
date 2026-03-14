@@ -45,4 +45,3 @@ export const createTypewriterEventEnvelope = ({
   payload,
   timestamp: Date.now(),
 });
-

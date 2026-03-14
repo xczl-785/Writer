@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { useEditorStore } from '../../state/slices/editorSlice';
-import { useWorkspaceStore } from '../../state/slices/workspaceSlice';
-import { FsService, type GitSyncStatus } from '../../services/fs/FsService';
 import {
-  countCharacters,
-  deriveSyncState,
-  syncLabel,
-  syncTooltip,
-} from './statusBarUtils';
+  useWorkspaceStore,
+  getWorkspaceType,
+} from '../../state/slices/workspaceSlice';
+import { FsService } from '../../services/fs/FsService';
+import { countCharacters } from './statusBarUtils';
+import { getWorkspaceIndicatorLabel } from './workspaceIndicator';
 import { t } from '../../i18n';
 import './StatusBar.css';
 
@@ -23,12 +22,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 }) => {
   const { saveStatus, message, saveError, lastSavedAt, setStatus } =
     useStatusStore();
-  const folders = useWorkspaceStore((state) => state.folders);
-  const currentPath = folders[0]?.path ?? null;
-  const activeFile = useWorkspaceStore((state) => state.activeFile);
+  const { folders, activeFile, workspaceFile, isDirty } = useWorkspaceStore();
   const { fileStates } = useEditorStore();
   const [isFaded, setIsFaded] = useState(false);
-  const [gitSync, setGitSync] = useState<GitSyncStatus | null>(null);
   const [encodingLabel, setEncodingLabel] = useState('UTF-8');
 
   const activeContent = activeFile
@@ -36,54 +32,35 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     : '';
   const charactersCount = countCharacters(activeContent);
 
-  useEffect(() => {
-    let disposed = false;
-    let timer: number | null = null;
-
-    if (!currentPath) {
-      setGitSync(null);
-      return;
-    }
-
-    const loadSyncStatus = async (): Promise<GitSyncStatus | null> => {
-      try {
-        const status = await FsService.getGitSyncStatus(currentPath);
-        if (!disposed) {
-          setGitSync(status);
-        }
-        return status;
-      } catch {
-        if (!disposed) {
-          setGitSync(null);
-        }
-        return null;
-      }
-    };
-
-    void (async () => {
-      const initial = await loadSyncStatus();
-      if (disposed || !initial?.isRepo) {
-        return;
-      }
-      timer = window.setInterval(() => {
-        void loadSyncStatus();
-      }, 15000);
-    })();
-
-    return () => {
-      disposed = true;
-      if (timer !== null) {
-        window.clearInterval(timer);
-      }
-    };
-  }, [currentPath]);
+  // 计算工作区类型和名称
+  const workspaceType = getWorkspaceType({
+    folders,
+    workspaceFile,
+    isDirty,
+    openFiles: [],
+    activeFile: null,
+  });
+  const workspaceName = getWorkspaceIndicatorLabel({
+    folders,
+    workspaceFile,
+    isDirty,
+  });
+  const showWorkspace = workspaceType !== 'empty';
 
   useEffect(() => {
     let disposed = false;
 
     if (!activeFile) {
-      setEncodingLabel('UTF-8');
-      return;
+      // 使用 setTimeout 避免在 effect 中同步调用 setState
+      const timer = setTimeout(() => {
+        if (!disposed) {
+          setEncodingLabel('UTF-8');
+        }
+      }, 0);
+      return () => {
+        disposed = true;
+        clearTimeout(timer);
+      };
     }
 
     void FsService.detectFileEncoding(activeFile)
@@ -161,7 +138,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     }
   };
 
-  const syncState = deriveSyncState(saveStatus, gitSync);
   const focusZenClass =
     isFocusZen && !isVisibleInFocusZen ? 'status-bar--focus-zen-hidden' : '';
 
@@ -189,6 +165,18 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           ) : null}
         </div>
         <span className="status-message">{getStatusText()}</span>
+        {/* 工作区标识 - V6规范 */}
+        {showWorkspace && (
+          <div
+            className={`status-workspace-indicator ${
+              workspaceType === 'multi'
+                ? 'status-workspace-indicator--multi'
+                : ''
+            }`}
+          >
+            <span className="status-workspace-name">{workspaceName}</span>
+          </div>
+        )}
       </div>
       <div className="status-bar__right">
         <span className="status-meta">
@@ -204,12 +192,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         >
           {encodingLabel}
         </button>
-        <span
-          className={`status-sync status-sync--${syncState}`}
-          title={syncTooltip(syncState, gitSync)}
-        >
-          {syncLabel(syncState)}
-        </span>
+        {/* SYNC 已移除，保留占位 */}
+        <span className="w-2" />
       </div>
     </div>
   );

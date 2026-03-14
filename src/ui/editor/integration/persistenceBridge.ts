@@ -37,4 +37,3 @@ export function flushEditorOnBlur(activeFile: string | null): void {
     void AutosaveService.flush(activeFile);
   }
 }
-

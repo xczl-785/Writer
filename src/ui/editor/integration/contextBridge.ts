@@ -37,4 +37,3 @@ export function openEditorContextMenu({
   const opener = openerFactory(editor, contextMenu, copyText, setStatus);
   opener(event);
 }
-

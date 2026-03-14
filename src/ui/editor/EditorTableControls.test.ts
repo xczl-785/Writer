@@ -16,10 +16,7 @@ describe('Editor table controls contracts', () => {
     const view = {
       state: { selection: {} },
     } as unknown as EditorView;
-    const handled = handler(
-      view,
-      event,
-    );
+    const handled = handler(view, event);
     expect(handled).toBe(false);
   });
 

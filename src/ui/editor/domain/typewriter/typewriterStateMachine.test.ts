@@ -16,14 +16,11 @@ describe('typewriterStateMachine', () => {
   });
 
   it('captures dynamic anchor when free mode movement crosses threshold downward', () => {
-    const next = reduceTypewriterInputMovement(
-      createInitialTypewriterState(),
-      {
-        previousCaretTop: 320,
-        nextCaretTop: 460,
-        thresholdY: 450,
-      },
-    );
+    const next = reduceTypewriterInputMovement(createInitialTypewriterState(), {
+      previousCaretTop: 320,
+      nextCaretTop: 460,
+      thresholdY: 450,
+    });
     expect(next).toEqual({
       mode: 'locked',
       dynamicAnchorY: 460,
@@ -32,14 +29,11 @@ describe('typewriterStateMachine', () => {
   });
 
   it('captures dynamic anchor when free mode movement crosses threshold upward', () => {
-    const next = reduceTypewriterInputMovement(
-      createInitialTypewriterState(),
-      {
-        previousCaretTop: 520,
-        nextCaretTop: 440,
-        thresholdY: 450,
-      },
-    );
+    const next = reduceTypewriterInputMovement(createInitialTypewriterState(), {
+      previousCaretTop: 520,
+      nextCaretTop: 440,
+      thresholdY: 450,
+    });
     expect(next).toEqual({
       mode: 'locked',
       dynamicAnchorY: 440,

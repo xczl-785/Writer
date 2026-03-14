@@ -36,4 +36,3 @@ describe('viewModeSlice', () => {
     expect(useViewModeStore.getState().isTypewriterActive).toBe(true);
   });
 });
-
