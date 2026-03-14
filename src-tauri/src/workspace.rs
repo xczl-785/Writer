@@ -245,3 +245,146 @@ fn build_tree_batch(path: &str) -> Result<FolderPathResult, String> {
         error: None,
     })
 }
+
+// ==================== Workspace Lock Commands ====================
+
+/// Get the lock file path for a workspace
+fn get_lock_file_path(workspace_path: &str) -> String {
+    let path = Path::new(workspace_path);
+    let lock_name = format!(
+        ".{}.lock",
+        path.file_name().unwrap_or_default().to_string_lossy()
+    );
+    path.parent()
+        .map(|p| p.join(&lock_name))
+        .unwrap_or_else(|| path.join(&lock_name))
+        .to_string_lossy()
+        .replace('\\', "/")
+}
+
+/// Get current process ID
+fn get_current_pid() -> u32 {
+    std::process::id()
+}
+
+/// Get current timestamp in milliseconds
+fn get_current_timestamp() -> u64 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+/// Check if a process is still running
+#[cfg(target_os = "windows")]
+fn is_process_running(pid: u32) -> bool {
+    use std::process::Command;
+    Command::new("tasklist")
+        .args(["/FI", &format!("PID eq {}", pid), "/NH"])
+        .output()
+        .map(|output| String::from_utf8_lossy(&output.stdout).contains(&pid.to_string()))
+        .unwrap_or(false)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn is_process_running(pid: u32) -> bool {
+    std::fs::exists(format!("/proc/{}", pid)).unwrap_or(false)
+}
+
+/// Check workspace lock status
+#[tauri::command]
+pub fn check_workspace_lock(workspace_path: &str) -> Result<WorkspaceLockStatus, String> {
+    let lock_file = get_lock_file_path(workspace_path);
+    let lock_path = Path::new(&lock_file);
+
+    if !lock_path.exists() {
+        return Ok(WorkspaceLockStatus {
+            is_locked: false,
+            lock_info: None,
+        });
+    }
+
+    // Read lock file
+    let content = fs::read_to_string(&lock_path).map_err(|e| e.to_string())?;
+    let lock_info: WorkspaceLockInfo =
+        serde_json::from_str(&content).map_err(|e| format!("Invalid lock file: {}", e))?;
+
+    // Check if the process is still running
+    if is_process_running(lock_info.pid) {
+        Ok(WorkspaceLockStatus {
+            is_locked: true,
+            lock_info: Some(lock_info),
+        })
+    } else {
+        // Process is dead, lock is stale - clean it up
+        let _ = fs::remove_file(&lock_path);
+        Ok(WorkspaceLockStatus {
+            is_locked: false,
+            lock_info: None,
+        })
+    }
+}
+
+/// Acquire workspace lock
+#[tauri::command]
+pub fn acquire_workspace_lock(
+    workspace_path: &str,
+    description: Option<String>,
+) -> Result<bool, String> {
+    // Check if already locked
+    let status = check_workspace_lock(workspace_path)?;
+    if status.is_locked {
+        return Ok(false);
+    }
+
+    // Create lock file
+    let lock_file = get_lock_file_path(workspace_path);
+    let lock_info = WorkspaceLockInfo {
+        pid: get_current_pid(),
+        locked_at: get_current_timestamp(),
+        description,
+    };
+
+    let content = serde_json::to_string(&lock_info)
+        .map_err(|e| format!("Failed to serialize lock: {}", e))?;
+
+    fs::write(&lock_file, content).map_err(|e| e.to_string())?;
+
+    Ok(true)
+}
+
+/// Release workspace lock
+#[tauri::command]
+pub fn release_workspace_lock(workspace_path: &str) -> Result<(), String> {
+    let lock_file = get_lock_file_path(workspace_path);
+    let lock_path = Path::new(&lock_file);
+
+    if !lock_path.exists() {
+        return Ok(());
+    }
+
+    // Verify it's our lock before releasing
+    let content = fs::read_to_string(&lock_path).map_err(|e| e.to_string())?;
+    let lock_info: WorkspaceLockInfo =
+        serde_json::from_str(&content).map_err(|e| format!("Invalid lock file: {}", e))?;
+
+    if lock_info.pid == get_current_pid() {
+        fs::remove_file(&lock_path).map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
+
+/// Force release workspace lock (use with caution)
+#[tauri::command]
+pub fn force_release_workspace_lock(workspace_path: &str) -> Result<(), String> {
+    let lock_file = get_lock_file_path(workspace_path);
+    let lock_path = Path::new(&lock_file);
+
+    if lock_path.exists() {
+        fs::remove_file(&lock_path).map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
