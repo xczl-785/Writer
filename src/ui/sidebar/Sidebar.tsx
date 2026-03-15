@@ -20,6 +20,7 @@ import {
 } from '../../domains/workspace/services/WorkspaceManager';
 import { FsService } from '../../domains/file/services/FsService';
 import { FsSafety } from '../../domains/file/services/FsSafety';
+import { handleDropToEditor } from '../../domains/file/services/SingleFileDropHandler';
 import {
   classifyDroppedPaths,
   extractDroppedPaths,
@@ -117,9 +118,13 @@ function FolderIcon({ className, filled = false }: FolderIconProps) {
 
 type SidebarProps = {
   isExternalDragOver?: boolean;
+  dragClassificationType?: 'files' | 'folders' | null;
 };
 
-export function Sidebar({ isExternalDragOver = false }: SidebarProps) {
+export function Sidebar({
+  isExternalDragOver = false,
+  dragClassificationType = null,
+}: SidebarProps) {
   // V6 状态获取 - 使用 selector 模式
   const rootFolders = useFileTreeStore((state) => state.rootFolders);
   const selectedPath = useFileTreeStore((state) => state.selectedPath);
@@ -895,6 +900,30 @@ export function Sidebar({ isExternalDragOver = false }: SidebarProps) {
             FsService.getPathKind,
           );
 
+          if (classification.files.length > 0 && rootFolders.length === 0) {
+            await handleDropToEditor(classification.files[0], {
+              selectedPath: null,
+              rootFolders: [],
+              hasWorkspace: false,
+              onOpenFile: workspaceActions.openFile,
+              onRefreshFileTree: async () => {},
+              onShowStatus: (type, message) => {
+                const status =
+                  type === 'error'
+                    ? 'error'
+                    : type === 'info'
+                      ? 'loading'
+                      : 'idle';
+                useStatusStore.getState().setStatus(status, message);
+              },
+              showConflictDialog: async () => 'cancel',
+              onSetDragOver: setIsDragOver,
+              onSetDropBlocked: () => {},
+              isSaving: () => false,
+            });
+            return;
+          }
+
           if (classification.directories.length === 0) {
             useStatusStore
               .getState()
@@ -1064,7 +1093,9 @@ export function Sidebar({ isExternalDragOver = false }: SidebarProps) {
                 <span className="text-sm font-medium text-zinc-600">
                   {rootFolders.length > 0
                     ? t('fileDrop.addToWorkspace')
-                    : t('fileDrop.openFile')}
+                    : dragClassificationType === 'folders'
+                      ? t('fileDrop.openWorkspace')
+                      : t('fileDrop.openFile')}
                 </span>
               </div>
             </div>
