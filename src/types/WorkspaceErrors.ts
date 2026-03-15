@@ -36,35 +36,6 @@ export interface WorkspaceLoadSuccess {
 export type WorkspaceLoadResult = WorkspaceLoadSuccess | WorkspaceLoadError;
 
 /**
- * 文件冲突类型
- */
-export type FileConflictType =
-  | 'remote-modified' // 远程文件已被修改
-  | 'remote-deleted' // 远程文件已被删除
-  | 'local-modified'; // 本地有未保存修改
-
-/**
- * 文件冲突信息
- */
-export interface FileConflictInfo {
-  /** 文件路径 */
-  filePath: string;
-  /** 文件名 */
-  fileName: string;
-  /** 冲突类型 */
-  conflictType: FileConflictType;
-  /** 远程修改时间（可选） */
-  remoteModifiedTime?: number;
-  /** 本地修改时间（可选） */
-  localModifiedTime?: number;
-}
-
-/**
- * 文件冲突解决方案
- */
-export type FileConflictResolution = 'overwrite' | 'keep-local' | 'cancel';
-
-/**
  * 工作区锁状态
  */
 export interface WorkspaceLockStatus {

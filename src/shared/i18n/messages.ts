@@ -273,14 +273,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'errorStates.permissionDeniedDesc': '没有足够的权限访问此文件夹。',
     'errorStates.resetWorkspace': '重置工作区',
     'errorStates.checkPermissions': '检查权限',
-    // File Conflict Dialog
-    'fileConflict.title': '文件冲突',
-    'fileConflict.message': '文件 "{name}" 在其他位置已被修改。',
-    'fileConflict.description': '选择如何处理此冲突：',
-    'fileConflict.overwrite': '覆盖远程版本',
-    'fileConflict.keepLocal': '保留本地版本',
-    'fileConflict.cancel': '取消',
-    'fileConflict.showDiff': '查看差异',
     // Workspace Lock
     'workspaceLock.title': '工作区已被占用',
     'workspaceLock.message': '该工作区已在其他窗口中打开。',
@@ -301,6 +293,11 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'recent.workspace': '工作区',
     'recent.clearHistory': '清除所有历史记录',
     'recent.empty': '无最近项目',
+    // V6.1 单文件拖拽 - 文件覆盖确认
+    'fileOverwrite.title': '文件已存在',
+    'fileOverwrite.message': '工作区中已存在同名文件 "{name}"，是否覆盖？',
+    'fileOverwrite.confirm': '覆盖',
+    'fileOverwrite.cancel': '取消',
     // V6.1 单文件拖拽
     'file.openFileDialogTitle': '打开 Markdown 文件',
     'file.opening': '正在打开文件...',
@@ -598,14 +595,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
       'Insufficient permissions to access this folder.',
     'errorStates.resetWorkspace': 'Reset Workspace',
     'errorStates.checkPermissions': 'Check Permissions',
-    // File Conflict Dialog
-    'fileConflict.title': 'File Conflict',
-    'fileConflict.message': 'The file "{name}" has been modified elsewhere.',
-    'fileConflict.description': 'Choose how to resolve this conflict:',
-    'fileConflict.overwrite': 'Overwrite Remote Version',
-    'fileConflict.keepLocal': 'Keep Local Version',
-    'fileConflict.cancel': 'Cancel',
-    'fileConflict.showDiff': 'Show Diff',
     // Workspace Lock
     'workspaceLock.title': 'Workspace Already Open',
     'workspaceLock.message':
@@ -629,6 +618,12 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'recent.workspace': 'Workspace',
     'recent.clearHistory': 'Clear All History',
     'recent.empty': 'No recent items',
+    // V6.1 Single File Drop - File Overwrite Confirmation
+    'fileOverwrite.title': 'File Already Exists',
+    'fileOverwrite.message':
+      'A file with the same name "{name}" already exists in the workspace. Overwrite?',
+    'fileOverwrite.confirm': 'Overwrite',
+    'fileOverwrite.cancel': 'Cancel',
     // V6.1 Single File Drop
     'file.openFileDialogTitle': 'Open Markdown File',
     'file.opening': 'Opening file...',
