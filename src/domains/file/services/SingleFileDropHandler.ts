@@ -5,7 +5,7 @@ import type { DropHandlerDeps, DropResult } from './types';
 import { getDropTargetDirectory, findRootPath } from '../utils/ghostPathUtils';
 import { isSupportedFile, getUnsupportedMessage } from '../utils/fileTypeUtils';
 import { FsService } from './FsService';
-import { joinPath } from '../../../utils/pathUtils';
+import { joinPath, normalizePath } from '../../../utils/pathUtils';
 import { useDropStore } from '../../../state/slices/dropSlice';
 import { t } from '../../../shared/i18n';
 
@@ -132,7 +132,8 @@ export async function handleDropToSidebar(
     }
 
     // 3. 计算目标路径
-    const fileName = sourcePath.split('/').pop() || 'untitled.md';
+    const normalizedSourcePath = normalizePath(sourcePath);
+    const fileName = normalizedSourcePath.split('/').pop() || 'untitled.md';
     const targetPath = joinPath(targetDir, fileName);
 
     // 4. 冲突检查
@@ -179,10 +180,6 @@ export async function handleDropToSidebar(
     return { success: true, openedFile: copyResult.actualPath };
   } catch (error) {
     const message = getErrorMessage(error);
-
-    // 禁用态反馈（2s 后自动解除）
-    deps.onSetDropBlocked(true, message);
-    setTimeout(() => deps.onSetDropBlocked(false), 2000);
 
     deps.onShowStatus('error', message);
 

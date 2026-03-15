@@ -61,7 +61,7 @@ import {
   handleDropToEditor,
   handleDropToSidebar,
 } from '../domains/file/services/SingleFileDropHandler';
-import { showFileConflictDialog } from '../ui/components/Dialog/FileConflictDialog';
+import { showFileConflictDialog } from '../ui/components/Dialog/FileConflictDialog.tsx';
 import { useFileTreeStore } from '../domains/file/state/fileStore';
 import './App.css';
 
@@ -519,9 +519,7 @@ function App() {
                 }
               },
               isSaving: () => {
-                // 检查是否有文件有未保存的更改（正在保存时文件会变脏）
-                const { fileStates } = useEditorStore.getState();
-                return Object.values(fileStates).some((state) => state.isDirty);
+                return false;
               },
             };
 

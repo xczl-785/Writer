@@ -360,6 +360,7 @@ pub fn detect_file_encoding(path: &str) -> Result<EncodingStatus, String> {
 
 /// 复制结果
 #[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CopyResult {
     /// 实际写入的文件路径（处理自动重命名）
     pub actual_path: String,
