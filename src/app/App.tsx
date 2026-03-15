@@ -57,6 +57,12 @@ import {
   classifyDroppedPaths,
   extractDroppedPaths,
 } from '../domains/workspace/services/droppedPaths';
+import {
+  handleDropToEditor,
+  handleDropToSidebar,
+} from '../domains/file/services/SingleFileDropHandler';
+import { showFileConflictDialog } from '../ui/components/Dialog/FileConflictDialog';
+import { useFileTreeStore } from '../domains/file/state/fileStore';
 import './App.css';
 
 function flattenRecentItems(
@@ -354,17 +360,50 @@ function App() {
         paths,
         FsService.getPathKind,
       );
-      if (!mounted || classification.directories.length === 0) {
+
+      if (!mounted) {
         clearDragState();
         return;
       }
 
+      // 计算拖拽目标区域
       const sidebarTarget = isPointInsideElement(
         sidebarDropZoneRef.current,
         x,
         y,
       );
       const mainTarget = isPointInsideElement(mainDropZoneRef.current, x, y);
+
+      // 有文件拖入时的处理
+      if (classification.files.length > 0) {
+        // 文件拖拽：根据目标区域显示不同状态
+        if (sidebarTarget && hasWorkspace) {
+          // 拖入侧边栏 → 显示可接受状态
+          setIsSidebarDragOver(true);
+          setIsEditorDragOver(false);
+          setIsEditorDropBlocked(false);
+        } else if (mainTarget) {
+          // 拖入编辑区
+          if (hasWorkspace) {
+            // 有工作区时，编辑区可接受文件（直接打开）
+            setIsEditorDragOver(true);
+            setIsEditorDropBlocked(false);
+          } else {
+            // 无工作区时，编辑区可接受文件
+            setIsEditorDragOver(true);
+            setIsEditorDropBlocked(false);
+          }
+        } else {
+          clearDragState();
+        }
+        return;
+      }
+
+      // 文件夹拖拽：原有逻辑
+      if (classification.directories.length === 0) {
+        clearDragState();
+        return;
+      }
 
       setIsSidebarDragOver(sidebarTarget);
       setIsEditorDragOver(!hasWorkspace && !sidebarTarget && mainTarget);
@@ -389,6 +428,7 @@ function App() {
           }
 
           if (event.payload.type === 'over') {
+            // over 事件没有 paths，使用 enter 时保存的 classification 或直接计算位置
             const sidebarTarget = isPointInsideElement(
               sidebarDropZoneRef.current,
               x,
@@ -402,14 +442,14 @@ function App() {
             if (!mounted) {
               return;
             }
+            // 保持当前拖拽状态（enter 时已设置）
+            // 这里只是更新位置相关的状态
             setIsSidebarDragOver(sidebarTarget);
-            setIsEditorDragOver(!hasWorkspace && !sidebarTarget && mainTarget);
-            setIsEditorDropBlocked(
-              hasWorkspace && !sidebarTarget && mainTarget,
-            );
+            setIsEditorDragOver(mainTarget && !sidebarTarget);
             return;
           }
 
+          // ========== Drop 事件处理 ==========
           const classification = await classifyDroppedPaths(
             event.payload.paths,
             FsService.getPathKind,
@@ -421,6 +461,82 @@ function App() {
             return;
           }
 
+          // ========== 处理文件拖入（V6.1 新增）==========
+          if (classification.files.length > 0) {
+            // 仅处理第一个文件（多文件 TODO）
+            const firstFilePath = classification.files[0];
+
+            const droppedInSidebar = isPointInsideElement(
+              sidebarDropZoneRef.current,
+              x,
+              y,
+            );
+            const droppedInMain = isPointInsideElement(
+              mainDropZoneRef.current,
+              x,
+              y,
+            );
+
+            if (!droppedInSidebar && !droppedInMain) {
+              return;
+            }
+
+            // 准备依赖注入
+            const deps = {
+              selectedPath: useFileTreeStore.getState().selectedPath,
+              rootFolders: useFileTreeStore.getState().rootFolders,
+              hasWorkspace: folders.length > 0,
+              onOpenFile: workspaceActions.openFile,
+              onRefreshFileTree: async (rootPath: string) => {
+                const nodes = await FsService.listTree(rootPath);
+                useFileTreeStore.getState().setNodes(rootPath, nodes);
+              },
+              // 适配 onShowStatus 类型
+              onShowStatus: (
+                type: 'success' | 'error' | 'info',
+                message: string,
+              ) => {
+                const statusMap: Record<
+                  'success' | 'error' | 'info',
+                  'idle' | 'loading' | 'error'
+                > = {
+                  success: 'idle',
+                  error: 'error',
+                  info: 'loading',
+                };
+                useStatusStore.getState().setStatus(statusMap[type], message);
+              },
+              showConflictDialog: async (fileName: string) => {
+                const result = await showFileConflictDialog(fileName);
+                return result;
+              },
+              onSetDragOver: setIsEditorDragOver,
+              onSetDropBlocked: (blocked: boolean, reason?: string) => {
+                setIsEditorDropBlocked(blocked);
+                if (blocked && reason) {
+                  useStatusStore.getState().setStatus('error', reason);
+                }
+              },
+              isSaving: () => {
+                // 检查是否有文件有未保存的更改（正在保存时文件会变脏）
+                const { fileStates } = useEditorStore.getState();
+                return Object.values(fileStates).some((state) => state.isDirty);
+              },
+            };
+
+            if (droppedInSidebar && hasWorkspace) {
+              // 侧边栏：复制到工作区
+              await handleDropToSidebar(firstFilePath, deps);
+            } else {
+              // 编辑区/无工作区：直接打开
+              await handleDropToEditor(firstFilePath, deps);
+            }
+
+            await refreshRecentItems();
+            return;
+          }
+
+          // ========== 处理文件夹拖入（已有逻辑）==========
           if (classification.directories.length === 0) {
             useStatusStore
               .getState()

@@ -356,6 +356,166 @@ pub fn detect_file_encoding(path: &str) -> Result<EncodingStatus, String> {
     })
 }
 
+// ========== V6.1 单文件拖拽 - 文件复制命令 ==========
+
+/// 复制结果
+#[derive(Debug, Serialize, Clone)]
+pub struct CopyResult {
+    /// 实际写入的文件路径（处理自动重命名）
+    pub actual_path: String,
+    /// 复制的字节数
+    pub bytes_written: u64,
+}
+
+/// 复制文件（返回实际写入路径）
+///
+/// 支持自动重命名、隐藏文件和无扩展名文件
+#[tauri::command]
+pub async fn copy_file_with_result(
+    source: String,
+    target: String,
+) -> Result<CopyResult, String> {
+    // 1. 规范化源路径（使用 canonicalize 解析符号链接和相对路径）
+    let source_path = normalize_source_path(&source)
+        .ok_or_else(|| format!("Invalid source path: {}", source))?;
+
+    // 2. 规范化目标路径（仅规范化父目录，保留原始文件名）
+    let target_path = normalize_target_path(&target)
+        .ok_or_else(|| format!("Invalid target path: {}", target))?;
+
+    // 3. 校验源文件存在
+    if !Path::new(&source_path).exists() {
+        return Err(format!("Source file does not exist: {}", source_path));
+    }
+
+    // 4. 检查目标目录存在
+    let target_dir = Path::new(&target_path)
+        .parent()
+        .ok_or_else(|| "Invalid target path: no parent directory".to_string())?;
+
+    if !target_dir.exists() {
+        return Err("Target directory does not exist".to_string());
+    }
+
+    // 5. 检查目标文件是否存在，若存在则自动重命名
+    let final_path = if Path::new(&target_path).exists() {
+        generate_unique_path(&target_path)
+            .ok_or_else(|| "Failed to generate unique path".to_string())?
+    } else {
+        target_path.clone()
+    };
+
+    // 6. 执行复制（保持元数据）
+    let bytes_written = std::fs::copy(&source_path, &final_path)
+        .map_err(|e| format!("Copy failed: {}", e))?;
+
+    Ok(CopyResult {
+        actual_path: final_path,
+        bytes_written,
+    })
+}
+
+/// 规范化源文件路径（使用 canonicalize 解析完整路径）
+///
+/// 源文件必须存在，因此可以安全使用 canonicalize
+fn normalize_source_path(path: &str) -> Option<String> {
+    let path = Path::new(path);
+    path.canonicalize()
+        .ok()
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+}
+
+/// 规范化目标路径（仅规范化父目录，保留原始文件名）
+///
+/// 目标文件可能不存在，因此不能对完整路径使用 canonicalize
+/// 而是规范化父目录后拼接文件名
+fn normalize_target_path(path: &str) -> Option<String> {
+    let path = Path::new(path);
+
+    // 获取父目录和文件名
+    let parent = path.parent()?;
+    let file_name = path.file_name()?; // 包含扩展名的完整文件名
+
+    // 规范化父目录（父目录必须存在）
+    let canonical_parent = parent.canonicalize().ok()?;
+
+    // 拼接规范化后的路径
+    let normalized = canonical_parent.join(file_name);
+    Some(normalized.to_string_lossy().replace('\\', "/"))
+}
+
+/// 生成唯一路径（若文件已存在）
+///
+/// 使用 Path API 进行跨平台路径操作，避免字符串拼接的跨平台问题
+///
+/// 支持以下特殊情况：
+/// - 隐藏文件（如 `.gitignore`）：file_stem 为空时使用完整文件名
+/// - 无扩展名文件（如 `README`）：extension 为空时跳过扩展名拼接
+///
+/// 返回路径统一使用 `/` 分隔符（兼容前端）
+fn generate_unique_path(original: &str) -> Option<String> {
+    let path = Path::new(original);
+    let parent = path.parent()?;
+
+    // 获取文件名（完整文件名，包含扩展名）
+    let file_name = path.file_name()?;
+    let file_name_str = file_name.to_string_lossy();
+
+    // 获取文件名主体（不含扩展名）和扩展名
+    // 注意：对于隐藏文件（如 .gitignore），file_stem 可能返回空或 None
+    // 对于无扩展名文件（如 README），extension 返回 None
+    let stem = path.file_stem();
+    let ext = path.extension();
+
+    let stem_str = stem.map(|s| s.to_string_lossy()).unwrap_or_default();
+    // 将 Option<Cow<str>> 转换为 String 避免所有权问题
+    let ext_str = ext.map(|e| e.to_string_lossy().into_owned());
+
+    let mut counter = 1;
+    loop {
+        let new_name = if stem.is_none() || stem_str.is_empty() {
+            // 情况1：隐藏文件（如 .gitignore）
+            // 文件名格式：.gitignore → .gitignore (1)
+            if ext.is_none() {
+                // 无扩展名的隐藏文件（如 .hidden）
+                format!("{} ({})", file_name_str, counter)
+            } else {
+                // 有扩展名的隐藏文件（如 .gitignore）
+                // file_stem 为空，但我们有 extension
+                format!(".{} ({})", ext_str.as_deref().unwrap_or_default(), counter)
+            }
+        } else if ext.is_none() {
+            // 情况2：无扩展名文件（如 README）
+            // 文件名格式：README → README (1)
+            format!("{} ({})", stem_str, counter)
+        } else {
+            // 情况3：普通文件（如 notes.md）
+            // 文件名格式：notes.md → notes (1).md
+            format!(
+                "{} ({}).{}",
+                stem_str,
+                counter,
+                ext_str.as_deref().unwrap_or_default()
+            )
+        };
+
+        let new_path = parent.join(&new_name);
+
+        if !new_path.exists() {
+            // 统一返回 `/` 分隔符给前端
+            // Rust 的 Path 在 Windows 上使用 `\`，但前端期望 `/`
+            return Some(new_path.to_string_lossy().replace('\\', "/"));
+        }
+
+        counter += 1;
+
+        // 防止无限循环
+        if counter > 1000 {
+            return None;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::list_tree;

@@ -16,6 +16,7 @@ import {
   openWorkspace,
   saveCurrentWorkspace,
   saveWorkspaceFileByDialog,
+  openFileWithDialog,
 } from '../../domains/workspace/services/WorkspaceManager';
 
 export type CleanupFn = () => void;
@@ -38,6 +39,13 @@ export function registerFileCommands(
   cleanups.push(
     menuCommandBus.register('menu.file.open_folder', async () => {
       await openWorkspace();
+    }),
+  );
+
+  // V6.1: 打开单文件命令（Cmd/Ctrl+O）
+  cleanups.push(
+    menuCommandBus.register('menu.file.open_file', async () => {
+      await openFileWithDialog();
     }),
   );
 
@@ -95,7 +103,9 @@ export function registerFileCommands(
     menuCommandBus.register('menu.file.save_workspace', async () => {
       const workspace = useWorkspaceStore.getState();
       if (workspace.folders.length === 0) {
-        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        useStatusStore
+          .getState()
+          .setStatus('error', t('status.menu.noWorkspace'));
         return;
       }
 
@@ -107,7 +117,9 @@ export function registerFileCommands(
     menuCommandBus.register('menu.file.save_workspace_as', async () => {
       const workspace = useWorkspaceStore.getState();
       if (workspace.folders.length === 0) {
-        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        useStatusStore
+          .getState()
+          .setStatus('error', t('status.menu.noWorkspace'));
         return;
       }
 

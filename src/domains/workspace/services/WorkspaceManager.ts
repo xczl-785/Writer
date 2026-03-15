@@ -4,8 +4,12 @@ import { useStatusStore } from '../../../state/slices/statusSlice';
 import { ErrorService } from '../../../services/error/ErrorService';
 import { useWorkspaceStore } from '../state/workspaceStore';
 import { RecentItemsService } from './RecentItemsService';
-import { buildDefaultWorkspaceFileName, getWorkspaceFileBaseName } from '../../../ui/statusbar/workspaceIndicator';
+import {
+  buildDefaultWorkspaceFileName,
+  getWorkspaceFileBaseName,
+} from '../../../ui/statusbar/workspaceIndicator';
 import { t } from '../../../shared/i18n';
+import { getSupportedExtensions } from '../../file/utils/fileTypeUtils';
 
 const normalizeDialogPath = (selected: unknown): string | null => {
   const pickPath = (value: unknown): string | null => {
@@ -74,6 +78,72 @@ export const openFile = async (path: string): Promise<void> => {
       'Failed to open file',
     );
   }
+};
+
+/**
+ * 打开单文件对话框（Cmd/Ctrl+O）
+ *
+ * 打开文件选择对话框，仅显示 Markdown 文件类型
+ *
+ * @returns 选中的文件路径，或 null（用户取消）
+ */
+export const openFileWithDialog = async (): Promise<string | null> => {
+  try {
+    const selected = await open({
+      title: t('file.openFileDialogTitle'),
+      directory: false, // 单文件模式
+      multiple: false,
+      filters: [
+        {
+          name: 'Markdown Files',
+          extensions: getSupportedExtensions().map((ext) =>
+            ext.replace('.', ''),
+          ),
+        },
+      ],
+    });
+
+    // 处理取消情况
+    if (!selected) {
+      return null;
+    }
+
+    // Tauri 返回的可能是 string 或 string[]（取决于 multiple）
+    const path = normalizeDialogPath(selected);
+
+    if (!path) {
+      return null;
+    }
+
+    // 打开选中的文件
+    useStatusStore.getState().setStatus('loading', t('file.opening'));
+
+    const result = await workspaceActions.openFile(path);
+    if (!result.ok) {
+      useStatusStore.getState().setStatus('error', t('file.openFailed'));
+      return null;
+    }
+
+    // 添加到最近文件列表
+    await RecentItemsService.addFile(path);
+
+    useStatusStore.getState().setStatus('idle');
+    return path;
+  } catch (error) {
+    ErrorService.handle(
+      error,
+      'Failed to open file dialog',
+      'Failed to open file',
+    );
+    return null;
+  }
+};
+
+/**
+ * 处理 Cmd/Ctrl+O 快捷键
+ */
+export const handleOpenFileShortcut = async (): Promise<void> => {
+  await openFileWithDialog();
 };
 
 export const openWorkspace = async (): Promise<void> => {
@@ -258,7 +328,10 @@ export const openWorkspaceFile = async (): Promise<void> => {
 
     const result = await workspaceActions.loadWorkspaceFile(path);
     if (result.ok) {
-      await RecentItemsService.addWorkspace(path, getWorkspaceFileBaseName(path));
+      await RecentItemsService.addWorkspace(
+        path,
+        getWorkspaceFileBaseName(path),
+      );
       useStatusStore.getState().setStatus('idle');
       return;
     }

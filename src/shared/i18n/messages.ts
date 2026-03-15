@@ -301,6 +301,17 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'recent.workspace': '工作区',
     'recent.clearHistory': '清除所有历史记录',
     'recent.empty': '无最近项目',
+    // V6.1 单文件拖拽
+    'file.openFileDialogTitle': '打开 Markdown 文件',
+    'file.opening': '正在打开文件...',
+    'file.openFailed': '打开文件失败',
+    'fileDrop.openSuccess': '文件已打开',
+    'fileDrop.copySuccess': '文件已复制到工作区',
+    'fileDrop.cancelled': '操作已取消',
+    'fileDrop.noWorkspace': '请先打开一个工作区',
+    'fileDrop.saveInProgress': '正在保存文件，请稍后再试',
+    'fileDrop.operationInProgress': '有操作正在进行中，请稍后再试',
+    'fileDrop.unknownError': '未知错误',
   },
   'en-US': {
     'menu.file': 'File',
@@ -406,7 +417,8 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'workspace.openWorkspace': 'Open Workspace',
     'workspace.recent': 'Recent',
     'workspace.dragHint': 'Or drag a folder here',
-    'workspace.dragFoldersOnly': 'Only folder drag-and-drop is supported for now',
+    'workspace.dragFoldersOnly':
+      'Only folder drag-and-drop is supported for now',
     'workspace.dropInEditorDisabled':
       'Drop folders into the left panel to add them to the workspace',
     'workspace.dropBlockedTitle': 'Drop is not accepted here',
@@ -615,5 +627,16 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'recent.workspace': 'Workspace',
     'recent.clearHistory': 'Clear All History',
     'recent.empty': 'No recent items',
+    // V6.1 Single File Drop
+    'file.openFileDialogTitle': 'Open Markdown File',
+    'file.opening': 'Opening file...',
+    'file.openFailed': 'Failed to open file',
+    'fileDrop.openSuccess': 'File opened',
+    'fileDrop.copySuccess': 'File copied to workspace',
+    'fileDrop.cancelled': 'Operation cancelled',
+    'fileDrop.noWorkspace': 'Please open a workspace first',
+    'fileDrop.saveInProgress': 'Saving file, please wait',
+    'fileDrop.operationInProgress': 'An operation is in progress, please wait',
+    'fileDrop.unknownError': 'Unknown error',
   },
 };

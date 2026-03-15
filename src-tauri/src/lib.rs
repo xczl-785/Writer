@@ -53,6 +53,8 @@ pub fn run() {
             fs::check_exists,
             fs::get_path_kind,
             fs::detect_file_encoding,
+            // V6.1 单文件拖拽
+            fs::copy_file_with_result,
             // Workspace commands
             workspace::parse_workspace_file,
             workspace::save_workspace_file,
