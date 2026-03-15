@@ -118,6 +118,109 @@
             color: #18181b; /* zinc-900 */
         }
 
+        .menu-item-active {
+            background-color: #f4f4f5;
+            color: #18181b;
+        }
+
+        .menu-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 48px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid #e4e4e7;
+            border-radius: 14px;
+            box-shadow: 0 18px 40px rgba(24, 24, 27, 0.14);
+            padding: 10px 0;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.18s ease-out;
+            z-index: 200;
+        }
+
+        .menu-dropdown-section + .menu-dropdown-section {
+            border-top: 1px solid #f1f5f9;
+            margin-top: 8px;
+            padding-top: 8px;
+        }
+
+        .menu-dropdown-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #a1a1aa;
+            padding: 4px 16px 6px;
+            text-transform: uppercase;
+        }
+
+        .menu-dropdown-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 8px 16px;
+            font-size: 14px;
+            color: #27272a;
+            cursor: default;
+            transition: background-color 0.16s ease;
+        }
+
+        .menu-dropdown-item:hover {
+            background: #f8fafc;
+        }
+
+        .menu-dropdown-item.disabled {
+            color: #d4d4d8;
+        }
+
+        .menu-dropdown-item.disabled:hover {
+            background: transparent;
+        }
+
+        .menu-dropdown-shortcut {
+            font-size: 12px;
+            color: #a1a1aa;
+            white-space: nowrap;
+        }
+
+        .menu-dropdown-submenu-anchor {
+            position: relative;
+        }
+
+        .menu-dropdown-item.has-submenu {
+            position: relative;
+        }
+
+        .menu-dropdown-submenu {
+            position: absolute;
+            top: 0;
+            left: calc(100% + 14px);
+            width: 220px;
+            padding: 6px 0;
+            border: 1px solid #e4e4e7;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 16px 32px rgba(24, 24, 27, 0.12);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            z-index: 220;
+        }
+
+        .menu-dropdown-subitem {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 9px 14px;
+            font-size: 13px;
+            color: #d4d4d8;
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .menu-dropdown-subitem + .menu-dropdown-subitem {
+            border-top: 1px solid #f4f4f5;
+        }
+
         .window-controls {
             margin-left: auto;
             display: flex;
@@ -262,13 +365,102 @@
                 </div>
                 
                 <!-- 恢复原版经典文本菜单并扩展 -->
-                <div class="menu-item ml-1">文件</div>
+                <div class="menu-item menu-item-active ml-1">文件</div>
                 <div class="menu-item">编辑</div>
                 <div class="menu-item">段落</div>
                 <div class="menu-item">格式</div>
                 <div class="menu-item">视图</div>
                 <div class="menu-item">工具</div>
                 <div class="menu-item">帮助</div>
+
+                <div class="menu-dropdown">
+                    <div class="menu-dropdown-section">
+                        <div class="menu-dropdown-label">文件</div>
+                        <div class="menu-dropdown-item">
+                            <span>新建文件</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+N</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>打开文件…</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+O</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>打开文件夹…</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+K Ctrl+O</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>打开工作区…</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+Alt+O</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>打开最近</span>
+                            <span class="menu-dropdown-shortcut">▶</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-dropdown-section">
+                        <div class="menu-dropdown-label">工作区</div>
+                        <div class="menu-dropdown-item">
+                            <span>将文件夹添加到工作区…</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+Alt+K</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>保存工作区</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+Alt+S</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>工作区另存为…</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+Shift+Alt+S</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-dropdown-section">
+                        <div class="menu-dropdown-submenu-anchor">
+                            <div class="menu-dropdown-item has-submenu">
+                                <span>导出…</span>
+                                <span class="menu-dropdown-shortcut">▶</span>
+                            </div>
+                            <div class="menu-dropdown-submenu">
+                                <div class="menu-dropdown-subitem">
+                                    <span>导出 PDF</span>
+                                    <span class="menu-dropdown-shortcut">即将支持</span>
+                                </div>
+                                <div class="menu-dropdown-subitem">
+                                    <span>导出 HTML</span>
+                                    <span class="menu-dropdown-shortcut">即将支持</span>
+                                </div>
+                                <div class="menu-dropdown-subitem">
+                                    <span>导出图片</span>
+                                    <span class="menu-dropdown-shortcut">即将支持</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="menu-dropdown-section">
+                        <div class="menu-dropdown-label">关闭</div>
+                        <div class="menu-dropdown-item">
+                            <span>关闭文件</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+W</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>关闭文件夹</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+K F</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>关闭工作区</span>
+                            <span class="menu-dropdown-shortcut">Shift+Ctrl+W</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>设置</span>
+                            <span class="menu-dropdown-shortcut">Ctrl+,</span>
+                        </div>
+                        <div class="menu-dropdown-item">
+                            <span>退出</span>
+                            <span class="menu-dropdown-shortcut">Alt+F4</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <!-- 可拖拽中空区域 (自动撑开) -->
