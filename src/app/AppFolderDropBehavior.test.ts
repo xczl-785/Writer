@@ -25,9 +25,9 @@ describe('App folder-drop wiring', () => {
     expect(source).toContain('isExternalDragOver={isSidebarDragOver}');
     expect(source).toContain('dragClassificationType={dragClassificationType}');
     expect(source).toContain('isDragOver={isEditorDragOver}');
-    expect(source).toContain(
-      "import { EditorDropBlockedOverlay } from '../ui/components/ErrorStates'",
-    );
+    expect(source).toContain('DragDropHint');
+    expect(source).toContain('<DragDropHint');
+    expect(source).toContain('EditorDropBlockedOverlay');
     expect(source).toContain('<EditorDropBlockedOverlay');
     expect(source).not.toContain("t('workspace.dropBlockedTitle')");
     expect(source).not.toContain('WORKSPACE ONLY');

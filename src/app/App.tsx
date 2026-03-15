@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
-import { FolderDown } from 'lucide-react';
 import { Editor } from '../domains/editor/core/Editor';
 import { StateDebug } from '../ui/StateDebug';
 import { Sidebar } from '../ui/sidebar/Sidebar';
@@ -17,7 +16,10 @@ import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
 import { ErrorService } from '../services/error/ErrorService';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
 import { RecentWorkspacesMenu } from '../ui/components/RecentWorkspaces/RecentWorkspacesMenu';
-import { EditorDropBlockedOverlay } from '../ui/components/ErrorStates';
+import {
+  DragDropHint,
+  EditorDropBlockedOverlay,
+} from '../ui/components/ErrorStates';
 import { EmptyStateWorkspace } from '../ui/workspace/EmptyStateWorkspace';
 import {
   RecentItemsService,
@@ -793,16 +795,13 @@ function App() {
             >
               <EditorDropBlockedOverlay isVisible={isEditorDropBlocked} />
               {isEditorDragOver ? (
-                <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-zinc-50/90">
-                  <div className="flex w-full max-w-[640px] flex-col items-center rounded-2xl border border-zinc-300 bg-zinc-50 px-8 py-20">
-                    <FolderDown className="mb-5 h-14 w-14 text-zinc-400" />
-                    <div className="text-[18px] font-medium text-zinc-600">
-                      {dragClassificationType === 'folders'
-                        ? t('fileDrop.openWorkspace')
-                        : t('fileDrop.openFile')}
-                    </div>
-                  </div>
-                </div>
+                <DragDropHint
+                  label={
+                    dragClassificationType === 'folders'
+                      ? t('fileDrop.openWorkspace')
+                      : t('fileDrop.openFile')
+                  }
+                />
               ) : null}
               <Editor
                 isTypewriterActive={isTypewriterActive}

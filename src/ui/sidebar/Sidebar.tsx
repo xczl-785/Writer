@@ -27,6 +27,7 @@ import {
 } from '../../domains/workspace/services/droppedPaths';
 import type { FileNode } from '../../state/types';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
+import { DragDropHint } from '../components/ErrorStates';
 import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
 import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
 import { showDeleteConfirmDialog } from '../components/Dialog';
@@ -55,7 +56,6 @@ import {
   File,
   FilePlus,
   FolderPlus,
-  FolderDown,
   X,
 } from 'lucide-react';
 import { t } from '../../shared/i18n';
@@ -1085,21 +1085,17 @@ export function Sidebar({
       >
         {/* 外部文件拖拽遮罩层 */}
         {(isDragOver || isExternalDragOver) && (
-          <div className="absolute inset-0 z-10 pointer-events-none">
-            <div className="absolute inset-0 bg-zinc-50/85" />
-            <div className="absolute inset-3 flex items-center justify-center rounded-xl border border-zinc-300 bg-zinc-50">
-              <div className="flex flex-col items-center gap-3 text-zinc-500">
-                <FolderDown className="h-10 w-10 text-zinc-400" />
-                <span className="text-sm font-medium text-zinc-600">
-                  {rootFolders.length > 0
-                    ? t('fileDrop.addToWorkspace')
-                    : dragClassificationType === 'folders'
-                      ? t('fileDrop.openWorkspace')
-                      : t('fileDrop.openFile')}
-                </span>
-              </div>
-            </div>
-          </div>
+          <DragDropHint
+            tone="sidebar"
+            className="bg-zinc-50/85"
+            label={
+              rootFolders.length > 0
+                ? t('fileDrop.addToWorkspace')
+                : dragClassificationType === 'folders'
+                  ? t('fileDrop.openWorkspace')
+                  : t('fileDrop.openFile')
+            }
+          />
         )}
 
         {isSearchActive ? (
