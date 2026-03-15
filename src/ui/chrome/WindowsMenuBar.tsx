@@ -2,6 +2,11 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent }
 import { ChevronRight } from 'lucide-react';
 import { t, getLocale } from '../../shared/i18n';
 import {
+  RECENT_ITEMS_CHANGED_EVENT,
+  RecentItemsService,
+  type RecentItem,
+} from '../../domains/workspace/services/RecentItemsService';
+import {
   getWorkspaceContext,
   useWorkspaceStore,
 } from '../../domains/workspace/state/workspaceStore';
@@ -37,6 +42,9 @@ type PendingFocusTarget =
   | { type: 'item'; groupId: string; itemIndex: number }
   | null;
 
+const OPEN_RECENT_ITEM_EVENT = 'writer:open-recent-item';
+const CLEAR_RECENT_ITEMS_EVENT = 'writer:clear-recent-items';
+
 export function WindowsMenuBar({
   hasRecentItems,
   platform,
@@ -48,6 +56,7 @@ export function WindowsMenuBar({
     {},
   );
   const pendingFocusRef = useRef<PendingFocusTarget>(null);
+  const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
 
   const groups = WINDOWS_MENU_SCHEMA.filter((group) =>
     group.platforms.includes(platform),
@@ -102,6 +111,27 @@ export function WindowsMenuBar({
   useEffect(() => {
     flushPendingFocus();
   }, [openGroupId, groups]);
+
+  useEffect(() => {
+    async function refreshRecentItems(): Promise<void> {
+      const data = await RecentItemsService.getAll();
+      setRecentItems([...data.workspaces, ...data.folders, ...data.files]);
+    }
+
+    void refreshRecentItems();
+
+    function handleRecentItemsChanged(): void {
+      void refreshRecentItems();
+    }
+
+    window.addEventListener(RECENT_ITEMS_CHANGED_EVENT, handleRecentItemsChanged);
+    return () => {
+      window.removeEventListener(
+        RECENT_ITEMS_CHANGED_EVENT,
+        handleRecentItemsChanged,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     function handleWindowClick(event: MouseEvent): void {
@@ -225,12 +255,70 @@ export function WindowsMenuBar({
   }
 
   function dispatchCommand(item: MenuSchemaItem): void {
-    if (!isItemEnabled(item) || item.children) {
+    if (
+      !isItemEnabled(item) ||
+      item.children ||
+      item.id === 'menu.file.open_recent'
+    ) {
       return;
     }
 
     menuCommandBus.dispatch(item.id);
     setOpenGroupId(null);
+  }
+
+  function dispatchRecentItem(item: RecentItem): void {
+    window.dispatchEvent(
+      new CustomEvent<RecentItem>(OPEN_RECENT_ITEM_EVENT, { detail: item }),
+    );
+    setOpenGroupId(null);
+  }
+
+  function clearRecentItems(): void {
+    window.dispatchEvent(new CustomEvent(CLEAR_RECENT_ITEMS_EVENT));
+    setOpenGroupId(null);
+  }
+
+  function renderRecentSubmenu() {
+    if (recentItems.length === 0) {
+      return (
+        <div className="rounded-md px-3 py-2 text-[13px] text-zinc-300">
+          {t('recent.empty')}
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {recentItems.slice(0, 8).map((item) => (
+          <button
+            key={`${item.type}:${item.path}`}
+            type="button"
+            className="flex w-full items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[13px] text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+            onClick={() => dispatchRecentItem(item)}
+            title={item.path}
+          >
+            <span className="truncate">{item.name}</span>
+            <span className="text-[11px] text-zinc-400">
+              {item.type === 'workspace'
+                ? t('recent.workspace')
+                : item.type === 'folder'
+                  ? t('recent.folders')
+                  : t('recent.files')}
+            </span>
+          </button>
+        ))}
+        <div className="my-1 h-px bg-zinc-200" />
+        <button
+          type="button"
+          className="flex w-full items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[13px] text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-red-500"
+          onClick={clearRecentItems}
+        >
+          <span>{t('recent.clearHistory')}</span>
+          <span className="text-[11px] text-zinc-400" />
+        </button>
+      </>
+    );
   }
 
   function handleGroupKeyDown(
@@ -339,7 +427,8 @@ export function WindowsMenuBar({
     }
 
     const enabled = isItemEnabled(item);
-    const hasChildren = (item.children?.length ?? 0) > 0;
+    const hasChildren =
+      item.id === 'menu.file.open_recent' || (item.children?.length ?? 0) > 0;
     return (
       <div
         key={item.id}
@@ -370,17 +459,19 @@ export function WindowsMenuBar({
         </button>
         {hasChildren ? (
           <div className="absolute left-[calc(100%+14px)] top-0 hidden min-w-[220px] rounded-xl border border-zinc-200 bg-white p-1 shadow-[0_8px_30px_rgba(0,0,0,0.08)] group-hover/item:block">
-            {item.children?.map((child) => (
-              <div
-                key={child.id}
-                className={`flex items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[13px] ${
-                  isItemEnabled(child) ? 'text-zinc-700' : 'text-zinc-300'
-                }`}
-              >
-                <span>{resolveLabel(child.labelKey, child.fallbackLabels)}</span>
-                <span className="text-[11px] text-zinc-400">{child.accelerator ?? ''}</span>
-              </div>
-            ))}
+            {item.id === 'menu.file.open_recent'
+              ? renderRecentSubmenu()
+              : item.children?.map((child) => (
+                  <div
+                    key={child.id}
+                    className={`flex items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[13px] ${
+                      isItemEnabled(child) ? 'text-zinc-700' : 'text-zinc-300'
+                    }`}
+                  >
+                    <span>{resolveLabel(child.labelKey, child.fallbackLabels)}</span>
+                    <span className="text-[11px] text-zinc-400">{child.accelerator ?? ''}</span>
+                  </div>
+                ))}
           </div>
         ) : null}
       </div>

@@ -25,6 +25,7 @@ import {
 } from '../ui/components/ErrorStates';
 import { EmptyStateWorkspace } from '../ui/workspace/EmptyStateWorkspace';
 import {
+  RECENT_ITEMS_CHANGED_EVENT,
   RecentItemsService,
   type RecentItem,
 } from '../domains/workspace/services/RecentItemsService';
@@ -125,6 +126,9 @@ function flattenRecentItems(
 ): RecentItem[] {
   return [...data.workspaces, ...data.folders, ...data.files];
 }
+
+const OPEN_RECENT_ITEM_EVENT = 'writer:open-recent-item';
+const CLEAR_RECENT_ITEMS_EVENT = 'writer:clear-recent-items';
 
 function isPointInsideElement(
   element: HTMLElement | null,
@@ -288,6 +292,7 @@ function App() {
       useStatusStore.getState().setStatus('loading', 'Loading workspace...');
       const result = await workspaceActions.loadWorkspaceFile(path);
       if (result.ok) {
+        await RecentItemsService.addWorkspace(path);
         useStatusStore.getState().setStatus('idle');
       } else {
         useStatusStore.getState().setStatus('error', result.errorMessage);
@@ -305,6 +310,7 @@ function App() {
     try {
       useStatusStore.getState().setStatus('loading', 'Loading folder...');
       await workspaceActions.loadWorkspace(path);
+      await RecentItemsService.addFolder(path);
       useStatusStore.getState().setStatus('idle');
     } catch (error) {
       ErrorService.handle(
@@ -320,6 +326,7 @@ function App() {
       useStatusStore.getState().setStatus('loading', 'Opening file...');
       const result = await workspaceActions.openFile(path);
       if (result.ok) {
+        await RecentItemsService.addFile(path);
         useStatusStore.getState().setStatus('idle');
       } else {
         useStatusStore.getState().setStatus('error', result.reason);
@@ -380,6 +387,48 @@ function App() {
   useEffect(() => {
     void refreshRecentItems();
   }, [refreshRecentItems]);
+
+  useEffect(() => {
+    function handleRecentItemsChanged(): void {
+      void refreshRecentItems();
+    }
+
+    function handleOpenRecentItem(
+      event: Event,
+    ): void {
+      const detail = (event as CustomEvent<RecentItem>).detail;
+      if (!detail) {
+        return;
+      }
+      void handleSelectRecentItem(detail);
+    }
+
+    function handleClearRecentItems(): void {
+      void RecentItemsService.clearAll();
+    }
+
+    window.addEventListener(RECENT_ITEMS_CHANGED_EVENT, handleRecentItemsChanged);
+    window.addEventListener(
+      OPEN_RECENT_ITEM_EVENT,
+      handleOpenRecentItem as EventListener,
+    );
+    window.addEventListener(CLEAR_RECENT_ITEMS_EVENT, handleClearRecentItems);
+
+    return () => {
+      window.removeEventListener(
+        RECENT_ITEMS_CHANGED_EVENT,
+        handleRecentItemsChanged,
+      );
+      window.removeEventListener(
+        OPEN_RECENT_ITEM_EVENT,
+        handleOpenRecentItem as EventListener,
+      );
+      window.removeEventListener(
+        CLEAR_RECENT_ITEMS_EVENT,
+        handleClearRecentItems,
+      );
+    };
+  }, [handleSelectRecentItem, refreshRecentItems]);
 
   useEffect(() => {
     const previousIsMinTier = previousIsMinTierRef.current;
