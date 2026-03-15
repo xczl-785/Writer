@@ -312,6 +312,8 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'fileDrop.saveInProgress': '正在保存文件，请稍后再试',
     'fileDrop.operationInProgress': '有操作正在进行中，请稍后再试',
     'fileDrop.unknownError': '未知错误',
+    'fileDrop.addToWorkspace': '添加到工作区',
+    'fileDrop.openFile': '打开文件',
   },
   'en-US': {
     'menu.file': 'File',
@@ -638,5 +640,7 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'fileDrop.saveInProgress': 'Saving file, please wait',
     'fileDrop.operationInProgress': 'An operation is in progress, please wait',
     'fileDrop.unknownError': 'Unknown error',
+    'fileDrop.addToWorkspace': 'Add to Workspace',
+    'fileDrop.openFile': 'Open File',
   },
 };

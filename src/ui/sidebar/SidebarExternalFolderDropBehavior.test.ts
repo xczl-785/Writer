@@ -14,7 +14,10 @@ describe('Sidebar external folder-drop wiring', () => {
     expect(source).toContain('await addFolderPathToWorkspace(path);');
     expect(source).toContain('isExternalDragOver = false');
     expect(source).toContain('FolderDown');
-    expect(source).toContain('添加到工作区');
-    expect(source).not.toContain('// Handle file drop logic here - future enhancement');
+    expect(source).toContain("t('fileDrop.addToWorkspace')");
+    expect(source).toContain("t('fileDrop.openFile')");
+    expect(source).not.toContain(
+      '// Handle file drop logic here - future enhancement',
+    );
   });
 });
