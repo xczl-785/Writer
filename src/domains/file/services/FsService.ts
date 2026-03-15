@@ -23,6 +23,16 @@ export interface WorkspaceConfig {
   };
 }
 
+/**
+ * 复制文件结果
+ */
+export interface CopyFileResult {
+  /** 实际写入的文件路径（处理自动重命名） */
+  actualPath: string;
+  /** 复制的字节数 */
+  bytesWritten: number;
+}
+
 export const FsService = {
   async listTree(path: string): Promise<FileNode[]> {
     return invoke('list_tree', { path });
@@ -77,6 +87,19 @@ export const FsService = {
 
   async checkExists(path: string): Promise<boolean> {
     return invoke('check_exists', { path });
+  },
+
+  /**
+   * 复制文件（返回实际写入路径）
+   * @param source - 源文件路径
+   * @param target - 目标路径
+   * @returns 实际写入的文件路径（处理自动重命名）
+   */
+  async copyFileWithResult(
+    source: string,
+    target: string,
+  ): Promise<CopyFileResult> {
+    return invoke('copy_file_with_result', { source, target });
   },
 
   async getPathKind(path: string): Promise<PathKind> {
