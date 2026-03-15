@@ -68,7 +68,12 @@ export function useGhostHint(
     };
 
     updateGhostHint();
-    const editorDom = editor.view.dom as HTMLElement | null;
+    let editorDom: HTMLElement | null = null;
+    try {
+      editorDom = editor.view?.dom as HTMLElement | null;
+    } catch {
+      // Editor view not yet available
+    }
     const scrollContainer = editorDom?.closest('.editor-content-area');
     editor.on('selectionUpdate', updateGhostHint);
     editor.on('transaction', updateGhostHint);

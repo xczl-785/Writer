@@ -85,8 +85,9 @@ function isPointInsideElement(
 }
 
 function App() {
-  const { folders } = useWorkspaceStore();
+  const { folders, activeFile } = useWorkspaceStore();
   const hasWorkspace = folders.length > 0;
+  const hasOpenFile = activeFile !== null;
   const currentPath = folders[0]?.path;
   const { tier } = useViewportTier();
   const isMinTier = tier === 'min';
@@ -738,7 +739,7 @@ function App() {
           ref={mainDropZoneRef}
           className="flex-1 flex flex-col relative min-w-0 h-full"
         >
-          {!hasWorkspace ? (
+          {!hasWorkspace && !hasOpenFile ? (
             <EmptyStateWorkspace
               onOpenFolder={handleOpenFolder}
               onOpenWorkspace={handleOpenWorkspaceFile}
@@ -794,7 +795,9 @@ function App() {
                   <div className="flex w-full max-w-[640px] flex-col items-center rounded-2xl border border-zinc-300 bg-zinc-50 px-8 py-20">
                     <FolderDown className="mb-5 h-14 w-14 text-zinc-400" />
                     <div className="text-[18px] font-medium text-zinc-600">
-                      添加到工作区
+                      {hasWorkspace
+                        ? t('fileDrop.addToWorkspace')
+                        : t('fileDrop.openFile')}
                     </div>
                   </div>
                 </div>

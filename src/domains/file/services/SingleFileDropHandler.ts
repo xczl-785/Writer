@@ -6,7 +6,7 @@ import { getDropTargetDirectory, findRootPath } from '../utils/ghostPathUtils';
 import { isSupportedFile, getUnsupportedMessage } from '../utils/fileTypeUtils';
 import { FsService } from './FsService';
 import { joinPath } from '../../../utils/pathUtils';
-import { useDropStore } from '../../state/slices/dropSlice';
+import { useDropStore } from '../../../state/slices/dropSlice';
 import { t } from '../../../shared/i18n';
 
 /**

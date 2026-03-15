@@ -447,7 +447,9 @@ export function Sidebar({ isExternalDragOver = false }: SidebarProps) {
       isReservedPath,
       onNewFile: () => {
         setSelectedPath(node.path);
-        setGhostNode(getCreateGhostTarget('file', rootPath, node.path, node.type));
+        setGhostNode(
+          getCreateGhostTarget('file', rootPath, node.path, node.type),
+        );
       },
       onNewFolder: () => {
         setSelectedPath(node.path);
@@ -1060,7 +1062,9 @@ export function Sidebar({ isExternalDragOver = false }: SidebarProps) {
               <div className="flex flex-col items-center gap-3 text-zinc-500">
                 <FolderDown className="h-10 w-10 text-zinc-400" />
                 <span className="text-sm font-medium text-zinc-600">
-                  添加到工作区
+                  {rootFolders.length > 0
+                    ? t('fileDrop.addToWorkspace')
+                    : t('fileDrop.openFile')}
                 </span>
               </div>
             </div>
