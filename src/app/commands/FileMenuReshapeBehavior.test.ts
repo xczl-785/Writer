@@ -21,6 +21,16 @@ describe('File menu reshape behavior markers', () => {
   });
 
   it('does not route close-folder directly to closeWorkspace anymore', () => {
-    expect(fileCommandsSource).not.toContain('workspaceActions.closeWorkspace();');
+    const closeFolderRegistration = fileCommandsSource.match(
+      /menuCommandBus\.register\('menu\.file\.close_folder'[\s\S]*?\),\n\s*\);/,
+    );
+
+    expect(closeFolderRegistration?.[0]).toBeDefined();
+    expect(closeFolderRegistration?.[0]).toContain(
+      'workspaceActions.removeFolderFromWorkspace',
+    );
+    expect(closeFolderRegistration?.[0]).not.toContain(
+      'workspaceActions.closeWorkspace();',
+    );
   });
 });

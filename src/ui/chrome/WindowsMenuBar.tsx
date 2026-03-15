@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { t, getLocale } from '../../shared/i18n';
-import { useEditorStore } from '../../domains/editor/state/editorStore';
 import {
   getWorkspaceContext,
   useWorkspaceStore,
@@ -17,7 +16,6 @@ import { isMenuItemEnabledForState } from './menuState';
 
 type WindowsMenuBarProps = {
   hasRecentItems: boolean;
-  isSidebarVisible: boolean;
   platform: MenuPlatform;
 };
 
@@ -40,7 +38,6 @@ type PendingFocusTarget =
 
 export function WindowsMenuBar({
   hasRecentItems,
-  isSidebarVisible,
   platform,
 }: WindowsMenuBarProps) {
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
