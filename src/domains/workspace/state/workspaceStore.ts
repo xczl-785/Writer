@@ -1,79 +1,100 @@
-// Workspace store for the workspace domain
+﻿// Workspace store for the workspace domain
 // V6 工作区状态模型 - 支持多文件夹工作区
 
 import { create } from 'zustand';
 
 export interface WorkspaceFolder {
-  path: string; // 绝对路径
-  name?: string; // 可选显示名
-  index: number; // 排序索引
+  path: string;
+  name?: string;
+  index: number;
 }
 
 export interface WorkspaceState {
-  // 核心状态 - 单一事实来源
   folders: WorkspaceFolder[];
-
-  // 工作区文件路径（如已保存）
   workspaceFile: string | null;
-
-  // 脏标记（无标题工作区有未保存变更）
   isDirty: boolean;
-
-  // 打开的文件
   openFiles: string[];
-
-  // 当前活动文件
   activeFile: string | null;
 }
 
-// 计算属性（通过 selector 使用）
-export const getWorkspaceType = (state: WorkspaceState): WorkspaceType => {
+export type WorkspaceType = 'empty' | 'single' | 'multi';
+
+export type WorkspaceContext =
+  | 'none'
+  | 'single-temporary'
+  | 'multi-unsaved'
+  | 'saved'
+  | 'saved-empty';
+
+export function getWorkspaceType(state: WorkspaceState): WorkspaceType {
   if (state.folders.length === 0) return 'empty';
   if (state.folders.length === 1) return 'single';
   return 'multi';
-};
+}
 
-export const isUntitledWorkspace = (state: WorkspaceState): boolean => {
-  return state.folders.length > 1 && state.workspaceFile === null;
-};
+export function getWorkspaceContext(
+  state: WorkspaceState,
+): WorkspaceContext {
+  if (state.workspaceFile) {
+    if (state.folders.length === 0) {
+      return 'saved-empty';
+    }
+    return 'saved';
+  }
 
-export type WorkspaceType = 'empty' | 'single' | 'multi';
+  if (state.folders.length === 0) {
+    return 'none';
+  }
+
+  if (state.folders.length === 1) {
+    return 'single-temporary';
+  }
+
+  return 'multi-unsaved';
+}
+
+export function hasWorkspaceContext(state: WorkspaceState): boolean {
+  return getWorkspaceContext(state) !== 'none';
+}
+
+export function isSavedWorkspace(state: WorkspaceState): boolean {
+  const context = getWorkspaceContext(state);
+  return context === 'saved' || context === 'saved-empty';
+}
+
+export function isEmptySavedWorkspace(state: WorkspaceState): boolean {
+  return getWorkspaceContext(state) === 'saved-empty';
+}
+
+export function isUntitledWorkspace(state: WorkspaceState): boolean {
+  return getWorkspaceContext(state) === 'multi-unsaved';
+}
 
 export interface WorkspaceActions {
-  // 基础操作
   setWorkspaceFile: (path: string | null) => void;
   setDirty: (dirty: boolean) => void;
-
-  // 文件夹管理
   addFolder: (folder: WorkspaceFolder) => void;
   removeFolder: (path: string) => void;
   renameFolder: (path: string, name: string) => void;
   reorderFolders: (fromIndex: number, toIndex: number) => void;
   moveFolderUp: (path: string) => void;
   moveFolderDown: (path: string) => void;
-
-  // 文件操作
   openFile: (path: string) => void;
   closeFile: (path: string) => void;
   setActiveFile: (path: string | null) => void;
   renameFile: (oldPath: string, newPath: string) => void;
   removePath: (path: string) => void;
-
-  // 状态恢复
   restoreState: (state: Partial<WorkspaceState>) => void;
   clearState: () => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
   (set) => ({
-    // 初始状态
     folders: [],
     workspaceFile: null,
     isDirty: false,
     openFiles: [],
     activeFile: null,
-
-    // ========== 基础操作 ==========
 
     setWorkspaceFile: (path) =>
       set({
@@ -82,8 +103,6 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
       }),
 
     setDirty: (dirty) => set({ isDirty: dirty }),
-
-    // ========== 文件夹管理 ==========
 
     addFolder: (folder) =>
       set((state) => ({
@@ -111,7 +130,6 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
         const [removed] = newFolders.splice(fromIndex, 1);
         newFolders.splice(toIndex, 0, removed);
 
-        // 更新索引
         newFolders.forEach((folder, index) => {
           folder.index = index;
         });
@@ -133,7 +151,6 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
           newFolders[index - 1],
         ];
 
-        // 更新索引
         newFolders.forEach((folder, idx) => {
           folder.index = idx;
         });
@@ -155,7 +172,6 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
           newFolders[index],
         ];
 
-        // 更新索引
         newFolders.forEach((folder, idx) => {
           folder.index = idx;
         });
@@ -165,8 +181,6 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
           isDirty: true,
         };
       }),
-
-    // ========== 文件操作 ==========
 
     openFile: (path) =>
       set((state) => {
@@ -199,12 +213,12 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
 
     renameFile: (oldPath, newPath) =>
       set((state) => {
-        const replacePath = (f: string) => {
-          if (f === oldPath) return newPath;
-          if (f.startsWith(oldPath + '/')) {
-            return newPath + f.slice(oldPath.length);
+        const replacePath = (filePath: string): string => {
+          if (filePath === oldPath) return newPath;
+          if (filePath.startsWith(oldPath + '/')) {
+            return newPath + filePath.slice(oldPath.length);
           }
-          return f;
+          return filePath;
         };
 
         return {
@@ -215,7 +229,8 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
 
     removePath: (path) =>
       set((state) => {
-        const isMatch = (f: string) => f === path || f.startsWith(path + '/');
+        const isMatch = (filePath: string): boolean =>
+          filePath === path || filePath.startsWith(path + '/');
 
         const newOpenFiles = state.openFiles.filter((f) => !isMatch(f));
         let newActiveFile = state.activeFile;
@@ -230,8 +245,6 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
           activeFile: newActiveFile,
         };
       }),
-
-    // ========== 状态恢复 ==========
 
     restoreState: (partialState) => set(partialState),
 

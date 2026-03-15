@@ -2,7 +2,10 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import { workspaceActions } from './workspaceActions';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { ErrorService } from '../../../services/error/ErrorService';
-import { useWorkspaceStore } from '../state/workspaceStore';
+import {
+  getWorkspaceContext,
+  useWorkspaceStore,
+} from '../state/workspaceStore';
 import { RecentItemsService } from './RecentItemsService';
 import {
   buildDefaultWorkspaceFileName,
@@ -349,7 +352,7 @@ export const openWorkspaceFile = async (): Promise<void> => {
 export const saveWorkspaceFileByDialog = async (): Promise<void> => {
   try {
     const workspace = useWorkspaceStore.getState();
-    if (workspace.folders.length === 0) {
+    if (getWorkspaceContext(workspace) === 'none') {
       useStatusStore.getState().setStatus('error', 'No workspace to save');
       return;
     }
@@ -396,7 +399,7 @@ export const saveWorkspaceFileByDialog = async (): Promise<void> => {
 export const saveCurrentWorkspace = async (): Promise<void> => {
   try {
     const workspace = useWorkspaceStore.getState();
-    if (workspace.folders.length === 0) {
+    if (getWorkspaceContext(workspace) === 'none') {
       useStatusStore.getState().setStatus('error', 'No workspace to save');
       return;
     }

@@ -1,29 +1,26 @@
-// src/ui/workspace/EmptyStateWorkspace.tsx
-// V6 空状态界面组件 - 严格对齐原型图 v6_workspace_v5_base.html 第 125-166 行
-
-import React, { useState, useCallback } from 'react';
-import { Sparkles, Briefcase, Folder, FileText } from 'lucide-react';
+﻿import React, { useCallback, useState } from 'react';
+import { Briefcase, FileText, Folder, Sparkles } from 'lucide-react';
 import { t } from '../../i18n';
 import { type RecentItem } from '../../domains/workspace/services/RecentItemsService';
 import { DragDropHint } from '../components/ErrorStates';
 
+type EmptyStateMode = 'welcome' | 'saved-empty';
+
 interface EmptyStateWorkspaceProps {
   onOpenFolder: () => void;
   onOpenWorkspace: () => void;
-  /** Callback when a file/folder is dropped onto the workspace */
+  onPrimaryAction?: () => void;
+  onSecondaryAction?: () => void;
   onDropItem?: (paths: string[]) => void;
-  /** Callback when a recent item is clicked */
   onSelectRecentItem?: (item: RecentItem) => void;
   recentItems?: RecentItem[];
   isDragOver?: boolean;
-  /** Type of dragged content for displaying appropriate hint */
   dragClassificationType?: 'files' | 'folders' | null;
+  mode?: EmptyStateMode;
+  workspaceName?: string;
 }
 
-/**
- * 获取最近项目的 Lucide 图标
- */
-const getRecentItemIcon = (type: string): React.ReactNode => {
+function getRecentItemIcon(type: string): React.ReactNode {
   switch (type) {
     case 'workspace':
       return <Briefcase className="w-4 h-4 mr-2.5 text-zinc-400" />;
@@ -33,18 +30,51 @@ const getRecentItemIcon = (type: string): React.ReactNode => {
     default:
       return <FileText className="w-4 h-4 mr-2.5 text-zinc-400" />;
   }
-};
+}
+
+function getEmptyStateCopy(
+  mode: EmptyStateMode,
+  workspaceName?: string,
+): {
+  title: string;
+  description: string;
+  primaryLabel: string;
+  secondaryLabel: string;
+} {
+  if (mode === 'saved-empty') {
+    return {
+      title: '当前工作区未包含文件夹',
+      description: workspaceName
+        ? `你仍位于工作区“${workspaceName}”中。可继续将文件夹添加到该工作区，或关闭当前工作区。`
+        : '你仍位于当前工作区中。可继续将文件夹添加到该工作区，或关闭当前工作区。',
+      primaryLabel: t('workspace.addFolderToWorkspace'),
+      secondaryLabel: t('workspace.closeTitle'),
+    };
+  }
+
+  return {
+    title: 'Writer',
+    description: '写作，心流。',
+    primaryLabel: t('workspace.openFolder'),
+    secondaryLabel: t('workspace.openWorkspace'),
+  };
+}
 
 export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
   onOpenFolder,
   onOpenWorkspace,
+  onPrimaryAction,
+  onSecondaryAction,
   onDropItem,
   onSelectRecentItem,
   recentItems = [],
   isDragOver = false,
   dragClassificationType = null,
+  mode = 'welcome',
+  workspaceName,
 }) => {
   const [isLocalDragOver, setIsLocalDragOver] = useState(false);
+  const copy = getEmptyStateCopy(mode, workspaceName);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -56,11 +86,6 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
     setIsLocalDragOver(false);
   }, []);
 
-  /**
-   * Handle file/folder drop event
-   * In Tauri, the dropped file's path can be accessed via file.path
-   * @see https://tauri.app/v2/guides/features/drag-and-drop/
-   */
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -82,20 +107,15 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
         if (paths.length > 0) {
           onDropItem(paths);
         } else {
-          // Fallback: if path is not available, open folder dialog
           onOpenFolder();
         }
       } else if (files.length > 0) {
-        // No onDropItem callback provided, fallback to open folder dialog
         onOpenFolder();
       }
     },
     [onDropItem, onOpenFolder],
   );
 
-  /**
-   * Handle recent item click
-   */
   const handleRecentItemClick = useCallback(
     (item: RecentItem) => {
       if (onSelectRecentItem) {
@@ -105,16 +125,19 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
     [onSelectRecentItem],
   );
 
+  const primaryAction = onPrimaryAction ?? onOpenFolder;
+  const secondaryAction = onSecondaryAction ?? onOpenWorkspace;
+  const showRecentItems = mode === 'welcome' && recentItems.length > 0;
+
   return (
     <div
-      className={`absolute inset-0 flex flex-col items-center justify-center bg-white z-20`}
+      className="absolute inset-0 flex flex-col items-center justify-center bg-white z-20"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       role="application"
       aria-label="Empty State Workspace"
     >
-      {/* 拖拽遮罩层 */}
       {(isLocalDragOver || isDragOver) && (
         <DragDropHint
           label={
@@ -125,42 +148,39 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
         />
       )}
 
-      <div className="w-full max-w-sm py-20 flex flex-col items-center">
-        {/* Logo 区域 - 原型图第 129-131 行 */}
+      <div className="w-full max-w-md py-20 flex flex-col items-center">
         <div className="mb-1">
           <Sparkles className="w-10 h-10 text-zinc-900" />
         </div>
-        <div className="text-xl font-bold mb-1">Writer</div>
-        <div className="text-sm text-zinc-400 mb-10 italic">写作，心流</div>
+        <div className="text-xl font-bold mb-1">{copy.title}</div>
+        <div className="text-sm text-zinc-400 mb-10 italic text-center px-8">
+          {copy.description}
+        </div>
 
-        {/* 主操作按钮 - 原型图第 133-142 行 */}
         <div className="flex space-x-4 mb-10">
           <button
             className="px-6 py-2 bg-zinc-900 text-white text-sm font-medium rounded-md hover:bg-zinc-800 transition-colors shadow-sm cursor-pointer"
-            onClick={onOpenFolder}
+            onClick={primaryAction}
             type="button"
           >
-            {t('workspace.openFolder')}
+            {copy.primaryLabel}
           </button>
           <button
             className="px-6 py-2 border border-zinc-200 text-zinc-600 text-sm font-medium rounded-md hover:bg-zinc-50 transition-colors cursor-pointer"
-            onClick={onOpenWorkspace}
+            onClick={secondaryAction}
             type="button"
           >
-            {t('workspace.openWorkspace')}
+            {copy.secondaryLabel}
           </button>
         </div>
 
-        {/* 最近打开 - 原型图第 144-163 行 */}
-        {recentItems.length > 0 && (
+        {showRecentItems && (
           <div className="w-full px-8">
-            {/* 标题带左右横线 */}
             <div className="flex items-center text-zinc-300 text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
               <div className="flex-grow border-t border-zinc-200 mr-3"></div>
               {t('workspace.recent')}
               <div className="flex-grow border-t border-zinc-200 ml-3"></div>
             </div>
-            {/* 统一列表，无分组 */}
             <div className="space-y-1">
               {recentItems.slice(0, 5).map((item) => (
                 <button
@@ -178,10 +198,11 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
           </div>
         )}
 
-        {/* 拖拽提示 - 原型图第 163 行，无图标 */}
         <div className="w-full px-8">
           <p className="mt-8 text-center text-xs text-zinc-300 italic">
-            {t('workspace.dragHint')}
+            {mode === 'saved-empty'
+              ? t('workspace.dropBlockedHint')
+              : t('workspace.dragHint')}
           </p>
         </div>
       </div>

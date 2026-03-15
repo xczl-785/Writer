@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { useEditorStore } from '../../domains/editor/state/editorStore';
 import {
-  useWorkspaceStore,
+  getWorkspaceContext,
   getWorkspaceType,
+  useWorkspaceStore,
 } from '../../domains/workspace/state/workspaceStore';
 import { FsService } from '../../domains/file/services/FsService';
 import { countCharacters } from './statusBarUtils';
@@ -40,12 +41,19 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     openFiles: [],
     activeFile: null,
   });
+  const workspaceContext = getWorkspaceContext({
+    folders,
+    workspaceFile,
+    isDirty,
+    openFiles: [],
+    activeFile: null,
+  });
   const workspaceName = getWorkspaceIndicatorLabel({
     folders,
     workspaceFile,
     isDirty,
   });
-  const showWorkspace = workspaceType !== 'empty';
+  const showWorkspace = workspaceContext !== 'none';
 
   useEffect(() => {
     let disposed = false;

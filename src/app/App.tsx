@@ -4,7 +4,10 @@ import { invoke } from '@tauri-apps/api/core';
 import { Editor } from '../domains/editor/core/Editor';
 import { StateDebug } from '../ui/StateDebug';
 import { Sidebar } from '../ui/sidebar/Sidebar';
-import { useWorkspaceStore } from '../domains/workspace/state/workspaceStore';
+import {
+  getWorkspaceContext,
+  useWorkspaceStore,
+} from '../domains/workspace/state/workspaceStore';
 import { useEditorStore } from '../domains/editor/state/editorStore';
 import { useStatusStore } from '../state/slices/statusSlice';
 import { useSettingsStore } from '../domains/settings/state/settingsStore';
@@ -50,7 +53,9 @@ import { useViewportTier } from '../ui/layout/useViewportTier';
 import { useFocusZenWakeup } from '../ui/layout/useFocusZenWakeup';
 import { AppChrome } from './AppChrome';
 import { createAppChromeModel } from '../ui/chrome/chromeState';
+import { getWorkspaceIndicatorLabel } from '../ui/statusbar/workspaceIndicator';
 import {
+  addFolderToWorkspaceByDialog,
   handleDroppedFolderPaths,
   openWorkspace,
   openWorkspaceFile,
@@ -135,10 +140,22 @@ function isPointInsideElement(
 }
 
 function App() {
-  const { folders, activeFile } = useWorkspaceStore();
-  const hasWorkspace = folders.length > 0;
+  const { folders, activeFile, workspaceFile, isDirty } = useWorkspaceStore();
+  const workspaceContext = getWorkspaceContext({
+    folders,
+    activeFile,
+    openFiles: [],
+    workspaceFile,
+    isDirty,
+  });
+  const hasWorkspace = workspaceContext !== 'none';
   const hasOpenFile = activeFile !== null;
   const currentPath = folders[0]?.path;
+  const workspaceName = getWorkspaceIndicatorLabel({
+    folders,
+    workspaceFile,
+    isDirty,
+  });
   const { tier } = useViewportTier();
   const isMinTier = tier === 'min';
   const typewriterEnabledByUser = useSettingsStore(
@@ -236,6 +253,10 @@ function App() {
   }, [refreshRecentItems]);
   const handleOpenWorkspaceFile = useCallback(async () => {
     await openWorkspaceFile();
+    await refreshRecentItems();
+  }, [refreshRecentItems]);
+  const handleAddFolderToWorkspace = useCallback(async () => {
+    await addFolderToWorkspaceByDialog();
     await refreshRecentItems();
   }, [refreshRecentItems]);
   const handleDroppedFolders = useCallback(
@@ -742,7 +763,7 @@ function App() {
           ref={mainDropZoneRef}
           className="flex-1 flex flex-col relative min-w-0 h-full"
         >
-          {!hasWorkspace && !hasOpenFile ? (
+          {workspaceContext === 'none' && !hasOpenFile ? (
             <EmptyStateWorkspace
               onOpenFolder={handleOpenFolder}
               onOpenWorkspace={handleOpenWorkspaceFile}
@@ -753,6 +774,25 @@ function App() {
               recentItems={recentItems}
               isDragOver={isEditorDragOver}
               dragClassificationType={dragClassificationType}
+              mode="welcome"
+            />
+          ) : workspaceContext === 'saved-empty' ? (
+            <EmptyStateWorkspace
+              onOpenFolder={handleOpenFolder}
+              onOpenWorkspace={handleOpenWorkspaceFile}
+              onPrimaryAction={() => {
+                void handleAddFolderToWorkspace();
+              }}
+              onSecondaryAction={() => {
+                void workspaceActions.closeWorkspace();
+              }}
+              onDropItem={(paths) => {
+                void handleDroppedFolders(paths, false);
+              }}
+              isDragOver={isEditorDragOver}
+              dragClassificationType={dragClassificationType}
+              mode="saved-empty"
+              workspaceName={workspaceName}
             />
           ) : (
             <div
