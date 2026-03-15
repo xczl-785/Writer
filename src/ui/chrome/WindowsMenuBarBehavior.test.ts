@@ -6,6 +6,26 @@ import { WindowsMenuBar } from './WindowsMenuBar';
 import { menuCommandBus } from '../commands/menuCommandBus';
 import { setLocale } from '../../shared/i18n';
 
+vi.mock('../../domains/workspace/services/RecentItemsService', () => ({
+  RECENT_ITEMS_CHANGED_EVENT: 'writer:recent-items-changed',
+  RecentItemsService: {
+    getAll: vi.fn(() =>
+      Promise.resolve({
+        workspaces: [
+          {
+            type: 'workspace',
+            path: '/recent/workspace.writer-workspace',
+            name: 'Recent Workspace',
+            lastOpened: new Date().toISOString(),
+          },
+        ],
+        folders: [],
+        files: [],
+      }),
+    ),
+  },
+}));
+
 function renderMenuBar() {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -145,11 +165,9 @@ describe('WindowsMenuBar behavior', () => {
     await cleanup(container, root);
   });
 
-  it('dispatches open recent when the file menu item is clicked', async () => {
+  it('shows recent items in a cascading submenu from the file menu', async () => {
     setLocale('en-US');
     const { container, root } = renderMenuBar();
-    const handler = vi.fn();
-    const unregister = menuCommandBus.register('menu.file.open_recent', handler);
 
     const fileButton = getTopLevelButton(container, 'File');
 
@@ -160,14 +178,37 @@ describe('WindowsMenuBar behavior', () => {
 
     const openRecentItem = getMenuItem(container, 'Open Recent');
 
+    expect(openRecentItem.textContent).toContain('Open Recent');
+    expect(container.textContent).toContain('Recent Workspace');
+    expect(container.textContent).toContain('Clear All History');
+    await cleanup(container, root);
+  });
+
+  it('dispatches a custom event when a recent item is clicked', async () => {
+    setLocale('en-US');
+    const { container, root } = renderMenuBar();
+    const eventSpy = vi.fn();
+    window.addEventListener('writer:open-recent-item', eventSpy as EventListener);
+
+    const fileButton = getTopLevelButton(container, 'File');
+
     await act(async () => {
-      openRecentItem.click();
+      fileButton.click();
       await Promise.resolve();
     });
 
-    expect(handler).toHaveBeenCalledTimes(1);
+    const recentWorkspaceItem = getMenuItem(container, 'Recent Workspace');
 
-    unregister();
+    await act(async () => {
+      recentWorkspaceItem.click();
+      await Promise.resolve();
+    });
+
+    expect(eventSpy).toHaveBeenCalledTimes(1);
+    window.removeEventListener(
+      'writer:open-recent-item',
+      eventSpy as EventListener,
+    );
     await cleanup(container, root);
   });
 });

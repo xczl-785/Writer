@@ -19,7 +19,10 @@ vi.mock('../../file/services/FsService', () => ({
 }));
 
 import { FsService } from '../../file/services/FsService';
-import { RecentItemsService } from './RecentItemsService';
+import {
+  RecentItemsService,
+  RECENT_ITEMS_CHANGED_EVENT,
+} from './RecentItemsService';
 
 const mockFsService = vi.mocked(FsService);
 
@@ -180,6 +183,18 @@ describe('RecentItemsService', () => {
       expect(await RecentItemsService.getWorkspaces()).toHaveLength(0);
       expect(await RecentItemsService.getFolders()).toHaveLength(0);
       expect(await RecentItemsService.getFiles()).toHaveLength(0);
+    });
+  });
+
+  describe('change events', () => {
+    it('emits a browser event after mutating recent items', async () => {
+      const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+      await RecentItemsService.addFolder('/folder');
+
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: RECENT_ITEMS_CHANGED_EVENT }),
+      );
     });
   });
 

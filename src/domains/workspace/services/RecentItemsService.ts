@@ -54,6 +54,7 @@ const STORAGE_FILENAME = 'recent-items.json';
 const MAX_WORKSPACES = 10;
 const MAX_FOLDERS = 5;
 const MAX_FILES = 20;
+export const RECENT_ITEMS_CHANGED_EVENT = 'writer:recent-items-changed';
 
 // Cache for the storage path
 let cachedStoragePath: string | null = null;
@@ -114,6 +115,9 @@ async function saveData(data: RecentItemsData): Promise<void> {
   try {
     const storagePath = await getStoragePath();
     await FsService.writeJsonFile(storagePath, data);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(RECENT_ITEMS_CHANGED_EVENT));
+    }
   } catch (e) {
     console.error('Failed to save recent items:', e);
   }
