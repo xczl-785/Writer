@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { t, getLocale } from '../../shared/i18n';
 import { useEditorStore } from '../../domains/editor/state/editorStore';
-import { useWorkspaceStore } from '../../domains/workspace/state/workspaceStore';
+import {
+  getWorkspaceContext,
+  useWorkspaceStore,
+} from '../../domains/workspace/state/workspaceStore';
+import { useFileTreeStore } from '../../domains/file/state/fileStore';
 import { menuCommandBus } from '../commands/menuCommandBus';
 import {
   WINDOWS_MENU_SCHEMA,
@@ -51,22 +55,23 @@ export function WindowsMenuBar({
     group.platforms.includes(platform),
   );
   const activeFile = useWorkspaceStore((state) => state.activeFile);
-  const foldersLength = useWorkspaceStore((state) => state.folders.length);
+  const folders = useWorkspaceStore((state) => state.folders);
   const workspaceFile = useWorkspaceStore((state) => state.workspaceFile);
-  const hasDirtyActiveFile = useEditorStore((state) => {
-    if (!activeFile) {
-      return false;
-    }
-    return state.fileStates[activeFile]?.isDirty ?? false;
-  });
+  const isDirty = useWorkspaceStore((state) => state.isDirty);
+  const selectedPath = useFileTreeStore((state) => state.selectedPath);
+  const hasSelectedRootFolder = folders.some((folder) => folder.path === selectedPath);
 
   const runtimeState = {
-    hasWorkspace: foldersLength > 0,
-    hasWorkspaceFile: workspaceFile !== null,
+    workspaceContext: getWorkspaceContext({
+      folders,
+      workspaceFile,
+      isDirty,
+      openFiles: [],
+      activeFile,
+    }),
     hasActiveFile: activeFile !== null,
-    hasDirtyActiveFile,
     hasRecentItems,
-    isSidebarVisible,
+    hasSelectedRootFolder,
   };
 
   function isItemEnabled(item: MenuSchemaItem): boolean {

@@ -1,25 +1,25 @@
+﻿import type { WorkspaceContext } from '../../domains/workspace/state/workspaceStore';
+
 export type MenuRuntimeState = {
-  hasWorkspace: boolean;
-  hasWorkspaceFile: boolean;
+  workspaceContext: WorkspaceContext;
   hasActiveFile: boolean;
-  hasDirtyActiveFile: boolean;
   hasRecentItems: boolean;
-  isSidebarVisible: boolean;
+  hasSelectedRootFolder: boolean;
 };
 
 const ALWAYS_ENABLED_IDS = new Set([
   'menu.file.new',
+  'menu.file.open_file',
   'menu.file.open_folder',
+  'menu.file.open_workspace',
   'menu.file.settings',
   'menu.view.toggle_sidebar',
   'menu.view.focus_mode',
 ]);
 
-const WORKSPACE_REQUIRED_IDS = new Set([
-  'menu.file.close_folder',
-  'menu.file.save_workspace',
-  'menu.file.save_workspace_as',
-  'menu.view.outline',
+const RECENT_ITEMS_REQUIRED_IDS = new Set([
+  'menu.file.open_recent',
+  'menu.file.clear_recent',
 ]);
 
 const ACTIVE_FILE_REQUIRED_PREFIXES = [
@@ -28,12 +28,26 @@ const ACTIVE_FILE_REQUIRED_PREFIXES = [
   'menu.format.',
 ];
 
-const ACTIVE_FILE_REQUIRED_IDS = new Set(['menu.file.save']);
-
-const RECENT_ITEMS_REQUIRED_IDS = new Set([
-  'menu.file.open_recent',
-  'menu.file.clear_recent',
+const ACTIVE_FILE_REQUIRED_IDS = new Set([
+  'menu.file.save',
+  'menu.file.close_file',
+  'menu.view.outline',
 ]);
+
+const WORKSPACE_CONTEXT_REQUIRED_IDS = new Set([
+  'menu.file.add_folder_to_workspace',
+  'menu.file.save_workspace',
+  'menu.file.save_workspace_as',
+  'menu.file.close_workspace',
+]);
+
+function hasWorkspaceContext(state: MenuRuntimeState): boolean {
+  return state.workspaceContext !== 'none';
+}
+
+function canCloseFolder(state: MenuRuntimeState): boolean {
+  return hasWorkspaceContext(state) && state.hasSelectedRootFolder;
+}
 
 export function isMenuItemEnabledForState(
   id: string,
@@ -48,8 +62,16 @@ export function isMenuItemEnabledForState(
     return true;
   }
 
-  if (WORKSPACE_REQUIRED_IDS.has(id)) {
-    return state.hasWorkspace;
+  if (RECENT_ITEMS_REQUIRED_IDS.has(id)) {
+    return state.hasRecentItems;
+  }
+
+  if (id === 'menu.file.close_folder') {
+    return canCloseFolder(state);
+  }
+
+  if (WORKSPACE_CONTEXT_REQUIRED_IDS.has(id)) {
+    return hasWorkspaceContext(state);
   }
 
   if (ACTIVE_FILE_REQUIRED_IDS.has(id)) {
@@ -60,10 +82,6 @@ export function isMenuItemEnabledForState(
     ACTIVE_FILE_REQUIRED_PREFIXES.some((prefix) => id.startsWith(prefix))
   ) {
     return state.hasActiveFile;
-  }
-
-  if (RECENT_ITEMS_REQUIRED_IDS.has(id)) {
-    return state.hasRecentItems;
   }
 
   return schemaEnabled;

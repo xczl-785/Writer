@@ -1,6 +1,5 @@
-import {
-  getWorkspaceType,
-  isUntitledWorkspace,
+﻿import {
+  getWorkspaceContext,
   type WorkspaceState,
 } from '../../domains/workspace/state/workspaceStore';
 import { t } from '../../shared/i18n';
@@ -14,10 +13,14 @@ export function getWorkspaceFileBaseName(path: string): string {
     : fileName;
 }
 
+function getSavedWorkspaceLabel(workspaceFile: string): string {
+  return `${getWorkspaceFileBaseName(workspaceFile)} ${t('workspace.savedSuffix')}`;
+}
+
 export function getWorkspaceIndicatorLabel(
   workspace: Pick<WorkspaceState, 'folders' | 'workspaceFile' | 'isDirty'>,
 ): string {
-  const workspaceType = getWorkspaceType({
+  const workspaceContext = getWorkspaceContext({
     folders: workspace.folders,
     workspaceFile: workspace.workspaceFile,
     isDirty: workspace.isDirty,
@@ -25,27 +28,21 @@ export function getWorkspaceIndicatorLabel(
     activeFile: null,
   });
 
-  if (workspaceType === 'empty') {
+  if (workspaceContext === 'none') {
     return '';
   }
 
-  if (workspaceType === 'single') {
+  if (workspaceContext === 'single-temporary') {
     const folder = workspace.folders[0];
     return folder?.name ?? folder?.path.split('/').pop() ?? '';
   }
 
-  if (isUntitledWorkspace({
-    folders: workspace.folders,
-    workspaceFile: workspace.workspaceFile,
-    isDirty: workspace.isDirty,
-    openFiles: [],
-    activeFile: null,
-  })) {
+  if (workspaceContext === 'multi-unsaved') {
     return t('workspace.untitledUnsaved');
   }
 
   if (workspace.workspaceFile) {
-    return `${getWorkspaceFileBaseName(workspace.workspaceFile)} ${t('workspace.savedSuffix')}`;
+    return getSavedWorkspaceLabel(workspace.workspaceFile);
   }
 
   return '';
@@ -58,7 +55,7 @@ export function buildDefaultWorkspaceFileName(
     return `${getWorkspaceFileBaseName(workspace.workspaceFile)}${WORKSPACE_FILE_SUFFIX}`;
   }
 
-  const workspaceType = getWorkspaceType({
+  const workspaceContext = getWorkspaceContext({
     folders: workspace.folders,
     workspaceFile: workspace.workspaceFile,
     isDirty: workspace.isDirty,
@@ -66,11 +63,11 @@ export function buildDefaultWorkspaceFileName(
     activeFile: null,
   });
 
-  if (workspaceType === 'single') {
+  if (workspaceContext === 'single-temporary') {
     const folder = workspace.folders[0];
     const baseName = folder?.name ?? folder?.path.split('/').pop() ?? 'workspace';
     return `${baseName}${WORKSPACE_FILE_SUFFIX}`;
   }
 
-  return `未命名工作区${WORKSPACE_FILE_SUFFIX}`;
+  return `${t('workspace.untitledUnsaved').replace(' (未保存)', '').replace(' (Unsaved)', '')}${WORKSPACE_FILE_SUFFIX}`;
 }

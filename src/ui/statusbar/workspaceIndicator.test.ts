@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 import {
   buildDefaultWorkspaceFileName,
   getWorkspaceIndicatorLabel,
@@ -16,6 +16,16 @@ describe('workspace indicator naming', () => {
     ).toBe('temp');
   });
 
+  it('uses workspace name for a saved single-folder workspace', () => {
+    expect(
+      getWorkspaceIndicatorLabel({
+        folders: [{ path: '/notes/temp', index: 0 }],
+        workspaceFile: '/Users/demo/project.writer-workspace',
+        isDirty: false,
+      }),
+    ).toBe('project (宸ヤ綔鍖?)');
+  });
+
   it('uses untitled label for a multi-root workspace without a workspace file', () => {
     expect(
       getWorkspaceIndicatorLabel({
@@ -26,7 +36,7 @@ describe('workspace indicator naming', () => {
         workspaceFile: null,
         isDirty: true,
       }),
-    ).toBe('未命名工作区 (未保存)');
+    ).toBe('鏈懡鍚嶅伐浣滃尯 (鏈繚瀛?)');
   });
 
   it('uses the workspace file name for a saved multi-root workspace', () => {
@@ -39,7 +49,17 @@ describe('workspace indicator naming', () => {
         workspaceFile: '/Users/demo/project.writer-workspace',
         isDirty: false,
       }),
-    ).toBe('project (工作区)');
+    ).toBe('project (宸ヤ綔鍖?)');
+  });
+
+  it('uses the workspace file name for an empty saved workspace', () => {
+    expect(
+      getWorkspaceIndicatorLabel({
+        folders: [],
+        workspaceFile: '/Users/demo/project.writer-workspace',
+        isDirty: false,
+      }),
+    ).toBe('project (宸ヤ綔鍖?)');
   });
 
   it('builds default workspace file names from current workspace state', () => {
@@ -60,7 +80,7 @@ describe('workspace indicator naming', () => {
         workspaceFile: null,
         isDirty: true,
       }),
-    ).toBe('未命名工作区.writer-workspace');
+    ).toBe('鏈懡鍚嶅伐浣滃尯.writer-workspace');
   });
 
   it('strips the workspace file suffix when deriving the base name', () => {

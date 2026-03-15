@@ -1,16 +1,14 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 import {
   isMenuItemEnabledForState,
   type MenuRuntimeState,
 } from './menuState';
 
 const emptyState: MenuRuntimeState = {
-  hasWorkspace: false,
-  hasWorkspaceFile: false,
+  workspaceContext: 'none',
   hasActiveFile: false,
-  hasDirtyActiveFile: false,
   hasRecentItems: false,
-  isSidebarVisible: true,
+  hasSelectedRootFolder: false,
 };
 
 describe('menuState', () => {
@@ -23,6 +21,15 @@ describe('menuState', () => {
     ).toBe(false);
     expect(
       isMenuItemEnabledForState('menu.file.save_workspace_as', emptyState),
+    ).toBe(false);
+    expect(isMenuItemEnabledForState('menu.file.close_file', emptyState)).toBe(
+      false,
+    );
+    expect(
+      isMenuItemEnabledForState(
+        'menu.file.add_folder_to_workspace',
+        emptyState,
+      ),
     ).toBe(false);
   });
 
@@ -37,7 +44,7 @@ describe('menuState', () => {
 
     const activeFileState: MenuRuntimeState = {
       ...emptyState,
-      hasWorkspace: true,
+      workspaceContext: 'single-temporary',
       hasActiveFile: true,
     };
 
@@ -49,6 +56,9 @@ describe('menuState', () => {
     ).toBe(true);
     expect(
       isMenuItemEnabledForState('menu.paragraph.blockquote', activeFileState),
+    ).toBe(true);
+    expect(
+      isMenuItemEnabledForState('menu.file.close_file', activeFileState),
     ).toBe(true);
   });
 
@@ -73,14 +83,67 @@ describe('menuState', () => {
     ).toBe(true);
   });
 
+  it('allows workspace save actions for an empty saved workspace while keeping close-folder disabled', () => {
+    const emptySavedWorkspaceState: MenuRuntimeState = {
+      ...emptyState,
+      workspaceContext: 'saved-empty',
+    };
+
+    expect(
+      isMenuItemEnabledForState(
+        'menu.file.add_folder_to_workspace',
+        emptySavedWorkspaceState,
+      ),
+    ).toBe(true);
+    expect(
+      isMenuItemEnabledForState(
+        'menu.file.save_workspace',
+        emptySavedWorkspaceState,
+      ),
+    ).toBe(true);
+    expect(
+      isMenuItemEnabledForState(
+        'menu.file.save_workspace_as',
+        emptySavedWorkspaceState,
+      ),
+    ).toBe(true);
+    expect(
+      isMenuItemEnabledForState(
+        'menu.file.close_workspace',
+        emptySavedWorkspaceState,
+      ),
+    ).toBe(true);
+    expect(
+      isMenuItemEnabledForState(
+        'menu.file.close_folder',
+        emptySavedWorkspaceState,
+      ),
+    ).toBe(false);
+  });
+
+  it('requires an explicitly selected root folder before enabling close-folder', () => {
+    const multiWorkspaceState: MenuRuntimeState = {
+      ...emptyState,
+      workspaceContext: 'multi-unsaved',
+    };
+
+    expect(
+      isMenuItemEnabledForState('menu.file.close_folder', multiWorkspaceState),
+    ).toBe(false);
+    expect(
+      isMenuItemEnabledForState('menu.file.close_folder', {
+        ...multiWorkspaceState,
+        hasSelectedRootFolder: true,
+      }),
+    ).toBe(true);
+  });
+
   it('keeps unsupported items disabled even when runtime state is otherwise valid', () => {
     const readyState: MenuRuntimeState = {
-      hasWorkspace: true,
-      hasWorkspaceFile: true,
+      workspaceContext: 'saved',
       hasActiveFile: true,
-      hasDirtyActiveFile: true,
       hasRecentItems: true,
-      isSidebarVisible: true,
+      hasSelectedRootFolder: true,
     };
 
     expect(

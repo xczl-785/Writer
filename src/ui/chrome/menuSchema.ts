@@ -1,4 +1,4 @@
-import type { AppLocale } from '../../shared/i18n/messages';
+﻿import type { AppLocale } from '../../shared/i18n/messages';
 
 export type MenuPlatform = 'windows' | 'macos';
 
@@ -35,33 +35,58 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
         accelerator: 'Ctrl+N',
       },
       {
-        id: 'menu.file.open_folder',
-        labelKey: 'menu.file.openFolder',
-        fallbackLabels: { 'zh-CN': '打开文件夹', 'en-US': 'Open Folder' },
+        id: 'menu.file.open_file',
+        labelKey: 'menu.file.openFile',
+        fallbackLabels: { 'zh-CN': '打开文件…', 'en-US': 'Open File…' },
         accelerator: 'Ctrl+O',
       },
       {
-        id: 'menu.file.close_folder',
-        labelKey: 'menu.file.closeFolder',
-        fallbackLabels: { 'zh-CN': '关闭文件夹', 'en-US': 'Close Folder' },
-        accelerator: 'Shift+Ctrl+W',
+        id: 'menu.file.open_folder',
+        labelKey: 'menu.file.openFolder',
+        fallbackLabels: { 'zh-CN': '打开文件夹…', 'en-US': 'Open Folder…' },
+        accelerator: 'Ctrl+K Ctrl+O',
+      },
+      {
+        id: 'menu.file.open_workspace',
+        labelKey: 'menu.file.openWorkspace',
+        fallbackLabels: { 'zh-CN': '打开工作区…', 'en-US': 'Open Workspace…' },
+        accelerator: 'Ctrl+Alt+O',
+      },
+      {
+        id: 'menu.file.open_recent',
+        labelKey: 'recent.menuLabel',
+        fallbackLabels: { 'zh-CN': '打开最近', 'en-US': 'Open Recent' },
+      },
+      {
+        id: 'menu.file.clear_recent',
+        labelKey: 'recent.clearHistory',
+        fallbackLabels: { 'zh-CN': '清除所有历史记录', 'en-US': 'Clear All History' },
       },
       { id: 'separator.file.1', labelKey: 'separator.file.1', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
       {
-        id: 'menu.file.save',
-        labelKey: 'menu.file.save',
-        fallbackLabels: { 'zh-CN': '保存', 'en-US': 'Save' },
-        accelerator: 'Ctrl+S',
+        id: 'menu.file.add_folder_to_workspace',
+        labelKey: 'workspace.addFolderToWorkspace',
+        fallbackLabels: { 'zh-CN': '将文件夹添加到工作区…', 'en-US': 'Add Folder to Workspace…' },
+        accelerator: 'Ctrl+Alt+K',
       },
       {
         id: 'menu.file.save_workspace',
         labelKey: 'menu.file.saveWorkspace',
         fallbackLabels: { 'zh-CN': '保存工作区', 'en-US': 'Save Workspace' },
+        accelerator: 'Ctrl+Alt+S',
       },
       {
         id: 'menu.file.save_workspace_as',
         labelKey: 'menu.file.saveWorkspaceAs',
-        fallbackLabels: { 'zh-CN': '工作区另存为...', 'en-US': 'Save Workspace As...' },
+        fallbackLabels: { 'zh-CN': '工作区另存为…', 'en-US': 'Save Workspace As…' },
+        accelerator: 'Ctrl+Shift+Alt+S',
+      },
+      { id: 'separator.file.2', labelKey: 'separator.file.2', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
+      {
+        id: 'menu.file.save',
+        labelKey: 'menu.file.save',
+        fallbackLabels: { 'zh-CN': '保存', 'en-US': 'Save' },
+        accelerator: 'Ctrl+S',
       },
       {
         id: 'menu.file.save_as',
@@ -70,7 +95,7 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
         accelerator: 'Shift+Ctrl+S',
         enabled: false,
       },
-      { id: 'separator.file.2', labelKey: 'separator.file.2', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
+      { id: 'separator.file.3', labelKey: 'separator.file.3', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
       {
         id: 'menu.file.export_pdf',
         labelKey: 'menu.file.exportPdf',
@@ -89,7 +114,26 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
         fallbackLabels: { 'zh-CN': '导出图片', 'en-US': 'Export Image' },
         enabled: false,
       },
-      { id: 'separator.file.3', labelKey: 'separator.file.3', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
+      { id: 'separator.file.4', labelKey: 'separator.file.4', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
+      {
+        id: 'menu.file.close_file',
+        labelKey: 'menu.file.closeFile',
+        fallbackLabels: { 'zh-CN': '关闭文件', 'en-US': 'Close File' },
+        accelerator: 'Ctrl+W',
+      },
+      {
+        id: 'menu.file.close_folder',
+        labelKey: 'menu.file.closeFolder',
+        fallbackLabels: { 'zh-CN': '关闭文件夹', 'en-US': 'Close Folder' },
+        accelerator: 'Ctrl+K F',
+      },
+      {
+        id: 'menu.file.close_workspace',
+        labelKey: 'menu.file.closeWorkspace',
+        fallbackLabels: { 'zh-CN': '关闭工作区', 'en-US': 'Close Workspace' },
+        accelerator: 'Shift+Ctrl+W',
+      },
+      { id: 'separator.file.5', labelKey: 'separator.file.5', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
       {
         id: 'menu.file.settings',
         labelKey: 'menu.file.settings',
@@ -170,10 +214,6 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
     fallbackLabels: { 'zh-CN': '工具', 'en-US': 'Tools' },
     platforms: ['windows'],
     items: [
-      { id: 'menu.file.open_recent', labelKey: 'recent.menuLabel', fallbackLabels: { 'zh-CN': '打开最近', 'en-US': 'Open Recent' } },
-      { id: 'menu.file.clear_recent', labelKey: 'recent.clearHistory', fallbackLabels: { 'zh-CN': '清除所有历史记录', 'en-US': 'Clear All History' } },
-      { id: 'separator.tools.1', labelKey: 'separator.tools.1', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
-      { id: 'menu.file.settings', labelKey: 'menu.file.settings', fallbackLabels: { 'zh-CN': '设置', 'en-US': 'Settings' } },
       { id: 'menu.tools.command_palette', labelKey: 'menu.tools.commandPalette', fallbackLabels: { 'zh-CN': '命令面板', 'en-US': 'Command Palette' }, enabled: false },
     ],
   },
@@ -190,4 +230,3 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
     ],
   },
 ];
-

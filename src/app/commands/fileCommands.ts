@@ -1,32 +1,60 @@
-/**
+﻿/**
  * File menu commands
  *
  * Handles file operations like open, close, save, new, export.
  */
 import { menuCommandBus } from '../../ui/commands/menuCommandBus';
-import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
-import { useWorkspaceStore } from '../../domains/workspace/state/workspaceStore';
-import { useEditorStore } from '../../domains/editor/state/editorStore';
-import { useStatusStore } from '../../state/slices/statusSlice';
+import { useFileTreeStore } from '../../domains/file/state/fileStore';
 import { AutosaveService } from '../../domains/file/services/AutosaveService';
 import { FsService } from '../../domains/file/services/FsService';
+import { useEditorStore } from '../../domains/editor/state/editorStore';
 import { RecentItemsService } from '../../domains/workspace/services/RecentItemsService';
-import { t } from '../../shared/i18n';
+import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 import {
+  addFolderToWorkspaceByDialog,
+  openFileWithDialog,
   openWorkspace,
+  openWorkspaceFile,
   saveCurrentWorkspace,
   saveWorkspaceFileByDialog,
-  openFileWithDialog,
 } from '../../domains/workspace/services/WorkspaceManager';
+import {
+  getWorkspaceContext,
+  useWorkspaceStore,
+} from '../../domains/workspace/state/workspaceStore';
+import { useStatusStore } from '../../state/slices/statusSlice';
+import { t } from '../../shared/i18n';
 
 export type CleanupFn = () => void;
 export type OpenRecentCallback = () => void;
 
-const emitSidebarCommand = (id: string) => {
+function emitSidebarCommand(id: string): void {
   window.dispatchEvent(
     new CustomEvent('writer:sidebar-command', { detail: { id } }),
   );
-};
+}
+
+function getSelectedRootFolderPath(): string | null {
+  const selectedPath = useFileTreeStore.getState().selectedPath;
+  if (!selectedPath) {
+    return null;
+  }
+
+  const selectedRoot = useFileTreeStore
+    .getState()
+    .rootFolders.find((folder) => folder.workspacePath === selectedPath);
+
+  return selectedRoot?.workspacePath ?? null;
+}
+
+function hasWorkspaceContext(): boolean {
+  return getWorkspaceContext(useWorkspaceStore.getState()) !== 'none';
+}
+
+function canSaveWorkspace(): boolean {
+  const workspaceContext = getWorkspaceContext(useWorkspaceStore.getState());
+  return workspaceContext !== 'none';
+}
 
 export function registerFileCommands(
   setIsSidebarVisible: (value: boolean | ((prev: boolean) => boolean)) => void,
@@ -37,22 +65,65 @@ export function registerFileCommands(
   const cleanups: CleanupFn[] = [];
 
   cleanups.push(
-    menuCommandBus.register('menu.file.open_folder', async () => {
-      await openWorkspace();
-    }),
-  );
-
-  // V6.1: 打开单文件命令（Cmd/Ctrl+O）
-  cleanups.push(
     menuCommandBus.register('menu.file.open_file', async () => {
       await openFileWithDialog();
     }),
   );
 
   cleanups.push(
-    menuCommandBus.register('menu.file.close_folder', () => {
-      workspaceActions.closeWorkspace();
+    menuCommandBus.register('menu.file.open_folder', async () => {
+      await openWorkspace();
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.open_workspace', async () => {
+      await openWorkspaceFile();
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.close_file', () => {
+      const activeFile = useWorkspaceStore.getState().activeFile;
+      if (!activeFile) {
+        useStatusStore.getState().setStatus('error', t('status.menu.unavailable'));
+        return;
+      }
+
+      useWorkspaceStore.getState().closeFile(activeFile);
+      useStatusStore.getState().setStatus('idle', t('menu.file.closeFile'));
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.close_folder', async () => {
+      const selectedRootFolderPath = getSelectedRootFolderPath();
+      if (!selectedRootFolderPath) {
+        useStatusStore.getState().setStatus('error', t('status.menu.unavailable'));
+        return;
+      }
+
+      const result = await workspaceActions.removeFolderFromWorkspace(
+        selectedRootFolderPath,
+      );
+      if (!result.ok) {
+        useStatusStore.getState().setStatus('error', result.error);
+        return;
+      }
+
+      if (!hasWorkspaceContext()) {
+        useStatusStore.getState().setStatus('idle', null);
+        return;
+      }
+
       useStatusStore.getState().setStatus('idle', t('menu.file.closeFolder'));
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.close_workspace', async () => {
+      await workspaceActions.closeWorkspace();
+      useStatusStore.getState().setStatus('idle', t('menu.file.closeWorkspace'));
     }),
   );
 
@@ -100,12 +171,20 @@ export function registerFileCommands(
   );
 
   cleanups.push(
+    menuCommandBus.register('menu.file.add_folder_to_workspace', async () => {
+      if (!hasWorkspaceContext()) {
+        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        return;
+      }
+
+      await addFolderToWorkspaceByDialog();
+    }),
+  );
+
+  cleanups.push(
     menuCommandBus.register('menu.file.save_workspace', async () => {
-      const workspace = useWorkspaceStore.getState();
-      if (workspace.folders.length === 0) {
-        useStatusStore
-          .getState()
-          .setStatus('error', t('status.menu.noWorkspace'));
+      if (!canSaveWorkspace()) {
+        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
         return;
       }
 
@@ -115,11 +194,8 @@ export function registerFileCommands(
 
   cleanups.push(
     menuCommandBus.register('menu.file.save_workspace_as', async () => {
-      const workspace = useWorkspaceStore.getState();
-      if (workspace.folders.length === 0) {
-        useStatusStore
-          .getState()
-          .setStatus('error', t('status.menu.noWorkspace'));
+      if (!canSaveWorkspace()) {
+        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
         return;
       }
 
@@ -157,7 +233,6 @@ export function registerFileCommands(
     }),
   );
 
-  // Recent items commands
   cleanups.push(
     menuCommandBus.register('menu.file.open_recent', () => {
       if (onOpenRecent) {
