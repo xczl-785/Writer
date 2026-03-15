@@ -1,6 +1,3 @@
-// src/domains/file/services/SingleFileDropHandler.ts
-// V6.1 单文件拖拽 - 核心拖拽处理服务层
-
 import type { DropHandlerDeps, DropResult } from './types';
 import { getDropTargetDirectory, findRootPath } from '../utils/ghostPathUtils';
 import { isSupportedFile, getUnsupportedMessage } from '../utils/fileTypeUtils';
@@ -9,9 +6,6 @@ import { joinPath, normalizePath } from '../../../utils/pathUtils';
 import { useDropStore } from '../../../state/slices/dropSlice';
 import { t } from '../../../shared/i18n';
 
-/**
- * 获取错误提示信息
- */
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -22,180 +16,200 @@ function getErrorMessage(error: unknown): string {
   return t('fileDrop.unknownError');
 }
 
-/**
- * 拖入编辑区 - 直接打开
- *
- * @param sourcePath - 源文件路径
- * @param deps - 依赖注入
- */
+function createDropResult(success: true, openedFile: string): DropResult;
+function createDropResult(
+  success: false,
+  error: NonNullable<DropResult['error']>,
+): DropResult;
+function createDropResult(
+  success: boolean,
+  value: string | NonNullable<DropResult['error']>,
+): DropResult {
+  if (success) {
+    return { success: true, openedFile: value as string };
+  }
+  return { success: false, error: value as NonNullable<DropResult['error']> };
+}
+
+function validateFile(
+  sourcePath: string,
+  onShowStatus: DropHandlerDeps['onShowStatus'],
+): DropResult | null {
+  if (!isSupportedFile(sourcePath)) {
+    const message = getUnsupportedMessage(sourcePath);
+    onShowStatus('error', message);
+    return createDropResult(false, {
+      type: 'UNSUPPORTED_TYPE',
+      path: sourcePath,
+    });
+  }
+  return null;
+}
+
+async function resolveTargetPath(
+  sourcePath: string,
+  targetDir: string,
+): Promise<{ fileName: string; targetPath: string }> {
+  const normalizedSourcePath = normalizePath(sourcePath);
+  const fileName = normalizedSourcePath.split('/').pop() || 'untitled.md';
+  const targetPath = joinPath(targetDir, fileName);
+  return { fileName, targetPath };
+}
+
+async function handleFileConflict(
+  fileName: string,
+  targetPath: string,
+  showConflictDialog: DropHandlerDeps['showConflictDialog'],
+  onShowStatus: DropHandlerDeps['onShowStatus'],
+): Promise<'proceed' | 'cancel' | 'error'> {
+  const exists = await FsService.checkExists(targetPath);
+  if (!exists) {
+    return 'proceed';
+  }
+
+  const action = await showConflictDialog(fileName);
+  if (action === 'cancel') {
+    onShowStatus('info', t('fileDrop.cancelled'));
+    return 'cancel';
+  }
+  return 'proceed';
+}
+
+async function copyAndOpenFile(
+  sourcePath: string,
+  targetPath: string,
+  rootPath: string | null,
+  deps: DropHandlerDeps,
+): Promise<DropResult> {
+  const copyResult = await FsService.copyFileWithResult(sourcePath, targetPath);
+
+  if (rootPath) {
+    await deps.onRefreshFileTree(rootPath);
+  }
+
+  const openResult = await deps.onOpenFile(copyResult.actualPath);
+  if (!openResult.ok) {
+    return createDropResult(false, {
+      type: 'OPEN_FAILED',
+      path: copyResult.actualPath,
+      reason: openResult.reason,
+    });
+  }
+
+  deps.onShowStatus('success', t('fileDrop.copySuccess'));
+  return createDropResult(true, copyResult.actualPath);
+}
+
+function tryAcquireOperationLock(sourcePath: string): boolean {
+  return useDropStore.getState().startOperation(`File drop: ${sourcePath}`);
+}
+
+function releaseOperationLock(): void {
+  useDropStore.getState().endOperation();
+}
+
 export async function handleDropToEditor(
   sourcePath: string,
   deps: DropHandlerDeps,
 ): Promise<DropResult> {
-  // 1. 文件类型检查
-  if (!isSupportedFile(sourcePath)) {
-    const message = getUnsupportedMessage(sourcePath);
-    deps.onShowStatus('error', message);
-    return {
-      success: false,
-      error: { type: 'UNSUPPORTED_TYPE', path: sourcePath },
-    };
+  const validationError = validateFile(sourcePath, deps.onShowStatus);
+  if (validationError) {
+    return validationError;
   }
 
-  // 2. 直接打开文件
   try {
     const result = await deps.onOpenFile(sourcePath);
-
     if (!result.ok) {
-      return {
-        success: false,
-        error: {
-          type: 'OPEN_FAILED',
-          path: sourcePath,
-          reason: result.reason,
-        },
-      };
+      return createDropResult(false, {
+        type: 'OPEN_FAILED',
+        path: sourcePath,
+        reason: result.reason,
+      });
     }
 
     deps.onShowStatus('success', t('fileDrop.openSuccess'));
-    return { success: true, openedFile: sourcePath };
+    return createDropResult(true, sourcePath);
   } catch (error) {
     const message = getErrorMessage(error);
     deps.onShowStatus('error', message);
-    return {
-      success: false,
-      error: {
-        type: 'OPEN_FAILED',
-        path: sourcePath,
-        reason: message,
-      },
-    };
+    return createDropResult(false, {
+      type: 'OPEN_FAILED',
+      path: sourcePath,
+      reason: message,
+    });
   }
 }
 
-/**
- * 拖入文件树侧边栏 - 复制到工作区
- *
- * @param sourcePath - 源文件路径
- * @param deps - 依赖注入
- */
 export async function handleDropToSidebar(
   sourcePath: string,
   deps: DropHandlerDeps,
 ): Promise<DropResult> {
-  // 检查是否有保存操作进行中
   if (deps.isSaving()) {
     deps.onShowStatus('error', t('fileDrop.saveInProgress'));
-    return {
-      success: false,
-      error: { type: 'SAVE_IN_PROGRESS' },
-    };
+    return createDropResult(false, { type: 'SAVE_IN_PROGRESS' });
   }
 
-  // 尝试设置操作锁（使用 Store）
-  const operationStarted = useDropStore
-    .getState()
-    .startOperation(`File drop: ${sourcePath}`);
-
+  const operationStarted = tryAcquireOperationLock(sourcePath);
   if (!operationStarted) {
     deps.onShowStatus('error', t('fileDrop.operationInProgress'));
-    return {
-      success: false,
-      error: { type: 'OPERATION_IN_PROGRESS' },
-    };
+    return createDropResult(false, { type: 'OPERATION_IN_PROGRESS' });
   }
 
-  deps.onSetDragOver(false); // 清除拖拽态
+  deps.onSetDragOver(false);
 
   try {
-    // 1. 文件类型检查
-    if (!isSupportedFile(sourcePath)) {
-      const message = getUnsupportedMessage(sourcePath);
-      deps.onShowStatus('error', message);
-      return {
-        success: false,
-        error: { type: 'UNSUPPORTED_TYPE', path: sourcePath },
-      };
-    }
-
-    // 2. 获取目标目录
-    const targetDir = getDropTargetDirectory({
-      selectedPath: deps.selectedPath,
-      rootFolders: deps.rootFolders,
-    });
-
-    if (!targetDir) {
-      const message = t('fileDrop.noWorkspace');
-      deps.onShowStatus('error', message);
-      // 无工作区时退化为编辑区行为
-      return await handleDropToEditor(sourcePath, deps);
-    }
-
-    // 3. 计算目标路径
-    const normalizedSourcePath = normalizePath(sourcePath);
-    const fileName = normalizedSourcePath.split('/').pop() || 'untitled.md';
-    const targetPath = joinPath(targetDir, fileName);
-
-    // 4. 冲突检查
-    const exists = await FsService.checkExists(targetPath);
-    if (exists) {
-      const action = await deps.showConflictDialog(fileName);
-
-      if (action === 'cancel') {
-        deps.onShowStatus('info', t('fileDrop.cancelled'));
-        return {
-          success: false,
-          error: { type: 'USER_CANCELLED' },
-        };
-      }
-    }
-
-    // 5. 执行复制
-    const copyResult = await FsService.copyFileWithResult(
-      sourcePath,
-      targetPath,
-    );
-
-    // 6. 刷新文件树
-    const rootPath = findRootPath(targetDir, deps.rootFolders);
-    if (rootPath) {
-      await deps.onRefreshFileTree(rootPath);
-    }
-
-    // 7. 打开文件（使用实际写入路径）
-    const openResult = await deps.onOpenFile(copyResult.actualPath);
-
-    if (!openResult.ok) {
-      return {
-        success: false,
-        error: {
-          type: 'OPEN_FAILED',
-          path: copyResult.actualPath,
-          reason: openResult.reason,
-        },
-      };
-    }
-
-    deps.onShowStatus('success', t('fileDrop.copySuccess'));
-    return { success: true, openedFile: copyResult.actualPath };
+    return await executeDropToSidebar(sourcePath, deps);
   } catch (error) {
     const message = getErrorMessage(error);
-
     deps.onShowStatus('error', message);
-
-    return {
-      success: false,
-      error: {
-        type: 'COPY_FAILED',
-        source: sourcePath,
-        target: '',
-        reason: message,
-      },
-    };
+    return createDropResult(false, {
+      type: 'COPY_FAILED',
+      source: sourcePath,
+      target: '',
+      reason: message,
+    });
   } finally {
-    // 只有成功设置锁的情况下才释放
     if (operationStarted) {
-      useDropStore.getState().endOperation();
+      releaseOperationLock();
     }
   }
+}
+
+async function executeDropToSidebar(
+  sourcePath: string,
+  deps: DropHandlerDeps,
+): Promise<DropResult> {
+  const validationError = validateFile(sourcePath, deps.onShowStatus);
+  if (validationError) {
+    return validationError;
+  }
+
+  const targetDir = getDropTargetDirectory({
+    selectedPath: deps.selectedPath,
+    rootFolders: deps.rootFolders,
+  });
+
+  if (!targetDir) {
+    deps.onShowStatus('error', t('fileDrop.noWorkspace'));
+    return handleDropToEditor(sourcePath, deps);
+  }
+
+  const { fileName, targetPath } = await resolveTargetPath(
+    sourcePath,
+    targetDir,
+  );
+
+  const conflictResult = await handleFileConflict(
+    fileName,
+    targetPath,
+    deps.showConflictDialog,
+    deps.onShowStatus,
+  );
+
+  if (conflictResult === 'cancel') {
+    return createDropResult(false, { type: 'USER_CANCELLED' });
+  }
+
+  const rootPath = findRootPath(targetDir, deps.rootFolders);
+  return copyAndOpenFile(sourcePath, targetPath, rootPath, deps);
 }

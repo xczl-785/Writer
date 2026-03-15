@@ -311,6 +311,7 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'fileDrop.unknownError': '未知错误',
     'fileDrop.addToWorkspace': '添加到工作区',
     'fileDrop.openFile': '打开文件',
+    'fileDrop.openWorkspace': '打开工作区',
   },
   'en-US': {
     'menu.file': 'File',
@@ -637,5 +638,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'fileDrop.unknownError': 'Unknown error',
     'fileDrop.addToWorkspace': 'Add to Workspace',
     'fileDrop.openFile': 'Open File',
+    'fileDrop.openWorkspace': 'Open Workspace',
   },
 };

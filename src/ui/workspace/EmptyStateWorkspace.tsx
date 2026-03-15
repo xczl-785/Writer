@@ -5,6 +5,7 @@ import React, { useState, useCallback } from 'react';
 import { Sparkles, Briefcase, Folder, FileText } from 'lucide-react';
 import { t } from '../../i18n';
 import { type RecentItem } from '../../domains/workspace/services/RecentItemsService';
+import { DragDropHint } from '../components/ErrorStates';
 
 interface EmptyStateWorkspaceProps {
   onOpenFolder: () => void;
@@ -15,6 +16,8 @@ interface EmptyStateWorkspaceProps {
   onSelectRecentItem?: (item: RecentItem) => void;
   recentItems?: RecentItem[];
   isDragOver?: boolean;
+  /** Type of dragged content for displaying appropriate hint */
+  dragClassificationType?: 'files' | 'folders' | null;
 }
 
 /**
@@ -39,6 +42,7 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
   onSelectRecentItem,
   recentItems = [],
   isDragOver = false,
+  dragClassificationType = null,
 }) => {
   const [isLocalDragOver, setIsLocalDragOver] = useState(false);
 
@@ -103,13 +107,24 @@ export const EmptyStateWorkspace: React.FC<EmptyStateWorkspaceProps> = ({
 
   return (
     <div
-      className={`absolute inset-0 flex flex-col items-center justify-center bg-white z-20 ${isLocalDragOver || isDragOver ? 'bg-zinc-50 ring-1 ring-inset ring-zinc-300' : ''}`}
+      className={`absolute inset-0 flex flex-col items-center justify-center bg-white z-20`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       role="application"
       aria-label="Empty State Workspace"
     >
+      {/* 拖拽遮罩层 */}
+      {(isLocalDragOver || isDragOver) && (
+        <DragDropHint
+          label={
+            dragClassificationType === 'folders'
+              ? t('fileDrop.openWorkspace')
+              : t('fileDrop.openFile')
+          }
+        />
+      )}
+
       <div className="w-full max-w-sm py-20 flex flex-col items-center">
         {/* Logo 区域 - 原型图第 129-131 行 */}
         <div className="mb-1">
