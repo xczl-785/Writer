@@ -795,9 +795,7 @@ function App() {
                   <div className="flex w-full max-w-[640px] flex-col items-center rounded-2xl border border-zinc-300 bg-zinc-50 px-8 py-20">
                     <FolderDown className="mb-5 h-14 w-14 text-zinc-400" />
                     <div className="text-[18px] font-medium text-zinc-600">
-                      {hasWorkspace
-                        ? t('fileDrop.addToWorkspace')
-                        : t('fileDrop.openFile')}
+                      {t('fileDrop.openFile')}
                     </div>
                   </div>
                 </div>
