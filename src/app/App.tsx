@@ -61,9 +61,57 @@ import {
   handleDropToEditor,
   handleDropToSidebar,
 } from '../domains/file/services/SingleFileDropHandler';
+import type { DropHandlerDeps } from '../domains/file/services/types';
 import { showFileConflictDialog } from '../ui/components/Dialog/FileConflictDialog.tsx';
 import { useFileTreeStore } from '../domains/file/state/fileStore';
 import './App.css';
+
+type DropZone = { sidebar: boolean; main: boolean };
+
+function getDropZone(
+  sidebarRef: HTMLElement | null,
+  mainRef: HTMLElement | null,
+  x: number,
+  y: number,
+): DropZone {
+  return {
+    sidebar: isPointInsideElement(sidebarRef, x, y),
+    main: isPointInsideElement(mainRef, x, y),
+  };
+}
+
+function buildDropHandlerDeps(
+  hasWorkspace: boolean,
+  setEditorDragOver: (v: boolean) => void,
+  setEditorDropBlocked: (v: boolean, reason?: string) => void,
+): DropHandlerDeps {
+  return {
+    selectedPath: useFileTreeStore.getState().selectedPath,
+    rootFolders: useFileTreeStore.getState().rootFolders,
+    hasWorkspace,
+    onOpenFile: workspaceActions.openFile,
+    onRefreshFileTree: async (rootPath: string) => {
+      const nodes = await FsService.listTree(rootPath);
+      useFileTreeStore.getState().setNodes(rootPath, nodes);
+    },
+    onShowStatus: (type: 'success' | 'error' | 'info', message: string) => {
+      const statusMap: Record<
+        'success' | 'error' | 'info',
+        'idle' | 'loading' | 'error'
+      > = {
+        success: 'idle',
+        error: 'error',
+        info: 'loading',
+      };
+      useStatusStore.getState().setStatus(statusMap[type], message);
+    },
+    showConflictDialog: async (fileName: string) =>
+      showFileConflictDialog(fileName),
+    onSetDragOver: setEditorDragOver,
+    onSetDropBlocked: setEditorDropBlocked,
+    isSaving: () => false,
+  };
+}
 
 function flattenRecentItems(
   data: Awaited<ReturnType<typeof RecentItemsService.getAll>>,
@@ -117,6 +165,9 @@ function App() {
   const [isEditorDragOver, setIsEditorDragOver] = useState(false);
   const [isEditorDropBlocked, setIsEditorDropBlocked] = useState(false);
   const [isSidebarDragOver, setIsSidebarDragOver] = useState(false);
+  const [dragClassificationType, setDragClassificationType] = useState<
+    'files' | 'folders' | null
+  >(null);
   const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
   const [localePreference, setLocalePreferenceState] =
     useState<LocalePreference>(() => getLocalePreference());
@@ -132,6 +183,7 @@ function App() {
   const currentPathRef = useRef(currentPath);
   const mainDropZoneRef = useRef<HTMLElement | null>(null);
   const sidebarDropZoneRef = useRef<HTMLDivElement | null>(null);
+  const dragClassificationTypeRef = useRef<'files' | 'folders' | null>(null);
   const showStateDebug =
     import.meta.env.DEV && import.meta.env.VITE_SHOW_STATE_DEBUG === '1';
 
@@ -348,12 +400,35 @@ function App() {
     let mounted = true;
 
     const clearDragState = () => {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
+      dragClassificationTypeRef.current = null;
       setIsSidebarDragOver(false);
       setIsEditorDragOver(false);
       setIsEditorDropBlocked(false);
+      setDragClassificationType(null);
+    };
+
+    const updateDragTargetForFiles = (zone: DropZone) => {
+      dragClassificationTypeRef.current = 'files';
+      setDragClassificationType('files');
+      if (zone.sidebar) {
+        setIsSidebarDragOver(true);
+        setIsEditorDragOver(false);
+        setIsEditorDropBlocked(false);
+      } else if (zone.main) {
+        setIsEditorDragOver(true);
+        setIsEditorDropBlocked(false);
+      } else {
+        clearDragState();
+      }
+    };
+
+    const updateDragTargetForFolders = (zone: DropZone) => {
+      dragClassificationTypeRef.current = 'folders';
+      setDragClassificationType('folders');
+      setIsSidebarDragOver(zone.sidebar);
+      setIsEditorDragOver(!hasWorkspace && !zone.sidebar && zone.main);
+      setIsEditorDropBlocked(hasWorkspace && !zone.sidebar && zone.main);
     };
 
     const updateDragTarget = async (paths: string[], x: number, y: number) => {
@@ -361,54 +436,81 @@ function App() {
         paths,
         FsService.getPathKind,
       );
-
       if (!mounted) {
         clearDragState();
         return;
       }
 
-      // 计算拖拽目标区域
-      const sidebarTarget = isPointInsideElement(
+      const zone = getDropZone(
         sidebarDropZoneRef.current,
+        mainDropZoneRef.current,
         x,
         y,
       );
-      const mainTarget = isPointInsideElement(mainDropZoneRef.current, x, y);
 
-      // 有文件拖入时的处理
+      // TODO: 混合拖入（文件+文件夹）当前优先处理文件，后续需确认期望行为
+      // TODO: 多文件拖入当前只处理第一个文件，后续需确认是否支持批量打开
       if (classification.files.length > 0) {
-        // 文件拖拽：根据目标区域显示不同状态
-        if (sidebarTarget && hasWorkspace) {
-          // 拖入侧边栏 → 显示可接受状态
-          setIsSidebarDragOver(true);
-          setIsEditorDragOver(false);
-          setIsEditorDropBlocked(false);
-        } else if (mainTarget) {
-          // 拖入编辑区
-          if (hasWorkspace) {
-            // 有工作区时，编辑区可接受文件（直接打开）
-            setIsEditorDragOver(true);
-            setIsEditorDropBlocked(false);
-          } else {
-            // 无工作区时，编辑区可接受文件
-            setIsEditorDragOver(true);
-            setIsEditorDropBlocked(false);
-          }
-        } else {
-          clearDragState();
-        }
+        updateDragTargetForFiles(zone);
         return;
       }
 
-      // 文件夹拖拽：原有逻辑
-      if (classification.directories.length === 0) {
-        clearDragState();
+      if (classification.directories.length > 0) {
+        updateDragTargetForFolders(zone);
         return;
       }
 
-      setIsSidebarDragOver(sidebarTarget);
-      setIsEditorDragOver(!hasWorkspace && !sidebarTarget && mainTarget);
-      setIsEditorDropBlocked(hasWorkspace && !sidebarTarget && mainTarget);
+      clearDragState();
+    };
+
+    const handleDragOver = (x: number, y: number) => {
+      if (!mounted) return;
+      const zone = getDropZone(
+        sidebarDropZoneRef.current,
+        mainDropZoneRef.current,
+        x,
+        y,
+      );
+
+      // 使用缓存的分类结果，避免 over 事件覆盖 enter 设置的正确状态
+      const classification = dragClassificationTypeRef.current;
+      if (classification === 'files') {
+        updateDragTargetForFiles(zone);
+      } else if (classification === 'folders') {
+        updateDragTargetForFolders(zone);
+      }
+    };
+
+    const handleFileDrop = async (filePath: string, zone: DropZone) => {
+      const deps = buildDropHandlerDeps(
+        hasWorkspace,
+        setIsEditorDragOver,
+        setIsEditorDropBlocked,
+      );
+
+      if (zone.sidebar && hasWorkspace) {
+        await handleDropToSidebar(filePath, deps);
+      } else {
+        await handleDropToEditor(filePath, deps);
+      }
+      await refreshRecentItems();
+    };
+
+    const handleFolderDrop = async (directories: string[], zone: DropZone) => {
+      if (!zone.sidebar && !zone.main) return;
+
+      if (hasWorkspace && zone.main) {
+        useStatusStore
+          .getState()
+          .setStatus('error', t('workspace.dropInEditorDisabled'));
+        return;
+      }
+
+      // 有工作区且拖到侧边栏时，添加到现有工作区；否则打开新工作区
+      await handleDroppedFolderPaths(directories, {
+        openInNewWorkspace: !(hasWorkspace && zone.sidebar),
+      });
+      await refreshRecentItems();
     };
 
     const registerDragDrop = async () => {
@@ -429,145 +531,40 @@ function App() {
           }
 
           if (event.payload.type === 'over') {
-            // over 事件没有 paths，使用 enter 时保存的 classification 或直接计算位置
-            const sidebarTarget = isPointInsideElement(
-              sidebarDropZoneRef.current,
-              x,
-              y,
-            );
-            const mainTarget = isPointInsideElement(
-              mainDropZoneRef.current,
-              x,
-              y,
-            );
-            if (!mounted) {
-              return;
-            }
-            // 保持当前拖拽状态（enter 时已设置）
-            // 这里只是更新位置相关的状态
-            setIsSidebarDragOver(sidebarTarget);
-            setIsEditorDragOver(mainTarget && !sidebarTarget);
+            handleDragOver(x, y);
             return;
           }
 
-          // ========== Drop 事件处理 ==========
           const classification = await classifyDroppedPaths(
             event.payload.paths,
             FsService.getPathKind,
           );
-
           clearDragState();
 
-          if (!mounted) {
-            return;
-          }
+          if (!mounted) return;
 
-          // ========== 处理文件拖入（V6.1 新增）==========
-          if (classification.files.length > 0) {
-            // 仅处理第一个文件（多文件 TODO）
-            const firstFilePath = classification.files[0];
-
-            const droppedInSidebar = isPointInsideElement(
-              sidebarDropZoneRef.current,
-              x,
-              y,
-            );
-            const droppedInMain = isPointInsideElement(
-              mainDropZoneRef.current,
-              x,
-              y,
-            );
-
-            if (!droppedInSidebar && !droppedInMain) {
-              return;
-            }
-
-            // 准备依赖注入
-            const deps = {
-              selectedPath: useFileTreeStore.getState().selectedPath,
-              rootFolders: useFileTreeStore.getState().rootFolders,
-              hasWorkspace: folders.length > 0,
-              onOpenFile: workspaceActions.openFile,
-              onRefreshFileTree: async (rootPath: string) => {
-                const nodes = await FsService.listTree(rootPath);
-                useFileTreeStore.getState().setNodes(rootPath, nodes);
-              },
-              // 适配 onShowStatus 类型
-              onShowStatus: (
-                type: 'success' | 'error' | 'info',
-                message: string,
-              ) => {
-                const statusMap: Record<
-                  'success' | 'error' | 'info',
-                  'idle' | 'loading' | 'error'
-                > = {
-                  success: 'idle',
-                  error: 'error',
-                  info: 'loading',
-                };
-                useStatusStore.getState().setStatus(statusMap[type], message);
-              },
-              showConflictDialog: async (fileName: string) => {
-                const result = await showFileConflictDialog(fileName);
-                return result;
-              },
-              onSetDragOver: setIsEditorDragOver,
-              onSetDropBlocked: (blocked: boolean, reason?: string) => {
-                setIsEditorDropBlocked(blocked);
-                if (blocked && reason) {
-                  useStatusStore.getState().setStatus('error', reason);
-                }
-              },
-              isSaving: () => {
-                return false;
-              },
-            };
-
-            if (droppedInSidebar && hasWorkspace) {
-              // 侧边栏：复制到工作区
-              await handleDropToSidebar(firstFilePath, deps);
-            } else {
-              // 编辑区/无工作区：直接打开
-              await handleDropToEditor(firstFilePath, deps);
-            }
-
-            await refreshRecentItems();
-            return;
-          }
-
-          // ========== 处理文件夹拖入（已有逻辑）==========
-          if (classification.directories.length === 0) {
-            useStatusStore
-              .getState()
-              .setStatus('error', t('workspace.dragFoldersOnly'));
-            return;
-          }
-
-          const droppedInSidebar = isPointInsideElement(
+          const zone = getDropZone(
             sidebarDropZoneRef.current,
-            x,
-            y,
-          );
-          const droppedInMain = isPointInsideElement(
             mainDropZoneRef.current,
             x,
             y,
           );
-          if (!droppedInSidebar && !droppedInMain) {
+
+          // TODO: 混合拖入（文件+文件夹）当前优先处理文件，后续需确认期望行为
+          // TODO: 多文件拖入当前只处理第一个文件，后续需确认是否支持批量打开
+          if (classification.files.length > 0) {
+            await handleFileDrop(classification.files[0], zone);
             return;
           }
 
-          if (hasWorkspace && droppedInMain) {
-            useStatusStore
-              .getState()
-              .setStatus('error', t('workspace.dropInEditorDisabled'));
+          if (classification.directories.length > 0) {
+            await handleFolderDrop(classification.directories, zone);
             return;
           }
 
-          await handleDroppedFolderPaths(classification.directories, {
-            openInNewWorkspace: true,
-          });
-          await refreshRecentItems();
+          useStatusStore
+            .getState()
+            .setStatus('error', t('workspace.dragFoldersOnly'));
         });
       } catch {
         // Ignore in non-Tauri runtimes.
@@ -723,12 +720,18 @@ function App() {
               ref={sidebarDropZoneRef}
               className="fixed inset-y-0 left-0 z-40"
             >
-              <Sidebar isExternalDragOver={isSidebarDragOver} />
+              <Sidebar
+                isExternalDragOver={isSidebarDragOver}
+                dragClassificationType={dragClassificationType}
+              />
             </div>
           </>
         ) : isSidebarVisible ? (
           <div ref={sidebarDropZoneRef}>
-            <Sidebar isExternalDragOver={isSidebarDragOver} />
+            <Sidebar
+              isExternalDragOver={isSidebarDragOver}
+              dragClassificationType={dragClassificationType}
+            />
           </div>
         ) : null}
 
@@ -747,6 +750,7 @@ function App() {
               onSelectRecentItem={handleSelectRecentItem}
               recentItems={recentItems}
               isDragOver={isEditorDragOver}
+              dragClassificationType={dragClassificationType}
             />
           ) : (
             <div
@@ -793,7 +797,9 @@ function App() {
                   <div className="flex w-full max-w-[640px] flex-col items-center rounded-2xl border border-zinc-300 bg-zinc-50 px-8 py-20">
                     <FolderDown className="mb-5 h-14 w-14 text-zinc-400" />
                     <div className="text-[18px] font-medium text-zinc-600">
-                      {t('fileDrop.openFile')}
+                      {dragClassificationType === 'folders'
+                        ? t('fileDrop.openWorkspace')
+                        : t('fileDrop.openFile')}
                     </div>
                   </div>
                 </div>
