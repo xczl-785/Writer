@@ -206,7 +206,6 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
               </button>
               <WindowsMenuBar
                 hasRecentItems={hasRecentItems}
-                isSidebarVisible={isSidebarVisible}
                 platform="windows"
               />
             </div>

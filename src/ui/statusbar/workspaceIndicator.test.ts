@@ -23,7 +23,7 @@ describe('workspace indicator naming', () => {
         workspaceFile: '/Users/demo/project.writer-workspace',
         isDirty: false,
       }),
-    ).toBe('project (宸ヤ綔鍖?)');
+    ).toBe('project (工作区)');
   });
 
   it('uses untitled label for a multi-root workspace without a workspace file', () => {
@@ -36,7 +36,7 @@ describe('workspace indicator naming', () => {
         workspaceFile: null,
         isDirty: true,
       }),
-    ).toBe('鏈懡鍚嶅伐浣滃尯 (鏈繚瀛?)');
+    ).toBe('未命名工作区 (未保存)');
   });
 
   it('uses the workspace file name for a saved multi-root workspace', () => {
@@ -49,7 +49,7 @@ describe('workspace indicator naming', () => {
         workspaceFile: '/Users/demo/project.writer-workspace',
         isDirty: false,
       }),
-    ).toBe('project (宸ヤ綔鍖?)');
+    ).toBe('project (工作区)');
   });
 
   it('uses the workspace file name for an empty saved workspace', () => {
@@ -59,7 +59,7 @@ describe('workspace indicator naming', () => {
         workspaceFile: '/Users/demo/project.writer-workspace',
         isDirty: false,
       }),
-    ).toBe('project (宸ヤ綔鍖?)');
+    ).toBe('project (工作区)');
   });
 
   it('builds default workspace file names from current workspace state', () => {
@@ -80,7 +80,7 @@ describe('workspace indicator naming', () => {
         workspaceFile: null,
         isDirty: true,
       }),
-    ).toBe('鏈懡鍚嶅伐浣滃尯.writer-workspace');
+    ).toBe('未命名工作区.writer-workspace');
   });
 
   it('strips the workspace file suffix when deriving the base name', () => {

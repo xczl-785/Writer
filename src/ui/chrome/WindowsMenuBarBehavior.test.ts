@@ -15,7 +15,6 @@ function renderMenuBar() {
     root.render(
       createElement(WindowsMenuBar, {
         hasRecentItems: true,
-        isSidebarVisible: true,
         platform: 'windows',
       }),
     );
