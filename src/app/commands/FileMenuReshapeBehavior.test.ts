@@ -33,4 +33,16 @@ describe('File menu reshape behavior markers', () => {
       'workspaceActions.closeWorkspace();',
     );
   });
+
+  it('matches the prototype-driven file menu surface', () => {
+    expect(fileCommandsSource).toContain(
+      "menuCommandBus.register('menu.file.open_recent'",
+    );
+    expect(fileCommandsSource).toContain(
+      "menuCommandBus.register('menu.file.exit'",
+    );
+    expect(fileCommandsSource).not.toContain(
+      "menuCommandBus.register('menu.file.clear_recent'",
+    );
+  });
 });

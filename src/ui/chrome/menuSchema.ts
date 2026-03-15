@@ -11,6 +11,7 @@ export type MenuSchemaItem = {
   accelerator?: string;
   enabled?: boolean;
   separator?: boolean;
+  children?: MenuSchemaItem[];
 };
 
 export type MenuSchemaGroup = {
@@ -57,12 +58,7 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
         labelKey: 'recent.menuLabel',
         fallbackLabels: { 'zh-CN': '打开最近', 'en-US': 'Open Recent' },
       },
-      {
-        id: 'menu.file.clear_recent',
-        labelKey: 'recent.clearHistory',
-        fallbackLabels: { 'zh-CN': '清除所有历史记录', 'en-US': 'Clear All History' },
-      },
-      { id: 'separator.file.1', labelKey: 'separator.file.1', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
+      { id: 'separator.file.1', labelKey: 'separator.file.1', fallbackLabels: { 'zh-CN': '文件', 'en-US': 'File' }, separator: true },
       {
         id: 'menu.file.add_folder_to_workspace',
         labelKey: 'workspace.addFolderToWorkspace',
@@ -81,40 +77,37 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
         fallbackLabels: { 'zh-CN': '工作区另存为…', 'en-US': 'Save Workspace As…' },
         accelerator: 'Ctrl+Shift+Alt+S',
       },
-      { id: 'separator.file.2', labelKey: 'separator.file.2', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
-      {
-        id: 'menu.file.save',
-        labelKey: 'menu.file.save',
-        fallbackLabels: { 'zh-CN': '保存', 'en-US': 'Save' },
-        accelerator: 'Ctrl+S',
-      },
-      {
-        id: 'menu.file.save_as',
-        labelKey: 'menu.file.saveAs',
-        fallbackLabels: { 'zh-CN': '另存为', 'en-US': 'Save As' },
-        accelerator: 'Shift+Ctrl+S',
-        enabled: false,
-      },
+      { id: 'separator.file.2', labelKey: 'separator.file.2', fallbackLabels: { 'zh-CN': '工作区', 'en-US': 'Workspace' }, separator: true },
       { id: 'separator.file.3', labelKey: 'separator.file.3', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
       {
-        id: 'menu.file.export_pdf',
-        labelKey: 'menu.file.exportPdf',
-        fallbackLabels: { 'zh-CN': '导出 PDF', 'en-US': 'Export PDF' },
-        enabled: false,
+        id: 'menu.file.export',
+        labelKey: 'menu.file.export',
+        fallbackLabels: { 'zh-CN': '导出…', 'en-US': 'Export…' },
+        children: [
+          {
+            id: 'menu.file.export_pdf',
+            labelKey: 'menu.file.exportPdf',
+            fallbackLabels: { 'zh-CN': '导出 PDF', 'en-US': 'Export PDF' },
+            enabled: false,
+            accelerator: '即将支持',
+          },
+          {
+            id: 'menu.file.export_html',
+            labelKey: 'menu.file.exportHtml',
+            fallbackLabels: { 'zh-CN': '导出 HTML', 'en-US': 'Export HTML' },
+            enabled: false,
+            accelerator: '即将支持',
+          },
+          {
+            id: 'menu.file.export_image',
+            labelKey: 'menu.file.exportImage',
+            fallbackLabels: { 'zh-CN': '导出图片', 'en-US': 'Export Image' },
+            enabled: false,
+            accelerator: '即将支持',
+          },
+        ],
       },
-      {
-        id: 'menu.file.export_html',
-        labelKey: 'menu.file.exportHtml',
-        fallbackLabels: { 'zh-CN': '导出 HTML', 'en-US': 'Export HTML' },
-        enabled: false,
-      },
-      {
-        id: 'menu.file.export_image',
-        labelKey: 'menu.file.exportImage',
-        fallbackLabels: { 'zh-CN': '导出图片', 'en-US': 'Export Image' },
-        enabled: false,
-      },
-      { id: 'separator.file.4', labelKey: 'separator.file.4', fallbackLabels: { 'zh-CN': '', 'en-US': '' }, separator: true },
+      { id: 'separator.file.4', labelKey: 'separator.file.4', fallbackLabels: { 'zh-CN': '关闭', 'en-US': 'Close' }, separator: true },
       {
         id: 'menu.file.close_file',
         labelKey: 'menu.file.closeFile',
@@ -138,6 +131,13 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
         id: 'menu.file.settings',
         labelKey: 'menu.file.settings',
         fallbackLabels: { 'zh-CN': '设置', 'en-US': 'Settings' },
+        accelerator: 'Ctrl+,',
+      },
+      {
+        id: 'menu.file.exit',
+        labelKey: 'menu.file.exit',
+        fallbackLabels: { 'zh-CN': '退出', 'en-US': 'Exit' },
+        accelerator: 'Alt+F4',
       },
     ],
   },

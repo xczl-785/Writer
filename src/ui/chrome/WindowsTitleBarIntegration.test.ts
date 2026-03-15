@@ -18,6 +18,7 @@ describe('WindowsTitleBar integration', () => {
     expect(source).toContain(
       "!isVisible ? 'opacity-0 pointer-events-none' : ''",
     );
+    expect(source).toContain('relative z-30 flex shrink-0');
     expect(source).toContain('windowHandle.isMaximized()');
     expect(source).toContain('.onResized(() => {');
     expect(source).toContain('.onFocusChanged((event) => {');
@@ -29,6 +30,7 @@ describe('WindowsTitleBar integration', () => {
     expect(source).toContain('windowHandle.startDragging()');
     expect(source).toContain("closest('button')");
     expect(source).toContain('toggleMaximizeWindow');
+    expect(source).toContain('data-no-drag');
     expect(
       source.match(/onMouseDown=\{beginWindowDrag\}/g)?.length ?? 0,
     ).toBeGreaterThanOrEqual(3);

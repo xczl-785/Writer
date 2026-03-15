@@ -3,12 +3,12 @@
  *
  * Handles file operations like open, close, save, new, export.
  */
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { menuCommandBus } from '../../ui/commands/menuCommandBus';
 import { useFileTreeStore } from '../../domains/file/state/fileStore';
 import { AutosaveService } from '../../domains/file/services/AutosaveService';
 import { FsService } from '../../domains/file/services/FsService';
 import { useEditorStore } from '../../domains/editor/state/editorStore';
-import { RecentItemsService } from '../../domains/workspace/services/RecentItemsService';
 import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 import {
   addFolderToWorkspaceByDialog,
@@ -234,17 +234,20 @@ export function registerFileCommands(
   );
 
   cleanups.push(
-    menuCommandBus.register('menu.file.open_recent', () => {
-      if (onOpenRecent) {
-        onOpenRecent();
-      }
+    menuCommandBus.register('menu.file.exit', () => {
+      void getCurrentWindow()
+        .close()
+        .catch(() => {
+          // Ignore outside Tauri runtime.
+        });
     }),
   );
 
   cleanups.push(
-    menuCommandBus.register('menu.file.clear_recent', async () => {
-      await RecentItemsService.clearAll();
-      useStatusStore.getState().setStatus('idle', t('recent.clearHistory'));
+    menuCommandBus.register('menu.file.open_recent', () => {
+      if (onOpenRecent) {
+        onOpenRecent();
+      }
     }),
   );
 

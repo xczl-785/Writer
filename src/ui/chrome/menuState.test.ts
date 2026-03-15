@@ -66,9 +66,6 @@ describe('menuState', () => {
     expect(
       isMenuItemEnabledForState('menu.file.open_recent', emptyState),
     ).toBe(false);
-    expect(
-      isMenuItemEnabledForState('menu.file.clear_recent', emptyState),
-    ).toBe(false);
 
     const recentState: MenuRuntimeState = {
       ...emptyState,
@@ -77,9 +74,6 @@ describe('menuState', () => {
 
     expect(
       isMenuItemEnabledForState('menu.file.open_recent', recentState),
-    ).toBe(true);
-    expect(
-      isMenuItemEnabledForState('menu.file.clear_recent', recentState),
     ).toBe(true);
   });
 
