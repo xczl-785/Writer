@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildBreadcrumb, truncateBreadcrumb } from './useBreadcrumb';
+import {
+  buildActiveFileBreadcrumb,
+  buildBreadcrumb,
+  truncateBreadcrumb,
+} from './useBreadcrumb';
 
 describe('useBreadcrumb', () => {
   it('builds breadcrumb items from workspace and active file', () => {
@@ -31,12 +35,44 @@ describe('useBreadcrumb', () => {
 
   it('builds breadcrumb items from windows style paths', () => {
     const items = buildBreadcrumb(
-      'E:\\Project\\Producer_Workstation\\é¡¹ç›®ä½™çƒ¬',
-      'E:\\Project\\Producer_Workstation\\é¡¹ç›®ä½™çƒ¬\\å¿«é€Ÿå¯¹é½.md',
+      'E:\\Project\\Producer_Workstation\\ÏîÄ¿Óà½ý',
+      'E:\\Project\\Producer_Workstation\\ÏîÄ¿Óà½ý\\¿ìËÙ¶ÔÆë.md',
     );
-    expect(items.map((item) => item.name)).toEqual(['é¡¹ç›®ä½™çƒ¬', 'å¿«é€Ÿå¯¹é½.md']);
+    expect(items.map((item) => item.name)).toEqual(['ÏîÄ¿Óà½ý', '¿ìËÙ¶ÔÆë.md']);
     expect(items.at(-1)?.path).toBe(
-      'E:/Project/Producer_Workstation/é¡¹ç›®ä½™çƒ¬/å¿«é€Ÿå¯¹é½.md',
+      'E:/Project/Producer_Workstation/ÏîÄ¿Óà½ý/¿ìËÙ¶ÔÆë.md',
     );
+  });
+
+  it('uses the matching workspace root instead of always assuming the first root', () => {
+    const items = buildActiveFileBreadcrumb(
+      [
+        { path: 'E:\\Project\\Writer' },
+        { path: 'E:\\Project\\Producer' },
+      ],
+      'E:\\Project\\Producer\\docs\\plan.md',
+    );
+
+    expect(items.map((item) => item.name)).toEqual([
+      'Producer',
+      'docs',
+      'plan.md',
+    ]);
+  });
+
+  it('shows the absolute path when the active file does not belong to the workspace', () => {
+    const items = buildActiveFileBreadcrumb(
+      [{ path: 'E:\\Project\\Writer' }],
+      'D:\\Inbox\\Scratch\\idea.md',
+    );
+
+    expect(items.map((item) => item.name)).toEqual([
+      'D:',
+      'Inbox',
+      'Scratch',
+      'idea.md',
+    ]);
+    expect(items[0]?.type).toBe('folder');
+    expect(items.at(-1)?.type).toBe('file');
   });
 });

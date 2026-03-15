@@ -18,4 +18,15 @@ describe('workspace file load fallback markers', () => {
       'if (rootFolders.length === 0 && failedFolderLoads.length > 0)',
     );
   });
+
+  it('derives workspace root display names from the folder basename instead of the full path', () => {
+    expect(source).toContain('getBasename');
+    expect(source).toContain('displayName: getBasename(path) || path');
+    expect(source).toContain(
+      'displayName: getBasename(folderPath) || folderPath',
+    );
+    expect(source).toContain(
+      'displayName: folder.name || getBasename(folder.path) || folder.path',
+    );
+  });
 });

@@ -17,7 +17,11 @@ import { useStatusStore } from '../../../state/slices/statusSlice';
 import { WorkspaceStatePersistence } from './WorkspaceStatePersistence';
 import { FileWatcherService } from '../../../services/filewatcher';
 import type { FileChangeEvent } from '../../../services/filewatcher';
-import { getRelativePath, resolvePath } from '../../../utils/pathUtils';
+import {
+  getBasename,
+  getRelativePath,
+  resolvePath,
+} from '../../../utils/pathUtils';
 import { showConfirmDialog } from '../../../ui/components/Dialog';
 import { t } from '../../../shared/i18n';
 import {
@@ -157,7 +161,7 @@ export const workspaceActions = {
     useFileTreeStore.getState().setRootFolders([
       {
         workspacePath: path,
-        displayName: path.split('/').pop() || path,
+        displayName: getBasename(path) || path,
         tree: nodes,
       },
     ]);
@@ -263,7 +267,7 @@ export const workspaceActions = {
       };
       const newRoot: RootFolderNode = {
         workspacePath: folderPath,
-        displayName: folderPath.split('/').pop() || folderPath,
+        displayName: getBasename(folderPath) || folderPath,
         tree: treeResult,
       };
 
@@ -613,7 +617,7 @@ export const workspaceActions = {
         if (batchEntry && batchEntry.error === undefined) {
           rootFolders.push({
             workspacePath: folder.path,
-            displayName: folder.name || folder.path.split('/').pop() || folder.path,
+            displayName: folder.name || getBasename(folder.path) || folder.path,
             tree: batchEntry.nodes,
           });
           continue;
@@ -623,7 +627,7 @@ export const workspaceActions = {
           const fallbackNodes = await FsService.listTree(folder.path);
           rootFolders.push({
             workspacePath: folder.path,
-            displayName: folder.name || folder.path.split('/').pop() || folder.path,
+            displayName: folder.name || getBasename(folder.path) || folder.path,
             tree: fallbackNodes,
           });
         } catch (fallbackError) {
