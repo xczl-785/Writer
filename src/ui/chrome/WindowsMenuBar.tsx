@@ -50,12 +50,14 @@ export function WindowsMenuBar({
   platform,
 }: WindowsMenuBarProps) {
   const [openGroupId, setOpenGroupId] = useState<string | null>(null);
+  const [openSubmenuId, setOpenSubmenuId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const groupButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const itemButtonRefs = useRef<Record<string, Array<HTMLButtonElement | null>>>(
     {},
   );
   const pendingFocusRef = useRef<PendingFocusTarget>(null);
+  const submenuCloseTimerRef = useRef<number | null>(null);
   const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
 
   const groups = WINDOWS_MENU_SCHEMA.filter((group) =>
@@ -113,6 +115,12 @@ export function WindowsMenuBar({
   }, [openGroupId, groups]);
 
   useEffect(() => {
+    if (openGroupId === null) {
+      setOpenSubmenuId(null);
+    }
+  }, [openGroupId]);
+
+  useEffect(() => {
     async function refreshRecentItems(): Promise<void> {
       const data = await RecentItemsService.getAll();
       setRecentItems([...data.workspaces, ...data.folders, ...data.files]);
@@ -149,13 +157,35 @@ export function WindowsMenuBar({
     window.addEventListener('mousedown', handleWindowClick);
     window.addEventListener('keydown', handleWindowKeyDown);
     return () => {
+      if (submenuCloseTimerRef.current !== null) {
+        window.clearTimeout(submenuCloseTimerRef.current);
+      }
       window.removeEventListener('mousedown', handleWindowClick);
       window.removeEventListener('keydown', handleWindowKeyDown);
     };
   }, []);
 
   function toggleGroup(id: string): void {
+    setOpenSubmenuId(null);
     setOpenGroupId((currentId) => (currentId === id ? null : id));
+  }
+
+  function openSubmenu(id: string): void {
+    if (submenuCloseTimerRef.current !== null) {
+      window.clearTimeout(submenuCloseTimerRef.current);
+      submenuCloseTimerRef.current = null;
+    }
+    setOpenSubmenuId(id);
+  }
+
+  function scheduleCloseSubmenu(id: string): void {
+    if (submenuCloseTimerRef.current !== null) {
+      window.clearTimeout(submenuCloseTimerRef.current);
+    }
+    submenuCloseTimerRef.current = window.setTimeout(() => {
+      setOpenSubmenuId((current) => (current === id ? null : current));
+      submenuCloseTimerRef.current = null;
+    }, 140);
   }
 
   function getEnabledItemIndexes(group: MenuSchemaGroup): number[] {
@@ -264,6 +294,7 @@ export function WindowsMenuBar({
     }
 
     menuCommandBus.dispatch(item.id);
+    setOpenSubmenuId(null);
     setOpenGroupId(null);
   }
 
@@ -271,11 +302,13 @@ export function WindowsMenuBar({
     window.dispatchEvent(
       new CustomEvent<RecentItem>(OPEN_RECENT_ITEM_EVENT, { detail: item }),
     );
+    setOpenSubmenuId(null);
     setOpenGroupId(null);
   }
 
   function clearRecentItems(): void {
     window.dispatchEvent(new CustomEvent(CLEAR_RECENT_ITEMS_EVENT));
+    setOpenSubmenuId(null);
     setOpenGroupId(null);
   }
 
@@ -429,10 +462,21 @@ export function WindowsMenuBar({
     const enabled = isItemEnabled(item);
     const hasChildren =
       item.id === 'menu.file.open_recent' || (item.children?.length ?? 0) > 0;
+    const isSubmenuOpen = openSubmenuId === item.id;
     return (
       <div
         key={item.id}
         className="group/item relative"
+        onMouseEnter={() => {
+          if (hasChildren) {
+            openSubmenu(item.id);
+          }
+        }}
+        onMouseLeave={() => {
+          if (hasChildren) {
+            scheduleCloseSubmenu(item.id);
+          }
+        }}
       >
         <button
           type="button"
@@ -451,14 +495,20 @@ export function WindowsMenuBar({
           }
         >
           <span>{resolveLabel(item.labelKey, item.fallbackLabels)}</span>
-          {item.children ? (
+          {hasChildren ? (
             <ChevronRight className="h-4 w-4 text-zinc-400" />
           ) : (
             <span className="text-[11px] text-zinc-400">{item.accelerator ?? ''}</span>
           )}
         </button>
-        {hasChildren ? (
-          <div className="absolute left-[calc(100%+14px)] top-0 hidden min-w-[220px] rounded-xl border border-zinc-200 bg-white p-1 shadow-[0_8px_30px_rgba(0,0,0,0.08)] group-hover/item:block">
+        {hasChildren && isSubmenuOpen ? (
+          <>
+            <div className="absolute left-full top-0 h-full w-[14px]" />
+            <div
+              className="absolute left-[calc(100%+14px)] top-0 min-w-[220px] rounded-xl border border-zinc-200 bg-white p-1 shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+              onMouseEnter={() => openSubmenu(item.id)}
+              onMouseLeave={() => scheduleCloseSubmenu(item.id)}
+            >
             {item.id === 'menu.file.open_recent'
               ? renderRecentSubmenu()
               : item.children?.map((child) => (
@@ -472,7 +522,8 @@ export function WindowsMenuBar({
                     <span className="text-[11px] text-zinc-400">{child.accelerator ?? ''}</span>
                   </div>
                 ))}
-          </div>
+            </div>
+          </>
         ) : null}
       </div>
     );
@@ -486,6 +537,7 @@ export function WindowsMenuBar({
         className="relative"
         onMouseEnter={() => {
           if (openGroupId && openGroupId !== group.id) {
+            setOpenSubmenuId(null);
             setOpenGroupId(group.id);
           }
         }}
