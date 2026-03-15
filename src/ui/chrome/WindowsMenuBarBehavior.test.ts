@@ -75,6 +75,7 @@ describe('WindowsMenuBar behavior', () => {
   afterEach(() => {
     document.body.innerHTML = '';
     setLocale('zh-CN');
+    vi.useRealTimers();
   });
 
   it('switches open groups on hover after a menu is already open', async () => {
@@ -177,6 +178,10 @@ describe('WindowsMenuBar behavior', () => {
     });
 
     const openRecentItem = getMenuItem(container, 'Open Recent');
+    await act(async () => {
+      openRecentItem.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      await Promise.resolve();
+    });
 
     expect(openRecentItem.textContent).toContain('Open Recent');
     expect(container.textContent).toContain('Recent Workspace');
@@ -197,6 +202,13 @@ describe('WindowsMenuBar behavior', () => {
       await Promise.resolve();
     });
 
+    const openRecentItem = getMenuItem(container, 'Open Recent');
+
+    await act(async () => {
+      openRecentItem.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      await Promise.resolve();
+    });
+
     const recentWorkspaceItem = getMenuItem(container, 'Recent Workspace');
 
     await act(async () => {
@@ -209,6 +221,44 @@ describe('WindowsMenuBar behavior', () => {
       'writer:open-recent-item',
       eventSpy as EventListener,
     );
+    await cleanup(container, root);
+  });
+
+  it('keeps a submenu open briefly while the pointer crosses the gap', async () => {
+    vi.useFakeTimers();
+    setLocale('en-US');
+    const { container, root } = renderMenuBar();
+
+    const fileButton = getTopLevelButton(container, 'File');
+
+    await act(async () => {
+      fileButton.click();
+      await Promise.resolve();
+    });
+
+    const openRecentItem = getMenuItem(container, 'Open Recent');
+
+    await act(async () => {
+      openRecentItem.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain('Recent Workspace');
+
+    await act(async () => {
+      openRecentItem.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain('Recent Workspace');
+
+    await act(async () => {
+      vi.advanceTimersByTime(60);
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).not.toContain('Recent Workspace');
     await cleanup(container, root);
   });
 });
