@@ -42,7 +42,7 @@ import { useToolbarCommands } from '../hooks/useToolbarCommands';
 import { ContextMenu, useContextMenu } from '../../../ui/components/ContextMenu';
 import { Breadcrumb } from '../../../ui/components/Breadcrumb';
 import {
-  buildBreadcrumb,
+  buildActiveFileBreadcrumb,
   type BreadcrumbItem,
 } from '../../../ui/components/Breadcrumb/useBreadcrumb';
 import { openFile } from '../../workspace/services/WorkspaceManager';
@@ -112,7 +112,6 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
     ref,
   ) => {
     const { activeFile, folders } = useWorkspaceStore();
-    const currentPath = folders[0]?.path;
     const { setStatus } = useStatusStore();
     const { setSelectedPath, expandNode } = useFileTreeStore();
     const { fileStates, updateFileContent, setDirty } = useEditorStore();
@@ -432,7 +431,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       );
     if (!editor) return null;
 
-    const breadcrumbItems = buildBreadcrumb(currentPath, activeFile);
+    const breadcrumbItems = buildActiveFileBreadcrumb(folders, activeFile);
     const isMinTier = viewportTier === 'min';
     const compactFileName = activeFile.split(/[/\\]/).pop() ?? activeFile;
 

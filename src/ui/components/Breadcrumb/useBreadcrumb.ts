@@ -1,8 +1,9 @@
 import {
+  getBasename,
+  joinPath,
   normalizePath,
   splitPath,
   trimTrailingSeparator,
-  joinPath,
 } from '../../../shared/utils/pathUtils';
 
 export interface BreadcrumbItem {
@@ -17,29 +18,49 @@ export interface BreadcrumbSegment {
   item?: BreadcrumbItem;
 }
 
-export function buildBreadcrumb(
-  workspacePath: string | null,
-  activeFile: string | null,
+export interface BreadcrumbWorkspaceRoot {
+  path: string;
+  name?: string;
+}
+
+function normalizeRootPath(path: string): string {
+  return trimTrailingSeparator(normalizePath(path));
+}
+
+function isWithinRoot(rootPath: string, activeFilePath: string): boolean {
+  return (
+    activeFilePath === rootPath || activeFilePath.startsWith(`${rootPath}/`)
+  );
+}
+
+function findContainingWorkspaceRoot(
+  roots: BreadcrumbWorkspaceRoot[],
+  activeFilePath: string,
+): BreadcrumbWorkspaceRoot | null {
+  const normalizedActiveFile = normalizePath(activeFilePath);
+
+  return (
+    [...roots]
+      .map((root) => ({
+        ...root,
+        path: normalizeRootPath(root.path),
+      }))
+      .sort((a, b) => b.path.length - a.path.length)
+      .find((root) => isWithinRoot(root.path, normalizedActiveFile)) ?? null
+  );
+}
+
+function buildWorkspaceRelativeBreadcrumb(
+  root: BreadcrumbWorkspaceRoot,
+  activeFilePath: string,
 ): BreadcrumbItem[] {
-  if (!workspacePath || !activeFile) {
-    return [];
-  }
-
-  const normalizedWorkspacePath = normalizePath(workspacePath);
-  const normalizedActiveFile = normalizePath(activeFile);
-
-  const workspaceParts = splitPath(normalizedWorkspacePath);
-  const workspaceName = workspaceParts[workspaceParts.length - 1];
-  if (!workspaceName) {
-    return [];
-  }
-
-  const workspacePrefix = normalizedWorkspacePath + '/';
-  const relative = normalizedActiveFile.startsWith(workspacePrefix)
-    ? normalizedActiveFile.slice(workspacePrefix.length)
-    : normalizedActiveFile;
+  const normalizedRootPath = normalizeRootPath(root.path);
+  const normalizedActiveFile = normalizePath(activeFilePath);
+  const relative = normalizedActiveFile.slice(normalizedRootPath.length + 1);
   const parts = splitPath(relative);
-  if (parts.length === 0) {
+  const workspaceName = root.name?.trim() || getBasename(normalizedRootPath);
+
+  if (!workspaceName || parts.length === 0) {
     return [];
   }
 
@@ -48,11 +69,11 @@ export function buildBreadcrumb(
       id: 'workspace',
       name: workspaceName,
       type: 'workspace',
-      path: normalizedWorkspacePath,
+      path: normalizedRootPath,
     },
   ];
 
-  let currentPath = trimTrailingSeparator(normalizedWorkspacePath);
+  let currentPath = normalizedRootPath;
   parts.forEach((part, index) => {
     currentPath = joinPath(currentPath, part);
     const isLast = index === parts.length - 1;
@@ -65,6 +86,58 @@ export function buildBreadcrumb(
   });
 
   return items;
+}
+
+function buildAbsoluteFileBreadcrumb(activeFilePath: string): BreadcrumbItem[] {
+  const normalizedActiveFile = normalizePath(activeFilePath);
+  const parts = splitPath(normalizedActiveFile);
+
+  if (parts.length === 0) {
+    return [];
+  }
+
+  const items: BreadcrumbItem[] = [];
+  let currentPath = normalizedActiveFile.startsWith('/') ? '/' : '';
+
+  parts.forEach((part, index) => {
+    currentPath = currentPath === '/' ? `/${part}` : joinPath(currentPath, part);
+    const isLast = index === parts.length - 1;
+    items.push({
+      id: `${index}-${part}`,
+      name: part,
+      type: isLast ? 'file' : 'folder',
+      path: currentPath,
+    });
+  });
+
+  return items;
+}
+
+export function buildActiveFileBreadcrumb(
+  roots: BreadcrumbWorkspaceRoot[],
+  activeFile: string | null,
+): BreadcrumbItem[] {
+  if (!activeFile) {
+    return [];
+  }
+
+  const containingRoot = findContainingWorkspaceRoot(roots, activeFile);
+  if (containingRoot) {
+    return buildWorkspaceRelativeBreadcrumb(containingRoot, activeFile);
+  }
+
+  return buildAbsoluteFileBreadcrumb(activeFile);
+}
+
+export function buildBreadcrumb(
+  workspacePath: string | null,
+  activeFile: string | null,
+): BreadcrumbItem[] {
+  if (!workspacePath || !activeFile) {
+    return [];
+  }
+
+  return buildWorkspaceRelativeBreadcrumb({ path: workspacePath }, activeFile);
 }
 
 export function truncateBreadcrumb(
