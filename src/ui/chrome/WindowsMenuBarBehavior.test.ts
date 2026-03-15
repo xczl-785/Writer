@@ -144,4 +144,30 @@ describe('WindowsMenuBar behavior', () => {
     unregister();
     await cleanup(container, root);
   });
+
+  it('dispatches open recent when the file menu item is clicked', async () => {
+    setLocale('en-US');
+    const { container, root } = renderMenuBar();
+    const handler = vi.fn();
+    const unregister = menuCommandBus.register('menu.file.open_recent', handler);
+
+    const fileButton = getTopLevelButton(container, 'File');
+
+    await act(async () => {
+      fileButton.click();
+      await Promise.resolve();
+    });
+
+    const openRecentItem = getMenuItem(container, 'Open Recent');
+
+    await act(async () => {
+      openRecentItem.click();
+      await Promise.resolve();
+    });
+
+    expect(handler).toHaveBeenCalledTimes(1);
+
+    unregister();
+    await cleanup(container, root);
+  });
 });

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { t, getLocale } from '../../shared/i18n';
 import {
   getWorkspaceContext,
@@ -72,6 +73,10 @@ export function WindowsMenuBar({
   };
 
   function isItemEnabled(item: MenuSchemaItem): boolean {
+    if (item.children) {
+      return true;
+    }
+
     return (
       !item.separator &&
       isMenuItemEnabledForState(item.id, runtimeState, item.enabled !== false)
@@ -220,7 +225,7 @@ export function WindowsMenuBar({
   }
 
   function dispatchCommand(item: MenuSchemaItem): void {
-    if (!isItemEnabled(item)) {
+    if (!isItemEnabled(item) || item.children) {
       return;
     }
 
@@ -319,31 +324,66 @@ export function WindowsMenuBar({
     itemIndex: number,
   ) {
     if (item.separator) {
-      return <div key={item.id} className="my-1 h-px bg-zinc-200" />;
+      const label = resolveLabel(item.labelKey, item.fallbackLabels);
+      const showLabel = label.length > 0;
+      return (
+        <div key={item.id} className="py-1 first:pt-0">
+          {showLabel ? (
+            <div className="px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.08em] text-zinc-400">
+              {label}
+            </div>
+          ) : null}
+          {!showLabel ? <div className="my-1 h-px bg-zinc-200" /> : null}
+        </div>
+      );
     }
 
     const enabled = isItemEnabled(item);
+    const hasChildren = (item.children?.length ?? 0) > 0;
     return (
-      <button
+      <div
         key={item.id}
-        type="button"
-        ref={(node) => {
-          itemButtonRefs.current[group.id] ??= [];
-          itemButtonRefs.current[group.id][itemIndex] = node;
-        }}
-        className={`flex w-full items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[13px] ${
-          enabled
-            ? 'text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300'
-            : 'cursor-not-allowed text-zinc-300'
-        }`}
-        onClick={() => dispatchCommand(item)}
-        onKeyDown={(event) =>
-          handleItemKeyDown(event, group, groupIndex, item, itemIndex)
-        }
+        className="group/item relative"
       >
-        <span>{resolveLabel(item.labelKey, item.fallbackLabels)}</span>
-        <span className="text-[11px] text-zinc-400">{item.accelerator ?? ''}</span>
-      </button>
+        <button
+          type="button"
+          ref={(node) => {
+            itemButtonRefs.current[group.id] ??= [];
+            itemButtonRefs.current[group.id][itemIndex] = node;
+          }}
+          className={`flex w-full items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[13px] ${
+            enabled
+              ? 'text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300'
+              : 'cursor-not-allowed text-zinc-300'
+          }`}
+          onClick={() => dispatchCommand(item)}
+          onKeyDown={(event) =>
+            handleItemKeyDown(event, group, groupIndex, item, itemIndex)
+          }
+        >
+          <span>{resolveLabel(item.labelKey, item.fallbackLabels)}</span>
+          {item.children ? (
+            <ChevronRight className="h-4 w-4 text-zinc-400" />
+          ) : (
+            <span className="text-[11px] text-zinc-400">{item.accelerator ?? ''}</span>
+          )}
+        </button>
+        {hasChildren ? (
+          <div className="absolute left-[calc(100%+14px)] top-0 hidden min-w-[220px] rounded-xl border border-zinc-200 bg-white p-1 shadow-[0_8px_30px_rgba(0,0,0,0.08)] group-hover/item:block">
+            {item.children?.map((child) => (
+              <div
+                key={child.id}
+                className={`flex items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[13px] ${
+                  isItemEnabled(child) ? 'text-zinc-700' : 'text-zinc-300'
+                }`}
+              >
+                <span>{resolveLabel(child.labelKey, child.fallbackLabels)}</span>
+                <span className="text-[11px] text-zinc-400">{child.accelerator ?? ''}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
     );
   }
 
@@ -376,7 +416,7 @@ export function WindowsMenuBar({
           {resolveLabel(group.labelKey, group.fallbackLabels)}
         </button>
         {isOpen ? (
-          <div className="absolute left-0 top-[calc(100%+6px)] z-50 min-w-[220px] rounded-xl border border-zinc-200 bg-white p-1 shadow-[0_8px_30px_rgba(0,0,0,0.08)] animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute left-0 top-[calc(100%+6px)] z-50 min-w-[320px] rounded-xl border border-zinc-200 bg-white p-2 shadow-[0_8px_30px_rgba(0,0,0,0.08)] animate-in fade-in zoom-in-95 duration-150">
             {group.items.map((item, itemIndex) =>
               renderItem(item, group, groupIndex, itemIndex),
             )}
@@ -387,7 +427,7 @@ export function WindowsMenuBar({
   }
 
   return (
-    <div ref={rootRef} className="flex items-center gap-1">
+    <div ref={rootRef} className="flex items-center gap-1" data-no-drag>
       {groups.map(renderGroup)}
     </div>
   );

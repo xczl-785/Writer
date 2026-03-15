@@ -12,9 +12,6 @@ describe('Disabled native menu items', () => {
 
   it('builds unsupported file and view items as disabled', () => {
     expect(menuRs).toMatch(
-      /item_with_enabled\([\s\S]*"menu\.file\.save_as"[\s\S]*false,\s*\)\?/,
-    );
-    expect(menuRs).toMatch(
       /item_with_enabled\([\s\S]*"menu\.file\.export_pdf"[\s\S]*false,\s*\)\?/,
     );
     expect(menuRs).toMatch(

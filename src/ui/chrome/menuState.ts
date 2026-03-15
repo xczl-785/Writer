@@ -13,14 +13,12 @@ const ALWAYS_ENABLED_IDS = new Set([
   'menu.file.open_folder',
   'menu.file.open_workspace',
   'menu.file.settings',
+  'menu.file.exit',
   'menu.view.toggle_sidebar',
   'menu.view.focus_mode',
 ]);
 
-const RECENT_ITEMS_REQUIRED_IDS = new Set([
-  'menu.file.open_recent',
-  'menu.file.clear_recent',
-]);
+const RECENT_ITEMS_REQUIRED_IDS = new Set(['menu.file.open_recent']);
 
 const ACTIVE_FILE_REQUIRED_PREFIXES = [
   'menu.edit.',

@@ -154,7 +154,7 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
 
   return (
     <div
-      className={`flex shrink-0 select-none bg-white transition-[padding,background-color,opacity] duration-150 ${
+      className={`relative z-30 flex shrink-0 select-none bg-white transition-[padding,background-color,opacity] duration-150 ${
         !isVisible ? 'opacity-0 pointer-events-none' : ''
       } ${rootInsetClass}`}
       data-window-focused={isWindowFocused}
@@ -196,6 +196,7 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
             <div className="flex items-center gap-2 px-2 pointer-events-auto">
               <button
                 type="button"
+                data-no-drag
                 onClick={sidebarToggleBehavior.onClick}
                 onDoubleClick={sidebarToggleBehavior.onDoubleClick}
                 className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
@@ -219,6 +220,7 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
             <div className="flex items-center pointer-events-auto">
               <button
                 type="button"
+                data-no-drag
                 className="flex h-10 w-[46px] items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-100 active:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
                 onClick={() => void minimizeWindow()}
                 aria-label="Minimize"
@@ -227,6 +229,7 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
               </button>
               <button
                 type="button"
+                data-no-drag
                 className="flex h-10 w-[46px] items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-100 active:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
                 onClick={() => void toggleMaximizeWindow()}
                 aria-label="Toggle Maximize"
@@ -239,6 +242,7 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
               </button>
               <button
                 type="button"
+                data-no-drag
                 className="flex h-10 w-[46px] items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-red-500 hover:text-white active:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
                 onClick={() => void closeWindow()}
                 aria-label="Close"

@@ -121,14 +121,6 @@ fn build_native_menu_with_locale<R: Runtime>(
                 "Open Recent",
                 None,
             )?,
-            &item(
-                app,
-                locale,
-                "menu.file.clear_recent",
-                "清除所有历史记录",
-                "Clear All History",
-                None,
-            )?,
             &PredefinedMenuItem::separator(app)?,
             &item(
                 app,
@@ -153,17 +145,6 @@ fn build_native_menu_with_locale<R: Runtime>(
                 "工作区另存为…",
                 "Save Workspace As…",
                 Some("CmdOrCtrl+Shift+Alt+S"),
-            )?,
-            &PredefinedMenuItem::separator(app)?,
-            &item(app, locale, "menu.file.save", "保存", "Save", Some("CmdOrCtrl+S"))?,
-            &item_with_enabled(
-                app,
-                locale,
-                "menu.file.save_as",
-                "另存为",
-                "Save As",
-                Some("Shift+CmdOrCtrl+S"),
-                false,
             )?,
             &PredefinedMenuItem::separator(app)?,
             &item_with_enabled(
@@ -218,8 +199,15 @@ fn build_native_menu_with_locale<R: Runtime>(
                 "Close Workspace",
                 Some("Shift+CmdOrCtrl+W"),
             )?,
-            &PredefinedMenuItem::separator(app)?,
-            &item(app, locale, "menu.file.settings", "设置", "Settings", None)?,
+            &item(
+                app,
+                locale,
+                "menu.file.settings",
+                "设置",
+                "Settings",
+                Some("CmdOrCtrl+,"),
+            )?,
+            &item(app, locale, "menu.file.exit", "退出", "Exit", Some("Alt+F4"))?,
         ],
     )?;
 
