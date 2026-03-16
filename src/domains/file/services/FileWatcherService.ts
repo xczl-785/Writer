@@ -5,6 +5,7 @@
 
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
+import { normalizePath } from '../../../utils/pathUtils';
 
 export interface FileChangeEvent {
   type: 'add' | 'change' | 'unlink' | 'unlinkDir' | 'rename';
@@ -52,7 +53,7 @@ function mapEvent(payload: {
 }): FileChangeEvent[] {
   return payload.paths.map((path: string) => ({
     type: mapKind(payload.kind),
-    path,
+    path: normalizePath(path),
   }));
 }
 

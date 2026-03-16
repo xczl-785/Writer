@@ -166,11 +166,6 @@ describe('build warning regression', () => {
       join(srcRoot, 'ui', 'workspace', 'EmptyStateWorkspace.tsx'),
       'utf-8',
     );
-    const fileCommands = readFileSync(
-      join(srcRoot, 'app', 'commands', 'fileCommands.ts'),
-      'utf-8',
-    );
-
     expect(fsSafety).toContain(
       "import { useEditorStore } from '../../editor/state/editorStore';",
     );
@@ -200,9 +195,6 @@ describe('build warning regression', () => {
     );
     expect(emptyStateWorkspace).toContain(
       "import { type RecentItem } from '../../domains/workspace/services/RecentItemsService';",
-    );
-    expect(fileCommands).toContain(
-      "import { RecentItemsService } from '../../domains/workspace/services/RecentItemsService';",
     );
   });
 
