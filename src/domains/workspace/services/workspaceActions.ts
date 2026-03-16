@@ -20,6 +20,8 @@ import type { FileChangeEvent } from '../../../services/filewatcher';
 import {
   getBasename,
   getRelativePath,
+  isPathMatch,
+  normalizePath,
   resolvePath,
 } from '../../../utils/pathUtils';
 import { showConfirmDialog } from '../../../ui/components/Dialog';
@@ -93,20 +95,94 @@ function clearWorkspaceState(): void {
   });
 }
 
+interface DetachWorkspaceFolderOptions {
+  removeOpenDescendants: boolean;
+  removeWorkspacePaths: boolean;
+  removeEditorPaths: boolean;
+  markDirty: boolean;
+  persist: boolean;
+}
+
+async function detachWorkspaceFolder(
+  folderPath: string,
+  options: DetachWorkspaceFolderOptions,
+): Promise<void> {
+  if (options.removeOpenDescendants) {
+    const filesToClose = useWorkspaceStore
+      .getState()
+      .openFiles.filter((path) => isPathMatch(folderPath, path));
+
+    for (const file of filesToClose) {
+      useWorkspaceStore.getState().closeFile(file);
+    }
+  }
+
+  if (options.removeWorkspacePaths) {
+    useWorkspaceStore.getState().removePath(folderPath);
+  }
+
+  if (options.removeEditorPaths) {
+    useEditorStore.getState().removePath(folderPath);
+  }
+
+  useWorkspaceStore.getState().removeFolder(folderPath);
+  useFileTreeStore.getState().removeRootFolder(folderPath);
+  useFileTreeStore.setState((state) => {
+    const nextExpandedPaths = new Set(state.expandedPaths);
+    nextExpandedPaths.delete(folderPath);
+    return { expandedPaths: nextExpandedPaths };
+  });
+
+  const selectedPath = useFileTreeStore.getState().selectedPath;
+  if (selectedPath && isPathMatch(folderPath, selectedPath)) {
+    useFileTreeStore.getState().setSelectedPath(null);
+  }
+
+  if (options.markDirty) {
+    useWorkspaceStore.getState().setDirty(true);
+  }
+
+  if (options.persist) {
+    await WorkspaceStatePersistence.saveCurrentState();
+  }
+
+  const remainingPaths = useWorkspaceStore.getState().folders.map((f) => f.path);
+  if (remainingPaths.length > 0) {
+    await FileWatcherService.updateWatchPaths(remainingPaths);
+  } else {
+    await FileWatcherService.stopWatching();
+  }
+}
+
 /**
  * 处理文件变化事件（来自 FileWatcherService）
  */
 async function handleFileChange(event: FileChangeEvent): Promise<void> {
   const rootFolders = useFileTreeStore.getState().rootFolders;
+  const normalizedEventPath = normalizePath(event.path);
 
   // 找到变化文件所属的根文件夹
   const affectedRoot = rootFolders.find(
-    (folder) =>
-      event.path === folder.workspacePath ||
-      event.path.startsWith(folder.workspacePath + '/'),
+    (folder) => isPathMatch(folder.workspacePath, normalizedEventPath),
   );
 
   if (!affectedRoot) return;
+
+  const normalizedRootPath = normalizePath(affectedRoot.workspacePath);
+  const isRootDeleted =
+    normalizedEventPath === normalizedRootPath &&
+    (event.type === 'unlink' || event.type === 'unlinkDir');
+
+  if (isRootDeleted) {
+    await detachWorkspaceFolder(affectedRoot.workspacePath, {
+      removeOpenDescendants: false,
+      removeWorkspacePaths: true,
+      removeEditorPaths: true,
+      markDirty: false,
+      persist: false,
+    });
+    return;
+  }
 
   // 刷新受影响的根文件夹树
   try {
@@ -305,37 +381,13 @@ export const workspaceActions = {
     };
 
     try {
-      // 2. 关闭该文件夹内已打开的文件
-      const filesToClose = useWorkspaceStore
-        .getState()
-        .openFiles.filter((p) => p.startsWith(folderPath + '/'));
-
-      for (const file of filesToClose) {
-        useWorkspaceStore.getState().closeFile(file);
-      }
-
-      // 3. 更新状态
-      useWorkspaceStore.getState().removeFolder(folderPath);
-      useFileTreeStore.getState().removeRootFolder(folderPath);
-      useFileTreeStore.setState((state) => {
-        const nextExpandedPaths = new Set(state.expandedPaths);
-        nextExpandedPaths.delete(folderPath);
-        return { expandedPaths: nextExpandedPaths };
+      await detachWorkspaceFolder(folderPath, {
+        removeOpenDescendants: true,
+        removeWorkspacePaths: false,
+        removeEditorPaths: false,
+        markDirty: true,
+        persist: true,
       });
-      useWorkspaceStore.getState().setDirty(true);
-
-      // 4. 持久化
-      await WorkspaceStatePersistence.saveCurrentState();
-
-      // 5. 更新文件监听路径
-      const remainingPaths = useWorkspaceStore
-        .getState()
-        .folders.map((f) => f.path);
-      if (remainingPaths.length > 0) {
-        await FileWatcherService.updateWatchPaths(remainingPaths);
-      } else {
-        await FileWatcherService.stopWatching();
-      }
 
       return { ok: true };
     } catch (error) {
