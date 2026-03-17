@@ -32,8 +32,13 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
       {
         id: 'menu.file.new',
         labelKey: 'menu.file.new',
-        fallbackLabels: { 'zh-CN': '新建', 'en-US': 'New' },
+        fallbackLabels: { 'zh-CN': '新建文件', 'en-US': 'New File' },
         accelerator: 'Ctrl+N',
+      },
+      {
+        id: 'menu.file.new_folder',
+        labelKey: 'menu.file.newFolder',
+        fallbackLabels: { 'zh-CN': '新建文件夹', 'en-US': 'New Folder' },
       },
       {
         id: 'menu.file.open_file',

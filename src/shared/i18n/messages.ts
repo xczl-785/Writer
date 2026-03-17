@@ -5,7 +5,8 @@ type Messages = Record<string, string>;
 export const MESSAGES: Record<AppLocale, Messages> = {
   'zh-CN': {
     'menu.file': '文件',
-    'menu.file.new': '新建',
+    'menu.file.new': '新建文件',
+    'menu.file.newFolder': '新建文件夹',
     'menu.file.openFolder': '打开文件夹',
     'menu.file.closeFolder': '关闭文件夹',
     'menu.file.save': '保存',
@@ -315,7 +316,8 @@ export const MESSAGES: Record<AppLocale, Messages> = {
   },
   'en-US': {
     'menu.file': 'File',
-    'menu.file.new': 'New',
+    'menu.file.new': 'New File',
+    'menu.file.newFolder': 'New Folder',
     'menu.file.openFolder': 'Open Folder',
     'menu.file.closeFolder': 'Close Folder',
     'menu.file.save': 'Save',

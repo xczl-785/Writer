@@ -34,6 +34,12 @@ function emitSidebarCommand(id: string): void {
   );
 }
 
+function emitSidebarCommandAfterRender(id: string): void {
+  window.setTimeout(() => {
+    emitSidebarCommand(id);
+  }, 0);
+}
+
 function getSelectedRootFolderPath(): string | null {
   const selectedPath = useFileTreeStore.getState().selectedPath;
   if (!selectedPath) {
@@ -165,8 +171,21 @@ export function registerFileCommands(
     menuCommandBus.register('menu.file.new', () => {
       if (!isSidebarVisible) {
         setIsSidebarVisible(true);
+        emitSidebarCommandAfterRender('new-file');
+        return;
       }
       emitSidebarCommand('new-file');
+    }),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.file.new_folder', () => {
+      if (!isSidebarVisible) {
+        setIsSidebarVisible(true);
+        emitSidebarCommandAfterRender('new-folder');
+        return;
+      }
+      emitSidebarCommand('new-folder');
     }),
   );
 
