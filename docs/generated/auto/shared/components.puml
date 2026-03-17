@@ -1,0 +1,129 @@
+@startuml shared/components
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "shared/components" {
+  class shared.components.ContextMenuProps {
+    + isOpen: boolean
+    + x: number
+    + y: number
+    + items: MenuItem[]
+    + onClose: () => void
+  }
+  class shared.components.ContextMenuRegistryImpl {
+    + menus: MenuItem[]>
+  }
+  class shared.components.MenuItemConfig {
+    + id: string
+    + label: string
+    + shortcut: string | undefined
+    + icon: React.ReactNode
+    + danger: boolean | undefined
+    .. 2 more ..
+  }
+  class shared.components.MenuDividerConfig {
+    + type: "divider"
+  }
+  class shared.components.ContextMenuConfig {
+    + context: string
+    + items: MenuItem[]
+  }
+  class shared.components.EditorContextMenuActions {
+    + onPaste: () => void
+    + onSelectAll: () => void
+    + onCopyFullText: () => void
+    + onInsertTable: () => void
+    + onInsertQuote: () => void
+  }
+  class shared.components.CodeBlockContextMenuActions {
+    + onCopyCodeBlock: () => void
+    + onChangeLanguage: () => void
+    + onFormatCode: () => void
+  }
+  class shared.components.TableContextMenuActions {
+    + onInsertRowAbove: () => void
+    + onInsertRowBelow: () => void
+    + onDeleteRow: () => void
+    + onInsertColumnLeft: () => void
+    + onInsertColumnRight: () => void
+    .. 25 more ..
+  }
+  class shared.components.FileTreeMenuContext {
+    + node: FileNode
+    + onNewFile: () => void
+    + onNewFolder: () => void
+    + onRename: () => void
+    + onRevealInFinder: () => void
+    .. 3 more ..
+  }
+  class shared.components.MenuItemProps {
+    + item: MenuItemConfig
+    + isFocused: boolean
+    + onClose: () => void
+  }
+  class shared.components.ContextMenuState {
+    + isOpen: boolean
+    + x: number
+    + y: number
+    + items: MenuItem[]
+  }
+  class shared.components.UseContextMenuResult {
+    + state: ContextMenuState
+    + open: (x: number, y: number, items: import("E:/Project/Writer/src/shared/components/ContextMenu/contextMenuRegistry").MenuItem[]) => void
+    + close: () => void
+    + toggle: (x: number, y: number, items: import("E:/Project/Writer/src/shared/components/ContextMenu/contextMenuRegistry").MenuItem[]) => void
+  }
+  class shared.components.WorkspaceRootMenuContext {
+    + folderPath: string
+    + displayName: string
+    + onRename: () => void
+    + onRemove: () => void
+    + onRevealInFinder: () => void
+    .. 1 more ..
+  }
+  class shared.components.EmptyAreaMenuContext {
+    + onAddFolderToWorkspace: () => void
+    + onNewFile: () => void
+    + onNewFolder: () => void
+    + hasWorkspace: boolean
+  }
+  class shared.components.ConfirmDialogOptions {
+    + title: string
+    + message: string
+    + description: string | undefined
+    + okLabel: string | undefined
+    + cancelLabel: string | undefined
+    .. 1 more ..
+  }
+  class shared.components.WorkspaceLockDialogOptions {
+    + workspacePath: string
+    + lockStatus: WorkspaceLockStatus
+  }
+  class shared.components.WorkspaceLockDialogResult {
+    + openAnyway: boolean
+  }
+  class shared.components.OutlineProps {
+    + editor: Editor | null
+    + isOpen: boolean
+    + refreshToken: string | null | undefined
+    + onClose: (() => void) | undefined
+  }
+  class shared.components.OutlineItemProps {
+    + item: OutlineItem
+    + isActive: boolean
+    + onClick: () => void
+  }
+  class shared.components.OutlineWindow {
+    + start: number
+    + end: number
+  }
+  class shared.components.OutlineItem {
+    + id: string
+    + level: 1 | 2 | 3 | 4 | 5 | 6
+    + text: string
+    + position: number
+  }
+}
+
+@enduml

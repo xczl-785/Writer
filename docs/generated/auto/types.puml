@@ -1,0 +1,23 @@
+@startuml types
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "types" {
+  class types.WorkspaceLoadError {
+    + ok: false
+    + errorType: WorkspaceLoadErrorType
+    + errorMessage: string
+    + path: string | undefined
+  }
+  class types.WorkspaceLoadSuccess {
+    + ok: true
+  }
+  class types.WorkspaceLockStatus {
+    + isLocked: boolean
+    + lockedBy: string | undefined
+    + lockedAt: number | undefined
+  }
+}
+
+@enduml
