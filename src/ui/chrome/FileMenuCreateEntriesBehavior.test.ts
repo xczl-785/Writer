@@ -1,16 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+
+import { MESSAGES } from '../../shared/i18n/messages';
+import { FILE_MENU_CREATE_ITEMS, WINDOWS_MENU_SCHEMA } from './menuSchema';
 
 describe('File menu create entries', () => {
-  const currentDir = dirname(fileURLToPath(import.meta.url));
-  const source = readFileSync(join(currentDir, 'menuSchema.ts'), 'utf-8');
+  const fileMenu = WINDOWS_MENU_SCHEMA.find((group) => group.id === 'menu.file');
 
-  it('exposes separate entries for new file and new folder', () => {
-    expect(source).toContain("id: 'menu.file.new'");
-    expect(source).toContain("labelKey: 'menu.file.new'");
-    expect(source).toContain("id: 'menu.file.new_folder'");
-    expect(source).toContain("labelKey: 'menu.file.newFolder'");
+  it('defines file and folder create entries via a shared constant', () => {
+    expect(FILE_MENU_CREATE_ITEMS).toEqual([
+      {
+        id: 'menu.file.new',
+        labelKey: 'menu.file.new',
+        fallbackLabels: { 'zh-CN': '新建文件', 'en-US': 'New File' },
+        accelerator: 'Ctrl+N',
+      },
+      {
+        id: 'menu.file.new_folder',
+        labelKey: 'menu.file.newFolder',
+        fallbackLabels: { 'zh-CN': '新建文件夹', 'en-US': 'New Folder' },
+      },
+    ]);
+  });
+
+  it('keeps create entry fallback labels aligned with i18n messages', () => {
+    for (const item of FILE_MENU_CREATE_ITEMS) {
+      expect(item.fallbackLabels['zh-CN']).toBe(MESSAGES['zh-CN'][item.labelKey]);
+      expect(item.fallbackLabels['en-US']).toBe(MESSAGES['en-US'][item.labelKey]);
+    }
+  });
+
+  it('mounts the shared create entries into the file menu schema', () => {
+    expect(fileMenu?.items.slice(0, FILE_MENU_CREATE_ITEMS.length)).toEqual(
+      FILE_MENU_CREATE_ITEMS,
+    );
   });
 });

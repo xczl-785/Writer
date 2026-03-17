@@ -11,7 +11,11 @@ describe('Sidebar menu command workspace gating', () => {
       ?.[0] ?? '';
 
   it('derives menu create availability from workspace path presence instead of file-tree hydration state', () => {
-    expect(commandCtxSnippet).toContain('hasWorkspace: Boolean(currentPath)');
-    expect(commandCtxSnippet).not.toContain('hasWorkspace: rootFolders.length > 0');
+    expect(commandCtxSnippet).toContain(
+      'hasWorkspace: canCreateFromWorkspace(currentPath)',
+    );
+    expect(commandCtxSnippet).not.toContain(
+      'hasWorkspace: rootFolders.length > 0',
+    );
   });
 });

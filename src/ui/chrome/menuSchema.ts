@@ -22,6 +22,20 @@ export type MenuSchemaGroup = {
   items: MenuSchemaItem[];
 };
 
+export const FILE_MENU_CREATE_ITEMS: MenuSchemaItem[] = [
+  {
+    id: 'menu.file.new',
+    labelKey: 'menu.file.new',
+    fallbackLabels: { 'zh-CN': '新建文件', 'en-US': 'New File' },
+    accelerator: 'Ctrl+N',
+  },
+  {
+    id: 'menu.file.new_folder',
+    labelKey: 'menu.file.newFolder',
+    fallbackLabels: { 'zh-CN': '新建文件夹', 'en-US': 'New Folder' },
+  },
+];
+
 export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
   {
     id: 'menu.file',
@@ -29,17 +43,7 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
     fallbackLabels: { 'zh-CN': '文件', 'en-US': 'File' },
     platforms: ['windows', 'macos'],
     items: [
-      {
-        id: 'menu.file.new',
-        labelKey: 'menu.file.new',
-        fallbackLabels: { 'zh-CN': '新建文件', 'en-US': 'New File' },
-        accelerator: 'Ctrl+N',
-      },
-      {
-        id: 'menu.file.new_folder',
-        labelKey: 'menu.file.newFolder',
-        fallbackLabels: { 'zh-CN': '新建文件夹', 'en-US': 'New Folder' },
-      },
+      ...FILE_MENU_CREATE_ITEMS,
       {
         id: 'menu.file.open_file',
         labelKey: 'menu.file.openFile',
