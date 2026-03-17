@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "test": "vitest run src",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "uml:gen": "tsx scripts/gen-uml.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",
@@ -59,10 +60,12 @@
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.1",
+    "ts-morph": "^27.0.2",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "yaml": "^2.8.2"
   }
 }

@@ -1,0 +1,36 @@
+# UML Generator Configuration (Optional)
+# =======================================
+#
+# 此文件可选。默认行为：
+# - 自动扫描 src/ 目录
+# - 每个一级子目录生成一个模块
+# - 自动排除测试文件和类型声明
+#
+# 只在需要自定义时创建此文件。
+
+# 排除特定文件（正则表达式）
+exclude:
+  # - src/legacy/.*    # 示例：排除遗留代码
+
+# 忽略的关系类型（不作为依赖显示）
+ignore_relations:
+  - React.FC
+  - React.ReactNode
+  - React.ReactElement
+  - React.Component
+  - JSX.Element
+  - HTMLElement
+  - Event
+  - MouseEvent
+  - KeyboardEvent
+  - DragEvent
+  - ChangeEvent
+  - FocusEvent
+
+# 合并多个目录为一个模块（可选）
+# merge_modules:
+#   ui:
+#     - sidebar
+#     - chrome
+#     - statusbar
+#     - layout
