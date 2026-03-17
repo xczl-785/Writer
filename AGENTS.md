@@ -1,6 +1,6 @@
 # AGENTS.md — Writer 项目 AI 助手指南
 
-**最后更新**: 2026-03-01  
+**最后更新**: 2026-03-17  
 **项目**: Writer（本地优先 Markdown 编辑器）
 
 ---
@@ -12,30 +12,65 @@ docs/
 ├── current/
 │   └── 跟踪/
 │       ├── 全流程需求跟踪台账.md
-│       ├── 遗留问题.md
-│       └── design-block-indicator-system.md
+│       └── 遗留问题.md
+├── generated/          # 自动生成的架构图
+│   ├── README.md       # 使用说明
+│   └── auto/           # PlantUML 文件
 ├── 全局资产/
 │   ├── 产品/
 │   ├── 治理/
 │   └── 工程/
-├── archive/
-├── frozen/      # 兼容入口（长期资产已迁移）
-├── standards/   # 兼容入口（长期资产已迁移）
-└── 参考资料/
+└── archive/
 ```
 
 ---
 
-## 2. 执行边界（必须遵守）
+## 2. 架构快速理解
 
-1. `docs/current/` 仅放“当前进行中”文档。
-2. `docs/全局资产/` 仅放“长期生效”文档，修改需谨慎。
-3. 版本专项文档完成后必须归档到 `docs/archive/`。
-4. 禁止直接删除历史决策记录，需保留替代说明。
+### 模块总览
+
+查看 `docs/generated/auto/modules.puml` 了解模块间依赖关系。
+
+### 核心模块
+
+| 模块              | 职责             | 架构图                        |
+| ----------------- | ---------------- | ----------------------------- |
+| domains/file      | 文件树、路径处理 | `auto/domains/file.puml`      |
+| domains/workspace | 工作空间管理     | `auto/domains/workspace.puml` |
+| domains/editor    | 编辑器核心       | `auto/domains/editor.puml`    |
+| services/markdown | Markdown 解析    | `auto/services/markdown.puml` |
+| services/autosave | 自动保存         | `auto/services/autosave.puml` |
+| state             | Zustand 全局状态 | `auto/state.puml`             |
+| ui/\*             | React 组件       | `auto/ui/*.puml`              |
+| app               | 应用层、命令     | `auto/app.puml`               |
+
+### UML 体系规则
+
+1. **节点标识符**：`{模块}/{类名}`，如 `domains/file/FileService`
+2. **关系类型**：`<|--` 继承、`<|..` 实现、`-->` 依赖
+3. **更新方式**：`npm run uml:gen` 或 CI 自动更新
+4. **详细说明**：`docs/generated/README.md`
+
+### 快速命令
+
+```bash
+npm run uml:gen                        # 更新架构图
+npm run uml:gen -- --module domains/file  # 只更新指定模块
+```
 
 ---
 
-## 3. 开发与文档协作要求
+## 3. 执行边界（必须遵守）
+
+1. `docs/current/` 仅放"当前进行中"文档。
+2. `docs/全局资产/` 仅放"长期生效"文档，修改需谨慎。
+3. `docs/generated/` 自动生成，禁止手动修改 `auto/` 目录。
+4. 版本专项文档完成后必须归档到 `docs/archive/`。
+5. 禁止直接删除历史决策记录，需保留替代说明。
+
+---
+
+## 4. 开发与文档协作要求
 
 1. 代码改动保持小步提交，提交信息使用 Conventional Commits。
 2. 不要用 `as any`、`@ts-ignore`、空 `catch` 掩盖问题。
@@ -44,12 +79,12 @@ docs/
 
 ---
 
-## 4. 关键入口
+## 5. 关键入口
 
 - 需求总跟踪：`docs/current/跟踪/全流程需求跟踪台账.md`
 - 需求遗留池：`docs/current/跟踪/遗留问题.md`
 - 全局资产索引：`docs/全局资产/README.md`
-- 最新版本归档：`docs/archive/2026-03-01_v5-closeout/README.md`
+- 架构图说明：`docs/generated/README.md`
 
 ---
 
