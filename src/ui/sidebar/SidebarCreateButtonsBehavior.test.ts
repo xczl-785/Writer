@@ -8,6 +8,6 @@ describe('Sidebar create buttons workspace gating', () => {
   const source = readFileSync(join(currentDir, 'Sidebar.tsx'), 'utf-8');
 
   it('uses the same currentPath-based workspace predicate for create button disabled state', () => {
-    expect(source).toContain('disabled={!currentPath}');
+    expect(source).toContain('disabled={!canCreateFromWorkspace(currentPath)}');
   });
 });

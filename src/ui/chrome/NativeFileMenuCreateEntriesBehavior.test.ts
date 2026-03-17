@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { FILE_MENU_CREATE_ITEMS } from './menuSchema';
+
 describe('native file menu create entries', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const source = readFileSync(
@@ -10,12 +12,11 @@ describe('native file menu create entries', () => {
     'utf-8',
   );
 
-  it('exposes separate native entries for new file and new folder', () => {
-    expect(source).toContain('"menu.file.new"');
-    expect(source).toContain('"新建文件"');
-    expect(source).toContain('"New File"');
-    expect(source).toContain('"menu.file.new_folder"');
-    expect(source).toContain('"新建文件夹"');
-    expect(source).toContain('"New Folder"');
+  it('keeps native menu labels aligned with the shared create entry definitions', () => {
+    for (const item of FILE_MENU_CREATE_ITEMS) {
+      expect(source).toContain(`"${item.id}"`);
+      expect(source).toContain(`"${item.fallbackLabels['zh-CN']}"`);
+      expect(source).toContain(`"${item.fallbackLabels['en-US']}"`);
+    }
   });
 });

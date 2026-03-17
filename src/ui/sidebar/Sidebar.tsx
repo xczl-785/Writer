@@ -25,6 +25,10 @@ import {
   classifyDroppedPaths,
   extractDroppedPaths,
 } from '../../domains/workspace/services/droppedPaths';
+import {
+  canCreateFromWorkspace,
+  resolveCreateEntryExplorerCommand,
+} from '../../domains/workspace/services/createEntryCommands';
 import type { FileNode } from '../../state/types';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { DragDropHint } from '../components/ErrorStates';
@@ -496,9 +500,9 @@ export function Sidebar({
         void addFolderToWorkspaceByDialog();
       },
       onNewFile: () => {
-        // V6: 使用第一个根路径作为默认创建位置
         const targetRootPath =
-          rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
+          currentPath ||
+          (rootFolders.length > 0 ? rootFolders[0].workspacePath : null);
         if (!targetRootPath) return;
         setGhostNode({
           parentPath: null,
@@ -508,7 +512,8 @@ export function Sidebar({
       },
       onNewFolder: () => {
         const targetRootPath =
-          rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
+          currentPath ||
+          (rootFolders.length > 0 ? rootFolders[0].workspacePath : null);
         if (!targetRootPath) return;
         setGhostNode({
           parentPath: null,
@@ -516,7 +521,7 @@ export function Sidebar({
           rootPath: targetRootPath,
         });
       },
-      hasWorkspace: rootFolders.length > 0,
+      hasWorkspace: canCreateFromWorkspace(currentPath),
     });
 
     contextMenu.open(event.clientX, event.clientY, items);
@@ -715,7 +720,7 @@ export function Sidebar({
   );
 
   const commandCtx = {
-    hasWorkspace: Boolean(currentPath),
+    hasWorkspace: canCreateFromWorkspace(currentPath),
     hasSelection: Boolean(selectedNode),
     openWorkspace,
     beginCreateFile: () => startCreate('file'),
@@ -761,12 +766,9 @@ export function Sidebar({
   useEffect(() => {
     const onMenuCommand = (event: Event) => {
       const detail = (event as CustomEvent<{ id?: string }>).detail;
-      if (detail?.id === 'new-file') {
-        dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx);
-        return;
-      }
-      if (detail?.id === 'new-folder') {
-        dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx);
+      const command = resolveCreateEntryExplorerCommand(detail?.id ?? '');
+      if (command) {
+        dispatchExplorerCommand(command, commandCtx);
       }
     };
 
@@ -976,7 +978,7 @@ export function Sidebar({
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx)
             }
-            disabled={!currentPath}
+            disabled={!canCreateFromWorkspace(currentPath)}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-zinc-500 disabled:hover:bg-transparent"
             title={t('sidebar.newFile')}
           >
@@ -987,7 +989,7 @@ export function Sidebar({
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx)
             }
-            disabled={!currentPath}
+            disabled={!canCreateFromWorkspace(currentPath)}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-zinc-500 disabled:hover:bg-transparent"
             title={t('sidebar.newFolder')}
           >

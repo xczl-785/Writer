@@ -19,6 +19,10 @@ import {
   saveWorkspaceFileByDialog,
 } from '../../domains/workspace/services/WorkspaceManager';
 import {
+  dispatchCreateEntry,
+  resolveCreateEntryMenuTarget,
+} from '../../domains/workspace/services/createEntryCommands';
+import {
   getWorkspaceContext,
   useWorkspaceStore,
 } from '../../domains/workspace/state/workspaceStore';
@@ -32,12 +36,6 @@ function emitSidebarCommand(id: string): void {
   window.dispatchEvent(
     new CustomEvent('writer:sidebar-command', { detail: { id } }),
   );
-}
-
-function emitSidebarCommandAfterRender(id: string): void {
-  window.setTimeout(() => {
-    emitSidebarCommand(id);
-  }, 0);
 }
 
 function getSelectedRootFolderPath(): string | null {
@@ -169,23 +167,33 @@ export function registerFileCommands(
 
   cleanups.push(
     menuCommandBus.register('menu.file.new', () => {
-      if (!isSidebarVisible) {
-        setIsSidebarVisible(true);
-        emitSidebarCommandAfterRender('new-file');
+      const createTarget = resolveCreateEntryMenuTarget('menu.file.new');
+      if (!createTarget) {
         return;
       }
-      emitSidebarCommand('new-file');
+
+      dispatchCreateEntry({
+        createTarget,
+        isSidebarVisible,
+        setIsSidebarVisible,
+        emit: emitSidebarCommand,
+      });
     }),
   );
 
   cleanups.push(
     menuCommandBus.register('menu.file.new_folder', () => {
-      if (!isSidebarVisible) {
-        setIsSidebarVisible(true);
-        emitSidebarCommandAfterRender('new-folder');
+      const createTarget = resolveCreateEntryMenuTarget('menu.file.new_folder');
+      if (!createTarget) {
         return;
       }
-      emitSidebarCommand('new-folder');
+
+      dispatchCreateEntry({
+        createTarget,
+        isSidebarVisible,
+        setIsSidebarVisible,
+        emit: emitSidebarCommand,
+      });
     }),
   );
 
