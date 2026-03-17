@@ -1,0 +1,57 @@
+@startuml ui/sidebar
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "ui/sidebar" {
+  class ui.sidebar.ExplorerCommandContext {
+    + hasWorkspace: boolean
+    + hasSelection: boolean
+    + openWorkspace: () => void
+    + beginCreateFile: () => void
+    + beginCreateFolder: () => void
+    .. 5 more ..
+  }
+  class ui.sidebar.FileTreeNodeProps {
+    + node: FileNode
+    + depth: number
+    + rootPath: string
+  }
+  class ui.sidebar.InlineInputProps {
+    + value: string
+    + placeholder: string | undefined
+    + onCommit: (value: string, trigger: import("E:/Project/Writer/src/ui/sidebar/InlineInput").InlineCommitTrigger) => void
+    + onCancel: (trigger: import("E:/Project/Writer/src/ui/sidebar/InlineInput").InlineCancelTrigger) => void
+    + className: string | undefined
+    .. 1 more ..
+  }
+  class ui.sidebar.GhostNodeState {
+    + parentPath: string | null
+    + type: "file" | "directory"
+    + rootPath: string
+  }
+  class ui.sidebar.MultiRootFileTreeProps {
+    + ghostNode: GhostNodeState | null | undefined
+    + onGhostCommit: ((name: string, trigger: "enter" | "blur") => Promise<void>) | undefined
+    + onGhostCancel: (() => void) | undefined
+    + selectedPath: string | null | undefined
+    + activeFile: string | null | undefined
+    .. 8 more ..
+  }
+  class ui.sidebar.ResolveCreateBasePathInput {
+    + currentPath: string
+    + selectedPath: string | null
+    + selectedType: NodeType
+    + activeFile: string | null
+  }
+  class ui.sidebar.WorkspaceRootHeaderProps {
+    + folder: { workspacePath: string; displayName: string; }
+    + isExpanded: boolean
+    + isSelected: boolean | undefined
+    + onToggle: () => void
+    + onSelect: (() => void) | undefined
+    .. 2 more ..
+  }
+}
+
+@enduml

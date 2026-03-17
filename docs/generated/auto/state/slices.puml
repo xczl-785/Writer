@@ -1,0 +1,56 @@
+@startuml state/slices
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "state/slices" {
+  class state.slices.DropState {
+    + isOperationInProgress: boolean
+    + operationDescription: string | null
+    + operationStartTime: number | null
+  }
+  class state.slices.DropActions {
+    + startOperation: (description?: string | undefined) => boolean
+    + endOperation: () => void
+    + reset: () => void
+    + checkTimeout: (timeoutMs?: number | undefined) => boolean
+  }
+  class state.slices.SaveErrorAction {
+    + label: string
+    + run: () => void
+  }
+  class state.slices.SaveErrorDetails {
+    + category: SaveErrorCategory | undefined
+    + reason: string
+    + suggestion: string
+    + action: SaveErrorAction | undefined
+  }
+  class state.slices.StatusState {
+    + status: AppStatus
+    + message: string | null
+    + saveStatus: SaveStatus
+    + lastSavedAt: number | null
+    + saveError: SaveErrorDetails | null
+  }
+  class state.slices.StatusActions {
+    + setStatus: (status: import("E:/Project/Writer/src/state/slices/statusSlice").AppStatus, message?: string | null | undefined) => void
+    + markDirty: () => void
+    + markSaving: (path: string) => void
+    + markSaved: (message?: string | undefined) => void
+    + setSaveError: (reason: string, suggestion: string, options?: { category?: import("E:/Project/Writer/src/state/slices/statusSlice").SaveErrorCategory | undefined; action?: import("E:/Project/Writer/src/state/slices/statusSlice").SaveErrorAction | undefined; } | undefined) => void
+  }
+  class state.slices.ViewModeState {
+    + isZen: boolean
+    + isFocusZen: boolean
+    + isTypewriterActive: boolean
+    + typewriterRestoreSnapshot: boolean | null
+  }
+  class state.slices.ViewModeActions {
+    + enterZen: (userTypewriterPreference: boolean) => void
+    + exitZen: () => void
+    + setFocusZen: (enabled: boolean) => void
+    + syncTypewriterFromUserPreference: (enabledByUser: boolean) => void
+  }
+}
+
+@enduml

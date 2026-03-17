@@ -1,0 +1,258 @@
+@startuml ui/components
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "ui/components" {
+  class ui.components.BlockBoundaryConfig {
+    + showCodeBlock: boolean | undefined
+    + showBlockquote: boolean | undefined
+    + showList: boolean | undefined
+  }
+  class ui.components.BreadcrumbProps {
+    + items: BreadcrumbItem[]
+    + onItemClick: (item: import("E:/Project/Writer/src/ui/components/Breadcrumb/useBreadcrumb").BreadcrumbItem) => void
+    + className: string | undefined
+  }
+  class ui.components.BreadcrumbItem {
+    + id: string
+    + name: string
+    + type: "file" | "workspace" | "folder"
+    + path: string
+  }
+  class ui.components.BreadcrumbSegment {
+    + type: "item" | "ellipsis"
+    + item: BreadcrumbItem | undefined
+  }
+  class ui.components.BreadcrumbWorkspaceRoot {
+    + path: string
+    + name: string | undefined
+  }
+  class ui.components.BubbleMenuProps {
+    + editor: Editor | null
+    + selectedText: string | undefined
+  }
+  class ui.components.FormatButton {
+    + id: string
+    + label: string
+    + icon: React.ReactNode
+    + isActive: (editor: import("E:/Project/Writer/node_modules/@tiptap/core/dist/index").Editor) => boolean
+    + action: (editor: import("E:/Project/Writer/node_modules/@tiptap/core/dist/index").Editor) => void
+  }
+  class ui.components.ContextMenuProps {
+    + isOpen: boolean
+    + x: number
+    + y: number
+    + items: MenuItem[]
+    + onClose: () => void
+  }
+  class ui.components.ContextMenuRegistryImpl {
+    + menus: MenuItem[]>
+  }
+  class ui.components.MenuItemConfig {
+    + id: string
+    + label: string
+    + shortcut: string | undefined
+    + icon: React.ReactNode
+    + danger: boolean | undefined
+    .. 2 more ..
+  }
+  class ui.components.MenuDividerConfig {
+    + type: "divider"
+  }
+  class ui.components.ContextMenuConfig {
+    + context: string
+    + items: MenuItem[]
+  }
+  class ui.components.EditorContextMenuActions {
+    + onPaste: () => void
+    + onSelectAll: () => void
+    + onCopyFullText: () => void
+    + onInsertTable: () => void
+    + onInsertQuote: () => void
+  }
+  class ui.components.CodeBlockContextMenuActions {
+    + onCopyCodeBlock: () => void
+    + onChangeLanguage: () => void
+    + onFormatCode: () => void
+  }
+  class ui.components.TableContextMenuActions {
+    + onInsertRowAbove: () => void
+    + onInsertRowBelow: () => void
+    + onDeleteRow: () => void
+    + onInsertColumnLeft: () => void
+    + onInsertColumnRight: () => void
+    .. 25 more ..
+  }
+  class ui.components.FileTreeMenuContext {
+    + node: FileNode
+    + onNewFile: () => void
+    + onNewFolder: () => void
+    + onRename: () => void
+    + onRevealInFinder: () => void
+    .. 3 more ..
+  }
+  class ui.components.MenuItemProps {
+    + item: MenuItemConfig
+    + isFocused: boolean
+    + onClose: () => void
+  }
+  class ui.components.ContextMenuState {
+    + isOpen: boolean
+    + x: number
+    + y: number
+    + items: MenuItem[]
+  }
+  class ui.components.UseContextMenuResult {
+    + state: ContextMenuState
+    + open: (x: number, y: number, items: import("E:/Project/Writer/src/ui/components/ContextMenu/contextMenuRegistry").MenuItem[]) => void
+    + close: () => void
+    + toggle: (x: number, y: number, items: import("E:/Project/Writer/src/ui/components/ContextMenu/contextMenuRegistry").MenuItem[]) => void
+  }
+  class ui.components.WorkspaceRootMenuContext {
+    + folderPath: string
+    + displayName: string
+    + onRename: () => void
+    + onRemove: () => void
+    + onRevealInFinder: () => void
+    .. 1 more ..
+  }
+  class ui.components.EmptyAreaMenuContext {
+    + onAddFolderToWorkspace: () => void
+    + onNewFile: () => void
+    + onNewFolder: () => void
+    + hasWorkspace: boolean
+  }
+  class ui.components.ConfirmDialogOptions {
+    + title: string
+    + message: string
+    + description: string | undefined
+    + okLabel: string | undefined
+    + cancelLabel: string | undefined
+    .. 1 more ..
+  }
+  class ui.components.FileConflictDialogProps {
+    + fileName: string
+    + onConfirm: (action: import("E:/Project/Writer/src/ui/components/Dialog/FileConflictDialog").ConflictDialogAction) => void
+    + onCancel: () => void
+  }
+  class ui.components.FileConflictDialogProps {
+    + sourcePath: string
+    + targetPath: string
+    + fileName: string
+    + onConfirm: (action: import("E:/Project/Writer/src/ui/components/Dialog/FileDropConflictDialog").ConflictDialogAction) => void
+    + onCancel: () => void
+  }
+  class ui.components.WorkspaceLockDialogOptions {
+    + workspacePath: string
+    + lockStatus: WorkspaceLockStatus
+  }
+  class ui.components.WorkspaceLockDialogResult {
+    + openAnyway: boolean
+  }
+  class ui.components.DeletedFileMarkerProps {
+    + filePath: string
+    + fileName: string
+    + isDirectory: boolean | undefined
+    + onRestore: (() => void) | undefined
+    + onConfirmDelete: (() => void) | undefined
+    .. 1 more ..
+  }
+  class ui.components.DragDropOverlayProps {
+    + isVisible: boolean
+    + dragType: "copy" | "move" | "none" | undefined
+    + targetPath: string | undefined
+    + isFolderTarget: boolean | undefined
+    + className: string | undefined
+    .. 1 more ..
+  }
+  class ui.components.FolderMissingStateProps {
+    + folderPath: string
+    + displayName: string
+    + onRemove: (() => void) | undefined
+    + onReopen: (() => void) | undefined
+  }
+  class ui.components.PermissionDeniedStateProps {
+    + path: string
+    + displayName: string
+    + isDirectory: boolean | undefined
+    + onRemove: (() => void) | undefined
+    + onRetry: (() => void) | undefined
+  }
+  class ui.components.WorkspaceCorruptedStateProps {
+    + workspacePath: string
+    + errorMessage: string | undefined
+    + onReset: (() => void) | undefined
+    + onReopen: (() => void) | undefined
+  }
+  class ui.components.OutlineProps {
+    + editor: Editor | null
+    + isOpen: boolean
+    + refreshToken: string | null | undefined
+    + onClose: (() => void) | undefined
+  }
+  class ui.components.OutlineItemProps {
+    + item: OutlineItem
+    + isActive: boolean
+    + onClick: () => void
+  }
+  class ui.components.OutlineWindow {
+    + start: number
+    + end: number
+  }
+  class ui.components.OutlineItem {
+    + id: string
+    + level: 1 | 2 | 3 | 4 | 5 | 6
+    + text: string
+    + position: number
+  }
+  class ui.components.RecentWorkspacesMenuProps {
+    + isOpen: boolean
+    + anchorEl: HTMLElement | null | undefined
+    + onSelectWorkspace: ((path: string) => void) | undefined
+    + onSelectFolder: ((path: string) => void) | undefined
+    + onSelectFile: ((path: string) => void) | undefined
+    .. 1 more ..
+  }
+  class ui.components.FlattenedNode {
+    + id: string
+    + node: FileNode
+    + depth: number
+    + rootPath: string
+    + isExpanded: boolean
+    .. 1 more ..
+  }
+  class ui.components.VirtualizedTreeProps {
+    + flattenedNodes: FlattenedNode[]
+    + selectedPath: string | null
+    + activeFile: string | null
+    + renamingPath: string | null
+    + renameTrigger: number
+    .. 9 more ..
+  }
+  class ui.components.TreeFlattenerOptions {
+    + expandedPaths: Set<string>
+    + rootPath: string
+  }
+  class ui.components.RowProps {
+    + flattenedNodes: FlattenedNode[]
+    + selectedPath: string | null
+    + activeFile: string | null
+    + renamingPath: string | null
+    + renameTrigger: number
+    .. 7 more ..
+  }
+  class ui.components.ListImperativeAPI {
+    + element: HTMLDivElement | null
+  }
+  class ui.components.VirtualizedFileTreeProps {
+    + flattenedNodes: FlattenedNode[]
+    + containerHeight: number
+    + selectedPath: string | null
+    + activeFile: string | null
+    + renamingPath: string | null
+    .. 10 more ..
+  }
+}
+
+@enduml

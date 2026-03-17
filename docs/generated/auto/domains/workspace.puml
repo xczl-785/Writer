@@ -1,0 +1,93 @@
+@startuml domains/workspace
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "domains/workspace" {
+  class domains.workspace.DroppedPathLike {
+    + path: string | undefined
+  }
+  class domains.workspace.DroppedPathClassification {
+    + directories: string[]
+    + files: string[]
+    + missing: string[]
+    + other: string[]
+  }
+  class domains.workspace.RecentWorkspace {
+    + type: "workspace"
+    + path: string
+    + name: string
+    + lastOpened: string
+  }
+  class domains.workspace.RecentFolder {
+    + type: "folder"
+    + path: string
+    + name: string
+    + lastOpened: string
+  }
+  class domains.workspace.RecentFile {
+    + type: "file"
+    + path: string
+    + name: string
+    + lastOpened: string
+  }
+  class domains.workspace.RecentItemsData {
+    + workspaces: RecentWorkspace[]
+    + folders: RecentFolder[]
+    + files: RecentFile[]
+  }
+  class domains.workspace.WorkspaceSnapshot {
+    + folders: WorkspaceFolder[]
+    + rootFolders: RootFolderNode[]
+  }
+  class domains.workspace.DetachWorkspaceFolderOptions {
+    + removeOpenDescendants: boolean
+    + removeWorkspacePaths: boolean
+    + removeEditorPaths: boolean
+    + markDirty: boolean
+    + persist: boolean
+  }
+  class domains.workspace.RustLockInfo {
+    + pid: number
+    + locked_at: number
+    + description: string | undefined
+  }
+  class domains.workspace.RustWorkspaceLockStatus {
+    + is_locked: boolean
+    + lock_info: RustLockInfo | null
+  }
+  class domains.workspace.WorkspaceLockStatus {
+    + isLocked: boolean
+    + lockedBy: string | undefined
+    + lockedAt: number | undefined
+  }
+  class domains.workspace.PersistedWorkspaceState {
+    + version: number
+    + folders: WorkspaceFolder[]
+    + openFiles: string[]
+    + activeFile: string | null
+    + updatedAt: number
+  }
+  class domains.workspace.WorkspaceFolder {
+    + path: string
+    + name: string | undefined
+    + index: number
+  }
+  class domains.workspace.WorkspaceState {
+    + folders: WorkspaceFolder[]
+    + workspaceFile: string | null
+    + isDirty: boolean
+    + openFiles: string[]
+    + activeFile: string | null
+  }
+  class domains.workspace.WorkspaceActions {
+    + setWorkspaceFile: (path: string | null) => void
+    + setDirty: (dirty: boolean) => void
+    + addFolder: (folder: import("E:/Project/Writer/src/domains/workspace/state/workspaceStore").WorkspaceFolder) => void
+    + removeFolder: (path: string) => void
+    + renameFolder: (path: string, name: string) => void
+    .. 10 more ..
+  }
+}
+
+@enduml

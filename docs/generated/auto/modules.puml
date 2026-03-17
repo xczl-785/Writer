@@ -1,0 +1,108 @@
+@startuml modules
+
+!theme plain
+skinparam packageStyle rectangle
+
+package "domains/editor" {
+  [CursorPosition]
+  [FileEditorState]
+  [EditorState]
+  [EditorActions]
+}
+package "domains/file" {
+  [PendingSave]
+  [FileChangeEvent]
+  [FileWatcherServiceState]
+  [EncodingStatus]
+  [FolderPathResult]
+  [WorkspaceConfig]
+  [CopyFileResult]
+  [DropHandlerDeps]
+  [DropResult]
+  [RootFolderNode]
+  .. 8 more ..
+}
+package "domains/settings" {
+  [SettingsStorageAdapter]
+  [SettingsState]
+  [SettingsActions]
+}
+package "domains/workspace" {
+  [DroppedPathLike]
+  [DroppedPathClassification]
+  [RecentWorkspace]
+  [RecentFolder]
+  [RecentFile]
+  [RecentItemsData]
+  [WorkspaceSnapshot]
+  [DetachWorkspaceFolderOptions]
+  [RustLockInfo]
+  [RustWorkspaceLockStatus]
+  .. 5 more ..
+}
+package "services/error" {
+  [ErrorInfo]
+  [ErrorInfoOptions]
+}
+package "shared/components" {
+  [ContextMenuProps]
+  [ContextMenuRegistryImpl]
+  [MenuItemConfig]
+  [MenuDividerConfig]
+  [ContextMenuConfig]
+  [EditorContextMenuActions]
+  [CodeBlockContextMenuActions]
+  [TableContextMenuActions]
+  [FileTreeMenuContext]
+  [MenuItemProps]
+  .. 11 more ..
+}
+package "state/slices" {
+  [DropState]
+  [DropActions]
+  [SaveErrorAction]
+  [SaveErrorDetails]
+  [StatusState]
+  [StatusActions]
+  [ViewModeState]
+  [ViewModeActions]
+}
+package "types" {
+  [WorkspaceLoadError]
+  [WorkspaceLoadSuccess]
+  [WorkspaceLockStatus]
+}
+package "ui/components" {
+  [BlockBoundaryConfig]
+  [BreadcrumbProps]
+  [BreadcrumbItem]
+  [BreadcrumbSegment]
+  [BreadcrumbWorkspaceRoot]
+  [BubbleMenuProps]
+  [FormatButton]
+  [ContextMenuProps]
+  [ContextMenuRegistryImpl]
+  [MenuItemConfig]
+  .. 32 more ..
+}
+package "ui/sidebar" {
+  [ExplorerCommandContext]
+  [FileTreeNodeProps]
+  [InlineInputProps]
+  [GhostNodeState]
+  [MultiRootFileTreeProps]
+  [ResolveCreateBasePathInput]
+  [WorkspaceRootHeaderProps]
+}
+package "ui/workspace" {
+  [EmptyStateWorkspaceProps]
+}
+
+"shared/components" --> "ui/components"
+"shared/components" --> "domains/workspace"
+"shared/components" --> "types"
+"ui/components" --> "shared/components"
+"ui/components" --> "domains/workspace"
+"ui/components" --> "types"
+
+@enduml

@@ -1,0 +1,112 @@
+@startuml domains/file
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "domains/file" {
+  class domains.file.PendingSave {
+    + content: string
+    + timer: number
+  }
+  class domains.file.FileChangeEvent {
+    + type: "add" | "change" | "unlink" | "unlinkDir" | "rename"
+    + path: string
+    + oldPath: string | undefined
+  }
+  class domains.file.FileWatcherServiceState {
+    + isWatching: boolean
+    + currentPaths: string[]
+    + eventListeners: ChangeCallback[]
+    + debounceTimers: Map<string, number>
+    + unlisten: (() => void) | null
+  }
+  class domains.file.EncodingStatus {
+    + label: string
+  }
+  class domains.file.FolderPathResult {
+    + path: string
+    + nodes: FileNode[]
+    + error: string | undefined
+  }
+  class domains.file.WorkspaceConfig {
+    + version: number
+    + folders: { path: string; name?: string | undefined; }[]
+    + state: { openFiles?: string[] | undefined; activeFile?: string | undefined; sidebarVisible?: boolean | undefined; } | undefined
+  }
+  class domains.file.CopyFileResult {
+    + actualPath: string
+    + bytesWritten: number
+  }
+  class domains.file.DropHandlerDeps {
+    + selectedPath: string | null
+    + rootFolders: RootFolderNode[]
+    + hasWorkspace: boolean
+    + onOpenFile: OpenFileResult>
+    + onRefreshFileTree: (rootPath: string) => Promise<void>
+    .. 5 more ..
+  }
+  class domains.file.DropResult {
+    + success: boolean
+    + error: DropError | undefined
+    + openedFile: string | undefined
+  }
+  class domains.file.RootFolderNode {
+    + workspacePath: string
+    + displayName: string
+    + tree: FileNode[]
+  }
+  class domains.file.FileTreeState {
+    + rootFolders: RootFolderNode[]
+    + expandedPaths: Set<string>
+    + selectedPath: string | null
+    + loadingPaths: Set<string>
+    + errorPaths: Map<string, string>
+    .. 1 more ..
+  }
+  class domains.file.FileTreeActions {
+    + setRootFolders: (folders: import("E:/Project/Writer/src/domains/file/state/fileStore").RootFolderNode[]) => void
+    + addRootFolder: (folder: import("E:/Project/Writer/src/domains/file/state/fileStore").RootFolderNode) => void
+    + removeRootFolder: (path: string) => void
+    + updateRootFolderName: (path: string, name: string) => void
+    + moveRootFolderUp: (path: string) => void
+    .. 11 more ..
+  }
+  class domains.file.FileTreeNodeProps {
+    + node: FileNode
+    + depth: number
+    + rootPath: string
+  }
+  class domains.file.InlineInputProps {
+    + value: string
+    + placeholder: string | undefined
+    + onCommit: (value: string, trigger: import("E:/Project/Writer/src/domains/file/ui/InlineInput").InlineCommitTrigger) => void
+    + onCancel: (trigger: import("E:/Project/Writer/src/domains/file/ui/InlineInput").InlineCancelTrigger) => void
+    + className: string | undefined
+    .. 1 more ..
+  }
+  class domains.file.GhostNodeState {
+    + parentPath: string | null
+    + type: "file" | "directory"
+    + rootPath: string
+  }
+  class domains.file.MultiRootFileTreeProps {
+    + ghostNode: GhostNodeState | null | undefined
+    + onGhostCommit: ((name: string, trigger: "enter" | "blur") => Promise<void>) | undefined
+    + onGhostCancel: (() => void) | undefined
+    + selectedPath: string | null | undefined
+    + activeFile: string | null | undefined
+    .. 8 more ..
+  }
+  class domains.file.FileTypePolicy {
+    + name: string
+    + isSupported: (path: string) => boolean
+    + getExtensions: () => string[]
+    + getUnsupportedMessage: (path: string) => string
+  }
+  class domains.file.GetDropTargetOptions {
+    + selectedPath: string | null
+    + rootFolders: RootFolderNode[]
+  }
+}
+
+@enduml

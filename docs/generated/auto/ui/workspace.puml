@@ -1,0 +1,17 @@
+@startuml ui/workspace
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "ui/workspace" {
+  class ui.workspace.EmptyStateWorkspaceProps {
+    + onOpenFolder: () => void
+    + onOpenWorkspace: () => void
+    + onPrimaryAction: (() => void) | undefined
+    + onSecondaryAction: (() => void) | undefined
+    + onDropItem: ((paths: string[]) => void) | undefined
+    .. 6 more ..
+  }
+}
+
+@enduml

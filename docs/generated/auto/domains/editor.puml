@@ -1,0 +1,29 @@
+@startuml domains/editor
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "domains/editor" {
+  class domains.editor.CursorPosition {
+    + line: number
+    + column: number
+  }
+  class domains.editor.FileEditorState {
+    + content: string
+    + cursor: CursorPosition
+    + isDirty: boolean
+  }
+  class domains.editor.EditorState {
+    + fileStates: FileEditorState>
+  }
+  class domains.editor.EditorActions {
+    + initializeFile: (path: string, content: string) => void
+    + updateFileContent: (path: string, content: string) => void
+    + updateCursor: (path: string, cursor: import("E:/Project/Writer/src/domains/editor/state/editorStore").CursorPosition) => void
+    + setDirty: (path: string, isDirty: boolean) => void
+    + closeFileState: (path: string) => void
+    .. 2 more ..
+  }
+}
+
+@enduml

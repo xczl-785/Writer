@@ -1,0 +1,21 @@
+@startuml services/error
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "services/error" {
+  class services.error.ErrorInfo {
+    + category: SaveErrorCategory
+    + reason: string
+    + suggestion: string
+    + action: SaveErrorAction | undefined
+  }
+  class services.error.ErrorInfoOptions {
+    + category: SaveErrorCategory | undefined
+    + reason: string | undefined
+    + suggestion: string | undefined
+    + action: SaveErrorAction | undefined
+  }
+}
+
+@enduml

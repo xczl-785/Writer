@@ -1,0 +1,24 @@
+@startuml domains/settings
+
+!theme plain
+skinparam classAttributeIconSize 0
+
+package "domains/settings" {
+  class domains.settings.SettingsStorageAdapter {
+    + getItem: (key: string) => string | null
+    + setItem: (key: string, value: string) => void
+    + removeItem: (key: string) => void
+  }
+  class domains.settings.SettingsState {
+    + localePreference: SettingsLocalePreference
+    + typewriterEnabledByUser: boolean
+    + focusZenEnabledByUser: boolean
+  }
+  class domains.settings.SettingsActions {
+    + setLocalePreference: (preference: import("E:/Project/Writer/src/domains/settings/state/settingsStore").SettingsLocalePreference) => void
+    + setTypewriterEnabledByUser: (enabled: boolean) => void
+    + setFocusZenEnabledByUser: (enabled: boolean) => void
+  }
+}
+
+@enduml
