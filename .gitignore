@@ -19,6 +19,4 @@ test-workspace/
 # Git worktrees
 .worktrees/
 
-# Auto-generated UML (CI managed)
-docs/generated/auto/
-!docs/generated/overlay/
+# Manual annotations for UML diagrams
