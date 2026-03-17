@@ -19,7 +19,7 @@ npm run uml:gen -- --module domains/file  # 只生成指定模块
 
 ```
 generated/
-├── auto/                    # 自动生成，CI 更新
+├── auto/                    # 自动生成，随代码提交
 │   ├── domains/             # 领域模块
 │   ├── services/            # 服务层
 │   ├── state/               # 状态管理
@@ -74,8 +74,8 @@ generated/
 
 ### 3. 更新时机
 
-- CI 自动更新：merge 到 main 分支时
-- 手动更新：`npm run uml:gen`
+- 手动更新：`npm run uml:gen`，然后提交变更
+- 建议：在完成重要功能或重构后重新生成
 
 ---
 
@@ -105,7 +105,7 @@ merge_modules:
 ## FAQ
 
 **Q: 图过时了怎么办？**
-A: 运行 `npm run uml:gen` 或等待 CI 自动更新。
+A: 运行 `npm run uml:gen` 重新生成，然后提交变更。
 
 **Q: 某个模块没有生成？**
 A: 该模块可能没有类或接口。脚本只提取类和接口。
