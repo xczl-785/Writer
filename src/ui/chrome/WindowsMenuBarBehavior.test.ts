@@ -150,7 +150,7 @@ describe('WindowsMenuBar behavior', () => {
       await Promise.resolve();
     });
 
-    const newItem = getMenuItem(container, 'New');
+    const newItem = getMenuItem(container, 'New File');
     expect(document.activeElement).toBe(newItem);
 
     await act(async () => {

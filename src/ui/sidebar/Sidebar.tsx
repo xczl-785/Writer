@@ -715,7 +715,7 @@ export function Sidebar({
   );
 
   const commandCtx = {
-    hasWorkspace: rootFolders.length > 0,
+    hasWorkspace: Boolean(currentPath),
     hasSelection: Boolean(selectedNode),
     openWorkspace,
     beginCreateFile: () => startCreate('file'),
@@ -763,6 +763,10 @@ export function Sidebar({
       const detail = (event as CustomEvent<{ id?: string }>).detail;
       if (detail?.id === 'new-file') {
         dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx);
+        return;
+      }
+      if (detail?.id === 'new-folder') {
+        dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx);
       }
     };
 
@@ -972,7 +976,7 @@ export function Sidebar({
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FILE, commandCtx)
             }
-            disabled={rootFolders.length === 0}
+            disabled={!currentPath}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-zinc-500 disabled:hover:bg-transparent"
             title={t('sidebar.newFile')}
           >
@@ -983,7 +987,7 @@ export function Sidebar({
             onClick={() =>
               dispatchExplorerCommand(EXPLORER_COMMANDS.NEW_FOLDER, commandCtx)
             }
-            disabled={rootFolders.length === 0}
+            disabled={!currentPath}
             className="p-2 rounded-md text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-zinc-500 disabled:hover:bg-transparent"
             title={t('sidebar.newFolder')}
           >

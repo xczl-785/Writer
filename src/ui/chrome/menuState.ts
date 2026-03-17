@@ -9,6 +9,7 @@ export type MenuRuntimeState = {
 
 const ALWAYS_ENABLED_IDS = new Set([
   'menu.file.new',
+  'menu.file.new_folder',
   'menu.file.open_file',
   'menu.file.open_folder',
   'menu.file.open_workspace',

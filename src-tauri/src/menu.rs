@@ -88,7 +88,22 @@ fn build_native_menu_with_locale<R: Runtime>(
         &tr(locale, "文件", "File"),
         true,
         &[
-            &item(app, locale, "menu.file.new", "新建", "New", Some("CmdOrCtrl+N"))?,
+            &item(
+                app,
+                locale,
+                "menu.file.new",
+                "新建文件",
+                "New File",
+                Some("CmdOrCtrl+N"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.file.new_folder",
+                "新建文件夹",
+                "New Folder",
+                None,
+            )?,
             &item(
                 app,
                 locale,
