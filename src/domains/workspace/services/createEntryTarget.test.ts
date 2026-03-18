@@ -92,4 +92,20 @@ describe('createEntryTarget', () => {
       rootPath: '/ws',
     });
   });
+
+  it('treats mixed path separators as the same root when resolving a root-level file target', () => {
+    expect(
+      resolveCreateGhostTarget({
+        type: 'file',
+        rootPath: 'E:\\workspace',
+        targetPath: 'E:/workspace/a.md',
+        targetType: 'file',
+        activeFile: null,
+      }),
+    ).toEqual({
+      parentPath: null,
+      type: 'file',
+      rootPath: 'E:\\workspace',
+    });
+  });
 });
