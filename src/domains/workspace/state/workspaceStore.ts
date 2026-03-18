@@ -75,7 +75,6 @@ export interface WorkspaceActions {
   setDirty: (dirty: boolean) => void;
   addFolder: (folder: WorkspaceFolder) => void;
   removeFolder: (path: string) => void;
-  renameFolder: (path: string, name: string) => void;
   reorderFolders: (fromIndex: number, toIndex: number) => void;
   moveFolderUp: (path: string) => void;
   moveFolderDown: (path: string) => void;
@@ -113,14 +112,6 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
     removeFolder: (path) =>
       set((state) => ({
         folders: state.folders.filter((f) => f.path !== path),
-        isDirty: true,
-      })),
-
-    renameFolder: (path, name) =>
-      set((state) => ({
-        folders: state.folders.map((f) =>
-          f.path === path ? { ...f, name } : f,
-        ),
         isDirty: true,
       })),
 

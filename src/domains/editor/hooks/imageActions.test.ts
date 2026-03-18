@@ -69,7 +69,6 @@ const createWorkspaceState = (
   openFiles: [],
   activeFile: null,
   setWorkspaceFile: vi.fn(),
-  renameFolder: vi.fn(),
   reorderFolders: vi.fn(),
   moveFolderUp: vi.fn(),
   moveFolderDown: vi.fn(),

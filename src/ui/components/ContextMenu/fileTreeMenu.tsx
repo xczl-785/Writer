@@ -38,21 +38,25 @@ export function getFileTreeMenuItems(context: FileTreeMenuContext): MenuItem[] {
   const labels = getPlatformLabels();
 
   const items: MenuItem[] = [
-    {
-      id: 'new-file',
-      label: t('contextMenu.newFile'),
-      shortcut: 'Cmd+N',
-      icon: <FilePlus size={14} />,
-      action: context.onNewFile,
-    },
-    {
-      id: 'new-folder',
-      label: t('contextMenu.newFolder'),
-      shortcut: 'Shift+Cmd+N',
-      icon: <FolderPlus size={14} />,
-      action: context.onNewFolder,
-    },
-    divider(),
+    ...(context.node.type === 'directory'
+      ? [
+          {
+            id: 'new-file',
+            label: t('contextMenu.newFile'),
+            shortcut: 'Cmd+N',
+            icon: <FilePlus size={14} />,
+            action: context.onNewFile,
+          },
+          {
+            id: 'new-folder',
+            label: t('contextMenu.newFolder'),
+            shortcut: 'Shift+Cmd+N',
+            icon: <FolderPlus size={14} />,
+            action: context.onNewFolder,
+          },
+          divider(),
+        ]
+      : []),
     {
       id: 'rename',
       label: t('contextMenu.rename'),

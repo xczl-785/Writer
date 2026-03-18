@@ -16,4 +16,14 @@ describe('WorkspaceRootHeader behavior markers', () => {
     expect(source).toContain('onToggle();');
     expect(source).toContain('onClick={handleRowClick}');
   });
+
+  it('does not keep inline rename state for workspace root display names', () => {
+    expect(source).not.toContain('isRenaming');
+    expect(source).not.toContain('renameDraft');
+    expect(source).not.toContain('handleRename');
+    expect(source).not.toContain('commitRename');
+    expect(source).not.toContain('cancelRename');
+    expect(source).not.toContain('renameWorkspaceFolder');
+    expect(source).not.toContain('InlineInput');
+  });
 });

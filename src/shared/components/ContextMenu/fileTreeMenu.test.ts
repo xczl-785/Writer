@@ -11,8 +11,15 @@ const fileNode: FileNode = {
   type: 'file',
 };
 
+const directoryNode: FileNode = {
+  path: '/workspace/docs',
+  name: 'docs',
+  type: 'directory',
+  children: [],
+};
+
 describe('fileTreeMenu', () => {
-  it('includes required core menu items', () => {
+  it('does not include create entries for file nodes', () => {
     const items = getFileTreeMenuItems({
       node: fileNode,
       onNewFile: noop,
@@ -24,12 +31,28 @@ describe('fileTreeMenu', () => {
     });
     const ids = items.filter(isMenuItem).map((item) => item.id);
 
-    expect(ids).toContain('new-file');
-    expect(ids).toContain('new-folder');
+    expect(ids).not.toContain('new-file');
+    expect(ids).not.toContain('new-folder');
     expect(ids).toContain('rename');
     expect(ids).toContain('reveal-in-finder');
     expect(ids).toContain('copy-path');
     expect(ids).toContain('delete');
+  });
+
+  it('includes create entries for directory nodes', () => {
+    const items = getFileTreeMenuItems({
+      node: directoryNode,
+      onNewFile: noop,
+      onNewFolder: noop,
+      onRename: noop,
+      onRevealInFinder: noop,
+      onCopyPath: noop,
+      onDelete: noop,
+    });
+    const ids = items.filter(isMenuItem).map((item) => item.id);
+
+    expect(ids).toContain('new-file');
+    expect(ids).toContain('new-folder');
   });
 
   it('disables destructive operations for reserved paths', () => {
