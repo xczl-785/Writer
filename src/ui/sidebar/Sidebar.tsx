@@ -48,7 +48,7 @@ import {
 } from './pathing';
 import { flattenMultipleRoots } from '../components/VirtualizedFileTree';
 import { VirtualizedFileTree } from '../components/VirtualizedFileTree/VirtualizedFileTree';
-import { joinPath } from '../../utils/pathUtils';
+import { joinPath, normalizePath } from '../../utils/pathUtils';
 import { dispatchExplorerCommand, EXPLORER_COMMANDS } from './explorerCommands';
 import { matchExplorerShortcut } from './explorerKeybindings';
 import {
@@ -167,13 +167,19 @@ export function Sidebar({
   const shouldUseVirtualization =
     flattenedNodes.length > VIRTUAL_SCROLL_THRESHOLD;
 
+  const isSamePath = useCallback((left: string, right: string): boolean => {
+    return normalizePath(left) === normalizePath(right);
+  }, []);
+
   // V6: 根据选中路径找到对应的根路径
   const getRootPathForPath = (path: string | null): string | null => {
     if (!path) return currentPath;
+    const normalizedPath = normalizePath(path);
     for (const folder of rootFolders) {
+      const normalizedWorkspacePath = normalizePath(folder.workspacePath);
       if (
-        path === folder.workspacePath ||
-        path.startsWith(folder.workspacePath + '/')
+        normalizedPath === normalizedWorkspacePath ||
+        normalizedPath.startsWith(normalizedWorkspacePath + '/')
       ) {
         return folder.workspacePath;
       }
@@ -310,7 +316,7 @@ export function Sidebar({
       expandNode(previewDirectoryPath);
       setGhostNode(ghost);
     },
-    [expandNode],
+    [expandNode, selectedPath],
   );
 
   const cancelCreate = () => {
@@ -761,7 +767,9 @@ export function Sidebar({
     const visibleNodes = filterVisibleNodes(rootFolder.tree);
     const isLoading = loadingPaths.has(rootFolder.workspacePath);
     const isExpanded = expandedPaths.has(rootFolder.workspacePath);
-    const isSelected = selectedPath === rootFolder.workspacePath;
+    const isSelected = Boolean(
+      selectedPath && isSamePath(selectedPath, rootFolder.workspacePath),
+    );
 
     return (
       <div key={rootFolder.workspacePath} className="root-folder-group">
@@ -790,7 +798,8 @@ export function Sidebar({
         />
 
         {ghostNode &&
-        ghostNode.rootPath === rootFolder.workspacePath &&
+        normalizePath(ghostNode.rootPath) ===
+          normalizePath(rootFolder.workspacePath) &&
         ghostNode.parentPath === null ? (
           <GhostRow
             level={level + 1}
@@ -1276,12 +1285,18 @@ function FileTreeNode({
   const [renameDraft, setRenameDraft] = useState(getDisplayName(node));
   const isDirectory = node.type === 'directory';
   const hasChildren = node.children && node.children.length > 0;
-  const isFocused = selectedPath === node.path;
-  const isActiveFile = node.type === 'file' && activeFile === node.path;
+  const isFocused =
+    selectedPath !== null &&
+    normalizePath(selectedPath) === normalizePath(node.path);
+  const isActiveFile =
+    node.type === 'file' &&
+    activeFile !== null &&
+    normalizePath(activeFile) === normalizePath(node.path);
   const isActiveParent =
     isDirectory &&
     Boolean(activeFile) &&
-    getParentPath(activeFile as string) === node.path;
+    normalizePath(getParentPath(activeFile as string)) ===
+      normalizePath(node.path);
 
   // 拖拽状态计算
   const isDraggingThis = dragState.dragPath === node.path;
@@ -1289,14 +1304,23 @@ function FileTreeNode({
   const dropPosition = isDropTarget ? dropState.dropPosition : null;
 
   useEffect(() => {
-    if (renamingPath === node.path) {
+    if (
+      renamingPath !== null &&
+      normalizePath(renamingPath) === normalizePath(node.path)
+    ) {
       setRenameDraft(getDisplayName(node));
       setIsRenaming(true);
     }
   }, [node, renamingPath, renameTrigger]);
 
   useEffect(() => {
-    if (isDirectory && ghostNode?.parentPath === node.path && !isExpanded) {
+    if (
+      isDirectory &&
+      ghostNode !== null &&
+      ghostNode.parentPath !== null &&
+      normalizePath(ghostNode.parentPath) === normalizePath(node.path) &&
+      !isExpanded
+    ) {
       setIsExpanded(true);
     }
   }, [ghostNode, isDirectory, isExpanded, node.path]);
@@ -1547,7 +1571,9 @@ function FileTreeNode({
 
       {isDirectory && isExpanded && (
         <div>
-          {ghostNode && ghostNode.parentPath === node.path && (
+          {ghostNode &&
+            ghostNode.parentPath !== null &&
+            normalizePath(ghostNode.parentPath) === normalizePath(node.path) && (
             <GhostRow
               level={level + 1}
               type={ghostNode.type}

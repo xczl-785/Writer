@@ -1,5 +1,5 @@
 import type { FileNode } from '../../../state/types';
-import { getParentPath } from '../../../shared/utils/pathUtils';
+import { getParentPath, normalizePath } from '../../../shared/utils/pathUtils';
 
 type NodeType = FileNode['type'] | null;
 
@@ -66,9 +66,11 @@ export function resolveCreateGhostTarget({
     selectedType: targetType,
     activeFile,
   });
+  const normalizedBasePath = normalizePath(basePath);
+  const normalizedRootPath = normalizePath(rootPath);
 
   return {
-    parentPath: basePath === rootPath ? null : basePath,
+    parentPath: normalizedBasePath === normalizedRootPath ? null : basePath,
     type,
     rootPath,
   };

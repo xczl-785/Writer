@@ -3,6 +3,7 @@ import {
   getParentPath as getParentPathBase,
   getFileExtension as getFileExtensionBase,
   isMarkdownFile as isMarkdownFileBase,
+  normalizePath,
 } from '../../shared/utils/pathUtils';
 export { resolveCreateBasePath } from '../../domains/workspace/services/createEntryTarget';
 
@@ -70,8 +71,9 @@ export const findNodeByPath = (
   nodes: FileNode[],
   path: string,
 ): FileNode | null => {
+  const normalizedPath = normalizePath(path);
   for (const node of nodes) {
-    if (node.path === path) {
+    if (normalizePath(node.path) === normalizedPath) {
       return node;
     }
     if (node.children && node.children.length > 0) {
