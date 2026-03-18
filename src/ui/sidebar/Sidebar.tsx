@@ -12,7 +12,6 @@ import { useStatusStore } from '../../state/slices/statusSlice';
 import { fileActions } from '../../domains/file/services/fileActions';
 import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 import {
-  addFolderToWorkspaceByDialog,
   addFolderPathToWorkspace,
   openWorkspaceAtPath,
   openWorkspace,
@@ -33,7 +32,6 @@ import type { FileNode } from '../../state/types';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { DragDropHint } from '../components/ErrorStates';
 import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
-import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
 import { showDeleteConfirmDialog } from '../components/Dialog';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import { WorkspaceRootHeader } from './WorkspaceRootHeader';
@@ -480,48 +478,6 @@ export function Sidebar({
       onDelete: () => {
         void confirmDeleteNode(node);
       },
-    });
-
-    contextMenu.open(event.clientX, event.clientY, items);
-  };
-
-  // V6: 空白处右键菜单
-  const openEmptyAreaContextMenu = (event: React.MouseEvent) => {
-    // 只在点击到容器本身（空白区域）时触发
-    if (event.target !== event.currentTarget) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const items = getEmptyAreaMenuItems({
-      onAddFolderToWorkspace: () => {
-        void addFolderToWorkspaceByDialog();
-      },
-      onNewFile: () => {
-        const targetRootPath =
-          currentPath ||
-          (rootFolders.length > 0 ? rootFolders[0].workspacePath : null);
-        if (!targetRootPath) return;
-        setGhostNode({
-          parentPath: null,
-          type: 'file',
-          rootPath: targetRootPath,
-        });
-      },
-      onNewFolder: () => {
-        const targetRootPath =
-          currentPath ||
-          (rootFolders.length > 0 ? rootFolders[0].workspacePath : null);
-        if (!targetRootPath) return;
-        setGhostNode({
-          parentPath: null,
-          type: 'directory',
-          rootPath: targetRootPath,
-        });
-      },
-      hasWorkspace: canCreateFromWorkspace(currentPath),
     });
 
     contextMenu.open(event.clientX, event.clientY, items);
@@ -1085,7 +1041,6 @@ export function Sidebar({
             setSelectedPath(null);
           }
         }}
-        onContextMenu={openEmptyAreaContextMenu}
         onKeyDown={() => {}}
         role="presentation"
       >

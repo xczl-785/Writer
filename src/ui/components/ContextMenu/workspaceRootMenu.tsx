@@ -63,38 +63,3 @@ export function getWorkspaceRootMenuItems(
   return items;
 }
 
-/**
- * Get empty area context menu items (file tree blank area)
- */
-export interface EmptyAreaMenuContext {
-  onAddFolderToWorkspace: () => void;
-  onNewFile: () => void;
-  onNewFolder: () => void;
-  hasWorkspace: boolean;
-}
-
-export function getEmptyAreaMenuItems(
-  context: EmptyAreaMenuContext,
-): MenuItem[] {
-  const items: MenuItem[] = [
-    {
-      id: 'add-folder-to-workspace',
-      label: t('workspace.addFolderToWorkspace'),
-      action: context.onAddFolderToWorkspace,
-    },
-    {
-      id: 'new-file',
-      label: t('contextMenu.newFile'),
-      action: context.onNewFile,
-      disabled: !context.hasWorkspace ? () => true : undefined,
-    },
-    {
-      id: 'new-folder',
-      label: t('contextMenu.newFolder'),
-      action: context.onNewFolder,
-      disabled: !context.hasWorkspace ? () => true : undefined,
-    },
-  ];
-
-  return items;
-}

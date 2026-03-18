@@ -16,8 +16,6 @@ import {
 import { useStatusStore } from '../../state/slices/statusSlice';
 import { WorkspaceRootHeader } from './WorkspaceRootHeader';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
-import { getEmptyAreaMenuItems } from '../components/ContextMenu/workspaceRootMenu';
-import { addFolderToWorkspaceByDialog } from '../../domains/workspace/services/WorkspaceManager';
 import { FsService } from '../../domains/file/services/FsService';
 import { FsSafety } from '../../domains/file/services/FsSafety';
 import { fileActions } from '../../domains/file/services/fileActions';
@@ -478,12 +476,6 @@ export const MultiRootFileTree: React.FC<MultiRootFileTreeProps> = ({
     activeFile: null,
   });
 
-  const hasWorkspace = rootFolders.length > 0;
-
-  // 获取第一个根路径作为默认创建位置
-  const firstRootPath =
-    rootFolders.length > 0 ? rootFolders[0].workspacePath : null;
-
   // 计算容器高度
   useEffect(() => {
     const updateHeight = () => {
@@ -505,51 +497,6 @@ export const MultiRootFileTree: React.FC<MultiRootFileTreeProps> = ({
   // 判断是否使用虚拟滚动
   const shouldUseVirtualization =
     flattenedNodes.length > VIRTUAL_SCROLL_THRESHOLD;
-
-  const handleAddFolderToWorkspace = useCallback(() => {
-    void addFolderToWorkspaceByDialog();
-  }, []);
-
-  const handleNewFile = useCallback(() => {
-    if (!firstRootPath || !onSetGhostNode) return;
-    onSetGhostNode({
-      parentPath: null,
-      type: 'file',
-      rootPath: firstRootPath,
-    });
-  }, [firstRootPath, onSetGhostNode]);
-
-  const handleNewFolder = useCallback(() => {
-    if (!firstRootPath || !onSetGhostNode) return;
-    onSetGhostNode({
-      parentPath: null,
-      type: 'directory',
-      rootPath: firstRootPath,
-    });
-  }, [firstRootPath, onSetGhostNode]);
-
-  const handleEmptyAreaContextMenu = useCallback(
-    (event: React.MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const items = getEmptyAreaMenuItems({
-        onAddFolderToWorkspace: handleAddFolderToWorkspace,
-        onNewFile: handleNewFile,
-        onNewFolder: handleNewFolder,
-        hasWorkspace,
-      });
-
-      contextMenu.open(event.clientX, event.clientY, items);
-    },
-    [
-      handleAddFolderToWorkspace,
-      handleNewFile,
-      handleNewFolder,
-      hasWorkspace,
-      contextMenu,
-    ],
-  );
 
   // 处理 ghost 节点提交
   const handleGhostCommit = useCallback(
@@ -679,7 +626,6 @@ export const MultiRootFileTree: React.FC<MultiRootFileTreeProps> = ({
       <div
         ref={containerRef}
         className="multi-root-file-tree flex-1 overflow-y-auto overflow-x-hidden py-2 px-1.5"
-        onContextMenu={handleEmptyAreaContextMenu}
       >
         {shouldUseVirtualization ? (
           // 虚拟滚动模式

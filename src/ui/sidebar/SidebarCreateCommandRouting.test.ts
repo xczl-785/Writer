@@ -14,10 +14,9 @@ describe('Sidebar create command routing', () => {
     expect(source).toContain('dispatchExplorerCommand(command, commandCtx)');
   });
 
-  it('uses the same currentPath-based workspace predicate for empty-area create menu gating', () => {
-    expect(source).toContain(
-      'hasWorkspace: canCreateFromWorkspace(currentPath)',
-    );
-    expect(source).not.toContain('hasWorkspace: rootFolders.length > 0');
+  it('does not register an empty-area context menu for sidebar creation anymore', () => {
+    expect(source).not.toContain('getEmptyAreaMenuItems');
+    expect(source).not.toContain('openEmptyAreaContextMenu');
+    expect(source).not.toContain('onContextMenu={openEmptyAreaContextMenu}');
   });
 });

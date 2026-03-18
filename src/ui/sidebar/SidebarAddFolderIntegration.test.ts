@@ -11,10 +11,9 @@ describe('Sidebar add-folder wiring', () => {
     'utf-8',
   );
 
-  it('routes add-folder-to-workspace entry points through the append flow', () => {
-    expect(sidebarTsx).toContain('addFolderToWorkspaceByDialog');
-    expect(sidebarTsx).toContain('void addFolderToWorkspaceByDialog();');
-    expect(multiRootTsx).toContain('addFolderToWorkspaceByDialog');
-    expect(multiRootTsx).toContain('void addFolderToWorkspaceByDialog();');
+  it('removes add-folder and create actions from the empty-area sidebar surface', () => {
+    expect(sidebarTsx).not.toContain('addFolderToWorkspaceByDialog');
+    expect(multiRootTsx).not.toContain('getEmptyAreaMenuItems');
+    expect(multiRootTsx).not.toContain('addFolderToWorkspaceByDialog');
   });
 });
