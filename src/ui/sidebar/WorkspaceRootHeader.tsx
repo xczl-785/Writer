@@ -1,7 +1,7 @@
 // src/ui/sidebar/WorkspaceRootHeader.tsx
 // V6 根文件夹头部组件 - 支持右键菜单和缺失状态
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { t } from '../../shared/i18n';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
@@ -9,7 +9,6 @@ import { getWorkspaceRootMenuItems } from '../components/ContextMenu/workspaceRo
 import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 import { FsService } from '../../domains/file/services/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
-import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import { FolderMissingState } from '../components/ErrorStates';
 
 // 纯线框风格的根文件夹图标组件
@@ -39,6 +38,8 @@ interface WorkspaceRootHeaderProps {
   isSelected?: boolean;
   onToggle: () => void;
   onSelect?: () => void;
+  onNewFile?: () => void;
+  onNewFolder?: () => void;
   /** 文件夹是否缺失（不存在或已移动） */
   isMissing?: boolean;
   onContextMenu?: (event: React.MouseEvent) => void;
@@ -50,11 +51,11 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   isSelected = false,
   onToggle,
   onSelect,
+  onNewFile,
+  onNewFolder,
   isMissing = false,
   onContextMenu,
 }) => {
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [renameDraft, setRenameDraft] = useState(folder.displayName);
   const contextMenu = useContextMenu();
 
   const toggleExpanded = useCallback((e: React.MouseEvent) => {
@@ -77,33 +78,6 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
         .setStatus('error', `${t('workspace.removeFailed')}: ${result.error}`);
     }
   }, [folder.workspacePath]);
-
-  const handleRename = useCallback(() => {
-    setRenameDraft(folder.displayName);
-    setIsRenaming(true);
-  }, [folder.displayName]);
-
-  const commitRename = useCallback(
-    async (nameRaw: string, trigger: InlineCommitTrigger) => {
-      const newName = nameRaw.trim();
-      if (!newName || newName === folder.displayName) {
-        setIsRenaming(false);
-        return;
-      }
-
-      // trigger 用于区分提交方式（enter 或 blur），此处统一处理
-      void trigger;
-
-      workspaceActions.renameWorkspaceFolder(folder.workspacePath, newName);
-      setIsRenaming(false);
-    },
-    [folder.workspacePath, folder.displayName],
-  );
-
-  const cancelRename = useCallback(() => {
-    setRenameDraft(folder.displayName);
-    setIsRenaming(false);
-  }, [folder.displayName]);
 
   const handleRevealInFinder = useCallback(async () => {
     try {
@@ -135,7 +109,8 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
       const items = getWorkspaceRootMenuItems({
         folderPath: folder.workspacePath,
         displayName: folder.displayName,
-        onRename: handleRename,
+        onNewFile: onNewFile ?? (() => {}),
+        onNewFolder: onNewFolder ?? (() => {}),
         onRemove: handleRemoveFolder,
         onRevealInFinder: handleRevealInFinder,
         onCopyPath: handleCopyPath,
@@ -146,10 +121,11 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
     [
       folder.workspacePath,
       folder.displayName,
-      handleRename,
       handleRemoveFolder,
       handleRevealInFinder,
       handleCopyPath,
+      onNewFile,
+      onNewFolder,
       contextMenu,
       onContextMenu,
     ],
@@ -203,19 +179,9 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
 
           {/* 纯线框根文件夹图标 */}
           <FolderOutlineIcon className="w-4 h-4 mr-2 text-zinc-600 shrink-0" />
-
-          {isRenaming ? (
-            <InlineInput
-              value={renameDraft}
-              onCommit={commitRename}
-              onCancel={cancelRename}
-              autoFocus={true}
-            />
-          ) : (
-            <span className="text-sm font-bold text-zinc-800 truncate">
-              {folder.displayName}
-            </span>
-          )}
+          <span className="text-sm font-bold text-zinc-800 truncate">
+            {folder.displayName}
+          </span>
         </div>
 
         {/* 移除按钮 */}

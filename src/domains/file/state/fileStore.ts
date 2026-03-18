@@ -28,7 +28,6 @@ export interface FileTreeActions {
   setRootFolders: (folders: RootFolderNode[]) => void;
   addRootFolder: (folder: RootFolderNode) => void;
   removeRootFolder: (path: string) => void;
-  updateRootFolderName: (path: string, name: string) => void;
   moveRootFolderUp: (path: string) => void;
   moveRootFolderDown: (path: string) => void;
 
@@ -75,13 +74,6 @@ export const useFileTreeStore = create<FileTreeState & FileTreeActions>(
     removeRootFolder: (path) =>
       set((state) => ({
         rootFolders: state.rootFolders.filter((f) => f.workspacePath !== path),
-      })),
-
-    updateRootFolderName: (path, name) =>
-      set((state) => ({
-        rootFolders: state.rootFolders.map((f) =>
-          f.workspacePath === path ? { ...f, displayName: name } : f,
-        ),
       })),
 
     moveRootFolderUp: (path) =>

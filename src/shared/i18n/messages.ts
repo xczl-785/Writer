@@ -92,7 +92,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     // Workspace context menu
     'workspace.addFolderToWorkspace': '添加文件夹到工作区',
     'workspace.removeFromWorkspace': '从工作区移除',
-    'workspace.renameDisplayName': '重命名显示名',
     'workspace.removeFailed': '移除文件夹失败',
     'workspace.collapse': '折叠',
     'workspace.expand': '展开',
@@ -403,7 +402,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     // Workspace context menu
     'workspace.addFolderToWorkspace': 'Add Folder to Workspace',
     'workspace.removeFromWorkspace': 'Remove from Workspace',
-    'workspace.renameDisplayName': 'Rename Display Name',
     'workspace.removeFailed': 'Failed to remove folder',
     'workspace.collapse': 'Collapse',
     'workspace.expand': 'Expand',

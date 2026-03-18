@@ -398,12 +398,6 @@ export const workspaceActions = {
     }
   },
 
-  renameWorkspaceFolder: (folderPath: string, name: string): void => {
-    useWorkspaceStore.getState().renameFolder(folderPath, name);
-    useFileTreeStore.getState().updateRootFolderName(folderPath, name);
-    useWorkspaceStore.getState().setDirty(true);
-  },
-
   reorderFolders: (fromIndex: number, toIndex: number): void => {
     useWorkspaceStore.getState().reorderFolders(fromIndex, toIndex);
     // 同步更新 filetreeStore 的顺序

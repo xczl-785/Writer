@@ -134,6 +134,7 @@ export function Sidebar({
   const setNodes = useFileTreeStore((state) => state.setNodes);
   const loadingPaths = useFileTreeStore((state) => state.loadingPaths);
   const expandedPaths = useFileTreeStore((state) => state.expandedPaths);
+  const expandNode = useFileTreeStore((state) => state.expandNode);
   const toggleNode = useFileTreeStore((state) => state.toggleNode);
 
   const folders = useWorkspaceStore((state) => state.folders);
@@ -453,12 +454,18 @@ export function Sidebar({
       node,
       isReservedPath,
       onNewFile: () => {
+        if (node.type === 'directory') {
+          expandNode(node.path);
+        }
         setSelectedPath(node.path);
         setGhostNode(
           getCreateGhostTarget('file', rootPath, node.path, node.type),
         );
       },
       onNewFolder: () => {
+        if (node.type === 'directory') {
+          expandNode(node.path);
+        }
         setSelectedPath(node.path);
         setGhostNode(
           getCreateGhostTarget('directory', rootPath, node.path, node.type),
@@ -769,6 +776,24 @@ export function Sidebar({
           isSelected={isSelected}
           onToggle={() => toggleNode(rootFolder.workspacePath)}
           onSelect={() => setSelectedPath(rootFolder.workspacePath)}
+          onNewFile={() => {
+            expandNode(rootFolder.workspacePath);
+            setSelectedPath(rootFolder.workspacePath);
+            setGhostNode({
+              parentPath: null,
+              type: 'file',
+              rootPath: rootFolder.workspacePath,
+            });
+          }}
+          onNewFolder={() => {
+            expandNode(rootFolder.workspacePath);
+            setSelectedPath(rootFolder.workspacePath);
+            setGhostNode({
+              parentPath: null,
+              type: 'directory',
+              rootPath: rootFolder.workspacePath,
+            });
+          }}
         />
 
         {ghostNode &&

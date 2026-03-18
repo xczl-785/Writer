@@ -6,7 +6,7 @@
  * @see docs/current/PM/V5 功能清单.md - INT-010: 文件树右键菜单
  */
 
-import { Pencil, FolderMinus, Folder, Copy } from 'lucide-react';
+import { FilePlus, FolderPlus, FolderMinus, Folder, Copy } from 'lucide-react';
 import type { MenuItem } from '../ContextMenu/contextMenuRegistry';
 import { divider } from '../ContextMenu/contextMenuRegistry';
 import { t } from '../../../i18n';
@@ -14,7 +14,8 @@ import { t } from '../../../i18n';
 export interface WorkspaceRootMenuContext {
   folderPath: string;
   displayName: string;
-  onRename: () => void;
+  onNewFile: () => void;
+  onNewFolder: () => void;
   onRemove: () => void;
   onRevealInFinder: () => void;
   onCopyPath: () => void;
@@ -32,11 +33,20 @@ export function getWorkspaceRootMenuItems(
 
   const items: MenuItem[] = [
     {
-      id: 'rename-display-name',
-      label: t('workspace.renameDisplayName'),
-      icon: <Pencil size={14} />,
-      action: context.onRename,
+      id: 'new-file',
+      label: t('contextMenu.newFile'),
+      shortcut: 'Cmd+N',
+      icon: <FilePlus size={14} />,
+      action: context.onNewFile,
     },
+    {
+      id: 'new-folder',
+      label: t('contextMenu.newFolder'),
+      shortcut: 'Shift+Cmd+N',
+      icon: <FolderPlus size={14} />,
+      action: context.onNewFolder,
+    },
+    divider(),
     {
       id: 'remove-from-workspace',
       label: t('workspace.removeFromWorkspace'),

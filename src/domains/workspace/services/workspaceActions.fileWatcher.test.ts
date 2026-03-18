@@ -49,7 +49,6 @@ const mocks = vi.hoisted(() => {
         (folder) => folder.workspacePath !== path,
       );
     }),
-    updateRootFolderName: vi.fn(),
     moveRootFolderUp: vi.fn(),
     moveRootFolderDown: vi.fn(),
     setNodes: vi.fn((path: string, nodes: FileNode[]) => {
@@ -79,7 +78,6 @@ const mocks = vi.hoisted(() => {
         (folder) => folder.path !== path,
       );
     }),
-    renameFolder: vi.fn(),
     reorderFolders: vi.fn(),
     moveFolderUp: vi.fn(),
     moveFolderDown: vi.fn(),
