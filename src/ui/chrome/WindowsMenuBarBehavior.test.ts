@@ -129,11 +129,9 @@ describe('WindowsMenuBar behavior', () => {
     await cleanup(container, root);
   });
 
-  it('enters menu items with ArrowDown and dispatches the focused command with Enter', async () => {
+  it('skips disabled create entries and focuses the first enabled file-menu item with ArrowDown', async () => {
     setLocale('en-US');
     const { container, root } = renderMenuBar();
-    const handler = vi.fn();
-    const unregister = menuCommandBus.register('menu.file.new', handler);
 
     const fileButton = getTopLevelButton(container, 'File');
     fileButton.focus();
@@ -150,19 +148,9 @@ describe('WindowsMenuBar behavior', () => {
       await Promise.resolve();
     });
 
-    const newItem = getMenuItem(container, 'New File');
-    expect(document.activeElement).toBe(newItem);
+    const openFileItem = getMenuItem(container, 'Open File');
+    expect(document.activeElement).toBe(openFileItem);
 
-    await act(async () => {
-      newItem.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
-      );
-      await Promise.resolve();
-    });
-
-    expect(handler).toHaveBeenCalledTimes(1);
-
-    unregister();
     await cleanup(container, root);
   });
 

@@ -1,4 +1,5 @@
 ﻿import type { WorkspaceContext } from '../../domains/workspace/state/workspaceStore';
+import { canCreateFromWorkspaceContext } from '../../domains/workspace/services/createEntryCommands';
 
 export type MenuRuntimeState = {
   workspaceContext: WorkspaceContext;
@@ -8,8 +9,6 @@ export type MenuRuntimeState = {
 };
 
 const ALWAYS_ENABLED_IDS = new Set([
-  'menu.file.new',
-  'menu.file.new_folder',
   'menu.file.open_file',
   'menu.file.open_folder',
   'menu.file.open_workspace',
@@ -34,6 +33,8 @@ const ACTIVE_FILE_REQUIRED_IDS = new Set([
 ]);
 
 const WORKSPACE_CONTEXT_REQUIRED_IDS = new Set([
+  'menu.file.new',
+  'menu.file.new_folder',
   'menu.file.add_folder_to_workspace',
   'menu.file.save_workspace',
   'menu.file.save_workspace_as',
@@ -41,7 +42,7 @@ const WORKSPACE_CONTEXT_REQUIRED_IDS = new Set([
 ]);
 
 function hasWorkspaceContext(state: MenuRuntimeState): boolean {
-  return state.workspaceContext !== 'none';
+  return canCreateFromWorkspaceContext(state.workspaceContext);
 }
 
 function canCloseFolder(state: MenuRuntimeState): boolean {

@@ -24,7 +24,8 @@ describe('WorkspaceRootHeader create behavior markers', () => {
 
   it('expands collapsed folders before showing create previews', () => {
     expect(sidebarSource).toContain('const expandNode = useFileTreeStore((state) => state.expandNode);');
-    expect(sidebarSource).toContain('expandNode(rootFolder.workspacePath);');
-    expect(sidebarSource).toContain('expandNode(node.path);');
+    expect(sidebarSource).toContain('const beginCreateWithGhost = useCallback(');
+    expect(sidebarSource).toContain('const previewDirectoryPath = ghost.parentPath ?? ghost.rootPath;');
+    expect(sidebarSource).toContain('expandNode(previewDirectoryPath);');
   });
 });
