@@ -28,6 +28,7 @@ import {
   canCreateFromWorkspace,
   resolveCreateEntryExplorerCommand,
 } from '../../domains/workspace/services/createEntryCommands';
+import { resolveCreateGhostTarget } from '../../domains/workspace/services/createEntryTarget';
 import type { FileNode } from '../../state/types';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { DragDropHint } from '../components/ErrorStates';
@@ -44,7 +45,6 @@ import {
   getFileExtension,
   getParentPath,
   hasInvalidNodeName,
-  resolveCreateBasePath,
 } from './pathing';
 import { flattenMultipleRoots } from '../components/VirtualizedFileTree';
 import { VirtualizedFileTree } from '../components/VirtualizedFileTree/VirtualizedFileTree';
@@ -270,23 +270,21 @@ export function Sidebar({
   };
 
   const startCreate = (type: 'file' | 'directory') => {
-    // V6: 使用选中的根路径或第一个根路径
+    // V6: ???????????????????????
     const targetRootPath = getRootPathForPath(selectedPath) || currentPath;
     if (!targetRootPath) {
       return;
     }
 
-    const basePath = resolveCreateBasePath({
-      currentPath: targetRootPath,
-      selectedPath,
-      selectedType: selectedNode?.type ?? null,
-      activeFile,
-    });
-    setGhostNode({
-      parentPath: basePath === targetRootPath ? null : basePath,
-      type,
-      rootPath: targetRootPath,
-    });
+    beginCreateWithGhost(
+      resolveCreateGhostTarget({
+        type,
+        rootPath: targetRootPath,
+        targetPath: selectedPath,
+        targetType: selectedNode?.type ?? null,
+        activeFile,
+      }),
+    );
   };
 
   const getCreateGhostTarget = useCallback(
@@ -295,21 +293,24 @@ export function Sidebar({
       rootPath: string,
       targetPath: string | null,
       targetType: FileNode['type'] | null,
-    ): GhostNode => {
-      const basePath = resolveCreateBasePath({
-        currentPath: rootPath,
-        selectedPath: targetPath,
-        selectedType: targetType,
-        activeFile,
-      });
-
-      return {
-        parentPath: basePath === rootPath ? null : basePath,
+    ): GhostNode =>
+      resolveCreateGhostTarget({
         type,
         rootPath,
-      };
-    },
+        targetPath,
+        targetType,
+        activeFile,
+      }),
     [activeFile],
+  );
+
+  const beginCreateWithGhost = useCallback(
+    (ghost: GhostNode) => {
+      const previewDirectoryPath = ghost.parentPath ?? ghost.rootPath;
+      expandNode(previewDirectoryPath);
+      setGhostNode(ghost);
+    },
+    [expandNode],
   );
 
   const cancelCreate = () => {
@@ -454,20 +455,14 @@ export function Sidebar({
       node,
       isReservedPath,
       onNewFile: () => {
-        if (node.type === 'directory') {
-          expandNode(node.path);
-        }
         setSelectedPath(node.path);
-        setGhostNode(
+        beginCreateWithGhost(
           getCreateGhostTarget('file', rootPath, node.path, node.type),
         );
       },
       onNewFolder: () => {
-        if (node.type === 'directory') {
-          expandNode(node.path);
-        }
         setSelectedPath(node.path);
-        setGhostNode(
+        beginCreateWithGhost(
           getCreateGhostTarget('directory', rootPath, node.path, node.type),
         );
       },
@@ -777,18 +772,16 @@ export function Sidebar({
           onToggle={() => toggleNode(rootFolder.workspacePath)}
           onSelect={() => setSelectedPath(rootFolder.workspacePath)}
           onNewFile={() => {
-            expandNode(rootFolder.workspacePath);
             setSelectedPath(rootFolder.workspacePath);
-            setGhostNode({
+            beginCreateWithGhost({
               parentPath: null,
               type: 'file',
               rootPath: rootFolder.workspacePath,
             });
           }}
           onNewFolder={() => {
-            expandNode(rootFolder.workspacePath);
             setSelectedPath(rootFolder.workspacePath);
-            setGhostNode({
+            beginCreateWithGhost({
               parentPath: null,
               type: 'directory',
               rootPath: rootFolder.workspacePath,

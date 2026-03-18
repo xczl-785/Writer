@@ -2,6 +2,7 @@ import {
   EXPLORER_COMMANDS,
   type ExplorerCommandId,
 } from '../../../ui/sidebar/explorerCommands';
+import type { WorkspaceContext } from '../state/workspaceStore';
 
 export const SIDEBAR_CREATE_TARGETS = {
   NEW_FILE: 'new-file',
@@ -44,6 +45,12 @@ export function resolveCreateEntryExplorerCommand(
 
 export function canCreateFromWorkspace(currentPath: string | null): boolean {
   return Boolean(currentPath);
+}
+
+export function canCreateFromWorkspaceContext(
+  workspaceContext: WorkspaceContext,
+): boolean {
+  return workspaceContext !== 'none';
 }
 
 export function dispatchCreateEntry({

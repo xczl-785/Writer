@@ -4,46 +4,9 @@ import {
   getFileExtension as getFileExtensionBase,
   isMarkdownFile as isMarkdownFileBase,
 } from '../../shared/utils/pathUtils';
-
-type NodeType = FileNode['type'] | null;
-
-export interface ResolveCreateBasePathInput {
-  currentPath: string;
-  selectedPath: string | null;
-  selectedType: NodeType;
-  activeFile: string | null;
-}
+export { resolveCreateBasePath } from '../../domains/workspace/services/createEntryTarget';
 
 export const getParentPath = getParentPathBase;
-
-export const resolveCreateBasePath = ({
-  currentPath,
-  selectedPath,
-  selectedType,
-  activeFile,
-}: ResolveCreateBasePathInput): string => {
-  if (selectedPath && selectedType === null && selectedPath === currentPath) {
-    return currentPath;
-  }
-
-  if (selectedPath) {
-    if (selectedType === 'directory') {
-      return selectedPath;
-    }
-    if (selectedType === 'file') {
-      return getParentPath(selectedPath) || currentPath;
-    }
-  }
-
-  if (selectedPath === null) {
-    if (activeFile) {
-      return getParentPath(activeFile) || currentPath;
-    }
-    return currentPath;
-  }
-
-  return currentPath;
-};
 
 export const hasInvalidNodeName = (name: string): boolean => {
   const trimmed = name.trim();

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   canCreateFromWorkspace,
+  canCreateFromWorkspaceContext,
   dispatchCreateEntry,
   resolveCreateEntryExplorerCommand,
   resolveCreateEntryMenuTarget,
@@ -34,6 +35,14 @@ describe('createEntryCommands', () => {
     expect(canCreateFromWorkspace(null)).toBe(false);
     expect(canCreateFromWorkspace('')).toBe(false);
     expect(canCreateFromWorkspace('/workspace')).toBe(true);
+  });
+
+  it('derives menu create availability from workspace context', () => {
+    expect(canCreateFromWorkspaceContext('none')).toBe(false);
+    expect(canCreateFromWorkspaceContext('single-temporary')).toBe(true);
+    expect(canCreateFromWorkspaceContext('multi-unsaved')).toBe(true);
+    expect(canCreateFromWorkspaceContext('saved')).toBe(true);
+    expect(canCreateFromWorkspaceContext('saved-empty')).toBe(true);
   });
 
   it('shows sidebar first and dispatches create target after render when hidden', async () => {
