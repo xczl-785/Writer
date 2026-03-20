@@ -1,6 +1,6 @@
-# AGENTS.md — Writer 项目 AI 助手指南
+﻿# AGENTS.md — Writer 项目 AI 助手指南
 
-**最后更新**: 2026-03-17  
+**最后更新**: 2026-03-20  
 **项目**: Writer（本地优先 Markdown 编辑器）
 
 ---
@@ -9,6 +9,8 @@
 
 ```text
 docs/
+├── capability/         # 当前生效的 capability 文档与发现层文档
+│   └── README.md
 ├── current/
 │   └── 跟踪/
 │       ├── 全流程需求跟踪台账.md
@@ -41,7 +43,7 @@ docs/
 | services/markdown | Markdown 解析    | `auto/services/markdown.puml` |
 | services/autosave | 自动保存         | `auto/services/autosave.puml` |
 | state             | Zustand 全局状态 | `auto/state.puml`             |
-| ui/\*             | React 组件       | `auto/ui/*.puml`              |
+| ui/*             | React 组件       | `auto/ui/*.puml`              |
 | app               | 应用层、命令     | `auto/app.puml`               |
 
 ### UML 体系规则
@@ -63,11 +65,12 @@ npm run uml:gen -- --module domains/file  # 只更新指定模块
 ## 3. 执行边界（必须遵守）
 
 1. `docs/current/` 仅放"当前进行中"文档。
-2. `docs/全局资产/` 仅放"长期生效"文档，修改需谨慎。
-3. `docs/generated/` 自动生成，禁止手动修改 `auto/` 目录。
-4. 版本专项文档完成后必须归档到 `docs/archive/`。
-5. 禁止直接删除历史决策记录，需保留替代说明。
-6. 项目为跨平台工程，在开发功能等场景中，需要优先考虑跨平台的实现，或者兼容方式。
+2. `docs/capability/` 仅放"当前生效"的 capability 文档、capability-index 与相关 shared-rule 文档。
+3. `docs/全局资产/` 仅放"长期生效"文档，修改需谨慎。
+4. `docs/generated/` 自动生成，禁止手动修改 `auto/` 目录。
+5. 版本专项文档完成后必须归档到 `docs/archive/`。
+6. 禁止直接删除历史决策记录，需保留替代说明。
+7. 项目为跨平台工程，在开发功能等场景中，需要优先考虑跨平台的实现，或者兼容方式。
 
 ---
 
@@ -77,11 +80,14 @@ npm run uml:gen -- --module domains/file  # 只更新指定模块
 2. 不要用 `as any`、`@ts-ignore`、空 `catch` 掩盖问题。
 3. 高风险改动前先落文档再落代码（需求/架构/UI 任一缺失时先补文档）。
 4. 若发现需求与实现冲突，不得越权改需求文档，需先反馈给 PO。
+5. 涉及已有能力的修改，应优先检查 `docs/capability/` 下的 capability 文档。
+6. 修改当前能力规则、入口或影响面后，应同步回写对应 capability 文档。
 
 ---
 
 ## 5. 关键入口
 
+- Capability 目录：`docs/capability/README.md`
 - 需求总跟踪：`docs/current/跟踪/全流程需求跟踪台账.md`
 - 需求遗留池：`docs/current/跟踪/遗留问题.md`
 - 全局资产索引：`docs/全局资产/README.md`
