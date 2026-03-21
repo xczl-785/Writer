@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Copy, Minus, Square, X } from 'lucide-react';
 import { WindowsMenuBar } from './WindowsMenuBar';
@@ -45,18 +45,6 @@ async function closeWindow(): Promise<void> {
   } catch {
     // Ignore outside Tauri runtime.
   }
-}
-
-function isInteractiveTarget(target: HTMLElement | null): boolean {
-  if (target?.closest('button')) {
-    return true;
-  }
-
-  return (
-    target?.closest(
-      '[role="button"], a, input, textarea, select, [data-no-drag]',
-    ) !== null
-  );
 }
 
 export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
@@ -125,33 +113,6 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
     };
   }, []);
 
-  function handleTitleBarDoubleClick(
-    event: ReactMouseEvent<HTMLDivElement>,
-  ): void {
-    const target = event.target as HTMLElement | null;
-    if (isInteractiveTarget(target)) {
-      return;
-    }
-
-    void toggleMaximizeWindow();
-  }
-
-  function beginWindowDrag(event: ReactMouseEvent<HTMLDivElement>): void {
-    if (event.button !== 0) {
-      return;
-    }
-
-    const target = event.target as HTMLElement | null;
-    if (isInteractiveTarget(target)) {
-      return;
-    }
-
-    const windowHandle = getCurrentWindow();
-    void windowHandle.startDragging().catch(() => {
-      // Ignore outside Tauri runtime.
-    });
-  }
-
   return (
     <div
       className={`relative z-30 flex shrink-0 select-none bg-white transition-[padding,background-color,opacity] duration-150 ${
@@ -159,7 +120,6 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
       } ${rootInsetClass}`}
       data-window-focused={isWindowFocused}
       data-window-maximized={isMaximized}
-      onDoubleClick={handleTitleBarDoubleClick}
     >
       <div
         className={`flex h-10 min-w-0 flex-1 border-b bg-white transition-colors ${
@@ -173,7 +133,6 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
               : 'border-r border-zinc-100 bg-zinc-50/80'
           }`}
           data-tauri-drag-region
-          onMouseDown={beginWindowDrag}
           style={{
             width: leftWidth,
             paddingLeft: isSidebarVisible ? 12 : 0,
@@ -190,7 +149,6 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
         <div
           className={`relative flex min-w-0 flex-1 items-center bg-white transition-[border-radius] duration-150 ${mainSurfaceClass}`}
           data-tauri-drag-region
-          onMouseDown={beginWindowDrag}
         >
           <div className="relative z-10 flex min-w-0 flex-1 items-center pointer-events-none">
             <div className="flex items-center gap-2 px-2 pointer-events-auto">
@@ -214,7 +172,6 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
             <div
               className="min-w-0 flex-1 self-stretch"
               data-tauri-drag-region
-              onMouseDown={beginWindowDrag}
             />
 
             <div className="flex items-center pointer-events-auto">

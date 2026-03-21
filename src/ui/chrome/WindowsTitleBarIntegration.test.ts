@@ -24,15 +24,13 @@ describe('WindowsTitleBar integration', () => {
     expect(source).toContain('.onFocusChanged((event) => {');
   });
 
-  it('supports title-bar double click maximize without hijacking interactive controls', () => {
-    expect(source).toContain('handleTitleBarDoubleClick');
-    expect(source).toContain('beginWindowDrag');
-    expect(source).toContain('windowHandle.startDragging()');
-    expect(source).toContain("closest('button')");
-    expect(source).toContain('toggleMaximizeWindow');
+  it('relies on tauri drag regions instead of manual title-bar gesture handlers', () => {
+    expect(source).toContain('data-tauri-drag-region');
     expect(source).toContain('data-no-drag');
-    expect(
-      source.match(/onMouseDown=\{beginWindowDrag\}/g)?.length ?? 0,
-    ).toBeGreaterThanOrEqual(3);
+    expect(source).not.toContain('handleTitleBarDoubleClick');
+    expect(source).not.toContain('beginWindowDrag');
+    expect(source).not.toContain('windowHandle.startDragging()');
+    expect(source).not.toContain('onDoubleClick={handleTitleBarDoubleClick}');
+    expect(source).not.toMatch(/onMouseDown=\{beginWindowDrag\}/);
   });
 });
