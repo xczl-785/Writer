@@ -105,7 +105,7 @@ describe('imageActions', () => {
     );
     vi.mocked(useStatusStore.getState).mockReturnValue(createStatusState());
     vi.mocked(ImageResolver.resolve).mockReturnValue(
-      'asset:///project/docs/assets/image.png',
+      'asset:///project/docs/.assets/image.png',
     );
   });
 
@@ -120,11 +120,11 @@ describe('imageActions', () => {
 
     expect(result).toBe('applied');
     expect(FsService.saveImage).toHaveBeenCalledWith(
-      expect.stringMatching(/\/assets\/image-\d{8}-\d{6}\.png$/),
+      expect.stringMatching(/\/\.assets\/image-\d{8}-\d{6}\.png$/),
       expect.any(Uint8Array),
     );
     expect(editor.commands.setImage).toHaveBeenCalledWith({
-      src: expect.stringMatching(/^\.\/assets\/image-\d{8}-\d{6}\.png$/),
+      src: expect.stringMatching(/^\.assets\/image-\d{8}-\d{6}\.png$/),
     });
   });
 
@@ -191,7 +191,7 @@ describe('generateUniqueFilename', () => {
     );
     vi.mocked(useStatusStore.getState).mockReturnValue(createStatusState());
     vi.mocked(ImageResolver.resolve).mockReturnValue(
-      'asset:///project/docs/assets/image.png',
+      'asset:///project/docs/.assets/image.png',
     );
   });
 

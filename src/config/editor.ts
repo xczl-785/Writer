@@ -19,5 +19,6 @@ export const EDITOR_CONFIG = {
   image: {
     maxUploadBytes: 10 * 1024 * 1024,
     allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'],
+    assetsDirName: '.assets',
   },
 } as const;
