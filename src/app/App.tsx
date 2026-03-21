@@ -226,13 +226,25 @@ function App() {
   const applyFocusZen = useCallback(
     (enabled: boolean) => {
       if (enabled) {
+        if (!hasOpenFile) {
+          useStatusStore
+            .getState()
+            .setStatus('error', t('status.menu.focusZenNoFile'));
+          return;
+        }
         setIsSidebarVisible(false);
         enterZen(typewriterEnabledByUser);
       }
       setFocusZen(enabled);
       setFocusZenEnabledByUser(enabled);
     },
-    [enterZen, setFocusZen, setFocusZenEnabledByUser, typewriterEnabledByUser],
+    [
+      enterZen,
+      setFocusZen,
+      setFocusZenEnabledByUser,
+      typewriterEnabledByUser,
+      hasOpenFile,
+    ],
   );
   const chrome = createAppChromeModel({
     hasRecentItems: recentItems.length > 0,
@@ -393,9 +405,7 @@ function App() {
       void refreshRecentItems();
     }
 
-    function handleOpenRecentItem(
-      event: Event,
-    ): void {
+    function handleOpenRecentItem(event: Event): void {
       const detail = (event as CustomEvent<RecentItem>).detail;
       if (!detail) {
         return;
@@ -407,7 +417,10 @@ function App() {
       void RecentItemsService.clearAll();
     }
 
-    window.addEventListener(RECENT_ITEMS_CHANGED_EVENT, handleRecentItemsChanged);
+    window.addEventListener(
+      RECENT_ITEMS_CHANGED_EVENT,
+      handleRecentItemsChanged,
+    );
     window.addEventListener(
       OPEN_RECENT_ITEM_EVENT,
       handleOpenRecentItem as EventListener,
