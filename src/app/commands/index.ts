@@ -9,3 +9,4 @@ export { registerFormatCommands } from './formatCommands';
 export { registerParagraphCommands } from './paragraphCommands';
 export { registerViewCommands } from './viewCommands';
 export type { CleanupFn } from './fileCommands';
+export { registerHelpCommands } from './helpCommands';

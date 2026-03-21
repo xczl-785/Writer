@@ -3,7 +3,6 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { createElement } from 'react';
 import { WindowsMenuBar } from './WindowsMenuBar';
-import { menuCommandBus } from '../commands/menuCommandBus';
 import { setLocale } from '../../shared/i18n';
 
 vi.mock('../../domains/workspace/services/RecentItemsService', () => ({
@@ -50,11 +49,16 @@ async function cleanup(container: HTMLElement, root: Root) {
   container.remove();
 }
 
-function getTopLevelButton(container: HTMLElement, label: string): HTMLButtonElement {
+function getTopLevelButton(
+  container: HTMLElement,
+  label: string,
+): HTMLButtonElement {
   const buttons = Array.from(container.querySelectorAll('button'));
   const match = buttons.find((button) => button.textContent?.trim() === label);
   if (!match) {
-    throw new Error(`Unable to find top-level button: ${label}\n${container.innerHTML}`);
+    throw new Error(
+      `Unable to find top-level button: ${label}\n${container.innerHTML}`,
+    );
   }
   return match as HTMLButtonElement;
 }
@@ -66,7 +70,9 @@ function getMenuItem(container: HTMLElement, label: string): HTMLButtonElement {
     return text?.startsWith(label);
   });
   if (!match) {
-    throw new Error(`Unable to find menu item: ${label}\n${container.innerHTML}`);
+    throw new Error(
+      `Unable to find menu item: ${label}\n${container.innerHTML}`,
+    );
   }
   return match as HTMLButtonElement;
 }
@@ -167,7 +173,9 @@ describe('WindowsMenuBar behavior', () => {
 
     const openRecentItem = getMenuItem(container, 'Open Recent');
     await act(async () => {
-      openRecentItem.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      openRecentItem.dispatchEvent(
+        new MouseEvent('mouseover', { bubbles: true }),
+      );
       await Promise.resolve();
     });
 
@@ -181,7 +189,10 @@ describe('WindowsMenuBar behavior', () => {
     setLocale('en-US');
     const { container, root } = renderMenuBar();
     const eventSpy = vi.fn();
-    window.addEventListener('writer:open-recent-item', eventSpy as EventListener);
+    window.addEventListener(
+      'writer:open-recent-item',
+      eventSpy as EventListener,
+    );
 
     const fileButton = getTopLevelButton(container, 'File');
 
@@ -193,7 +204,9 @@ describe('WindowsMenuBar behavior', () => {
     const openRecentItem = getMenuItem(container, 'Open Recent');
 
     await act(async () => {
-      openRecentItem.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      openRecentItem.dispatchEvent(
+        new MouseEvent('mouseover', { bubbles: true }),
+      );
       await Promise.resolve();
     });
 
@@ -227,14 +240,18 @@ describe('WindowsMenuBar behavior', () => {
     const openRecentItem = getMenuItem(container, 'Open Recent');
 
     await act(async () => {
-      openRecentItem.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      openRecentItem.dispatchEvent(
+        new MouseEvent('mouseover', { bubbles: true }),
+      );
       await Promise.resolve();
     });
 
     expect(container.textContent).toContain('Recent Workspace');
 
     await act(async () => {
-      openRecentItem.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+      openRecentItem.dispatchEvent(
+        new MouseEvent('mouseout', { bubbles: true }),
+      );
       vi.advanceTimersByTime(100);
       await Promise.resolve();
     });
