@@ -506,7 +506,7 @@ fn build_native_menu_with_locale<R: Runtime>(
                 "关于 Writer",
                 "About Writer",
                 None,
-                false,
+                true,
             )?,
         ],
     )?;

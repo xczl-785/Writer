@@ -48,8 +48,10 @@ import {
   registerFormatCommands,
   registerParagraphCommands,
   registerViewCommands,
+  registerHelpCommands,
 } from './commands';
 import { SettingsPanel } from '../ui/components/Settings';
+import { AboutWriterPanel } from '../ui/components/About';
 import { useViewportTier } from '../ui/layout/useViewportTier';
 import { useFocusZenWakeup } from '../ui/layout/useFocusZenWakeup';
 import { AppChrome } from './AppChrome';
@@ -184,6 +186,7 @@ function App() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const isOverlaySidebar = isMinTier && isSidebarVisible;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isRecentMenuOpen, setIsRecentMenuOpen] = useState(false);
   const [isEditorDragOver, setIsEditorDragOver] = useState(false);
   const [isEditorDropBlocked, setIsEditorDropBlocked] = useState(false);
@@ -257,6 +260,8 @@ function App() {
   });
   const openSettings = useCallback(() => setIsSettingsOpen(true), []);
   const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
+  const openAbout = useCallback(() => setIsAboutOpen(true), []);
+  const closeAbout = useCallback(() => setIsAboutOpen(false), []);
   const openRecentMenu = useCallback(() => setIsRecentMenuOpen(true), []);
   const closeRecentMenu = useCallback(() => setIsRecentMenuOpen(false), []);
   const refreshRecentItems = useCallback(async () => {
@@ -682,12 +687,19 @@ function App() {
       registerFormatCommands(),
       registerParagraphCommands(),
       registerViewCommands(toggleSidebar),
+      registerHelpCommands(openAbout),
     ];
 
     return () => {
       unregister.forEach((fn) => fn());
     };
-  }, [isSidebarVisible, openSettings, toggleSidebar, openRecentMenu]);
+  }, [
+    isSidebarVisible,
+    openSettings,
+    toggleSidebar,
+    openRecentMenu,
+    openAbout,
+  ]);
 
   // Handle window close requests (Tauri)
   useEffect(() => {
@@ -930,6 +942,11 @@ function App() {
         localePreference={localePreference}
         onLocalePreferenceChange={handleLocalePreferenceChange}
         onClose={closeSettings}
+      />
+      <AboutWriterPanel
+        isOpen={isAboutOpen}
+        viewportTier={tier}
+        onClose={closeAbout}
       />
       <RecentWorkspacesMenu
         isOpen={isRecentMenuOpen}
