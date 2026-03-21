@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import { ChevronRight } from 'lucide-react';
 import { t, getLocale } from '../../shared/i18n';
 import {
@@ -53,9 +58,9 @@ export function WindowsMenuBar({
   const [openSubmenuId, setOpenSubmenuId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const groupButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const itemButtonRefs = useRef<Record<string, Array<HTMLButtonElement | null>>>(
-    {},
-  );
+  const itemButtonRefs = useRef<
+    Record<string, Array<HTMLButtonElement | null>>
+  >({});
   const pendingFocusRef = useRef<PendingFocusTarget>(null);
   const submenuCloseTimerRef = useRef<number | null>(null);
   const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
@@ -68,7 +73,9 @@ export function WindowsMenuBar({
   const workspaceFile = useWorkspaceStore((state) => state.workspaceFile);
   const isDirty = useWorkspaceStore((state) => state.isDirty);
   const selectedPath = useFileTreeStore((state) => state.selectedPath);
-  const hasSelectedRootFolder = folders.some((folder) => folder.path === selectedPath);
+  const hasSelectedRootFolder = folders.some(
+    (folder) => folder.path === selectedPath,
+  );
 
   const runtimeState = {
     workspaceContext: getWorkspaceContext({
@@ -107,7 +114,9 @@ export function WindowsMenuBar({
       return;
     }
 
-    itemButtonRefs.current[pendingFocus.groupId]?.[pendingFocus.itemIndex]?.focus();
+    itemButtonRefs.current[pendingFocus.groupId]?.[
+      pendingFocus.itemIndex
+    ]?.focus();
   }
 
   useEffect(() => {
@@ -132,7 +141,10 @@ export function WindowsMenuBar({
       void refreshRecentItems();
     }
 
-    window.addEventListener(RECENT_ITEMS_CHANGED_EVENT, handleRecentItemsChanged);
+    window.addEventListener(
+      RECENT_ITEMS_CHANGED_EVENT,
+      handleRecentItemsChanged,
+    );
     return () => {
       window.removeEventListener(
         RECENT_ITEMS_CHANGED_EVENT,
@@ -379,12 +391,14 @@ export function WindowsMenuBar({
       case 'Home':
         event.preventDefault();
         focusGroupButton(0);
-        setOpenGroupId(openGroupId ? groups[0]?.id ?? null : null);
+        setOpenGroupId(openGroupId ? (groups[0]?.id ?? null) : null);
         break;
       case 'End':
         event.preventDefault();
         focusGroupButton(groups.length - 1);
-        setOpenGroupId(openGroupId ? groups[groups.length - 1]?.id ?? null : null);
+        setOpenGroupId(
+          openGroupId ? (groups[groups.length - 1]?.id ?? null) : null,
+        );
         break;
       default:
         break;
@@ -498,7 +512,9 @@ export function WindowsMenuBar({
           {hasChildren ? (
             <ChevronRight className="h-4 w-4 text-zinc-400" />
           ) : (
-            <span className="text-[11px] text-zinc-400">{item.accelerator ?? ''}</span>
+            <span className="text-[11px] text-zinc-400">
+              {item.accelerator ?? ''}
+            </span>
           )}
         </button>
         {hasChildren && isSubmenuOpen ? (
@@ -509,19 +525,23 @@ export function WindowsMenuBar({
               onMouseEnter={() => openSubmenu(item.id)}
               onMouseLeave={() => scheduleCloseSubmenu(item.id)}
             >
-            {item.id === 'menu.file.open_recent'
-              ? renderRecentSubmenu()
-              : item.children?.map((child) => (
-                  <div
-                    key={child.id}
-                    className={`flex items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[13px] ${
-                      isItemEnabled(child) ? 'text-zinc-700' : 'text-zinc-300'
-                    }`}
-                  >
-                    <span>{resolveLabel(child.labelKey, child.fallbackLabels)}</span>
-                    <span className="text-[11px] text-zinc-400">{child.accelerator ?? ''}</span>
-                  </div>
-                ))}
+              {item.id === 'menu.file.open_recent'
+                ? renderRecentSubmenu()
+                : item.children?.map((child) => (
+                    <div
+                      key={child.id}
+                      className={`flex items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[13px] ${
+                        isItemEnabled(child) ? 'text-zinc-700' : 'text-zinc-300'
+                      }`}
+                    >
+                      <span>
+                        {resolveLabel(child.labelKey, child.fallbackLabels)}
+                      </span>
+                      <span className="text-[11px] text-zinc-400">
+                        {child.accelerator ?? ''}
+                      </span>
+                    </div>
+                  ))}
             </div>
           </>
         ) : null}
@@ -570,7 +590,12 @@ export function WindowsMenuBar({
   }
 
   return (
-    <div ref={rootRef} className="flex items-center gap-1" data-no-drag>
+    <div
+      ref={rootRef}
+      className="flex items-center gap-1"
+      data-no-drag
+      data-menu-open={openGroupId !== null ? '' : undefined}
+    >
       {groups.map(renderGroup)}
     </div>
   );
