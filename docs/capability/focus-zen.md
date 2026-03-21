@@ -5,7 +5,7 @@
 - **id**: `focus-zen`
 - **name**: 禅模式
 - **summary**: 隐藏 header 和 statusbar，提供沉浸式写作体验，支持 ESC 和鼠标唤醒退出
-- **scope**: 包括 ESC 退出、双击退出、鼠标唤醒、overlay 检测、CSS 过渡动画；不包括打字机模式
+- **scope**: 包括 ESC 退出、双击退出、鼠标唤醒、overlay 检测、CSS 过渡动画、菜单栏展开保持唤醒；不包括打字机模式
 - **entry_points**:
   - useFocusZenWakeup hook
   - hasActiveOverlayInDom 检测函数
@@ -15,26 +15,26 @@
   - ESC 退出逻辑正确
   - 鼠标唤醒阈值可配置
   - CSS 过渡动画正确
-- **last_verified**: 2026-03-20
+- **last_verified**: 2026-03-21
 
 ---
 
 ## Capability Summary
 
-禅模式提供沉浸式写作体验，通过隐藏 header 和 statusbar 减少视觉干扰。支持三种退出方式：ESC 键退出（检测 overlay 状态避免误触）、鼠标移动到顶部/底部唤醒 UI、双击退出。useFocusZenWakeup hook 监听鼠标移动并返回 isHeaderAwake/isFooterAwake 状态，配合 CSS 200ms opacity 过渡动画实现平滑显示/隐藏。
+禅模式提供沉浸式写作体验，通过隐藏 header 和 statusbar 减少视觉干扰。支持三种退出方式：ESC 键退出（检测 overlay 状态避免误触）、鼠标移动到顶部/底部唤醒 UI、双击退出。useFocusZenWakeup hook 监听鼠标移动并返回 isHeaderAwake/isFooterAwake 状态，配合 CSS 200ms opacity 过渡动画实现平滑显示/隐藏。当 Windows 菜单栏有展开项时（检测 `[data-menu-open]`），header 保持唤醒状态以允许用户点击下拉菜单。
 
 ---
 
 ## Entries
 
-| Entry                           | Trigger            | Evidence                                                          | Notes                            |
-| ------------------------------- | ------------------ | ----------------------------------------------------------------- | -------------------------------- |
-| useFocusZenWakeup               | 鼠标移动唤醒       | `src/ui/layout/useFocusZenWakeup.ts:3-34`                         | 返回 isHeaderAwake/isFooterAwake |
-| hasActiveOverlayInDom           | 检测活跃 overlay   | `src/domains/editor/domain/focusZen/focusZenEscapeDomain.ts:4-17` | ESC 退出前检测                   |
-| EditorImpl ESC 处理             | ESC 键退出禅模式   | `src/domains/editor/core/EditorImpl.tsx:310-320`                  | 需无 overlay                     |
-| EditorImpl 双击处理             | 双击退出禅模式     | `src/domains/editor/core/EditorImpl.tsx`（onDoubleClick）         | 参考测试文件                     |
-| editor-header--focus-zen-hidden | Header 隐藏样式    | `src/domains/editor/ui/components/EditorShell.tsx`                | CSS 类                           |
-| status-bar--focus-zen-hidden    | Statusbar 隐藏样式 | `src/ui/statusbar/StatusBar.tsx`                                  | CSS 类                           |
+| Entry                           | Trigger            | Evidence                                                          | Notes                                                          |
+| ------------------------------- | ------------------ | ----------------------------------------------------------------- | -------------------------------------------------------------- |
+| useFocusZenWakeup               | 鼠标移动唤醒       | `src/ui/layout/useFocusZenWakeup.ts:5-37`                         | 返回 isHeaderAwake/isFooterAwake，检测 data-menu-open 保持唤醒 |
+| hasActiveOverlayInDom           | 检测活跃 overlay   | `src/domains/editor/domain/focusZen/focusZenEscapeDomain.ts:4-17` | ESC 退出前检测                                                 |
+| EditorImpl ESC 处理             | ESC 键退出禅模式   | `src/domains/editor/core/EditorImpl.tsx:310-320`                  | 需无 overlay                                                   |
+| EditorImpl 双击处理             | 双击退出禅模式     | `src/domains/editor/core/EditorImpl.tsx`（onDoubleClick）         | 参考测试文件                                                   |
+| editor-header--focus-zen-hidden | Header 隐藏样式    | `src/domains/editor/ui/components/EditorShell.tsx`                | CSS 类                                                         |
+| status-bar--focus-zen-hidden    | Statusbar 隐藏样式 | `src/ui/statusbar/StatusBar.tsx`                                  | CSS 类                                                         |
 
 ---
 
@@ -96,18 +96,27 @@ ESC 键监听使用 capture: true（第三个参数为 true），确保优先于
 
 ---
 
+### CR-008: 菜单栏展开时保持 header 唤醒
+
+当检测到 DOM 中存在 `[data-menu-open]` 元素时（即 Windows 菜单栏有展开项），isHeaderAwake 始终为 true，保持 header 可见以允许用户点击下拉菜单。该属性由 `WindowsMenuBar` 在 `openGroupId !== null` 时设置。
+
+**Evidence**: `src/ui/layout/useFocusZenWakeup.ts:27-28`、`src/ui/chrome/WindowsMenuBar.tsx:572-579`
+
+---
+
 ## Impact Surface
 
-| Area                  | What to check           | Evidence                                                     |
-| --------------------- | ----------------------- | ------------------------------------------------------------ |
-| useFocusZenWakeup     | 阈值和状态逻辑正确      | `src/ui/layout/useFocusZenWakeup.ts`                         |
-| hasActiveOverlayInDom | overlay 选择器正确      | `src/domains/editor/domain/focusZen/focusZenEscapeDomain.ts` |
-| EditorImpl ESC 逻辑   | 退出条件正确            | `src/domains/editor/core/EditorImpl.tsx:310-320`             |
-| EditorShell CSS       | focus-zen-hidden 类正确 | `src/domains/editor/ui/components/EditorShell.tsx`           |
-| Editor.css            | 过渡动画正确            | `src/domains/editor/core/Editor.css`                         |
-| StatusBar CSS         | 状态栏隐藏样式正确      | `src/ui/statusbar/StatusBar.css`                             |
-| App.tsx               | props 传递正确          | `src/app/App.tsx`                                            |
-| 测试覆盖              | 相关测试通过            | `src/ui/layout/FocusZenBehavior.test.ts`                     |
+| Area                  | What to check                           | Evidence                                                     |
+| --------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| useFocusZenWakeup     | 阈值、状态逻辑、data-menu-open 检测正确 | `src/ui/layout/useFocusZenWakeup.ts`                         |
+| hasActiveOverlayInDom | overlay 选择器正确                      | `src/domains/editor/domain/focusZen/focusZenEscapeDomain.ts` |
+| EditorImpl ESC 逻辑   | 退出条件正确                            | `src/domains/editor/core/EditorImpl.tsx:310-320`             |
+| EditorShell CSS       | focus-zen-hidden 类正确                 | `src/domains/editor/ui/components/EditorShell.tsx`           |
+| Editor.css            | 过渡动画正确                            | `src/domains/editor/core/Editor.css`                         |
+| StatusBar CSS         | 状态栏隐藏样式正确                      | `src/ui/statusbar/StatusBar.css`                             |
+| App.tsx               | props 传递正确                          | `src/app/App.tsx`                                            |
+| WindowsMenuBar        | data-menu-open 属性正确设置             | `src/ui/chrome/WindowsMenuBar.tsx:572-579`                   |
+| 测试覆盖              | 相关测试通过                            | `src/ui/layout/FocusZenBehavior.test.ts`                     |
 
 ---
 

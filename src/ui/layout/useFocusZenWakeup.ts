@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+const MENU_OPEN_SELECTOR = '[data-menu-open]';
+
 export const useFocusZenWakeup = ({
   enabled,
   threshold = 50,
@@ -22,7 +24,8 @@ export const useFocusZenWakeup = ({
 
     const onMouseMove = (event: MouseEvent) => {
       const height = window.innerHeight;
-      setIsHeaderAwake(event.clientY <= threshold);
+      const hasOpenMenu = document.querySelector(MENU_OPEN_SELECTOR) !== null;
+      setIsHeaderAwake(hasOpenMenu || event.clientY <= threshold);
       setIsFooterAwake(event.clientY >= height - threshold);
     };
 
