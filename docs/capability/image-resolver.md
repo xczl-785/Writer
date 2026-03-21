@@ -116,6 +116,8 @@ join 方法处理 `..`（上级目录）和 `.`（当前目录），拼接最终
 | EditorImpl   | Image 扩展的 src 解析 | `src/domains/editor/core/EditorImpl.tsx`   |
 | imageActions | 图片插入时路径处理    | `src/domains/editor/hooks/imageActions.ts` |
 
+> 注意：imageActions 中图片保存的目标资源目录由 `EDITOR_CONFIG.image.assetsDirName` 常量定义（当前 `.assets`），路径拼接使用 `joinPath`。详见 file-system CR-008。
+
 ---
 
 ## Archive Pointer

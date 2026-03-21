@@ -13,7 +13,7 @@
   - FsService API 不变
   - Tauri 命令签名同步
   - 类型定义一致
-- **last_verified**: 2026-03-20
+- **last_verified**: 2026-03-21
 
 ---
 
@@ -99,6 +99,25 @@ FsService 所有方法均通过 `@tauri-apps/api/core` 的 `invoke` 函数调用
 
 ---
 
+### CR-007: build_tree 保留空目录
+
+`build_tree` 不再过滤空目录。递归收集子节点后，即使 children 为空，也返回 `FileNode { children: Some(vec![]) }`。空目录序列化为 `children: []`，前端可正常渲染。
+
+**Evidence**: `src-tauri/src/fs.rs:48-100`
+
+---
+
+### CR-008: 资源目录名称由常量 ASSETS_DIR_NAME 定义
+
+资源目录名称由 `const ASSETS_DIR_NAME` 统一定义，当前值为 `.assets`（隐藏目录）。`is_skipped_dir` 通过常量判断是否跳过。变更资源目录名只需修改一处。
+
+- Rust 端：`src-tauri/src/fs.rs` 中 `const ASSETS_DIR_NAME: &str = ".assets"`
+- 前端：`src/config/editor.ts` 中 `EDITOR_CONFIG.image.assetsDirName`
+
+**Evidence**: `src-tauri/src/fs.rs:7`, `src/config/editor.ts:22`
+
+---
+
 ## Impact Surface
 
 | Area          | What to check                                    | Evidence                                                                                             |
@@ -108,6 +127,8 @@ FsService 所有方法均通过 `@tauri-apps/api/core` 的 `invoke` 函数调用
 | 类型定义      | FileNode、WorkspaceConfig、PathKind 等类型一致   | `src/state/types.ts`、`src/domains/file/services/FsService.ts:4-34`                                  |
 | 依赖服务      | AutosaveService、workspaceActions 等依赖调用正确 | `src/domains/file/services/AutosaveService.ts`、`src/domains/workspace/services/workspaceActions.ts` |
 | 测试覆盖      | 文件操作相关测试通过                             | 搜索 `FsService` 相关测试文件                                                                        |
+| 空目录支持    | 空目录在文件树中正确显示                         | `src-tauri/src/fs.rs` 单元测试、前端 `flattenTree.test.ts`                                           |
+| 资源目录常量  | `ASSETS_DIR_NAME` 前后端一致                     | `src-tauri/src/fs.rs`、`src/config/editor.ts`、`src/domains/editor/hooks/imageActions.ts`            |
 
 ---
 

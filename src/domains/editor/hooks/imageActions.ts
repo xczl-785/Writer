@@ -88,7 +88,7 @@ export async function saveAndInsertImageFile(
     now.getSeconds().toString().padStart(2, '0');
 
   const baseName = `image-${timestamp}`;
-  const assetsDir = joinPath(currentPath, 'assets');
+  const assetsDir = joinPath(currentPath, EDITOR_CONFIG.image.assetsDirName);
   const imagePath = await generateUniqueFilename(
     assetsDir,
     baseName,

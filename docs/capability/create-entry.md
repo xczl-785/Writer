@@ -17,6 +17,7 @@
   - All six entry points still dispatch correctly
   - Ghost node placement matches selection state
   - Path normalization cross-platform behavior
+  - Newly created empty folders appear in file tree after commit
 
 ---
 
@@ -131,6 +132,8 @@ On commit:
 5. Select the new path
 6. If file, open it in the editor
 7. Cancel ghost node
+
+Step 4 的树刷新保证新建的空目录也会出现在文件树中（`build_tree` 不再过滤空目录，详见 file-system CR-007）。
 
 **Evidence**: `src/ui/sidebar/Sidebar.tsx:326-387`
 

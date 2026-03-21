@@ -4,6 +4,8 @@ use std::io::Read;
 use std::path::Path;
 use std::process::Command;
 
+const ASSETS_DIR_NAME: &str = ".assets";
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileNode {
     pub path: String,
@@ -25,8 +27,9 @@ fn is_markdown_name(name: &str) -> bool {
 }
 
 fn is_skipped_dir(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
     matches!(
-        name.to_ascii_lowercase().as_str(),
+        lower.as_str(),
         ".git"
             | "node_modules"
             | "target"
@@ -40,9 +43,7 @@ fn is_skipped_dir(name: &str) -> bool {
             | ".next"
             | ".nuxt"
             | ".svelte-kit"
-            | "assets"
-            | ".assets"
-    )
+    ) || lower == ASSETS_DIR_NAME
 }
 
 pub fn build_tree(path: &Path) -> Option<FileNode> {
@@ -87,10 +88,6 @@ pub fn build_tree(path: &Path) -> Option<FileNode> {
                 a.name.cmp(&b.name)
             }
         });
-
-        if children.is_empty() {
-            return None;
-        }
 
         return Some(FileNode {
             path: path_str,
