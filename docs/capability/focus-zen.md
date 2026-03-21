@@ -104,6 +104,14 @@ ESC 键监听使用 capture: true（第三个参数为 true），确保优先于
 
 ---
 
+### CR-009: 无文件打开时拦截进入禅模式
+
+当用户尝试进入禅模式但没有打开任何文件时，拦截操作并通过状态栏显示错误提示 "请先打开文件再进入禅模式"。避免用户进入禅模式后界面无可操作内容导致困惑。
+
+**Evidence**: `src/app/App.tsx:228-232`
+
+---
+
 ## Impact Surface
 
 | Area                  | What to check                           | Evidence                                                     |
@@ -114,7 +122,7 @@ ESC 键监听使用 capture: true（第三个参数为 true），确保优先于
 | EditorShell CSS       | focus-zen-hidden 类正确                 | `src/domains/editor/ui/components/EditorShell.tsx`           |
 | Editor.css            | 过渡动画正确                            | `src/domains/editor/core/Editor.css`                         |
 | StatusBar CSS         | 状态栏隐藏样式正确                      | `src/ui/statusbar/StatusBar.css`                             |
-| App.tsx               | props 传递正确                          | `src/app/App.tsx`                                            |
+| App.tsx               | props 传递正确、无文件时拦截逻辑正确    | `src/app/App.tsx:228-236`                                    |
 | WindowsMenuBar        | data-menu-open 属性正确设置             | `src/ui/chrome/WindowsMenuBar.tsx:572-579`                   |
 | 测试覆盖              | 相关测试通过                            | `src/ui/layout/FocusZenBehavior.test.ts`                     |
 
