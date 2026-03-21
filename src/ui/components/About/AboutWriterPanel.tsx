@@ -1,12 +1,12 @@
-﻿import { t } from '../../../shared/i18n';
+﻿import { useState, useEffect } from 'react';
+import { getVersion } from '@tauri-apps/api/app';
+import { t } from '../../../shared/i18n';
 
 export type AboutWriterPanelProps = {
   isOpen: boolean;
   viewportTier?: 'min' | 'default' | 'airy';
   onClose: () => void;
 };
-
-const VERSION = '0.3.6';
 
 function detectDesktopPlatform():
   | 'Windows Desktop'
@@ -19,7 +19,8 @@ function detectDesktopPlatform():
   const userAgentData = (
     navigator as Navigator & { userAgentData?: { platform?: string } }
   ).userAgentData;
-  const userAgent = `${userAgentData?.platform ?? ''} ${navigator.userAgent}`.toLowerCase();
+  const userAgent =
+    `${userAgentData?.platform ?? ''} ${navigator.userAgent}`.toLowerCase();
 
   if (userAgent.includes('mac')) {
     return 'macOS Desktop';
@@ -37,13 +38,21 @@ export function AboutWriterPanel({
   viewportTier = 'default',
   onClose,
 }: AboutWriterPanelProps) {
+  const [version, setVersion] = useState<string>('...');
+
+  useEffect(() => {
+    getVersion()
+      .then(setVersion)
+      .catch(() => setVersion('dev'));
+  }, []);
+
   if (!isOpen) {
     return null;
   }
 
   const currentVersionText = t('aboutWriter.currentVersion').replace(
     '{version}',
-    VERSION,
+    version,
   );
   const desktopPlatform = detectDesktopPlatform();
   const footerTag = `About Writer - ${desktopPlatform.replace(' Desktop', '')}`;
@@ -110,7 +119,7 @@ export function AboutWriterPanel({
               <div className="about-writer-card__list">
                 <div>
                   <span>{t('aboutWriter.versionLabel')}</span>
-                  <strong>{VERSION}</strong>
+                  <strong>{version}</strong>
                 </div>
                 <div>
                   <span>{t('aboutWriter.platformLabel')}</span>
