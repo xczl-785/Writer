@@ -8,6 +8,30 @@ export type AboutWriterPanelProps = {
 
 const VERSION = '0.3.6';
 
+function detectDesktopPlatform():
+  | 'Windows Desktop'
+  | 'macOS Desktop'
+  | 'Linux Desktop' {
+  if (typeof navigator === 'undefined') {
+    return 'Windows Desktop';
+  }
+
+  const userAgentData = (
+    navigator as Navigator & { userAgentData?: { platform?: string } }
+  ).userAgentData;
+  const userAgent = `${userAgentData?.platform ?? ''} ${navigator.userAgent}`.toLowerCase();
+
+  if (userAgent.includes('mac')) {
+    return 'macOS Desktop';
+  }
+
+  if (userAgent.includes('win')) {
+    return 'Windows Desktop';
+  }
+
+  return 'Linux Desktop';
+}
+
 export function AboutWriterPanel({
   isOpen,
   viewportTier = 'default',
@@ -21,6 +45,8 @@ export function AboutWriterPanel({
     '{version}',
     VERSION,
   );
+  const desktopPlatform = detectDesktopPlatform();
+  const footerTag = `About Writer - ${desktopPlatform.replace(' Desktop', '')}`;
 
   return (
     <div
@@ -33,11 +59,13 @@ export function AboutWriterPanel({
       <div className="about-writer-dialog">
         <div className="about-writer-hero">
           <div className="about-writer-hero__main">
-            <img
-              src="/icon.svg"
-              alt={t('aboutWriter.iconAlt')}
-              className="about-writer-hero__icon"
-            />
+            <div className="about-writer-hero__icon-frame">
+              <img
+                src="/icon.svg"
+                alt={t('aboutWriter.iconAlt')}
+                className="about-writer-hero__icon"
+              />
+            </div>
             <div className="about-writer-hero__copy">
               <h2 className="about-writer-hero__title">
                 {t('aboutWriter.title')}
@@ -86,7 +114,7 @@ export function AboutWriterPanel({
                 </div>
                 <div>
                   <span>{t('aboutWriter.platformLabel')}</span>
-                  <strong>{t('aboutWriter.platformValue')}</strong>
+                  <strong>{desktopPlatform}</strong>
                 </div>
                 <div>
                   <span>{t('aboutWriter.stackLabel')}</span>
@@ -139,7 +167,7 @@ export function AboutWriterPanel({
 
         <div className="about-writer-footer">
           <span>© 2026 Writer</span>
-          <span>{t('aboutWriter.footerTag')}</span>
+          <span>{footerTag}</span>
         </div>
       </div>
     </div>

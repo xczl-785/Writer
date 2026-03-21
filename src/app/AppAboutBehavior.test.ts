@@ -48,6 +48,33 @@ describe('App about integration', () => {
     expect(messagesTs).toContain("'aboutWriter.documentation.title'");
   });
 
+  it('keeps zh-CN help/about copy readable instead of question-mark mojibake', () => {
+    expect(messagesTs).toContain("'menu.help': '\\u5e2e\\u52a9'");
+    expect(messagesTs).toContain("'menu.help.about': '\\u5173\\u4e8e Writer'");
+    expect(messagesTs).toContain("'aboutWriter.subtitle':");
+    expect(messagesTs).toContain(
+      '\\u672c\\u5730\\u4f18\\u5148\\u7684\\u8f7b\\u91cf Markdown \\u7f16\\u8f91\\u5668',
+    );
+    expect(messagesTs).toContain(
+      "'aboutWriter.buildInfo': '\\u6784\\u5efa\\u4fe1\\u606f'",
+    );
+    expect(messagesTs).not.toContain("'menu.help': '??'");
+    expect(messagesTs).not.toContain(
+      "'aboutWriter.subtitle': '??????? Markdown ???'",
+    );
+  });
+
+
+  it('detects platform at runtime and uses a full-bleed icon presentation', () => {
+    expect(aboutPanelTsx).toContain('detectDesktopPlatform');
+    expect(aboutPanelTsx).toContain('navigator.userAgent');
+    expect(aboutPanelTsx).toContain("return 'Windows Desktop'");
+    expect(aboutPanelTsx).toContain("return 'macOS Desktop'");
+    expect(aboutPanelTsx).toContain("return 'Linux Desktop'");
+    expect(aboutPanelTsx).toContain('about-writer-hero__icon-frame');
+    expect(aboutPanelTsx).not.toContain("t('aboutWriter.platformValue')");
+  });
+
   it('enables native help about entry for windows menu', () => {
     expect(tauriMenuRs).toContain('"menu.help.about"');
     expect(tauriMenuRs).toContain('"About Writer"');
