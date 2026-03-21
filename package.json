@@ -1,7 +1,7 @@
 {
   "name": "writer",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.3.8",
   "type": "module",
   "scripts": {
     "predev": "node scripts/prepare-dev-port.mjs",
@@ -11,7 +11,8 @@
     "test": "vitest run src",
     "preview": "vite preview",
     "tauri": "tauri",
-    "uml:gen": "tsx scripts/gen-uml.ts"
+    "uml:gen": "tsx scripts/gen-uml.ts",
+    "version:update": "node build/update-version.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",
