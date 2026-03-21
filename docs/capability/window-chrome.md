@@ -17,6 +17,7 @@
   - Menu bar, sidebar toggle, and window control buttons are not swallowed by drag-region behavior.
   - focus zen visibility changes do not break the above interactions.
   - Windows Help > About Writer still opens from the title-bar menu and the dialog uses Writer's own icon (`/icon.svg`).
+  - The About dialog platform row and footer tag resolve from the runtime desktop platform (`Windows`, `macOS`, `Linux`) instead of hard-coded Windows copy.
 - **last_verified**: 2026-03-21
 
 ---
@@ -27,7 +28,7 @@ This capability provides the cross-platform custom window title bar. `PlatformTi
 
 As of 2026-03-21, Windows title-bar blank-space gestures no longer mix manual `onDoubleClick` / `startDragging()` handlers with `data-tauri-drag-region`. Dragging and double-click maximize/restore for blank title-bar space now rely on the Tauri drag-region behavior only, preventing duplicate gesture handling on Windows.
 
-The Windows title-bar Help menu now exposes **About Writer** as an enabled entry. Selecting it opens an in-app modal panel mounted from `App.tsx`, while the remaining Help items stay disabled placeholders until their dedicated capability work lands. The About panel must use Writer's own `/icon.svg` asset rather than a placeholder graphic.
+The Windows title-bar Help menu now exposes **About Writer** as an enabled entry. Selecting it opens an in-app modal panel mounted from `App.tsx`, while the remaining Help items stay disabled placeholders until their dedicated capability work lands. The About panel must use Writer's own `/icon.svg` asset rather than a placeholder graphic, and its platform row plus footer tag must resolve from the runtime desktop platform so the same panel copy remains correct on Windows, macOS, and future Linux builds.
 
 ---
 
@@ -83,6 +84,14 @@ In focus zen or similar modes, the title bar may hide via `isVisible`-driven opa
 
 ---
 
+### CR-006: About dialog platform copy must be resolved at runtime
+
+The About Writer dialog must not hard-code Windows-only platform copy for the build-info platform row or footer tag. It must resolve the current desktop platform at runtime and present platform-specific labels that stay correct for Windows, macOS, and Linux distributions.
+
+**Evidence**: `src/ui/components/About/AboutWriterPanel.tsx`
+
+---
+
 ## Impact Surface
 
 | Area                  | What to check                                                                     | Evidence                                                                                          |
@@ -91,6 +100,7 @@ In focus zen or similar modes, the title bar may hide via `isVisible`-driven opa
 | Windows title bar     | Drag-region declarations, maximize state sync, and button behavior remain correct | `src/ui/chrome/WindowsTitleBar.tsx`                                                               |
 | Mac title bar         | Traffic-light controls and drag-region behavior remain intact                     | `src/ui/chrome/MacTitleBar.tsx`                                                                   |
 | Windows menu bar      | `data-no-drag`, `data-menu-open`, and Help > About Writer still behave correctly  | `src/ui/chrome/WindowsMenuBar.tsx`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`       |
+| About dialog          | Icon presentation uses `/icon.svg` and runtime platform copy remains correct       | `src/ui/components/About/AboutWriterPanel.tsx`, `src/app/App.css`                                 |
 | focus zen integration | Title-bar visibility changes do not break menu wake-up or button clicks           | `src/ui/layout/useFocusZenWakeup.ts`, `src/ui/chrome/WindowsTitleBar.tsx`                         |
 | Test coverage         | Platform-title-bar and Windows-title-bar integration tests remain green           | `src/app/PlatformTitleBarIntegration.test.ts`, `src/ui/chrome/WindowsTitleBarIntegration.test.ts` |
 
