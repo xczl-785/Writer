@@ -1,4 +1,4 @@
-﻿# AGENTS.md — Writer 项目 AI 助手指南
+# AGENTS.md — Writer 项目 AI 助手指南
 
 **最后更新**: 2026-03-20  
 **项目**: Writer（本地优先 Markdown 编辑器）

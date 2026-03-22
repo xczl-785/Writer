@@ -359,6 +359,42 @@
   </head>
 
   <body class="flex flex-col h-screen antialiased text-zinc-800 bg-zinc-50">
+    <!-- Level 2: Toast Container (fixed, top center) -->
+    <div
+      id="toast-container"
+      class="fixed top-0 left-1/2 -translate-x-1/2 z-[9999] transform -translate-y-full transition-transform duration-300 ease-out"
+    >
+      <div
+        class="mt-4 px-4 py-2.5 rounded-full shadow-lg bg-white/80 backdrop-blur-md border border-zinc-200 flex items-center gap-3 min-w-[280px]"
+      >
+        <div
+          class="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center shrink-0"
+        >
+          <svg
+            class="w-3.5 h-3.5 text-orange-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <span id="toast-message" class="text-sm font-medium text-zinc-800"
+          >PDF 导出失败</span
+        >
+        <div class="flex-1"></div>
+        <div class="w-px h-4 bg-zinc-200"></div>
+        <button class="text-sm font-medium text-blue-600 hover:text-blue-700">
+          重试
+        </button>
+      </div>
+    </div>
+
     <!-- Option A：贯穿式顶栏 (分裂为两部分) -->
     <div class="title-bar-container">
       <!-- 左半部分：假装成侧边栏的延伸 -->
@@ -749,8 +785,55 @@
         <!-- 编辑器内容区 (有内容时显示) -->
         <div
           id="editor-view"
-          class="hidden flex flex-col flex-1 overflow-hidden"
+          class="hidden flex flex-col flex-1 overflow-hidden relative"
         >
+          <!-- Level 3: Critical Banner (overlay, requires manual dismissal) -->
+          <div
+            id="critical-banner"
+            class="absolute top-0 left-0 right-0 z-30 bg-red-50 border-b border-red-200 px-6 py-2.5 flex items-center justify-between transform -translate-y-full transition-transform duration-300 ease-out"
+          >
+            <div class="flex items-center gap-3">
+              <svg
+                class="w-4 h-4 text-red-500 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span
+                id="critical-message"
+                class="text-sm font-medium text-red-800"
+                >当前文件已在外部被删除，继续编辑可能会导致内容冲突或丢失。</span
+              >
+            </div>
+            <div class="flex items-center gap-3">
+              <button
+                class="text-sm font-medium text-red-700 hover:text-red-800 px-3 py-1 bg-white border border-red-200 rounded shadow-sm"
+              >
+                重新另存为
+              </button>
+              <button
+                onclick="dismissCriticalBanner()"
+                class="p-1 text-red-400 hover:text-red-600 rounded transition-colors"
+              >
+                <svg
+                  class="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
           <!-- 新版顶栏 -->
           <header
             class="h-12 flex items-center px-6 justify-between shrink-0 select-none group hover:bg-white transition-colors z-10"
@@ -865,6 +948,23 @@
           lucide.createIcons();
         }
       }
+
+      // Toggle menu dropdown visibility
+      function toggleMenuDropdown() {
+        const dropdown = document.querySelector('.menu-dropdown');
+        if (dropdown) {
+          dropdown.classList.toggle('hidden');
+        }
+      }
+
+      // Close menu dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        const dropdown = document.querySelector('.menu-dropdown');
+        const menuItems = document.querySelector('.menu-items');
+        if (dropdown && menuItems && !menuItems.contains(e.target)) {
+          dropdown.classList.add('hidden');
+        }
+      });
 
       let folders = [];
 
@@ -1078,25 +1178,93 @@
         // 如果是非空状态，右侧丢下不生效（被 Tauri 拦截），前端默默取消视觉即可
       });
 
-      // --- 菜单下拉切换逻辑 ---
-      function toggleMenuDropdown() {
-        const dropdown = document.querySelector('.menu-dropdown');
-        if (dropdown) {
-          dropdown.classList.toggle('hidden');
-        }
-      }
-
-      // 点击外部关闭菜单
-      document.addEventListener('click', (e) => {
-        const dropdown = document.querySelector('.menu-dropdown');
-        const menuItems = document.querySelector('.menu-items');
-        if (dropdown && menuItems && !menuItems.contains(e.target)) {
-          dropdown.classList.add('hidden');
-        }
-      });
-
       // 初始化
       updateUI();
+
+      // ============================================
+      // Error UI Handling - 3 Levels
+      // ============================================
+
+      // Level 1: Status bar indicator warning (orange for 4 seconds)
+      function triggerLevel1() {
+        const indicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+
+        // Store original state
+        const originalBg = indicator.className;
+        const originalText = statusText.textContent;
+
+        // Set warning state (orange)
+        indicator.className =
+          'w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_4px_rgba(249,115,22,0.5)] transition-all';
+        statusText.textContent = '警告';
+        statusText.className = 'text-orange-600 font-medium';
+
+        // Revert after 4 seconds
+        setTimeout(() => {
+          indicator.className = originalBg;
+          statusText.textContent = originalText;
+          statusText.className = 'text-zinc-500';
+        }, 4000);
+      }
+
+      // Level 2: Toast notification (slides down, auto-dismiss after 3 seconds)
+      function triggerLevel2() {
+        const container = document.getElementById('toast-container');
+
+        // Slide down
+        container.classList.remove('-translate-y-full');
+        container.classList.add('translate-y-0');
+
+        // Slide up after 3 seconds
+        setTimeout(() => {
+          container.classList.remove('translate-y-0');
+          container.classList.add('-translate-y-full');
+        }, 3000);
+      }
+
+      // Level 3: Critical banner (overlay, slides down, requires manual dismissal)
+      function triggerLevel3() {
+        if (folders.length === 0) {
+          addRootFolder();
+        }
+        const banner = document.getElementById('critical-banner');
+        // Slide down: remove -translate-y-full, add translate-y-0
+        banner.classList.remove('-translate-y-full');
+        banner.classList.add('translate-y-0');
+      }
+
+      function dismissCriticalBanner() {
+        const banner = document.getElementById('critical-banner');
+        // Slide up: remove translate-y-0, add -translate-y-full
+        banner.classList.remove('translate-y-0');
+        banner.classList.add('-translate-y-full');
+      }
     </script>
+
+    <!-- Debug Control Panel (floating, bottom right) -->
+    <div class="fixed bottom-4 right-4 z-[9998] flex flex-col gap-2">
+      <button
+        onclick="triggerLevel1()"
+        class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg shadow-lg transition-colors flex items-center gap-2"
+      >
+        <span class="w-2 h-2 rounded-full bg-white"></span>
+        Level 1: Status Warning
+      </button>
+      <button
+        onclick="triggerLevel2()"
+        class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg shadow-lg transition-colors flex items-center gap-2"
+      >
+        <span class="w-2 h-2 rounded-full bg-white"></span>
+        Level 2: Toast
+      </button>
+      <button
+        onclick="triggerLevel3()"
+        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg shadow-lg transition-colors flex items-center gap-2"
+      >
+        <span class="w-2 h-2 rounded-full bg-white"></span>
+        Level 3: Critical Banner
+      </button>
+    </div>
   </body>
 </html>
