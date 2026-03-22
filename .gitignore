@@ -1,22 +1,35 @@
-.obsidian/
-node_modules/
+# 1. OS & Environment Files
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.log
+.env.local
+.env.*.local
 
-# Local/editor artifacts
-.vscode/
-.sisyphus/notepads/
-
-# Build artifacts
+# 2. Dependency & Build Artifacts
+node_modules/
 dist/
+dist-ssr/
+*.tsbuildinfo
+.eslintcache
 
-# Local evidence scratch
+# 3. Local Editor / IDE Workspaces
+.vscode/
+.idea/
+.obsidian/
+*.sublime-workspace
+*.sw?
+
+# 4. AI Assistants & Automation Context
+.sisyphus/
+.cursor/
+.cline/
+.aider*/
+.claude/
+
+# 5. Local Custom Throwaways
 docs/archive/evidence/
-
-# Local throwaway workspace
 test-workspace/
-
-# Git worktrees
 .worktrees/
 
 # Manual annotations for UML diagrams
