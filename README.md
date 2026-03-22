@@ -20,28 +20,39 @@ Writer 是一款基于 Tauri + React 构建的**本地优先 (Local-first)** 桌
 - **⚡ 极速轻量**：得益于 Rust 和 Tauri 底层架构，占用内存极小，启动速度极快。
 - **🎨 现代 UI 设计**：基于 TailwindCSS 构建的极简、现代的用户界面，支持定制化主题。
 
+## 💻 跨平台支持
+
+Writer 致力于提供一致的跨平台桌面体验，完美适配桌面操作系统：
+
+- 🪟 **Windows** (Windows 10 / 11) - _主力平台_
+- 🍎 **macOS** (Intel & Apple Silicon)
+- 🐧 **Linux** (Ubuntu, Fedora, Arch 等)
+
 ## 🚀 快速体验
 
-您可以在 [Releases](https://github.com/您的用户名/Writer/releases) 页面下载最新版本的预编译安装包（支持 Windows, macOS, Linux）。
+您可以在 [Releases](https://github.com/xczl-785/Writer/releases) 页面下载最新版本的预编译安装包（支持 Windows, macOS, Linux）。
 
-*注：开源版本刚刚发布，全平台预编译包将很快通过 GitHub Actions 自动提供。*
+_注：开源版本刚刚发布，全平台预编译包将很快通过 GitHub Actions 自动提供。_
 
 ## 🛠️ 本地开发指南
 
 如果您希望在本地运行本项目或参与贡献，请确保您的电脑已安装 [Node.js](https://nodejs.org/) (推荐 v18+) 和 [Rust](https://www.rust-lang.org/tools/install) 环境。
 
 ### 1. 克隆仓库
+
 ```bash
-git clone https://github.com/您的用户名/Writer.git
+git clone https://github.com/xczl-785/Writer.git
 cd Writer
 ```
 
 ### 2. 安装依赖
+
 ```bash
 npm install
 ```
 
 ### 3. 启动开发服务器
+
 ```bash
 npm run dev
 # 或使用 tauri CLI 启动桌面端调试
@@ -49,6 +60,7 @@ npm run tauri dev
 ```
 
 ### 4. 构建生产版本
+
 ```bash
 npm run build
 npm run tauri build
