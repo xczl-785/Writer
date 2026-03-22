@@ -8,7 +8,7 @@ English | [简体中文](./README.md)
 
 Writer is a cross-platform desktop Markdown editor adopting a local-first architecture. This project integrates an immersive rich-text editing experience with native local file system management, aiming to provide a distraction-free, highly responsive, and privacy-focused writing environment.
 
-> ⚠️ **Current Status**: In an active early development stage (v0.3.x). Core editing and file management capabilities are implemented.
+> **Current Status**: In an active early development stage (v0.3.x). Core editing and file management capabilities are implemented.
 
 ---
 
@@ -24,41 +24,43 @@ Writer is a cross-platform desktop Markdown editor adopting a local-first archit
 
 The project is committed to providing a consistent desktop experience. The current status is as follows:
 
-- 🪟 **Windows** (Windows 10 / 11) - *Routine development and testing platform*
-- 🍎 **macOS** (Intel & Apple Silicon) - *Routine development and testing platform*
-- 🐧 **Linux** - *In the roadmap; comprehensive compatibility verification is pending*
+- 🪟 **Windows** (Windows 10 / 11) - _Routine development and testing platform_
+- 🍎 **macOS** (Intel & Apple Silicon) - _Routine development and testing platform_
+- 🐧 **Linux** - _In the roadmap; comprehensive compatibility verification is pending_
 
 ## 🚀 Download & Usage
 
-As the project is in an active early development stage (v0.3.x), core features are gradually being fulfilled, while some advanced functionalities and edge cases are still under development.
+Download installers for your platform from the [Releases](https://github.com/xczl-785/Writer/releases) page:
 
-Expected beta installers (for Windows and macOS) will be gradually published on the [Releases](https://github.com/xczl-785/Writer/releases) page.
-
-*(Note: Automated cross-platform build pipelines are currently being configured.)*
+| Platform | Installer Format     |
+| -------- | -------------------- |
+| Windows  | `.msi` / `.exe`      |
+| macOS    | `.dmg`               |
+| Linux    | `.AppImage` / `.deb` |
 
 ## 🛠️ Developer Guide
 
-To participate in the development of this project, pre-configuration of [Node.js](https://nodejs.org/) (v18 or higher recommended) and the [Rust](https://www.rust-lang.org/tools/install) toolchain is required.
+To participate in the development of this project, pre-configuration of [Node.js](https://nodejs.org/) (v20 or higher recommended), [pnpm](https://pnpm.io/), and the [Rust](https://www.rust-lang.org/tools/install) toolchain is required.
 
 ### Environment Initialization
 
 ```bash
 git clone https://github.com/xczl-785/Writer.git
 cd Writer
-npm install
+pnpm install
 ```
 
 ### Debugging & Building
 
 ```bash
 # Start frontend dev server (Web view only)
-npm run dev
+pnpm dev
 
 # Start Tauri desktop debugging environment
-npm run tauri dev
+pnpm tauri dev
 
 # Build production binaries across all platforms
-npm run build && npm run tauri build
+pnpm build && pnpm tauri build
 ```
 
 ## 🏗️ Technical Architecture
