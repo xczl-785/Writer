@@ -22,17 +22,19 @@ Writer is a cross-platform desktop Markdown editor adopting a local-first archit
 
 ## Cross-Platform Support
 
-The project is committed to providing a consistent desktop experience and has been verified on the following platforms:
+The project is committed to providing a consistent desktop experience. The current status is as follows:
 
-- **Windows** (Windows 10 / 11) - *Primary Platform*
-- **macOS** (Intel & Apple Silicon)
-- **Linux** (Ubuntu, Fedora, Arch Linux, etc.)
+- **Windows** (Windows 10 / 11) - _Primary development and baseline testing platform_
+- **macOS** (Intel & Apple Silicon) - _Adapted and undergoing continuous optimization_
+- **Linux** - _In the roadmap; comprehensive compatibility verification is pending_
 
 ## Download & Usage
 
-Pre-compiled installers (covering Windows, macOS, Linux) can be obtained from the [Releases](https://github.com/xczl-785/Writer/releases) page.
+As the project is in an active early development stage (v0.3.x), core features are gradually being fulfilled, while some advanced functionalities and edge cases are still under development.
 
-*(Note: Automated cross-platform build workflows are being configured; binary packages for specific architectures will be supplemented soon.)*
+Expected beta installers (for Windows and macOS) will be gradually published on the [Releases](https://github.com/xczl-785/Writer/releases) page.
+
+_(Note: Automated cross-platform build pipelines are currently being configured.)_
 
 ## Developer Guide
 
