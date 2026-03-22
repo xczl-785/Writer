@@ -20,28 +20,39 @@ Writer is a **local-first** desktop Markdown editor built with Tauri and React. 
 - **⚡ Fast & Lightweight**: Powered by Rust and Tauri under the hood, ensuring minimal memory footprint and lightning-fast startup speeds.
 - **🎨 Modern UI Design**: A minimalist and modern user interface built with TailwindCSS.
 
+## 💻 Cross-Platform Support
+
+Writer is committed to providing a consistent desktop experience across all major operating systems:
+
+- 🪟 **Windows** (Windows 10 / 11) - _Primary Platform_
+- 🍎 **macOS** (Intel & Apple Silicon)
+- 🐧 **Linux** (Ubuntu, Fedora, Arch, etc.)
+
 ## 🚀 Quick Start
 
-You can download the latest pre-compiled installers for your operating system from the [Releases](https://github.com/YourUsername/Writer/releases) page (supports Windows, macOS, Linux).
+You can download the latest pre-compiled installers for your operating system from the [Releases](https://github.com/xczl-785/Writer/releases) page (supports Windows, macOS, Linux).
 
-*Note: As this open-source repository has just been launched, multi-platform pre-compiled binaries will soon be automatically provided via GitHub Actions.*
+_Note: As this open-source repository has just been launched, multi-platform pre-compiled binaries will soon be automatically provided via GitHub Actions._
 
 ## 🛠️ Local Development Guide
 
 If you wish to run the project locally or contribute, please ensure you have [Node.js](https://nodejs.org/) (v18+ recommended) and [Rust](https://www.rust-lang.org/tools/install) installed on your machine.
 
 ### 1. Clone the repository
+
 ```bash
-git clone https://github.com/YourUsername/Writer.git
+git clone https://github.com/xczl-785/Writer.git
 cd Writer
 ```
 
 ### 2. Install dependencies
+
 ```bash
 npm install
 ```
 
 ### 3. Start the development server
+
 ```bash
 npm run dev
 # Or start the desktop debugging environment using tauri CLI
@@ -49,6 +60,7 @@ npm run tauri dev
 ```
 
 ### 4. Build for production
+
 ```bash
 npm run build
 npm run tauri build
