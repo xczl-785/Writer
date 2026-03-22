@@ -1,4 +1,4 @@
-# Writer 📝
+# Writer
 
 English | [简体中文](./README.md)
 
@@ -6,77 +6,69 @@ English | [简体中文](./README.md)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8D8?logo=tauri)](https://tauri.app/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 
-Writer is a **local-first** desktop Markdown editor built with Tauri and React. It perfectly blends Typora's **immersive editing experience** with Obsidian's **local file tree management**, offering you a distraction-free, lightning-fast, and secure writing environment.
+Writer is a cross-platform desktop Markdown editor adopting a local-first architecture. This project integrates an immersive rich-text editing experience with native local file system management, aiming to provide a distraction-free, highly responsive, and privacy-focused writing environment.
 
-> ⚠️ **Project Status**: Currently in active development (v0.3.x). Core features are ready to use.
+> **Current Status**: In active development (v0.3.x). Core editing and file management capabilities are implemented.
 
 ---
 
-## ✨ Core Features
+## Core Features
 
-- **🌊 Immersive Editing**: A WYSIWYG (What You See Is What You Get) Markdown experience built on TipTap, letting you focus entirely on your content.
-- **📁 Local File Management**: Features a powerful sidebar file tree, supporting multiple directories and nested folders to easily organize your massive knowledge base.
-- **🔒 Local-First & Privacy Secure**: All data is saved as plain `.md` text files directly to your local hard drive. No forced cloud synchronization—your data truly belongs to you.
-- **⚡ Fast & Lightweight**: Powered by Rust and Tauri under the hood, ensuring minimal memory footprint and lightning-fast startup speeds.
-- **🎨 Modern UI Design**: A minimalist and modern user interface built with TailwindCSS.
+- **WYSIWYG Editor**: Built on the TipTap engine, supporting real-time parsing and rendering of Markdown syntax to minimize visual interference from markup languages.
+- **Local Workspace Management**: Features native file system mapping, supporting multi-level directory nesting and structured management of local knowledge bases.
+- **Data Privacy Protection**: Strictly enforces local file storage policies. Data is retained in plain `.md` text formats without any unauthorized cloud synchronization mechanisms.
+- **High Performance**: Powered by Rust and the Tauri framework at the lower level, achieving low memory footprint and low-latency responses.
+- **Modern User Interface**: Designed with TailwindCSS, following minimalist conventions while adapting to high-resolution displays and system theme switching.
 
-## 💻 Cross-Platform Support
+## Cross-Platform Support
 
-Writer is committed to providing a consistent desktop experience across all major operating systems:
+The project is committed to providing a consistent desktop experience and has been verified on the following platforms:
 
-- 🪟 **Windows** (Windows 10 / 11) - _Primary Platform_
-- 🍎 **macOS** (Intel & Apple Silicon)
-- 🐧 **Linux** (Ubuntu, Fedora, Arch, etc.)
+- **Windows** (Windows 10 / 11) - *Primary Platform*
+- **macOS** (Intel & Apple Silicon)
+- **Linux** (Ubuntu, Fedora, Arch Linux, etc.)
 
-## 🚀 Quick Start
+## Download & Usage
 
-You can download the latest pre-compiled installers for your operating system from the [Releases](https://github.com/xczl-785/Writer/releases) page (supports Windows, macOS, Linux).
+Pre-compiled installers (covering Windows, macOS, Linux) can be obtained from the [Releases](https://github.com/xczl-785/Writer/releases) page.
 
-_Note: As this open-source repository has just been launched, multi-platform pre-compiled binaries will soon be automatically provided via GitHub Actions._
+*(Note: Automated cross-platform build workflows are being configured; binary packages for specific architectures will be supplemented soon.)*
 
-## 🛠️ Local Development Guide
+## Developer Guide
 
-If you wish to run the project locally or contribute, please ensure you have [Node.js](https://nodejs.org/) (v18+ recommended) and [Rust](https://www.rust-lang.org/tools/install) installed on your machine.
+To participate in the development of this project, pre-configuration of [Node.js](https://nodejs.org/) (v18 or higher recommended) and the [Rust](https://www.rust-lang.org/tools/install) toolchain is required.
 
-### 1. Clone the repository
+### Environment Initialization
 
 ```bash
 git clone https://github.com/xczl-785/Writer.git
 cd Writer
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
 ```
 
-### 3. Start the development server
+### Debugging & Building
 
 ```bash
+# Start frontend dev server (Web view only)
 npm run dev
-# Or start the desktop debugging environment using tauri CLI
+
+# Start Tauri desktop debugging environment
 npm run tauri dev
+
+# Build production binaries across all platforms
+npm run build && npm run tauri build
 ```
 
-### 4. Build for production
+## Technical Architecture
 
-```bash
-npm run build
-npm run tauri build
-```
+- **Frontend Tier**: React 19, TypeScript, TipTap (Rich Text Core), Zustand (State Container), TailwindCSS (Utility-First Styling)
+- **System Tier**: Rust, Tauri v2 (System API bridging, window lifecycle management, and native interactions)
 
-## 🏗️ Tech Stack
+## Contributing
 
-- **Frontend**: React 19, TypeScript, TipTap (Rich Text Core), Zustand (State Management), TailwindCSS (Styling)
-- **Backend**: Rust, Tauri v2 (Providing system-level APIs and window management)
+Contributions via Issues or Pull Requests are welcome. For proposals introducing large-scale architectural changes or core feature iterations, submitting an Issue beforehand is recommended to ensure consistency with design principles.
 
-## 🤝 Contributing
-
-We warmly welcome all forms of contributions! Whether you want to fix bugs, add new features, or improve documentation, feel free to submit a Pull Request.
-Before submitting a major feature PR, we recommend opening an Issue to discuss it first.
-
-## 📄 License
+## License
 
 This project is open-sourced under the [GPL-3.0 License](./LICENSE).
-This means you are free to use, modify, and distribute this software, but if you distribute modified versions of this software, they must also be licensed under GPL-3.0.
+Free use, modification, and distribution are permitted. Derivative software or redistributions must inherit the equivalent open-source license.
