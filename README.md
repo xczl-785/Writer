@@ -1,4 +1,4 @@
-# Writer 📝
+# Writer
 
 [English](./README-en.md) | 简体中文
 
@@ -6,77 +6,69 @@
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8D8?logo=tauri)](https://tauri.app/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 
-Writer 是一款基于 Tauri + React 构建的**本地优先 (Local-first)** 桌面端 Markdown 编辑器。它结合了 Typora 的**沉浸式编辑体验**与 Obsidian 的**本地文件树管理**，致力于为您提供无打断、极速且安全的专注写作环境。
+Writer 是一款采用本地优先（Local-first）架构的跨平台 Markdown 桌面编辑器。本项目整合了沉浸式富文本编辑体验与本地文件系统管理能力，旨在提供无干扰、高响应速度及隐私安全的写作环境。
 
-> ⚠️ **项目状态**: 当前处于活跃开发阶段 (v0.3.x)，核心功能已可用。
+> **当前状态**: 处于活跃开发阶段 (v0.3.x)，核心编辑与文件管理功能已实现闭环。
 
 ---
 
-## ✨ 核心特性
+## 核心特性
 
-- **🌊 沉浸式编辑**：所见即所得 (WYSIWYG) 的 Markdown 编辑体验，基于 TipTap 构建，让您专注于内容本身。
-- **📁 本地文件管理**：左侧提供强大的工作区文件树，支持多目录、文件夹嵌套，轻松管理海量知识库。
-- **🔒 本地优先与隐私安全**：所有数据均以纯文本 `.md` 格式保存在您的本地硬盘，无强制云端同步，您的数据完全属于您。
-- **⚡ 极速轻量**：得益于 Rust 和 Tauri 底层架构，占用内存极小，启动速度极快。
-- **🎨 现代 UI 设计**：基于 TailwindCSS 构建的极简、现代的用户界面，支持定制化主题。
+- **所见即所得 (WYSIWYG) 编辑器**：基于 TipTap 引擎构建，支持 Markdown 语法的实时解析与渲染，降低标记语言的视觉干扰。
+- **本地工作区管理**：提供原生文件系统映射功能，支持多级目录嵌套与本地知识库的结构化管理。
+- **数据隐私保护**：严格执行本地文件存储策略，数据以纯文本 `.md` 格式留存，不存在未经授权的云端同步机制。
+- **高能效比**：依托 Rust 语言与 Tauri 框架底层驱动，实现系统资源的低负载占用与低延迟响应。
+- **现代化交互界面**：基于 TailwindCSS 构建，遵循极简设计规范，适配高分辨率屏幕与系统主题切换。
 
-## 💻 跨平台支持
+## 跨平台支持
 
-Writer 致力于提供一致的跨平台桌面体验，完美适配桌面操作系统：
+项目致力于提供一致的跨平台桌面体验，当前已在以下平台完成适配验证：
 
-- 🪟 **Windows** (Windows 10 / 11) - _主力平台_
-- 🍎 **macOS** (Intel & Apple Silicon)
-- 🐧 **Linux** (Ubuntu, Fedora, Arch 等)
+- **Windows** (Windows 10 / 11) - *基线测试平台*
+- **macOS** (Intel & Apple Silicon)
+- **Linux** (Ubuntu, Fedora, Arch Linux 等发行版)
 
-## 🚀 快速体验
+## 下载与使用
 
-您可以在 [Releases](https://github.com/xczl-785/Writer/releases) 页面下载最新版本的预编译安装包（支持 Windows, macOS, Linux）。
+预编译的安装程序（涵盖 Windows, macOS, Linux）可通过 [Releases](https://github.com/xczl-785/Writer/releases) 页面获取。
 
-_注：开源版本刚刚发布，全平台预编译包将很快通过 GitHub Actions 自动提供。_
+*(注：自动化跨平台构建工作流配置中，部分架构二进制包将陆续补充)*
 
-## 🛠️ 本地开发指南
+## 开发者指南
 
-如果您希望在本地运行本项目或参与贡献，请确保您的电脑已安装 [Node.js](https://nodejs.org/) (推荐 v18+) 和 [Rust](https://www.rust-lang.org/tools/install) 环境。
+参与本项目开发需预先配置 [Node.js](https://nodejs.org/) (推荐 v18 及以上版本) 与 [Rust](https://www.rust-lang.org/tools/install) 工具链。
 
-### 1. 克隆仓库
+### 环境初始化
 
 ```bash
 git clone https://github.com/xczl-785/Writer.git
 cd Writer
-```
-
-### 2. 安装依赖
-
-```bash
 npm install
 ```
 
-### 3. 启动开发服务器
+### 调试与构建
 
 ```bash
+# 启动前端开发服务器（仅 Web 视图）
 npm run dev
-# 或使用 tauri CLI 启动桌面端调试
+
+# 启动 Tauri 桌面端调试环境
 npm run tauri dev
+
+# 构建全平台生产环境二进制包
+npm run build && npm run tauri build
 ```
 
-### 4. 构建生产版本
+## 技术架构
 
-```bash
-npm run build
-npm run tauri build
-```
+- **前端层**: React 19, TypeScript, TipTap (富文本内核), Zustand (状态容器), TailwindCSS (原子化样式)
+- **系统层**: Rust, Tauri v2 (提供系统 API 桥接、窗口生命周期管理及原生交互)
 
-## 🏗️ 技术栈
+## 参与贡献
 
-- **前端**: React 19, TypeScript, TipTap (富文本内核), Zustand (状态管理), TailwindCSS (样式)
-- **后端**: Rust, Tauri v2 (提供系统级 API 交互与窗口管理)
+欢迎通过 Issue 或 Pull Request 参与项目建设。对于引入大规模结构变更或核心功能迭代的提案，建议先行提交 Issue 以确保设计理念的一致性。
 
-## 🤝 参与贡献
+## 许可协议
 
-我们非常欢迎任何形式的贡献！无论您是想要修复 Bug、添加新功能，还是改进文档，都可以随时提交 Pull Request。
-在提交大型功能前，建议先开启一个 Issue 进行讨论。
-
-## 📄 开源协议
-
-本项目采用 [GPL-3.0 License](./LICENSE) 开源协议。
-这意味着您可以自由地使用、修改和分发本项目，但如果您基于本项目发布了修改后的软件，您的软件也必须以 GPL-3.0 协议开源。
+本项目基于 [GPL-3.0 License](./LICENSE) 协议开源发布。
+允许自由使用、修改及分发，衍生软件或二次分发版本需继承同等开源协议。
