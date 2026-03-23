@@ -16,6 +16,7 @@ import { StatusBar } from '../ui/statusbar/StatusBar';
 import { AutosaveService } from '../domains/file/services/AutosaveService';
 import { FsService } from '../domains/file/services/FsService';
 import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
+import { getStartupFilePath } from '../services/startup/StartupService';
 import { ErrorService } from '../services/error/ErrorService';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
 import { RecentWorkspacesMenu } from '../ui/components/RecentWorkspaces/RecentWorkspacesMenu';
@@ -673,6 +674,32 @@ function App() {
   useEffect(() => {
     scheduleTauriBridgeWarmup();
   }, []);
+
+  // Handle startup file path (file association)
+  useEffect(() => {
+    const handleStartupArgs = async () => {
+      const filePath = await getStartupFilePath();
+
+      if (filePath) {
+        // Check if file exists
+        const exists = await FsService.checkExists(filePath);
+        if (!exists) {
+          useStatusStore.getState().setStatus('error', t('fileDrop.fileNotFound'));
+          return;
+        }
+
+        // Open the file
+        const result = await workspaceActions.openFile(filePath);
+        if (result.ok) {
+          useStatusStore.getState().setStatus('success', t('fileDrop.openSuccess'));
+        } else {
+          useStatusStore.getState().setStatus('error', result.reason || t('fileDrop.openFailed'));
+        }
+      }
+    };
+
+    handleStartupArgs();
+  }, []); // Run only once on mount
 
   // Register menu commands
   useEffect(() => {
