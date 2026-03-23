@@ -691,7 +691,7 @@ function App() {
         // Open the file
         const result = await workspaceActions.openFile(filePath);
         if (result.ok) {
-          useStatusStore.getState().setStatus('success', t('fileDrop.openSuccess'));
+          useStatusStore.getState().setStatus('idle', t('fileDrop.openSuccess'));
         } else {
           useStatusStore.getState().setStatus('error', result.reason || t('fileDrop.openFailed'));
         }
