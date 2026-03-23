@@ -45,11 +45,13 @@
     "fileAssociations": [
       {
         "ext": ["md"],
+        "name": "Writer",
         "mimeType": "text/markdown",
         "role": "Editor"
       },
       {
         "ext": ["markdown"],
+        "name": "Writer",
         "mimeType": "text/markdown",
         "role": "Editor"
       }
