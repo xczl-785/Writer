@@ -41,6 +41,18 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["md"],
+        "mimeType": "text/markdown",
+        "role": "Editor"
+      },
+      {
+        "ext": ["markdown"],
+        "mimeType": "text/markdown",
+        "role": "Editor"
+      }
     ]
   }
 }

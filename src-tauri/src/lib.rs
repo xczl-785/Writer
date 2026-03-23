@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod config;
 pub mod fs;
 pub mod menu;
@@ -24,13 +25,21 @@ fn set_menu_locale(app: AppHandle, locale: String) -> Result<(), String> {
         .map_err(|err| err.to_string())
 }
 
+#[tauri::command]
+fn get_startup_file_path(state: tauri::State<'_, cli::StartupArgs>) -> Option<String> {
+    state.file_path.clone()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let startup_args = cli::StartupArgs::from_args();
+
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         // 注册全局状态管理
         .manage(Mutex::new(WorkspaceAllowlist::default())) // WorkspaceAllowlist 安全守卫
-        .manage(Mutex::new(WatcherState::default())); // 文件监听器状态
+        .manage(Mutex::new(WatcherState::default())) // 文件监听器状态
+        .manage(startup_args); // 启动参数状态
 
     builder = builder.on_menu_event(|app, event| {
         menu::emit_menu_command(app, event.id().as_ref());
@@ -40,6 +49,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             set_menu_locale,
+            get_startup_file_path,
             fs::list_tree,
             workspace::list_tree_batch,
             fs::read_file,
