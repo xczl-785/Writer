@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
+import type { UnlistenFn } from '@tauri-apps/api/event';
 import { Editor } from '../domains/editor/core/Editor';
 import { StateDebug } from '../ui/StateDebug';
 import { Sidebar } from '../ui/sidebar/Sidebar';
@@ -16,6 +17,10 @@ import { StatusBar } from '../ui/statusbar/StatusBar';
 import { AutosaveService } from '../domains/file/services/AutosaveService';
 import { FsService } from '../domains/file/services/FsService';
 import { scheduleTauriBridgeWarmup } from '../services/runtime/TauriWarmup';
+import {
+  getInitialFilePath,
+  listenFileOpen,
+} from '../services/startup/StartupService';
 import { ErrorService } from '../services/error/ErrorService';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
 import { RecentWorkspacesMenu } from '../ui/components/RecentWorkspaces/RecentWorkspacesMenu';
@@ -673,6 +678,52 @@ function App() {
   useEffect(() => {
     scheduleTauriBridgeWarmup();
   }, []);
+
+  const openFileFromPath = useCallback(async (filePath: string) => {
+    const exists = await FsService.checkExists(filePath);
+    if (!exists) {
+      useStatusStore.getState().setStatus('error', t('fileDrop.fileNotFound'));
+      return;
+    }
+
+    const result = await workspaceActions.openFile(filePath);
+    if (result.ok) {
+      useStatusStore.getState().setStatus('idle', t('fileDrop.openSuccess'));
+    } else {
+      useStatusStore
+        .getState()
+        .setStatus('error', result.reason || t('fileDrop.openFailed'));
+    }
+  }, []);
+
+  useEffect(() => {
+    let unlisten: UnlistenFn | undefined;
+    let mounted = true;
+
+    const setup = async () => {
+      try {
+        const filePath = await getInitialFilePath();
+        if (mounted && filePath) {
+          await openFileFromPath(filePath);
+        }
+
+        unlisten = await listenFileOpen((path) => {
+          if (mounted) {
+            void openFileFromPath(path);
+          }
+        });
+      } catch (error) {
+        console.error('Failed to setup file open listener:', error);
+      }
+    };
+
+    void setup();
+
+    return () => {
+      mounted = false;
+      unlisten?.();
+    };
+  }, [openFileFromPath]);
 
   // Register menu commands
   useEffect(() => {
