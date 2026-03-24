@@ -1,3 +1,4 @@
+pub mod cli;
 pub mod config;
 pub mod fs;
 pub mod menu;
@@ -5,9 +6,10 @@ pub mod security;
 pub mod watcher;
 pub mod workspace;
 
+use cli::FileOpenState;
 use security::WorkspaceAllowlist;
 use std::sync::Mutex;
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter, Manager, RunEvent};
 use watcher::WatcherState;
 
 #[tauri::command]
@@ -24,13 +26,33 @@ fn set_menu_locale(app: AppHandle, locale: String) -> Result<(), String> {
         .map_err(|err| err.to_string())
 }
 
+#[tauri::command]
+fn get_startup_file_path(state: tauri::State<'_, cli::StartupArgs>) -> Option<String> {
+    state.file_path.clone()
+}
+
+#[tauri::command]
+fn get_pending_file_path(state: tauri::State<'_, FileOpenState>) -> Option<String> {
+    state.get_and_clear_pending_file()
+}
+
+const FILE_OPEN_EVENT: &str = "writer:file-open";
+
+fn emit_file_open_event(app: &AppHandle, file_path: String) {
+    let _ = app.emit(FILE_OPEN_EVENT, file_path);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let startup_args = cli::StartupArgs::from_args();
+    let file_open_state = FileOpenState::new();
+
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        // 注册全局状态管理
-        .manage(Mutex::new(WorkspaceAllowlist::default())) // WorkspaceAllowlist 安全守卫
-        .manage(Mutex::new(WatcherState::default())); // 文件监听器状态
+        .manage(Mutex::new(WorkspaceAllowlist::default()))
+        .manage(Mutex::new(WatcherState::default()))
+        .manage(startup_args)
+        .manage(file_open_state);
 
     builder = builder.on_menu_event(|app, event| {
         menu::emit_menu_command(app, event.id().as_ref());
@@ -40,6 +62,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             set_menu_locale,
+            get_startup_file_path,
+            get_pending_file_path,
             fs::list_tree,
             workspace::list_tree_batch,
             fs::read_file,
@@ -53,22 +77,17 @@ pub fn run() {
             fs::check_exists,
             fs::get_path_kind,
             fs::detect_file_encoding,
-            // V6.1 单文件拖拽
             fs::copy_file_with_result,
-            // Workspace commands
             workspace::parse_workspace_file,
             workspace::save_workspace_file,
             workspace::resolve_relative_path,
-            // App config commands
             config::get_app_config_dir,
             config::read_json_file,
             config::write_json_file,
-            // Workspace lock commands
             workspace::check_workspace_lock,
             workspace::acquire_workspace_lock,
             workspace::release_workspace_lock,
             workspace::force_release_workspace_lock,
-            // Watcher commands
             watcher::start_watching,
             watcher::stop_watching,
             watcher::update_watch_paths,
@@ -86,6 +105,17 @@ pub fn run() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app, event| {
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            if let RunEvent::Opened { urls } = event {
+                let files = cli::parse_urls_to_files(urls);
+                if let Some(file_path) = files.into_iter().next() {
+                    let file_open_state = app.state::<FileOpenState>();
+                    file_open_state.set_pending_file(file_path.clone());
+                    emit_file_open_event(&app, file_path);
+                }
+            }
+        });
 }
