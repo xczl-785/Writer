@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Writer",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "identifier": "com.writer.app",
   "build": {
     "frontendDist": "../dist",
@@ -41,6 +41,24 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "md"
+        ],
+        "name": "Writer",
+        "mimeType": "text/markdown",
+        "role": "Editor"
+      },
+      {
+        "ext": [
+          "markdown"
+        ],
+        "name": "Writer",
+        "mimeType": "text/markdown",
+        "role": "Editor"
+      }
     ]
   }
 }
