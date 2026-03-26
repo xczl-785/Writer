@@ -12,11 +12,15 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "uml:gen": "tsx scripts/gen-uml.ts",
-    "version:update": "node build/update-version.mjs"
+    "version:update": "node build/update-version.mjs",
+    "release:tag": "node build/release-tag.mjs",
+    "release:push": "node build/release-tag.mjs --push"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-dialog": "^2.6.0",
+    "@tauri-apps/plugin-opener": "^2.5.3",
+    "@tauri-apps/plugin-updater": "^2.10.0",
     "@tiptap/core": "^3.20.1",
     "@tiptap/extension-highlight": "^3.20.1",
     "@tiptap/extension-image": "^3.19.0",

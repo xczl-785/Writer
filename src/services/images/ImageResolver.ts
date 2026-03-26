@@ -1,6 +1,10 @@
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { ErrorService } from '../error/ErrorService';
-import { normalizePath, getParentPath, splitPath } from '../../shared/utils/pathUtils';
+import {
+  normalizePath,
+  getParentPath,
+  splitPath,
+} from '../../shared/utils/pathUtils';
 
 export const ImageResolver = {
   resolve(src: string, activeFilePath: string | null): string {

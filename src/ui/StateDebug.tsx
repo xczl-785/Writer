@@ -27,7 +27,11 @@ export const StateDebug: React.FC = () => {
         <div>Active: {workspace.activeFile || 'None'}</div>
         <div>Open Files: {workspace.openFiles.join(', ')}</div>
         <div style={{ marginTop: '10px' }}>
-          <button onClick={() => workspace.addFolder({ path: '/test/path', index: 1 })}>
+          <button
+            onClick={() =>
+              workspace.addFolder({ path: '/test/path', index: 1 })
+            }
+          >
             Add Test Path
           </button>
           <button

@@ -40,10 +40,7 @@ export default defineConfig({
             return 'vendor-tiptap';
           }
 
-          if (
-            id.includes('/@tauri-apps/') ||
-            id.includes('/tauri-plugin-')
-          ) {
+          if (id.includes('/@tauri-apps/') || id.includes('/tauri-plugin-')) {
             return 'vendor-tauri';
           }
 

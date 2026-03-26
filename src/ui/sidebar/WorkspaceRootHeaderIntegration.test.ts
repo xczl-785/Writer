@@ -8,7 +8,9 @@ describe('Sidebar workspace root header integration', () => {
   const sidebarTsx = readFileSync(join(currentDir, 'Sidebar.tsx'), 'utf-8');
 
   it('renders workspace roots through WorkspaceRootHeader instead of inline labels', () => {
-    expect(sidebarTsx).toContain("import { WorkspaceRootHeader } from './WorkspaceRootHeader';");
+    expect(sidebarTsx).toContain(
+      "import { WorkspaceRootHeader } from './WorkspaceRootHeader';",
+    );
     expect(sidebarTsx).toContain('<WorkspaceRootHeader');
   });
 });

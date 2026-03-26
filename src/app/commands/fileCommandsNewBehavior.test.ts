@@ -105,9 +105,9 @@ describe('fileCommands create behavior', () => {
 
     expect(setIsSidebarVisible).toHaveBeenCalledWith(true);
     expect(received).toHaveBeenCalledTimes(1);
-    expect((received.mock.calls[0][0] as CustomEvent<{ id: string }>).detail.id).toBe(
-      'new-file',
-    );
+    expect(
+      (received.mock.calls[0][0] as CustomEvent<{ id: string }>).detail.id,
+    ).toBe('new-file');
 
     window.removeEventListener(
       'writer:sidebar-command',
@@ -139,9 +139,9 @@ describe('fileCommands create behavior', () => {
 
     expect(setIsSidebarVisible).toHaveBeenCalledWith(true);
     expect(received).toHaveBeenCalledTimes(1);
-    expect((received.mock.calls[0][0] as CustomEvent<{ id: string }>).detail.id).toBe(
-      'new-folder',
-    );
+    expect(
+      (received.mock.calls[0][0] as CustomEvent<{ id: string }>).detail.id,
+    ).toBe('new-folder');
 
     window.removeEventListener(
       'writer:sidebar-command',

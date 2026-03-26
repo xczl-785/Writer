@@ -42,7 +42,9 @@ describe('applyLinkAction', () => {
   it('unsets active link when prompt returns empty string', () => {
     vi.mocked(window.prompt).mockReturnValue('');
     vi.mocked(editor.isActive).mockReturnValue(true);
-    vi.mocked(editor.getAttributes).mockReturnValue({ href: 'https://old.test' });
+    vi.mocked(editor.getAttributes).mockReturnValue({
+      href: 'https://old.test',
+    });
 
     const applied = applyLinkAction(editor);
 

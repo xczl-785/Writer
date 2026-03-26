@@ -90,7 +90,9 @@ export function registerFileCommands(
     menuCommandBus.register('menu.file.close_file', () => {
       const activeFile = useWorkspaceStore.getState().activeFile;
       if (!activeFile) {
-        useStatusStore.getState().setStatus('error', t('status.menu.unavailable'));
+        useStatusStore
+          .getState()
+          .setStatus('error', t('status.menu.unavailable'));
         return;
       }
 
@@ -103,7 +105,9 @@ export function registerFileCommands(
     menuCommandBus.register('menu.file.close_folder', async () => {
       const selectedRootFolderPath = getSelectedRootFolderPath();
       if (!selectedRootFolderPath) {
-        useStatusStore.getState().setStatus('error', t('status.menu.unavailable'));
+        useStatusStore
+          .getState()
+          .setStatus('error', t('status.menu.unavailable'));
         return;
       }
 
@@ -127,7 +131,9 @@ export function registerFileCommands(
   cleanups.push(
     menuCommandBus.register('menu.file.close_workspace', async () => {
       await workspaceActions.closeWorkspace();
-      useStatusStore.getState().setStatus('idle', t('menu.file.closeWorkspace'));
+      useStatusStore
+        .getState()
+        .setStatus('idle', t('menu.file.closeWorkspace'));
     }),
   );
 
@@ -200,7 +206,9 @@ export function registerFileCommands(
   cleanups.push(
     menuCommandBus.register('menu.file.add_folder_to_workspace', async () => {
       if (!hasWorkspaceContext()) {
-        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        useStatusStore
+          .getState()
+          .setStatus('error', t('status.menu.noWorkspace'));
         return;
       }
 
@@ -211,7 +219,9 @@ export function registerFileCommands(
   cleanups.push(
     menuCommandBus.register('menu.file.save_workspace', async () => {
       if (!canSaveWorkspace()) {
-        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        useStatusStore
+          .getState()
+          .setStatus('error', t('status.menu.noWorkspace'));
         return;
       }
 
@@ -222,7 +232,9 @@ export function registerFileCommands(
   cleanups.push(
     menuCommandBus.register('menu.file.save_workspace_as', async () => {
       if (!canSaveWorkspace()) {
-        useStatusStore.getState().setStatus('error', t('status.menu.noWorkspace'));
+        useStatusStore
+          .getState()
+          .setStatus('error', t('status.menu.noWorkspace'));
         return;
       }
 

@@ -11,7 +11,11 @@ const mocks = vi.hoisted(() => {
   const showConfirmDialog = vi.fn();
 
   let watcherCallback:
-    | ((event: { type: string; path: string; oldPath?: string }) => Promise<void>)
+    | ((event: {
+        type: string;
+        path: string;
+        oldPath?: string;
+      }) => Promise<void>)
     | undefined;
 
   const fileTreeState = {
@@ -118,20 +122,17 @@ const mocks = vi.hoisted(() => {
     },
   );
 
-  const editorStore = Object.assign(
-    () => ({ ...editorState }),
-    {
-      getState: () => ({
-        ...editorState,
-        initializeFile: vi.fn(),
-        renameFile: vi.fn(),
-        removePath: vi.fn(),
-      }),
-      setState: (partial: Partial<typeof editorState>) => {
-        Object.assign(editorState, partial);
-      },
+  const editorStore = Object.assign(() => ({ ...editorState }), {
+    getState: () => ({
+      ...editorState,
+      initializeFile: vi.fn(),
+      renameFile: vi.fn(),
+      removePath: vi.fn(),
+    }),
+    setState: (partial: Partial<typeof editorState>) => {
+      Object.assign(editorState, partial);
     },
-  );
+  });
 
   return {
     listTree,
@@ -302,9 +303,9 @@ describe('workspace watcher refresh behavior', () => {
   });
 
   it('refreshes the file tree when a watched child path is reported with Windows separators', async () => {
-    mocks.listTree.mockResolvedValueOnce(initialNodes).mockResolvedValueOnce(
-      refreshedNodes,
-    );
+    mocks.listTree
+      .mockResolvedValueOnce(initialNodes)
+      .mockResolvedValueOnce(refreshedNodes);
 
     await workspaceActions.loadWorkspace('E:/workspace');
 
@@ -373,9 +374,8 @@ describe('workspace watcher refresh behavior', () => {
     mocks.fileTreeState.expandedPaths = new Set(['E:/workspace']);
     mocks.fileTreeState.selectedPath = 'E:/workspace/docs/note.md';
 
-    const result = await workspaceActions.removeFolderFromWorkspace(
-      'E:/workspace',
-    );
+    const result =
+      await workspaceActions.removeFolderFromWorkspace('E:/workspace');
 
     expect(result).toEqual({ ok: true });
     expect(mocks.workspaceActions.removeFolder).toHaveBeenCalledWith(

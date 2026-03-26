@@ -12,7 +12,9 @@ describe('Sidebar external folder-drop wiring', () => {
     expect(source).toContain('extractDroppedPaths(');
     expect(source).toContain('FsService.getPathKind');
     expect(source).toContain('await addFolderPathToWorkspace(path);');
-    expect(source).toContain('await handleDropToEditor(classification.files[0], {');
+    expect(source).toContain(
+      'await handleDropToEditor(classification.files[0], {',
+    );
     expect(source).toContain('isExternalDragOver = false');
     expect(source).toContain('DragDropHint');
     expect(source).toContain('<DragDropHint');

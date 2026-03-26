@@ -34,6 +34,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "icon": [
       "icons/32x32.png",
@@ -48,6 +49,7 @@
           "md"
         ],
         "name": "Writer",
+        "description": "Writer Markdown Document",
         "mimeType": "text/markdown",
         "role": "Editor"
       },
@@ -56,9 +58,21 @@
           "markdown"
         ],
         "name": "Writer",
+        "description": "Writer Markdown Document",
         "mimeType": "text/markdown",
         "role": "Editor"
       }
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVDMTk3NTE4RTJCQTI3MjAKUldRZ0o3cmlHSFVaWENtMFlKNGVnUG1ackpWb1B1MEJEVGw2L2hIQVVTaVhBd3VMbUlWb2dTb2MK",
+      "endpoints": [
+        "https://github.com/xczl-785/Writer/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

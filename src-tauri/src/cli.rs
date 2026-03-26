@@ -23,6 +23,11 @@ fn parse_file_from_arg(arg: &str) -> Option<String> {
         return None;
     }
 
+    let direct_path = PathBuf::from(arg);
+    if direct_path.exists() && is_supported_file(&direct_path) {
+        return Some(direct_path.to_string_lossy().to_string());
+    }
+
     let path = if let Ok(url) = Url::parse(arg) {
         if url.scheme() == "file" {
             url.to_file_path().ok()?
@@ -99,4 +104,43 @@ pub fn parse_urls_to_files(urls: Vec<Url>) -> Vec<String> {
             None
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_file_from_arg;
+    use tempfile::tempdir;
+    use url::Url;
+
+    #[test]
+    fn parse_file_from_arg_accepts_existing_windows_style_paths_before_url_parsing() {
+        let dir = tempdir().expect("temp dir");
+        let file_path = dir.path().join("sample.md");
+        std::fs::write(&file_path, "# test").expect("write markdown file");
+
+        let parsed = parse_file_from_arg(&file_path.to_string_lossy())
+            .expect("expected direct file path to be accepted");
+
+        assert_eq!(parsed, file_path.to_string_lossy());
+    }
+
+    #[test]
+    fn parse_file_from_arg_accepts_file_urls() {
+        let dir = tempdir().expect("temp dir");
+        let file_path = dir.path().join("sample.markdown");
+        std::fs::write(&file_path, "# test").expect("write markdown file");
+        let file_url = Url::from_file_path(&file_path)
+            .expect("file url")
+            .to_string();
+
+        let parsed =
+            parse_file_from_arg(&file_url).expect("expected file URL to be accepted");
+
+        assert_eq!(parsed, file_path.to_string_lossy());
+    }
+
+    #[test]
+    fn parse_file_from_arg_rejects_non_file_urls() {
+        assert!(parse_file_from_arg("https://example.com/readme.md").is_none());
+    }
 }

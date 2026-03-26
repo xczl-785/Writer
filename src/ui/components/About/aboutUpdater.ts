@@ -1,0 +1,100 @@
+import { check, type Update } from '@tauri-apps/plugin-updater';
+import { openUrl } from '@tauri-apps/plugin-opener';
+
+const RELEASES_URL = 'https://github.com/xczl-785/Writer/releases/latest';
+const WINDOWS_NSIS_TARGET = 'windows-x86_64-nsis';
+
+export type AvailableAppUpdate = {
+  kind: 'available';
+  update: Update;
+  currentVersion: string;
+  version: string;
+  notes: string | null;
+  publishedAt: string | null;
+  releaseUrl: string;
+};
+
+export type AppUpdateResult = AvailableAppUpdate | { kind: 'none' };
+
+export type UpdateProgress =
+  | { phase: 'downloading'; percent: number | null }
+  | { phase: 'installing'; percent: number | null };
+
+export function resolveUpdaterTarget(): string | undefined {
+  if (typeof navigator === 'undefined') {
+    return undefined;
+  }
+
+  const userAgentData = (
+    navigator as Navigator & { userAgentData?: { platform?: string } }
+  ).userAgentData;
+  const userAgent =
+    `${userAgentData?.platform ?? ''} ${navigator.userAgent}`.toLowerCase();
+
+  if (userAgent.includes('win')) {
+    return WINDOWS_NSIS_TARGET;
+  }
+
+  return undefined;
+}
+
+export async function checkForAppUpdate(): Promise<AppUpdateResult> {
+  const update = await check({
+    target: resolveUpdaterTarget(),
+  });
+  if (!update) {
+    return { kind: 'none' };
+  }
+
+  return {
+    kind: 'available',
+    update,
+    currentVersion: update.currentVersion,
+    version: update.version,
+    notes: update.body ?? null,
+    publishedAt: update.date ?? null,
+    releaseUrl: RELEASES_URL,
+  };
+}
+
+export async function installAppUpdate(
+  appUpdate: AvailableAppUpdate,
+  onProgress: (progress: UpdateProgress) => void,
+): Promise<void> {
+  let totalBytes = 0;
+  let downloadedBytes = 0;
+
+  try {
+    await appUpdate.update.downloadAndInstall((event) => {
+      if (event.event === 'Started') {
+        totalBytes = event.data.contentLength ?? 0;
+        downloadedBytes = 0;
+        onProgress({
+          phase: 'downloading',
+          percent: totalBytes > 0 ? 0 : null,
+        });
+        return;
+      }
+
+      if (event.event === 'Progress') {
+        downloadedBytes += event.data.chunkLength;
+        const percent =
+          totalBytes > 0
+            ? Math.min(100, Math.round((downloadedBytes / totalBytes) * 100))
+            : null;
+        onProgress({ phase: 'downloading', percent });
+        return;
+      }
+
+      onProgress({ phase: 'installing', percent: 100 });
+    });
+  } finally {
+    await appUpdate.update.close().catch(() => {});
+  }
+}
+
+export async function openReleasePage(
+  url: string = RELEASES_URL,
+): Promise<void> {
+  await openUrl(url);
+}

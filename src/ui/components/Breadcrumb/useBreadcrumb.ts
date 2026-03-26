@@ -100,7 +100,8 @@ function buildAbsoluteFileBreadcrumb(activeFilePath: string): BreadcrumbItem[] {
   let currentPath = normalizedActiveFile.startsWith('/') ? '/' : '';
 
   parts.forEach((part, index) => {
-    currentPath = currentPath === '/' ? `/${part}` : joinPath(currentPath, part);
+    currentPath =
+      currentPath === '/' ? `/${part}` : joinPath(currentPath, part);
     const isLast = index === parts.length - 1;
     items.push({
       id: `${index}-${part}`,

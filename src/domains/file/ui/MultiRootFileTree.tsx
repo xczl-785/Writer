@@ -15,7 +15,10 @@ import {
 } from '../../workspace/state/workspaceStore';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { WorkspaceRootHeader } from '../../../ui/sidebar/WorkspaceRootHeader';
-import { ContextMenu, useContextMenu } from '../../../ui/components/ContextMenu';
+import {
+  ContextMenu,
+  useContextMenu,
+} from '../../../ui/components/ContextMenu';
 import { FsService } from '../services/FsService';
 import { FsSafety } from '../services/FsSafety';
 import { fileActions } from '../services/fileActions';

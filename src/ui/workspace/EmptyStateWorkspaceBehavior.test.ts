@@ -24,6 +24,8 @@ describe('EmptyStateWorkspace behavior markers', () => {
   it('reuses the shared drag-drop hint presentation instead of inline overlay markup', () => {
     expect(source).toContain('DragDropHint');
     expect(source).toContain('<DragDropHint');
-    expect(source).not.toContain('pointer-events-none flex items-center justify-center bg-zinc-50/90');
+    expect(source).not.toContain(
+      'pointer-events-none flex items-center justify-center bg-zinc-50/90',
+    );
   });
 });

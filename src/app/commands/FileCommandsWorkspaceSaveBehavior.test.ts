@@ -9,8 +9,12 @@ describe('file command workspace save wiring', () => {
 
   it('routes save-as through workspace save dialog when a workspace is open', () => {
     expect(source).toContain('saveWorkspaceFileByDialog');
-    expect(source).toContain("menuCommandBus.register('menu.file.save_workspace', async () => {");
-    expect(source).toContain("menuCommandBus.register('menu.file.save_workspace_as', async () => {");
+    expect(source).toContain(
+      "menuCommandBus.register('menu.file.save_workspace', async () => {",
+    );
+    expect(source).toContain(
+      "menuCommandBus.register('menu.file.save_workspace_as', async () => {",
+    );
     expect(source).toContain('await saveWorkspaceFileByDialog();');
     expect(source).toContain('await saveCurrentWorkspace();');
   });

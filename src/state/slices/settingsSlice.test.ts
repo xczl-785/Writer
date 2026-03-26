@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const LEGACY_LOCALE_KEY = 'writer.locale.preference';
 const SETTINGS_STORAGE_KEY = 'writer.settings.v1';
 
-const loadStore = async () => import('../../domains/settings/state/settingsStore');
+const loadStore = async () =>
+  import('../../domains/settings/state/settingsStore');
 
 describe('settingsSlice', () => {
   beforeEach(() => {
