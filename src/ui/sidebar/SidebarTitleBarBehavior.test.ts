@@ -14,6 +14,8 @@ describe('sidebar title bar behavior', () => {
     expect(sidebarTsx).not.toContain('handleCollapseButtonDoubleClick');
     expect(sidebarTsx).not.toContain("t('sidebar.collapse')");
     expect(sidebarTsx).not.toContain('onToggleVisibility?.()');
-    expect(sidebarTsx).not.toContain('onDoubleClick={handleCollapseButtonDoubleClick}');
+    expect(sidebarTsx).not.toContain(
+      'onDoubleClick={handleCollapseButtonDoubleClick}',
+    );
   });
 });

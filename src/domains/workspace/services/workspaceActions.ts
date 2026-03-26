@@ -8,7 +8,10 @@ import {
   type WorkspaceConfig,
 } from '../../file/services/FsService';
 import { useEditorStore } from '../../editor/state/editorStore';
-import { useFileTreeStore, type RootFolderNode } from '../../file/state/fileStore';
+import {
+  useFileTreeStore,
+  type RootFolderNode,
+} from '../../file/state/fileStore';
 import {
   useWorkspaceStore,
   type WorkspaceFolder,
@@ -146,7 +149,9 @@ async function detachWorkspaceFolder(
     await WorkspaceStatePersistence.saveCurrentState();
   }
 
-  const remainingPaths = useWorkspaceStore.getState().folders.map((f) => f.path);
+  const remainingPaths = useWorkspaceStore
+    .getState()
+    .folders.map((f) => f.path);
   if (remainingPaths.length > 0) {
     await FileWatcherService.updateWatchPaths(remainingPaths);
   } else {
@@ -162,8 +167,8 @@ async function handleFileChange(event: FileChangeEvent): Promise<void> {
   const normalizedEventPath = normalizePath(event.path);
 
   // 找到变化文件所属的根文件夹
-  const affectedRoot = rootFolders.find(
-    (folder) => isPathMatch(folder.workspacePath, normalizedEventPath),
+  const affectedRoot = rootFolders.find((folder) =>
+    isPathMatch(folder.workspacePath, normalizedEventPath),
   );
 
   if (!affectedRoot) return;

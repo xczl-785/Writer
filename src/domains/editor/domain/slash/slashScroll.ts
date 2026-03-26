@@ -24,7 +24,7 @@ export type ScrollComputeInput = {
 export function computeKeyboardScrollTop(
   menuElement: HTMLElement,
   _activeItemIndex: number,
-  _itemHeight: number = SLASH_MENU_ITEM_HEIGHT,
+  itemHeight: number = SLASH_MENU_ITEM_HEIGHT,
   buffer: number = SLASH_MENU_SCROLL_BUFFER,
 ): number | null {
   const activeItem = menuElement.querySelector<HTMLButtonElement>(
@@ -34,7 +34,7 @@ export function computeKeyboardScrollTop(
   if (!activeItem) return null;
 
   const itemTop = activeItem.offsetTop;
-  const itemBottom = itemTop + activeItem.offsetHeight;
+  const itemBottom = itemTop + itemHeight;
   const visibleTop = menuElement.scrollTop + buffer;
   const visibleBottom =
     menuElement.scrollTop + menuElement.clientHeight - buffer;

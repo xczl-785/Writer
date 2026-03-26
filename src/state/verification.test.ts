@@ -1,5 +1,8 @@
 import { expect, test } from 'vitest';
-import { useWorkspaceStore, getWorkspaceType } from '../domains/workspace/state/workspaceStore';
+import {
+  useWorkspaceStore,
+  getWorkspaceType,
+} from '../domains/workspace/state/workspaceStore';
 import { useFileTreeStore } from '../domains/file/state/fileStore';
 import { useEditorStore } from '../domains/editor/state/editorStore';
 import { useStatusStore } from './slices/statusSlice';

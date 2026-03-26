@@ -26,6 +26,30 @@ describe('App about integration', () => {
     join(currentDir, '..', '..', 'src-tauri', 'src', 'menu.rs'),
     'utf-8',
   );
+  const tauriLibRs = readFileSync(
+    join(currentDir, '..', '..', 'src-tauri', 'src', 'lib.rs'),
+    'utf-8',
+  );
+  const tauriConfigJson = readFileSync(
+    join(currentDir, '..', '..', 'src-tauri', 'tauri.conf.json'),
+    'utf-8',
+  );
+  const tauriCapabilityJson = readFileSync(
+    join(currentDir, '..', '..', 'src-tauri', 'capabilities', 'default.json'),
+    'utf-8',
+  );
+  const cargoToml = readFileSync(
+    join(currentDir, '..', '..', 'src-tauri', 'Cargo.toml'),
+    'utf-8',
+  );
+  const packageJson = readFileSync(
+    join(currentDir, '..', '..', 'package.json'),
+    'utf-8',
+  );
+  const releaseWorkflow = readFileSync(
+    join(currentDir, '..', '..', '.github', 'workflows', 'release.yml'),
+    'utf-8',
+  );
 
   it('registers help about command and mounts about panel from app state', () => {
     expect(commandsIndexTs).toContain('registerHelpCommands');
@@ -40,12 +64,14 @@ describe('App about integration', () => {
 
   it('renders about content with writer icon and localized copy', () => {
     expect(aboutPanelTsx).toContain('src="/icon.svg"');
+    expect(aboutPanelTsx).toContain('checkForAppUpdate');
     expect(aboutPanelTsx).toContain("t('aboutWriter.title')");
     expect(aboutPanelTsx).toContain("t('aboutWriter.versionLabel')");
-    expect(aboutPanelTsx).toContain('0.3.6');
+    expect(aboutPanelTsx).toContain('getVersion()');
     expect(messagesTs).toContain("'aboutWriter.title'");
     expect(messagesTs).toContain("'aboutWriter.releaseNotes.title'");
     expect(messagesTs).toContain("'aboutWriter.documentation.title'");
+    expect(messagesTs).toContain("'aboutWriter.updates.checkButton'");
   });
 
   it('keeps zh-CN help/about copy readable instead of question-mark mojibake', () => {
@@ -64,7 +90,6 @@ describe('App about integration', () => {
     );
   });
 
-
   it('detects platform at runtime and uses a full-bleed icon presentation', () => {
     expect(aboutPanelTsx).toContain('detectDesktopPlatform');
     expect(aboutPanelTsx).toContain('navigator.userAgent');
@@ -79,5 +104,17 @@ describe('App about integration', () => {
     expect(tauriMenuRs).toContain('"menu.help.about"');
     expect(tauriMenuRs).toContain('"About Writer"');
     expect(tauriMenuRs).toContain('true');
+  });
+
+  it('wires the official updater into the desktop app and release pipeline', () => {
+    expect(packageJson).toContain('@tauri-apps/plugin-updater');
+    expect(cargoToml).toContain('tauri-plugin-updater');
+    expect(tauriLibRs).toContain('tauri_plugin_updater::Builder');
+    expect(tauriConfigJson).toContain('"updater"');
+    expect(tauriConfigJson).toContain('releases/latest/download/latest.json');
+    expect(tauriCapabilityJson).toContain('updater:default');
+    expect(releaseWorkflow).toContain('TAURI_SIGNING_PRIVATE_KEY');
+    expect(releaseWorkflow).toContain('TAURI_SIGNING_PRIVATE_KEY_PASSWORD');
+    expect(releaseWorkflow).toContain('latest.json');
   });
 });

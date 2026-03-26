@@ -5,7 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 describe('workspace root context menu behavior', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const source = readFileSync(join(currentDir, 'workspaceRootMenu.tsx'), 'utf-8');
+  const source = readFileSync(
+    join(currentDir, 'workspaceRootMenu.tsx'),
+    'utf-8',
+  );
 
   it('exposes create entries for workspace roots and no empty-area helper', () => {
     expect(source).toContain('export function getWorkspaceRootMenuItems');

@@ -17,14 +17,8 @@ describe('Editor orchestrator composition', () => {
 
   it('routes editor shell rendering through EditorView', () => {
     // Editor.tsx, EditorImpl.tsx are in the same directory (core/)
-    const editorTsx = readFileSync(
-      join(currentDir, 'Editor.tsx'),
-      'utf-8',
-    );
-    const implTsx = readFileSync(
-      join(currentDir, 'EditorImpl.tsx'),
-      'utf-8',
-    );
+    const editorTsx = readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+    const implTsx = readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
     // view/ is a sibling directory to core/
     const viewTsx = readFileSync(
       join(currentDir, '..', 'view', 'EditorView.tsx'),

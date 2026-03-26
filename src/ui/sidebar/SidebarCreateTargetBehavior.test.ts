@@ -32,6 +32,8 @@ describe('Sidebar create target wiring', () => {
   it('normalizes paths before matching ghost placement in root and nested directories', () => {
     expect(source).toContain('normalizePath(ghostNode.rootPath) ===');
     expect(source).toContain('normalizePath(rootFolder.workspacePath)');
-    expect(source).toContain('normalizePath(ghostNode.parentPath) === normalizePath(node.path)');
+    expect(source).toContain(
+      'normalizePath(ghostNode.parentPath) === normalizePath(node.path)',
+    );
   });
 });

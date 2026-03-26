@@ -15,9 +15,13 @@ describe('App empty workspace integration', () => {
       'const { folders, activeFile, workspaceFile, isDirty } = useWorkspaceStore();',
     );
     expect(appTsx).toContain('const workspaceContext = getWorkspaceContext({');
-    expect(appTsx).toContain("const hasWorkspace = workspaceContext !== 'none';");
+    expect(appTsx).toContain(
+      "const hasWorkspace = workspaceContext !== 'none';",
+    );
     expect(appTsx).toContain('const hasOpenFile = activeFile !== null;');
-    expect(appTsx).toContain("{workspaceContext === 'none' && !hasOpenFile ? (");
+    expect(appTsx).toContain(
+      "{workspaceContext === 'none' && !hasOpenFile ? (",
+    );
     expect(appTsx).toContain(") : workspaceContext === 'saved-empty' ? (");
     expect(appTsx).toContain('<EmptyStateWorkspace');
     expect(appTsx).toContain('onOpenFolder={handleOpenFolder}');

@@ -5,10 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 describe('native file menu workspace items', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const source = readFileSync(
-    join(currentDir, 'menu.rs'),
-    'utf-8',
-  );
+  const source = readFileSync(join(currentDir, 'menu.rs'), 'utf-8');
 
   it('includes dedicated workspace save commands in the file menu', () => {
     expect(source).toContain('"menu.file.save_workspace"');

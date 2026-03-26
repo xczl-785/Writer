@@ -1573,14 +1573,15 @@ function FileTreeNode({
         <div>
           {ghostNode &&
             ghostNode.parentPath !== null &&
-            normalizePath(ghostNode.parentPath) === normalizePath(node.path) && (
-            <GhostRow
-              level={level + 1}
-              type={ghostNode.type}
-              onCommit={onGhostCommit}
-              onCancel={onGhostCancel}
-            />
-          )}
+            normalizePath(ghostNode.parentPath) ===
+              normalizePath(node.path) && (
+              <GhostRow
+                level={level + 1}
+                type={ghostNode.type}
+                onCommit={onGhostCommit}
+                onCancel={onGhostCancel}
+              />
+            )}
           {hasChildren &&
             node.children!.map((child) => (
               <FileTreeNode
