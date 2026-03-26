@@ -5,15 +5,16 @@
 - **id**: `about-updater`
 - **name**: About Updater
 - **summary**: Adds in-app update checking and install initiation to the About Writer panel using Tauri's official updater and GitHub Releases updater artifacts.
-- **scope**: Includes the About panel update card, updater status rendering, Tauri updater plugin/config wiring, and GitHub release artifact expectations; excludes full release-note browsing and external documentation pages.
+- **scope**: Includes the About panel's single-button updater flow, updater status rendering, Tauri updater plugin/config wiring, and GitHub release artifact expectations; excludes full release-note browsing and external documentation pages.
 - **entry_points**:
   - `AboutWriterPanel`
   - `aboutUpdater`
 - **check_on_change**:
   - Help > About Writer still opens normally from the native/custom menu.
   - The About panel still renders current version, platform, and icon correctly.
+  - The About panel still presents a single primary update button instead of a multi-action update card.
   - `Check for Updates` handles no-update, update-available, downloading, installing, and failure states.
-  - Failure state still offers a release-page fallback.
+  - Failure state still offers a release-page fallback through the primary button.
   - Tauri updater endpoint still points at `releases/latest/download/latest.json`.
   - Release workflow still uses updater signing secrets and publishes updater artifacts.
 - **last_verified**: 2026-03-26
@@ -22,7 +23,7 @@
 
 ## Capability Summary
 
-This capability places a first-class update card inside the existing About Writer panel. The card checks for updates through Tauri's official updater plugin and presents a compact in-app flow: check, inspect the target version, start download/install, and fall back to the GitHub Releases page when updater checks fail.
+This capability places a first-class updater CTA inside the existing About Writer panel. The panel checks for updates through Tauri's official updater plugin and presents a compact single-button flow: check, surface the target version on the primary button, start download/install from the same control, and switch the same button to a GitHub Releases fallback when updater checks or install steps fail.
 
 The runtime updater path depends on two repository-level contracts. First, desktop builds must register the updater plugin and expose updater permissions plus endpoint configuration. Second, the GitHub release workflow must publish updater artifacts, including `latest.json`, signed with the private key that matches the public key committed to `src-tauri/tauri.conf.json`.
 
@@ -56,7 +57,7 @@ Updater configuration must resolve through the stable GitHub endpoint `releases/
 
 ### CR-004: Release-page fallback must stay available
 
-If update checks or installation fail, the About panel must continue to offer a direct GitHub Releases fallback so the user can still update manually.
+If update checks or installation fail, the About panel must continue to offer a direct GitHub Releases fallback so the user can still update manually. The fallback now lives on the primary update button rather than a secondary action row.
 
 **Evidence**: `src/ui/components/About/AboutWriterPanel.tsx`, `src/ui/components/About/aboutUpdater.ts`
 
@@ -66,9 +67,9 @@ If update checks or installation fail, the About panel must continue to offer a 
 
 | Area                     | What to check                                                                    | Evidence                                                                                      |
 | ------------------------ | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| About UI                 | Update card layout, button states, progress, and fallback action remain usable   | `src/ui/components/About/AboutWriterPanel.tsx`, `src/app/App.css`                             |
+| About UI                 | Single-card layout, primary-button states, and fallback action remain usable      | `src/ui/components/About/AboutWriterPanel.tsx`, `src/app/App.css`                             |
 | Localization             | New update strings stay present in zh-CN and en-US                               | `src/shared/i18n/messages.ts`                                                                 |
-| Frontend updater service | Tauri updater calls and progress translation still match UI expectations         | `src/ui/components/About/aboutUpdater.ts`                                                     |
+| Frontend updater service | Tauri updater calls and progress translation still match the simplified UI states | `src/ui/components/About/aboutUpdater.ts`                                                     |
 | Tauri runtime            | Updater plugin registration and permission wiring remain intact                  | `src-tauri/src/lib.rs`, `src-tauri/capabilities/default.json`                                 |
 | Release pipeline         | Signed updater artifacts are still published for GitHub latest-download endpoint | `.github/workflows/release.yml`, `build/README.md`                                            |
 | Tests                    | About updater behavior and static integration checks remain green                | `src/ui/components/About/AboutWriterPanel.update.test.ts`, `src/app/AppAboutBehavior.test.ts` |

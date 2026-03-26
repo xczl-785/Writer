@@ -66,7 +66,7 @@ describe('App about integration', () => {
     expect(aboutPanelTsx).toContain('src="/icon.svg"');
     expect(aboutPanelTsx).toContain('checkForAppUpdate');
     expect(aboutPanelTsx).toContain("t('aboutWriter.title')");
-    expect(aboutPanelTsx).toContain("t('aboutWriter.versionLabel')");
+    expect(aboutPanelTsx).toContain("t('aboutWriter.currentVersion')");
     expect(aboutPanelTsx).toContain('getVersion()');
     expect(messagesTs).toContain("'aboutWriter.title'");
     expect(messagesTs).toContain("'aboutWriter.releaseNotes.title'");
@@ -82,7 +82,7 @@ describe('App about integration', () => {
       '\\u672c\\u5730\\u4f18\\u5148\\u7684\\u8f7b\\u91cf Markdown \\u7f16\\u8f91\\u5668',
     );
     expect(messagesTs).toContain(
-      "'aboutWriter.buildInfo': '\\u6784\\u5efa\\u4fe1\\u606f'",
+      "'aboutWriter.documentation.title': '\\u4f7f\\u7528\\u6587\\u6863'",
     );
     expect(messagesTs).not.toContain("'menu.help': '??'");
     expect(messagesTs).not.toContain(
@@ -90,7 +90,7 @@ describe('App about integration', () => {
     );
   });
 
-  it('detects platform at runtime and uses a full-bleed icon presentation', () => {
+  it('detects platform at runtime and keeps runtime platform copy dynamic', () => {
     expect(aboutPanelTsx).toContain('detectDesktopPlatform');
     expect(aboutPanelTsx).toContain('navigator.userAgent');
     expect(aboutPanelTsx).toContain("return 'Windows Desktop'");
@@ -98,6 +98,7 @@ describe('App about integration', () => {
     expect(aboutPanelTsx).toContain("return 'Linux Desktop'");
     expect(aboutPanelTsx).toContain('about-writer-hero__icon-frame');
     expect(aboutPanelTsx).not.toContain("t('aboutWriter.platformValue')");
+    expect(aboutPanelTsx).toContain("t('aboutWriter.environmentLine')");
   });
 
   it('enables native help about entry for windows menu', () => {
@@ -108,11 +109,15 @@ describe('App about integration', () => {
 
   it('wires the official updater into the desktop app and release pipeline', () => {
     expect(packageJson).toContain('@tauri-apps/plugin-updater');
+    expect(packageJson).toContain('@tauri-apps/plugin-opener');
     expect(cargoToml).toContain('tauri-plugin-updater');
+    expect(cargoToml).toContain('tauri-plugin-opener');
     expect(tauriLibRs).toContain('tauri_plugin_updater::Builder');
+    expect(tauriLibRs).toContain('tauri_plugin_opener::init()');
     expect(tauriConfigJson).toContain('"updater"');
     expect(tauriConfigJson).toContain('releases/latest/download/latest.json');
     expect(tauriCapabilityJson).toContain('updater:default');
+    expect(tauriCapabilityJson).toContain('opener:default');
     expect(releaseWorkflow).toContain('TAURI_SIGNING_PRIVATE_KEY');
     expect(releaseWorkflow).toContain('TAURI_SIGNING_PRIVATE_KEY_PASSWORD');
     expect(releaseWorkflow).toContain('latest.json');

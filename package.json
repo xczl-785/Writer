@@ -1,7 +1,7 @@
 {
   "name": "writer",
   "private": true,
-  "version": "0.3.13",
+  "version": "0.3.11",
   "type": "module",
   "scripts": {
     "predev": "node scripts/prepare-dev-port.mjs",
@@ -19,6 +19,7 @@
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-dialog": "^2.6.0",
+    "@tauri-apps/plugin-opener": "^2.5.3",
     "@tauri-apps/plugin-updater": "^2.10.0",
     "@tiptap/core": "^3.20.1",
     "@tiptap/extension-highlight": "^3.20.1",
