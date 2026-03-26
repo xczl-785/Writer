@@ -5,9 +5,7 @@ import {
   type WorkspaceState,
 } from './workspaceStore';
 
-function buildWorkspaceState(
-  partial: Partial<WorkspaceState>,
-): WorkspaceState {
+function buildWorkspaceState(partial: Partial<WorkspaceState>): WorkspaceState {
   return {
     folders: [],
     workspaceFile: null,
@@ -54,7 +52,9 @@ describe('workspaceStore derived workspace context', () => {
   });
 
   it('preserves legacy workspace type buckets for empty, single, and multi', () => {
-    expect(getWorkspaceType(buildWorkspaceState({ folders: [] }))).toBe('empty');
+    expect(getWorkspaceType(buildWorkspaceState({ folders: [] }))).toBe(
+      'empty',
+    );
     expect(
       getWorkspaceType(
         buildWorkspaceState({

@@ -35,21 +35,18 @@ describe('useBreadcrumb', () => {
 
   it('builds breadcrumb items from windows style paths', () => {
     const items = buildBreadcrumb(
-      'E:\\Project\\Producer_Workstation\\ÏîÄ¿Óà½ý',
-      'E:\\Project\\Producer_Workstation\\ÏîÄ¿Óà½ý\\¿ìËÙ¶ÔÆë.md',
+      'E:\\Project\\Producer_Workstation\\ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½',
+      'E:\\Project\\Producer_Workstation\\ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½Ù¶ï¿½ï¿½ï¿½.md',
     );
-    expect(items.map((item) => item.name)).toEqual(['ÏîÄ¿Óà½ý', '¿ìËÙ¶ÔÆë.md']);
+    expect(items.map((item) => item.name)).toEqual(['ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½', 'ï¿½ï¿½ï¿½Ù¶ï¿½ï¿½ï¿½.md']);
     expect(items.at(-1)?.path).toBe(
-      'E:/Project/Producer_Workstation/ÏîÄ¿Óà½ý/¿ìËÙ¶ÔÆë.md',
+      'E:/Project/Producer_Workstation/ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½Ù¶ï¿½ï¿½ï¿½.md',
     );
   });
 
   it('uses the matching workspace root instead of always assuming the first root', () => {
     const items = buildActiveFileBreadcrumb(
-      [
-        { path: 'E:\\Project\\Writer' },
-        { path: 'E:\\Project\\Producer' },
-      ],
+      [{ path: 'E:\\Project\\Writer' }, { path: 'E:\\Project\\Producer' }],
       'E:\\Project\\Producer\\docs\\plan.md',
     );
 

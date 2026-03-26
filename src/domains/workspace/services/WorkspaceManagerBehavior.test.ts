@@ -8,7 +8,9 @@ describe('WorkspaceManager behaviors', () => {
   const source = readFileSync(join(currentDir, 'WorkspaceManager.ts'), 'utf-8');
 
   it('opens saved workspaces through a file picker filtered to writer-workspace files', () => {
-    expect(source).toContain('export const openWorkspaceFile = async (): Promise<void> => {');
+    expect(source).toContain(
+      'export const openWorkspaceFile = async (): Promise<void> => {',
+    );
     expect(source).toContain('directory: false');
     expect(source).toContain("extensions: ['writer-workspace']");
     expect(source).toContain('workspaceActions.loadWorkspaceFile(path)');
@@ -18,7 +20,9 @@ describe('WorkspaceManager behaviors', () => {
     expect(source).toContain(
       'export const addFolderToWorkspaceByDialog = async (): Promise<void> => {',
     );
-    expect(source).toContain("useStatusStore.getState().setStatus('loading', 'Adding folder...');");
+    expect(source).toContain(
+      "useStatusStore.getState().setStatus('loading', 'Adding folder...');",
+    );
     expect(source).toContain('workspaceActions.addFolderToWorkspace(path)');
   });
 
@@ -26,12 +30,8 @@ describe('WorkspaceManager behaviors', () => {
     expect(source).toContain(
       'export const openWorkspaceAtPath = async (path: string): Promise<boolean> => {',
     );
-    expect(source).toContain(
-      'export const addFolderPathToWorkspace = async (',
-    );
-    expect(source).toContain(
-      'export const handleDroppedFolderPaths = async (',
-    );
+    expect(source).toContain('export const addFolderPathToWorkspace = async (');
+    expect(source).toContain('export const handleDroppedFolderPaths = async (');
     expect(source).toContain('const [firstPath, ...restPaths] = uniquePaths;');
   });
 
@@ -49,6 +49,8 @@ describe('WorkspaceManager behaviors', () => {
       'export const saveCurrentWorkspace = async (): Promise<void> => {',
     );
     expect(source).toContain('const existingPath = workspace.workspaceFile;');
-    expect(source).toContain('await workspaceActions.saveWorkspaceFile(existingPath)');
+    expect(source).toContain(
+      'await workspaceActions.saveWorkspaceFile(existingPath)',
+    );
   });
 });

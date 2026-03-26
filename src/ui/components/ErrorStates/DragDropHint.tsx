@@ -21,9 +21,7 @@ export function DragDropHint({
       ? 'absolute inset-3 flex items-center justify-center rounded-xl border border-zinc-300 bg-zinc-50'
       : 'flex w-full max-w-[640px] flex-col items-center rounded-2xl border border-zinc-300 bg-zinc-50 px-8 py-20';
   const contentClassName =
-    tone === 'sidebar'
-      ? 'flex flex-col items-center px-8 py-12'
-      : '';
+    tone === 'sidebar' ? 'flex flex-col items-center px-8 py-12' : '';
   const iconClassName =
     tone === 'sidebar'
       ? 'mb-4 h-10 w-10 text-zinc-400'

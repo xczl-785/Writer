@@ -4,7 +4,9 @@ import { MESSAGES } from '../../shared/i18n/messages';
 import { FILE_MENU_CREATE_ITEMS, WINDOWS_MENU_SCHEMA } from './menuSchema';
 
 describe('File menu create entries', () => {
-  const fileMenu = WINDOWS_MENU_SCHEMA.find((group) => group.id === 'menu.file');
+  const fileMenu = WINDOWS_MENU_SCHEMA.find(
+    (group) => group.id === 'menu.file',
+  );
 
   it('defines file and folder create entries via a shared constant', () => {
     expect(FILE_MENU_CREATE_ITEMS).toEqual([
@@ -24,8 +26,12 @@ describe('File menu create entries', () => {
 
   it('keeps create entry fallback labels aligned with i18n messages', () => {
     for (const item of FILE_MENU_CREATE_ITEMS) {
-      expect(item.fallbackLabels['zh-CN']).toBe(MESSAGES['zh-CN'][item.labelKey]);
-      expect(item.fallbackLabels['en-US']).toBe(MESSAGES['en-US'][item.labelKey]);
+      expect(item.fallbackLabels['zh-CN']).toBe(
+        MESSAGES['zh-CN'][item.labelKey],
+      );
+      expect(item.fallbackLabels['en-US']).toBe(
+        MESSAGES['en-US'][item.labelKey],
+      );
     }
   });
 

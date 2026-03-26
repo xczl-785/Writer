@@ -39,7 +39,10 @@ import {
 import { useTransientStatus } from '../hooks/useTransientStatus';
 import { useFindReplace } from '../hooks/useFindReplace';
 import { useToolbarCommands } from '../hooks/useToolbarCommands';
-import { ContextMenu, useContextMenu } from '../../../ui/components/ContextMenu';
+import {
+  ContextMenu,
+  useContextMenu,
+} from '../../../ui/components/ContextMenu';
 import { Breadcrumb } from '../../../ui/components/Breadcrumb';
 import {
   buildActiveFileBreadcrumb,

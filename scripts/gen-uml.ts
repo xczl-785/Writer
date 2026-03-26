@@ -8,7 +8,6 @@
 
 import {
   Project,
-  SourceFile,
   ClassDeclaration,
   InterfaceDeclaration,
   Type,

@@ -15,7 +15,7 @@ describe('EditorDropBlockedOverlay', () => {
   );
 
   it('renders the redirected drop hint from the v6 windows prototype', () => {
-    expect(source).toContain("ArrowLeft");
+    expect(source).toContain('ArrowLeft');
     expect(source).toContain('isVisible');
     expect(source).toContain("t('workspace.dropInEditorDisabled')");
     expect(source).toContain('rounded-full bg-zinc-800 text-white');
@@ -26,7 +26,9 @@ describe('EditorDropBlockedOverlay', () => {
     expect(source).toContain('opacity-100');
     expect(appCss).toContain('.editor-drop-blocked-overlay__arrow');
     expect(appCss).toContain('@keyframes editor-drop-blocked-arrow');
-    expect(appCss).toContain('animation: editor-drop-blocked-arrow 1.5s infinite;');
+    expect(appCss).toContain(
+      'animation: editor-drop-blocked-arrow 1.5s infinite;',
+    );
     expect(appCss).toContain('0%,');
     expect(appCss).toContain('100% {');
     expect(appCss).toContain('transform: translateX(0);');

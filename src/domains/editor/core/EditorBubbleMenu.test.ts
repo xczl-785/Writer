@@ -6,7 +6,10 @@ import { fileURLToPath } from 'node:url';
 describe('Editor bubble menu timing', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const readBubbleMenu = () =>
-    readFileSync(join(currentDir, '..', 'ui', 'menus', 'BubbleMenu.tsx'), 'utf-8');
+    readFileSync(
+      join(currentDir, '..', 'ui', 'menus', 'BubbleMenu.tsx'),
+      'utf-8',
+    );
 
   it('keeps bubble menu debounce under 100ms', () => {
     const bubbleMenuTsx = readBubbleMenu();

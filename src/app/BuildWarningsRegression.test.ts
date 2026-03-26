@@ -19,7 +19,7 @@ describe('build warning regression', () => {
       'utf-8',
     );
 
-    expect(source).toContain("useWorkspaceStore,");
+    expect(source).toContain('useWorkspaceStore,');
     expect(source).not.toContain("await import('../state/workspaceStore')");
   });
 
@@ -99,9 +99,7 @@ describe('build warning regression', () => {
     expect(sidebar).toContain(
       "import { fileActions } from '../../domains/file/services/fileActions';",
     );
-    expect(sidebar).toContain(
-      "openWorkspace,",
-    );
+    expect(sidebar).toContain('openWorkspace,');
     expect(sidebar).toContain(
       "} from '../../domains/workspace/services/WorkspaceManager';",
     );
@@ -175,15 +173,13 @@ describe('build warning regression', () => {
     expect(domainMultiRootTree).toContain(
       "} from '../../workspace/state/workspaceStore';",
     );
-    expect(domainMultiRootTree).toContain(
+    expect(domainMultiRootTree).not.toContain(
       "import { addFolderToWorkspaceByDialog } from '../../workspace/services/WorkspaceManager';",
     );
     expect(workspaceActions).toContain(
       "import { useEditorStore } from '../../editor/state/editorStore';",
     );
-    expect(workspaceActions).toContain(
-      "import { useFileTreeStore, type RootFolderNode } from '../../file/state/fileStore';",
-    );
+    expect(workspaceActions).toContain("} from '../../file/state/fileStore';");
     expect(recentMenu).toContain(
       "} from '../../../domains/workspace/services/RecentItemsService';",
     );
@@ -208,8 +204,8 @@ describe('build warning regression', () => {
     expect(
       existsSync(join(srcRoot, 'state', 'actions', 'editorActions.ts')),
     ).toBe(false);
-    expect(
-      existsSync(join(srcRoot, 'state', 'actions', 'index.ts')),
-    ).toBe(false);
+    expect(existsSync(join(srcRoot, 'state', 'actions', 'index.ts'))).toBe(
+      false,
+    );
   });
 });

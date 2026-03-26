@@ -65,7 +65,8 @@ export function buildDefaultWorkspaceFileName(
 
   if (workspaceContext === 'single-temporary') {
     const folder = workspace.folders[0];
-    const baseName = folder?.name ?? folder?.path.split('/').pop() ?? 'workspace';
+    const baseName =
+      folder?.name ?? folder?.path.split('/').pop() ?? 'workspace';
     return `${baseName}${WORKSPACE_FILE_SUFFIX}`;
   }
 

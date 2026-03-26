@@ -90,6 +90,27 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'aboutWriter.documentation.title': '\u4f7f\u7528\u6587\u6863',
     'aboutWriter.documentation.desc':
       '\u67e5\u770b\u5165\u95e8\u8bf4\u660e\u3001\u6838\u5fc3\u529f\u80fd\u4ecb\u7ecd\u4e0e\u5e38\u89c1\u95ee\u9898\u3002',
+    'aboutWriter.updates.title': '\u66f4\u65b0',
+    'aboutWriter.updates.cardTitle': '\u68c0\u67e5\u65b0\u7248\u672c',
+    'aboutWriter.updates.cardDesc':
+      '\u4ece GitHub Releases \u68c0\u67e5\u5f53\u524d\u7cfb\u7edf\u5bf9\u5e94\u7684\u6700\u65b0\u53ef\u7528\u7248\u672c\u3002',
+    'aboutWriter.updates.idle':
+      '\u53ef\u4ee5\u968f\u65f6\u68c0\u67e5 Writer \u662f\u5426\u6709\u65b0\u7248\u672c\u3002',
+    'aboutWriter.updates.checkButton': '\u68c0\u67e5\u66f4\u65b0',
+    'aboutWriter.updates.checking': '\u6b63\u5728\u68c0\u67e5\u66f4\u65b0...',
+    'aboutWriter.updates.upToDate':
+      '\u5f53\u524d\u5df2\u662f\u6700\u65b0\u7248\u672c',
+    'aboutWriter.updates.availableVersion':
+      '\u7248\u672c {version} \u5df2\u51c6\u5907\u5c31\u7eea',
+    'aboutWriter.updates.publishedAt': '\u53d1\u5e03\u4e8e {date}',
+    'aboutWriter.updates.updateNow': '\u7acb\u5373\u66f4\u65b0',
+    'aboutWriter.updates.downloading':
+      '\u6b63\u5728\u4e0b\u8f7d\u66f4\u65b0...',
+    'aboutWriter.updates.installing': '\u6b63\u5728\u542f\u52a8\u5b89\u88c5...',
+    'aboutWriter.updates.error': '\u65e0\u6cd5\u68c0\u67e5\u66f4\u65b0',
+    'aboutWriter.updates.installError':
+      '\u4e0b\u8f7d\u6216\u5b89\u88c5\u66f4\u65b0\u5931\u8d25',
+    'aboutWriter.updates.openReleasePage': '\u6253\u5f00 Release \u9875\u9762',
     'aboutWriter.footerTag': 'About Writer - Windows',
     'sidebar.title': '文件',
     'sidebar.newFile': '新建文件',
@@ -430,6 +451,24 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'aboutWriter.documentation.title': 'Documentation',
     'aboutWriter.documentation.desc':
       'Open onboarding guides, core feature docs, and common FAQs.',
+    'aboutWriter.updates.title': 'Updates',
+    'aboutWriter.updates.cardTitle': 'Check for a newer build',
+    'aboutWriter.updates.cardDesc':
+      'Look for the latest GitHub release that matches this desktop platform.',
+    'aboutWriter.updates.idle':
+      'Check whether a newer Writer release is ready for this device.',
+    'aboutWriter.updates.checkButton': 'Check for Updates',
+    'aboutWriter.updates.checking': 'Checking for updates...',
+    'aboutWriter.updates.upToDate': 'You already have the latest version',
+    'aboutWriter.updates.availableVersion': 'Version {version} is ready',
+    'aboutWriter.updates.publishedAt': 'Published on {date}',
+    'aboutWriter.updates.updateNow': 'Update Now',
+    'aboutWriter.updates.downloading': 'Downloading update...',
+    'aboutWriter.updates.installing': 'Starting installer...',
+    'aboutWriter.updates.error': 'Unable to check for updates',
+    'aboutWriter.updates.installError':
+      'Unable to download or install the update',
+    'aboutWriter.updates.openReleasePage': 'Open Release Page',
     'aboutWriter.footerTag': 'About Writer - Windows',
     'sidebar.title': 'Files',
     'sidebar.newFile': 'New File',

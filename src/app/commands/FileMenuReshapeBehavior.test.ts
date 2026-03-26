@@ -21,17 +21,26 @@ describe('File menu reshape behavior markers', () => {
   });
 
   it('does not route close-folder directly to closeWorkspace anymore', () => {
-    const closeFolderRegistration = fileCommandsSource.match(
-      /menuCommandBus\.register\('menu\.file\.close_folder'[\s\S]*?\),\n\s*\);/,
+    const closeFolderMarker =
+      "menuCommandBus.register('menu.file.close_folder'";
+    const closeWorkspaceMarker = 'workspaceActions.closeWorkspace();';
+    const closeFolderIndex = fileCommandsSource.indexOf(closeFolderMarker);
+    const nextRegistrationIndex = fileCommandsSource.indexOf(
+      "menuCommandBus.register('menu.file.",
+      closeFolderIndex + closeFolderMarker.length,
+    );
+    const closeFolderRegistration = fileCommandsSource.slice(
+      closeFolderIndex,
+      nextRegistrationIndex === -1
+        ? fileCommandsSource.length
+        : nextRegistrationIndex,
     );
 
-    expect(closeFolderRegistration?.[0]).toBeDefined();
-    expect(closeFolderRegistration?.[0]).toContain(
+    expect(closeFolderIndex).toBeGreaterThanOrEqual(0);
+    expect(closeFolderRegistration).toContain(
       'workspaceActions.removeFolderFromWorkspace',
     );
-    expect(closeFolderRegistration?.[0]).not.toContain(
-      'workspaceActions.closeWorkspace();',
-    );
+    expect(closeFolderRegistration).not.toContain(closeWorkspaceMarker);
   });
 
   it('matches the prototype-driven file menu surface', () => {

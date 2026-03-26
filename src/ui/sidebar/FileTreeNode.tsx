@@ -79,7 +79,8 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
 
   // 根据节点类型和状态构建样式
   const getNodeStyles = () => {
-    const baseStyles = 'flex items-center px-3 py-1.5 cursor-pointer select-none group';
+    const baseStyles =
+      'flex items-center px-3 py-1.5 cursor-pointer select-none group';
 
     // 活跃文件：蓝色背景 + 左侧指示条
     if (isActive && !isFolder) {
