@@ -4,28 +4,126 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing tag to release, for example v0.3.12
+        required: true
+        type: string
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  validate:
+    name: Validate Release Inputs
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+          else
+            RAW_TAG="${{ github.event.inputs.release_tag }}"
+            if [[ ! "${RAW_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "workflow_dispatch requires release_tag like v0.3.12"
+              exit 1
+            fi
+            TAG_VERSION="${RAW_TAG#v}"
+          fi
+          echo "tag_version=${TAG_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify app versions match release tag
+        shell: bash
+        run: |
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          TAURI_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('./src-tauri/tauri.conf.json', 'utf8')).version")"
+          TAG_VERSION="${{ steps.version.outputs.tag_version }}"
+
+          if [[ "${PACKAGE_VERSION}" != "${TAURI_VERSION}" ]]; then
+            echo "package.json (${PACKAGE_VERSION}) does not match src-tauri/tauri.conf.json (${TAURI_VERSION})"
+            exit 1
+          fi
+
+          if [[ "${PACKAGE_VERSION}" != "${TAG_VERSION}" ]]; then
+            echo "Version ${PACKAGE_VERSION} does not match release tag v${TAG_VERSION}"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate workspace before release
+        run: |
+          pnpm lint
+          pnpm test
+          pnpm build
+
   build:
+    name: Build ${{ matrix.name }}
+    needs: validate
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: ubuntu-22.04
+          - name: linux-x64
+            platform: ubuntu-22.04
             rust_target: x86_64-unknown-linux-gnu
-          - platform: macos-latest
+            args: --target x86_64-unknown-linux-gnu
+          - name: macos-arm64
+            platform: macos-latest
             rust_target: aarch64-apple-darwin
-          - platform: windows-latest
+            args: --target aarch64-apple-darwin
+          - name: macos-x64
+            platform: macos-latest
+            rust_target: x86_64-apple-darwin
+            args: --target x86_64-apple-darwin
+          - name: windows-x64
+            platform: windows-latest
             rust_target: x86_64-pc-windows-msvc
+            args: --target x86_64-pc-windows-msvc
 
     runs-on: ${{ matrix.platform }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+          else
+            RAW_TAG="${{ github.event.inputs.release_tag }}"
+            if [[ ! "${RAW_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "workflow_dispatch requires release_tag like v0.3.12"
+              exit 1
+            fi
+            TAG_VERSION="${RAW_TAG#v}"
+          fi
+          echo "tag_version=${TAG_VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies (ubuntu only)
         if: runner.os == 'Linux'
@@ -55,18 +153,28 @@ jobs:
           cache: pnpm
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build and release
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          # Updater artifacts include latest.json for the stable in-app endpoint.
-          tagName: v__VERSION__
-          releaseName: 'Writer v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
+          projectPath: .
+          tauriScript: pnpm tauri
+          args: ${{ matrix.args }}
+          tagName: v${{ steps.version.outputs.tag_version }}
+          releaseName: Writer v${{ steps.version.outputs.tag_version }}
+          releaseBody: |
+            Automated release for Writer v${{ steps.version.outputs.tag_version }}.
+
+            Assets:
+            - Desktop installers for supported platforms
+            - Tauri updater metadata (`latest.json`) and signatures for in-app updates
+
+            In-app update endpoint:
+            - https://github.com/xczl-785/Writer/releases/latest/download/latest.json
+          releaseDraft: false
           prerelease: false

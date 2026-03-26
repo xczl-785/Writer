@@ -58,3 +58,4 @@ pnpm version:update
 - `bundle.createUpdaterArtifacts` 必须保持开启，release 构建会产出 updater 资产
 - GitHub Release 需要上传 `latest.json` 与签名相关产物，应用内更新通过 `releases/latest/download/latest.json` 拉取
 - 不要把私钥提交到仓库；只将公钥保存在 `src-tauri/tauri.conf.json`
+- 推送 `vX.Y.Z` tag 会自动触发 GitHub Actions 发布流程，详见 `docs/release/github-release.md`

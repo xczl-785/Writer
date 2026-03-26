@@ -12,7 +12,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "uml:gen": "tsx scripts/gen-uml.ts",
-    "version:update": "node build/update-version.mjs"
+    "version:update": "node build/update-version.mjs",
+    "release:tag": "node build/release-tag.mjs",
+    "release:push": "node build/release-tag.mjs --push"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",
