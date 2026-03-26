@@ -58,10 +58,13 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
 }) => {
   const contextMenu = useContextMenu();
 
-  const toggleExpanded = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggle();
-  }, [onToggle]);
+  const toggleExpanded = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onToggle();
+    },
+    [onToggle],
+  );
 
   const handleRowClick = useCallback(() => {
     onSelect?.();

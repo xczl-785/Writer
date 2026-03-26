@@ -67,13 +67,15 @@ export function slashReducer(
       if (state.query.length === 0) {
         return createInitialSlashSession();
       }
-      const nextQuery = state.query.slice(0, -1);
-      return {
-        ...state,
-        query: nextQuery,
-        phase: nextQuery.length > 0 ? 'searching' : 'open',
-        selectedIndex: 0,
-      };
+      {
+        const nextQuery = state.query.slice(0, -1);
+        return {
+          ...state,
+          query: nextQuery,
+          phase: nextQuery.length > 0 ? 'searching' : 'open',
+          selectedIndex: 0,
+        };
+      }
 
     case 'SET_SELECTED':
       if (state.phase === 'idle' || action.itemCount === 0) return state;

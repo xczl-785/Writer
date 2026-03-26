@@ -9,9 +9,21 @@ describe('Typewriter fallback integration', () => {
     join(currentDir, '..', 'hooks', 'useTypewriterAnchor.ts'),
     'utf-8',
   );
-  const findTs = readFileSync(join(currentDir, '..', 'hooks', 'useFindReplace.ts'), 'utf-8');
+  const findTs = readFileSync(
+    join(currentDir, '..', 'hooks', 'useFindReplace.ts'),
+    'utf-8',
+  );
   const outlineExtractorTs = readFileSync(
-    join(currentDir, '..', '..', '..', 'shared', 'components', 'Outline', 'useOutlineExtractor.ts'),
+    join(
+      currentDir,
+      '..',
+      '..',
+      '..',
+      'shared',
+      'components',
+      'Outline',
+      'useOutlineExtractor.ts',
+    ),
     'utf-8',
   );
 

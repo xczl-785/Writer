@@ -32,9 +32,7 @@ export function getWorkspaceType(state: WorkspaceState): WorkspaceType {
   return 'multi';
 }
 
-export function getWorkspaceContext(
-  state: WorkspaceState,
-): WorkspaceContext {
+export function getWorkspaceContext(state: WorkspaceState): WorkspaceContext {
   if (state.workspaceFile) {
     if (state.folders.length === 0) {
       return 'saved-empty';

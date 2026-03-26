@@ -84,8 +84,8 @@ describe('workspace indicator naming', () => {
   });
 
   it('strips the workspace file suffix when deriving the base name', () => {
-    expect(getWorkspaceFileBaseName('/Users/demo/project.writer-workspace')).toBe(
-      'project',
-    );
+    expect(
+      getWorkspaceFileBaseName('/Users/demo/project.writer-workspace'),
+    ).toBe('project');
   });
 });

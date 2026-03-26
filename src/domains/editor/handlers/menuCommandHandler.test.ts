@@ -54,7 +54,11 @@ describe('createMenuCommandHandler', () => {
       setOutlineOpen,
     );
 
-    handler(new CustomEvent('writer:editor-command', { detail: { id: 'edit.paste' } }));
+    handler(
+      new CustomEvent('writer:editor-command', {
+        detail: { id: 'edit.paste' },
+      }),
+    );
 
     expect(execCommand).toHaveBeenCalledWith('paste');
     expect(readText).not.toHaveBeenCalled();
@@ -80,7 +84,11 @@ describe('createMenuCommandHandler', () => {
       vi.fn(),
     );
 
-    handler(new CustomEvent('writer:editor-command', { detail: { id: 'edit.paste' } }));
+    handler(
+      new CustomEvent('writer:editor-command', {
+        detail: { id: 'edit.paste' },
+      }),
+    );
 
     expect(setStatus).toHaveBeenCalledWith(
       'error',

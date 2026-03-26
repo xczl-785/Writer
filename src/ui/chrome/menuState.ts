@@ -78,9 +78,7 @@ export function isMenuItemEnabledForState(
     return state.hasActiveFile;
   }
 
-  if (
-    ACTIVE_FILE_REQUIRED_PREFIXES.some((prefix) => id.startsWith(prefix))
-  ) {
+  if (ACTIVE_FILE_REQUIRED_PREFIXES.some((prefix) => id.startsWith(prefix))) {
     return state.hasActiveFile;
   }
 

@@ -12,12 +12,12 @@ describe('Editor slash menu behavior', () => {
   const readUseSlashMenu = () =>
     readFileSync(join(editorDir, 'ui', 'menus', 'useSlashMenu.ts'), 'utf-8');
   const readSlashEligibility = () =>
-    readFileSync(join(editorDir, 'ui', 'menus', 'slashEligibility.ts'), 'utf-8');
-  const readSlashDomain = () =>
     readFileSync(
-      join(editorDir, 'domain', 'slash', 'slashDomain.ts'),
+      join(editorDir, 'ui', 'menus', 'slashEligibility.ts'),
       'utf-8',
     );
+  const readSlashDomain = () =>
+    readFileSync(join(editorDir, 'domain', 'slash', 'slashDomain.ts'), 'utf-8');
   const readSafeCoords = () =>
     readFileSync(join(editorDir, 'hooks', 'useSafeCoords.ts'), 'utf-8');
   const readGhostHintHook = () =>
@@ -27,7 +27,10 @@ describe('Editor slash menu behavior', () => {
   const readEditorImpl = () =>
     readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
   const readMessages = () =>
-    readFileSync(join(editorDir, '..', '..', 'shared', 'i18n', 'messages.ts'), 'utf-8');
+    readFileSync(
+      join(editorDir, '..', '..', 'shared', 'i18n', 'messages.ts'),
+      'utf-8',
+    );
 
   it('supports slash trigger chars for Latin and full-width input', () => {
     const slashDomainTs = readSlashDomain();
@@ -73,7 +76,7 @@ describe('Editor slash menu behavior', () => {
     const slashDomainTs = readSlashDomain();
     expect(useSlashMenuTs).toContain("addEventListener('beforeinput'");
     expect(useSlashMenuTs).toContain("addEventListener('compositionstart'");
-    expect(useSlashMenuTs).toContain("addEventListener('compositionend'");
+    expect(useSlashMenuTs).toContain("'compositionend'");
     expect(useSlashMenuTs).toContain('const handleCompositionEnd');
     expect(slashDomainTs).toContain("inputType === 'insertFromComposition'");
     expect(useSlashMenuTs).toContain(

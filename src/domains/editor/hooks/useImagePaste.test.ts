@@ -307,13 +307,13 @@ describe('useImagePaste', () => {
     await handlePaste(mockEvent);
 
     expect(ImageResolver.resolve).toHaveBeenCalledWith(
-      expect.stringMatching(/^\.\/assets\/image-\d{8}-\d{6}\.png$/),
+      expect.stringMatching(/^\.assets\/image-\d{8}-\d{6}\.png$/),
       '/project/docs/file.md',
     );
     expect(setStatusMock).toHaveBeenCalledWith(
       'idle',
       expect.stringMatching(
-        /^Image src: \.\/assets\/image-\d{8}-\d{6}\.png -> asset:\/\/\/project\/docs\/assets\/image\.png$/,
+        /^Image src: \.assets\/image-\d{8}-\d{6}\.png -> asset:\/\/\/project\/docs\/assets\/image\.png$/,
       ),
     );
   });

@@ -166,9 +166,7 @@ describe('import path regression', () => {
     expect(useInsertTable).toContain(
       "import { EDITOR_CONFIG } from '../../../config/editor';",
     );
-    expect(useToolbarCommands).toContain(
-      "} from '../core/constants';",
-    );
+    expect(useToolbarCommands).toContain("} from '../core/constants';");
     expect(useTransientStatus).toContain(
       "import { EDITOR_CONFIG } from '../../../config/editor';",
     );

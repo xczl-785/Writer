@@ -18,6 +18,8 @@ describe('Editor image behavior', () => {
     expect(slashMenuTs).toContain('applyImageAction');
     expect(slashMenuTs).not.toContain('readAsDataURL');
     expect(menuHandlerTs).toContain('applyImageAction');
-    expect(menuHandlerTs).not.toContain("setStatus('idle', t('status.menu.todo'))");
+    expect(menuHandlerTs).not.toContain(
+      "setStatus('idle', t('status.menu.todo'))",
+    );
   });
 });

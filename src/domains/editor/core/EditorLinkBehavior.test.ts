@@ -18,6 +18,8 @@ describe('Editor link behavior', () => {
     expect(bubbleMenuTs).toContain('applyLinkAction');
     expect(bubbleMenuTs).not.toContain('Link editor coming soon');
     expect(menuHandlerTs).toContain('applyLinkAction');
-    expect(menuHandlerTs).not.toContain("case 'format.link':\n      case 'format.image':");
+    expect(menuHandlerTs).not.toContain(
+      "case 'format.link':\n      case 'format.image':",
+    );
   });
 });

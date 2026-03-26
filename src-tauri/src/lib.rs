@@ -49,6 +49,7 @@ pub fn run() {
 
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(WorkspaceAllowlist::default()))
         .manage(Mutex::new(WatcherState::default()))
         .manage(startup_args)
@@ -96,6 +97,9 @@ pub fn run() {
         .setup(|app| {
             let native_menu = menu::build_native_menu(&app.handle())?;
             app.set_menu(native_menu)?;
+            #[cfg(desktop)]
+            app.handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())?;
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
