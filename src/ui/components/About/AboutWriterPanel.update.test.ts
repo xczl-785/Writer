@@ -54,6 +54,8 @@ function getButton(container: HTMLElement, label: string): HTMLButtonElement {
 }
 
 describe('AboutWriterPanel updater behavior', () => {
+  const originalNavigator = globalThis.navigator;
+
   afterEach(() => {
     document.body.innerHTML = '';
     setLocale('en-US');
@@ -61,6 +63,10 @@ describe('AboutWriterPanel updater behavior', () => {
     mockCheckForAppUpdate.mockReset();
     mockInstallAppUpdate.mockReset();
     mockOpenReleasePage.mockReset();
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: originalNavigator,
+    });
   });
 
   it('checks for updates and renders an update call to action when a release is available', async () => {
