@@ -1,6 +1,7 @@
 import { check, type Update } from '@tauri-apps/plugin-updater';
 
 const RELEASES_URL = 'https://github.com/xczl-785/Writer/releases/latest';
+const WINDOWS_NSIS_TARGET = 'windows-x86_64-nsis';
 
 export type AvailableAppUpdate = {
   kind: 'available';
@@ -18,8 +19,28 @@ export type UpdateProgress =
   | { phase: 'downloading'; percent: number | null }
   | { phase: 'installing'; percent: number | null };
 
+export function resolveUpdaterTarget(): string | undefined {
+  if (typeof navigator === 'undefined') {
+    return undefined;
+  }
+
+  const userAgentData = (
+    navigator as Navigator & { userAgentData?: { platform?: string } }
+  ).userAgentData;
+  const userAgent =
+    `${userAgentData?.platform ?? ''} ${navigator.userAgent}`.toLowerCase();
+
+  if (userAgent.includes('win')) {
+    return WINDOWS_NSIS_TARGET;
+  }
+
+  return undefined;
+}
+
 export async function checkForAppUpdate(): Promise<AppUpdateResult> {
-  const update = await check();
+  const update = await check({
+    target: resolveUpdaterTarget(),
+  });
   if (!update) {
     return { kind: 'none' };
   }
