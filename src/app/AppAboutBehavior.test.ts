@@ -122,4 +122,12 @@ describe('App about integration', () => {
     expect(releaseWorkflow).toContain('TAURI_SIGNING_PRIVATE_KEY_PASSWORD');
     expect(releaseWorkflow).toContain('latest.json');
   });
+
+  it('keeps file association metadata explicit for Windows and macOS consumers', () => {
+    expect(tauriConfigJson).toContain('"fileAssociations"');
+    expect(tauriConfigJson).toContain('"name": "Writer"');
+    expect(tauriConfigJson).toContain(
+      '"description": "Writer Markdown Document"',
+    );
+  });
 });

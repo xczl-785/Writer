@@ -49,6 +49,7 @@
           "md"
         ],
         "name": "Writer",
+        "description": "Writer Markdown Document",
         "mimeType": "text/markdown",
         "role": "Editor"
       },
@@ -57,6 +58,7 @@
           "markdown"
         ],
         "name": "Writer",
+        "description": "Writer Markdown Document",
         "mimeType": "text/markdown",
         "role": "Editor"
       }
