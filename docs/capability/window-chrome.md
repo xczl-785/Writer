@@ -17,7 +17,7 @@
   - Menu bar, sidebar toggle, and window control buttons are not swallowed by drag-region behavior.
   - focus zen visibility changes do not break the above interactions.
   - Windows Help > About Writer still opens from the title-bar menu and the dialog uses Writer's own icon (`/icon.svg`).
-  - The About dialog platform row and footer tag resolve from the runtime desktop platform (`Windows`, `macOS`, `Linux`) instead of hard-coded Windows copy.
+  - The About dialog environment line resolves from the runtime desktop platform (`Windows`, `macOS`, `Linux`) instead of hard-coded Windows copy.
   - The About dialog update card still exposes manual update checks without breaking title-bar or menu interactions.
 - **last_verified**: 2026-03-21
 
@@ -29,7 +29,7 @@ This capability provides the cross-platform custom window title bar. `PlatformTi
 
 As of 2026-03-21, Windows title-bar blank-space gestures no longer mix manual `onDoubleClick` / `startDragging()` handlers with `data-tauri-drag-region`. Dragging and double-click maximize/restore for blank title-bar space now rely on the Tauri drag-region behavior only, preventing duplicate gesture handling on Windows.
 
-The Windows title-bar Help menu now exposes **About Writer** as an enabled entry. Selecting it opens an in-app modal panel mounted from `App.tsx`, while the remaining Help items stay disabled placeholders until their dedicated capability work lands. The About panel must use Writer's own `/icon.svg` asset rather than a placeholder graphic, and its platform row plus footer tag must resolve from the runtime desktop platform so the same panel copy remains correct on Windows, macOS, and future Linux builds. As of 2026-03-26, the same About surface also owns manual update checks, so menu-entry behavior now implicitly depends on the update card remaining reachable after the panel opens.
+The Windows title-bar Help menu now exposes **About Writer** as an enabled entry. Selecting it opens an in-app modal panel mounted from `App.tsx`, while the remaining Help items stay disabled placeholders until their dedicated capability work lands. The About panel must use Writer's own `/icon.svg` asset rather than a placeholder graphic, and its runtime environment line must resolve from the current desktop platform so the same panel copy remains correct on Windows, macOS, and future Linux builds. As of 2026-03-26, the same About surface also owns manual update checks, so menu-entry behavior now implicitly depends on the update CTA remaining reachable after the panel opens.
 
 ---
 
@@ -87,7 +87,7 @@ In focus zen or similar modes, the title bar may hide via `isVisible`-driven opa
 
 ### CR-006: About dialog platform copy must be resolved at runtime
 
-The About Writer dialog must not hard-code Windows-only platform copy for the build-info platform row or footer tag. It must resolve the current desktop platform at runtime and present platform-specific labels that stay correct for Windows, macOS, and Linux distributions.
+The About Writer dialog must not hard-code Windows-only platform copy. It must resolve the current desktop platform at runtime and present a platform-specific environment line that stays correct for Windows, macOS, and Linux distributions.
 
 **Evidence**: `src/ui/components/About/AboutWriterPanel.tsx`
 

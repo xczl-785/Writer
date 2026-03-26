@@ -19,9 +19,9 @@ type UpdateState =
   | { phase: 'checking' }
   | { phase: 'upToDate' }
   | { phase: 'available'; update: AvailableAppUpdate }
-  | { phase: 'downloading'; update: AvailableAppUpdate; percent: number | null }
-  | { phase: 'installing'; update: AvailableAppUpdate; percent: number | null }
-  | { phase: 'error'; message: string };
+  | { phase: 'downloading'; update: AvailableAppUpdate }
+  | { phase: 'installing'; update: AvailableAppUpdate }
+  | { phase: 'error'; reason: 'checkFailed' | 'installFailed' };
 
 function detectDesktopPlatform():
   | 'Windows Desktop'
@@ -46,6 +46,10 @@ function detectDesktopPlatform():
   }
 
   return 'Linux Desktop';
+}
+
+function formatUpdateVersion(version: string): string {
+  return version.startsWith('v') ? version : `v${version}`;
 }
 
 export function AboutWriterPanel({
@@ -78,37 +82,39 @@ export function AboutWriterPanel({
     } catch {
       setUpdateState({
         phase: 'error',
-        message: t('aboutWriter.updates.error'),
+        reason: 'checkFailed',
       });
     }
   };
 
-  const handleInstallUpdate = async (appUpdate: AvailableAppUpdate) => {
-    setUpdateState({ phase: 'downloading', update: appUpdate, percent: 0 });
-
-    try {
-      await installAppUpdate(appUpdate, ({ phase, percent }) => {
-        if (phase === 'downloading') {
-          setUpdateState({
-            phase: 'downloading',
-            update: appUpdate,
-            percent,
-          });
-          return;
-        }
-
-        setUpdateState({
-          phase: 'installing',
-          update: appUpdate,
-          percent,
-        });
-      });
-    } catch {
-      setUpdateState({
-        phase: 'error',
-        message: t('aboutWriter.updates.installError'),
-      });
+  const handlePrimaryAction = async () => {
+    if (updateState.phase === 'error') {
+      openReleasePage();
+      return;
     }
+
+    if (updateState.phase === 'available') {
+      const { update } = updateState;
+      setUpdateState({ phase: 'downloading', update });
+
+      try {
+        await installAppUpdate(update, ({ phase }) => {
+          setUpdateState({
+            phase: phase === 'installing' ? 'installing' : 'downloading',
+            update,
+          });
+        });
+      } catch {
+        setUpdateState({
+          phase: 'error',
+          reason: 'installFailed',
+        });
+      }
+
+      return;
+    }
+
+    await handleCheckForUpdates();
   };
 
   if (!isOpen) {
@@ -120,116 +126,50 @@ export function AboutWriterPanel({
     version,
   );
   const desktopPlatform = detectDesktopPlatform();
-  const footerTag = `About Writer - ${desktopPlatform.replace(' Desktop', '')}`;
+  const environmentText = t('aboutWriter.environmentLine').replace(
+    '{platform}',
+    desktopPlatform,
+  );
+
+  const primaryActionLabel =
+    updateState.phase === 'checking'
+      ? t('aboutWriter.updates.checking')
+      : updateState.phase === 'upToDate'
+        ? t('aboutWriter.updates.upToDateButton')
+        : updateState.phase === 'available'
+          ? t('aboutWriter.updates.availableVersion').replace(
+              '{version}',
+              formatUpdateVersion(updateState.update.version),
+            )
+          : updateState.phase === 'downloading' ||
+              updateState.phase === 'installing'
+            ? t('aboutWriter.updates.preparing')
+            : updateState.phase === 'error'
+              ? t('aboutWriter.updates.downloadFallback')
+              : t('aboutWriter.updates.checkButton');
+
+  const primaryActionClassName =
+    updateState.phase === 'available' ||
+    updateState.phase === 'downloading' ||
+    updateState.phase === 'installing'
+      ? 'about-writer-primary-action about-writer-primary-action--accent'
+      : updateState.phase === 'upToDate'
+        ? 'about-writer-primary-action about-writer-primary-action--subtle'
+        : 'about-writer-primary-action';
+
   const isBusy =
     updateState.phase === 'checking' ||
     updateState.phase === 'downloading' ||
     updateState.phase === 'installing';
 
-  const renderUpdateSummary = () => {
-    if (updateState.phase === 'checking') {
-      return (
-        <p className="about-writer-update-card__status">
-          {t('aboutWriter.updates.checking')}
-        </p>
-      );
-    }
-
-    if (updateState.phase === 'upToDate') {
-      return (
-        <p className="about-writer-update-card__status">
-          {t('aboutWriter.updates.upToDate')}
-        </p>
-      );
-    }
-
-    if (updateState.phase === 'error') {
-      return (
-        <div className="about-writer-update-card__feedback">
-          <p className="about-writer-update-card__status">
-            {updateState.message}
-          </p>
-          <button
-            type="button"
-            className="about-writer-secondary-action"
-            onClick={() => openReleasePage()}
-          >
-            {t('aboutWriter.updates.openReleasePage')}
-          </button>
-        </div>
-      );
-    }
-
-    if (
-      updateState.phase === 'available' ||
-      updateState.phase === 'downloading' ||
-      updateState.phase === 'installing'
-    ) {
-      const { update } = updateState;
-      const statusText =
-        updateState.phase === 'installing'
-          ? t('aboutWriter.updates.installing')
-          : updateState.phase === 'downloading'
-            ? t('aboutWriter.updates.downloading')
-            : t('aboutWriter.updates.availableVersion').replace(
-                '{version}',
-                update.version,
-              );
-
-      return (
-        <div className="about-writer-update-card__feedback">
-          <p className="about-writer-update-card__status">{statusText}</p>
-          {update.notes ? (
-            <p className="about-writer-update-card__notes">{update.notes}</p>
-          ) : null}
-          {update.publishedAt ? (
-            <p className="about-writer-update-card__meta">
-              {t('aboutWriter.updates.publishedAt').replace(
-                '{date}',
-                new Date(update.publishedAt).toLocaleDateString(),
-              )}
-            </p>
-          ) : null}
-          {updateState.phase === 'downloading' ||
-          updateState.phase === 'installing' ? (
-            <div className="about-writer-update-progress">
-              <div
-                className="about-writer-update-progress__bar"
-                style={{ width: `${updateState.percent ?? 100}%` }}
-              />
-              <span className="about-writer-update-progress__label">
-                {updateState.percent ?? 100}%
-              </span>
-            </div>
-          ) : null}
-          {updateState.phase === 'available' ? (
-            <div className="about-writer-update-card__actions">
-              <button
-                type="button"
-                className="about-writer-primary-action"
-                onClick={() => void handleInstallUpdate(update)}
-              >
-                {t('aboutWriter.updates.updateNow')}
-              </button>
-              <button
-                type="button"
-                className="about-writer-secondary-action"
-                onClick={() => openReleasePage(update.releaseUrl)}
-              >
-                {t('aboutWriter.updates.openReleasePage')}
-              </button>
-            </div>
-          ) : null}
-        </div>
-      );
-    }
-
-    return (
-      <p className="about-writer-update-card__status">
-        {t('aboutWriter.updates.idle')}
-      </p>
-    );
-  };
+  const statusHint =
+    updateState.phase === 'error'
+      ? updateState.reason === 'installFailed'
+        ? t('aboutWriter.updates.installError')
+        : t('aboutWriter.updates.error')
+      : updateState.phase === 'upToDate'
+        ? t('aboutWriter.updates.upToDate')
+        : null;
 
   return (
     <div
@@ -240,144 +180,86 @@ export function AboutWriterPanel({
     >
       <div className="about-writer-backdrop" onClick={onClose} />
       <div className="about-writer-dialog">
-        <div className="about-writer-hero">
-          <div className="about-writer-hero__main">
-            <div className="about-writer-hero__icon-frame">
-              <img
-                src="/icon.svg"
-                alt={t('aboutWriter.iconAlt')}
-                className="about-writer-hero__icon"
-              />
-            </div>
-            <div className="about-writer-hero__copy">
-              <h2 className="about-writer-hero__title">
-                {t('aboutWriter.title')}
-              </h2>
-              <p className="about-writer-hero__subtitle">
-                {t('aboutWriter.subtitle')}
-              </p>
-              <div className="about-writer-version-pill">
-                <span
-                  className="about-writer-version-pill__dot"
-                  aria-hidden="true"
-                />
-                <span>{currentVersionText}</span>
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="about-writer-close"
-            onClick={onClose}
-            aria-label={t('aboutWriter.close')}
-            title={t('aboutWriter.close')}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M6 18L18 6M6 6L18 18"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
+        <button
+          type="button"
+          className="about-writer-close"
+          onClick={onClose}
+          aria-label={t('aboutWriter.close')}
+          title={t('aboutWriter.close')}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M6 18L18 6M6 6L18 18"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
 
         <div className="about-writer-content">
-          <div className="about-writer-grid">
-            <section className="about-writer-card">
-              <div className="about-writer-card__eyebrow">
-                {t('aboutWriter.buildInfo')}
-              </div>
-              <div className="about-writer-card__list">
-                <div>
-                  <span>{t('aboutWriter.versionLabel')}</span>
-                  <strong>{version}</strong>
-                </div>
-                <div>
-                  <span>{t('aboutWriter.platformLabel')}</span>
-                  <strong>{desktopPlatform}</strong>
-                </div>
-                <div>
-                  <span>{t('aboutWriter.stackLabel')}</span>
-                  <strong>{t('aboutWriter.stackValue')}</strong>
-                </div>
-              </div>
-            </section>
-            <section className="about-writer-card">
-              <div className="about-writer-card__eyebrow">
-                {t('aboutWriter.positioningTitle')}
-              </div>
-              <p className="about-writer-card__description">
-                {t('aboutWriter.positioningBody')}
-              </p>
-            </section>
+          <div className="about-writer-hero__icon-frame">
+            <img
+              src="/icon.svg"
+              alt={t('aboutWriter.iconAlt')}
+              className="about-writer-hero__icon"
+            />
           </div>
 
-          <section className="about-writer-update-card">
-            <div className="about-writer-links__eyebrow">
-              {t('aboutWriter.updates.title')}
-            </div>
-            <div className="about-writer-update-card__header">
-              <div>
-                <div className="about-writer-update-card__title">
-                  {t('aboutWriter.updates.cardTitle')}
-                </div>
-                <div className="about-writer-update-card__desc">
-                  {t('aboutWriter.updates.cardDesc')}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="about-writer-primary-action"
-                onClick={() => void handleCheckForUpdates()}
-                disabled={isBusy}
-              >
-                {updateState.phase === 'checking'
-                  ? t('aboutWriter.updates.checking')
-                  : t('aboutWriter.updates.checkButton')}
-              </button>
-            </div>
-            {renderUpdateSummary()}
-          </section>
+          <div className="about-writer-hero__copy">
+            <h2 className="about-writer-hero__title">
+              {t('aboutWriter.title')}
+            </h2>
+            <p className="about-writer-hero__subtitle">
+              {t('aboutWriter.subtitle')}
+            </p>
+          </div>
 
-          <section className="about-writer-links">
-            <div className="about-writer-links__eyebrow">
-              {t('aboutWriter.more')}
-            </div>
-            <div className="about-writer-link-card">
-              <div>
-                <div className="about-writer-link-card__title">
-                  {t('aboutWriter.releaseNotes.title')}
-                </div>
-                <div className="about-writer-link-card__desc">
-                  {t('aboutWriter.releaseNotes.desc')}
-                </div>
-              </div>
-              <div className="about-writer-link-card__meta">
-                {t('aboutWriter.comingSoon')}
-              </div>
-            </div>
-            <div className="about-writer-link-card">
-              <div>
-                <div className="about-writer-link-card__title">
-                  {t('aboutWriter.documentation.title')}
-                </div>
-                <div className="about-writer-link-card__desc">
-                  {t('aboutWriter.documentation.desc')}
-                </div>
-              </div>
-              <div className="about-writer-link-card__meta">
-                {t('aboutWriter.comingSoon')}
-              </div>
-            </div>
-          </section>
+          <div className="about-writer-version-pill">
+            <span
+              className="about-writer-version-pill__dot"
+              aria-hidden="true"
+            />
+            <span>{currentVersionText}</span>
+          </div>
+
+          <div className="about-writer-environment">
+            <p>{t('aboutWriter.stackValue')}</p>
+            <p>{environmentText}</p>
+          </div>
+
+          <div className="about-writer-update">
+            <button
+              type="button"
+              className={primaryActionClassName}
+              onClick={() => void handlePrimaryAction()}
+              disabled={isBusy}
+            >
+              {isBusy ? (
+                <span
+                  className="about-writer-primary-action__spinner"
+                  aria-hidden="true"
+                />
+              ) : null}
+              <span>{primaryActionLabel}</span>
+            </button>
+            {statusHint ? (
+              <p className="about-writer-update__hint">{statusHint}</p>
+            ) : null}
+          </div>
         </div>
 
         <div className="about-writer-footer">
-          <span>© 2026 Writer</span>
-          <span>{footerTag}</span>
+          <span>{t('aboutWriter.footerCopyright')}</span>
+          <div className="about-writer-footer__links">
+            <button type="button" className="about-writer-footer__link">
+              {t('aboutWriter.documentation.title')}
+            </button>
+            <button type="button" className="about-writer-footer__link">
+              {t('aboutWriter.releaseNotes.title')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

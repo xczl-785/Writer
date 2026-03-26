@@ -37,6 +37,17 @@ function renderAboutPanel() {
   return { container, root };
 }
 
+function rerenderAboutPanel(root: Root) {
+  act(() => {
+    root.render(
+      createElement(AboutWriterPanel, {
+        isOpen: true,
+        onClose: vi.fn(),
+      }),
+    );
+  });
+}
+
 async function cleanup(container: HTMLElement, root: Root) {
   await act(async () => {
     root.unmount();
@@ -69,41 +80,41 @@ describe('AboutWriterPanel updater behavior', () => {
     });
   });
 
-  it('checks for updates and renders an update call to action when a release is available', async () => {
+  it('renders the simplified about layout with dynamic version and platform info', async () => {
     setLocale('en-US');
-    mockGetVersion.mockResolvedValue('0.3.11');
-    mockCheckForAppUpdate.mockResolvedValue({
-      kind: 'available',
-      version: '0.4.0',
-      currentVersion: '0.3.11',
-      notes: 'New update summary',
-      publishedAt: '2026-03-26T12:00:00Z',
-      releaseUrl: 'https://github.com/xczl-785/Writer/releases/tag/v0.4.0',
+    mockGetVersion.mockResolvedValue('0.3.12');
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: {
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      },
     });
 
     const { container, root } = renderAboutPanel();
 
-    const checkButton = getButton(container, 'Check for Updates');
     await act(async () => {
-      checkButton.click();
       await Promise.resolve();
     });
 
-    expect(mockCheckForAppUpdate).toHaveBeenCalledTimes(1);
-    expect(container.textContent).toContain('Version 0.4.0 is ready');
-    expect(container.textContent).toContain('New update summary');
-    expect(getButton(container, 'Update Now')).toBeTruthy();
+    expect(container.textContent).toContain('Current version 0.3.12');
+    expect(container.textContent).toContain('Tauri 2 + React 19');
+    expect(container.textContent).toContain('Windows Desktop Environment');
+    expect(container.textContent).toContain('Documentation');
+    expect(container.textContent).toContain('Release Notes');
+    expect(container.textContent).not.toContain('Build Info');
+    expect(container.textContent).not.toContain('Positioning');
+    expect(container.textContent).not.toContain('Open Release Page');
 
     await cleanup(container, root);
   });
 
-  it('starts install and renders progress when the user confirms the update', async () => {
+  it('switches the main action into the available-update state and starts install from the same button', async () => {
     setLocale('en-US');
-    mockGetVersion.mockResolvedValue('0.3.11');
+    mockGetVersion.mockResolvedValue('0.3.12');
     mockCheckForAppUpdate.mockResolvedValue({
       kind: 'available',
       version: '0.4.0',
-      currentVersion: '0.3.11',
+      currentVersion: '0.3.12',
       notes: 'New update summary',
       publishedAt: '2026-03-26T12:00:00Z',
       releaseUrl: 'https://github.com/xczl-785/Writer/releases/tag/v0.4.0',
@@ -124,21 +135,26 @@ describe('AboutWriterPanel updater behavior', () => {
       await Promise.resolve();
     });
 
+    expect(mockCheckForAppUpdate).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain('Update Available: v0.4.0');
+    expect(container.textContent).not.toContain('New update summary');
+    expect(container.textContent).not.toContain('Update Now');
+
     await act(async () => {
-      getButton(container, 'Update Now').click();
+      getButton(container, 'Update Available: v0.4.0').click();
       await Promise.resolve();
     });
 
     expect(mockInstallAppUpdate).toHaveBeenCalledTimes(1);
-    expect(container.textContent).toContain('Downloading update...');
-    expect(container.textContent).toContain('42%');
+    expect(container.textContent).toContain('Preparing Update...');
+    expect(container.textContent).not.toContain('42%');
 
     await cleanup(container, root);
   });
 
-  it('shows a fallback release-page action when the update check fails', async () => {
+  it('turns the main action into a manual download fallback when update checking fails', async () => {
     setLocale('en-US');
-    mockGetVersion.mockResolvedValue('0.3.11');
+    mockGetVersion.mockResolvedValue('0.3.12');
     mockCheckForAppUpdate.mockRejectedValue(new Error('network unavailable'));
 
     const { container, root } = renderAboutPanel();
@@ -148,14 +164,39 @@ describe('AboutWriterPanel updater behavior', () => {
       await Promise.resolve();
     });
 
-    expect(container.textContent).toContain('Unable to check for updates');
+    expect(container.textContent).toContain('Update check failed');
+    expect(container.textContent).toContain('Download from Releases');
 
     await act(async () => {
-      getButton(container, 'Open Release Page').click();
+      getButton(container, 'Download from Releases').click();
       await Promise.resolve();
     });
 
     expect(mockOpenReleasePage).toHaveBeenCalledTimes(1);
+
+    await cleanup(container, root);
+  });
+
+  it('re-translates the error hint from the current locale on rerender', async () => {
+    setLocale('zh-CN');
+    mockGetVersion.mockResolvedValue('0.3.12');
+    mockCheckForAppUpdate.mockRejectedValue(new Error('network unavailable'));
+
+    const { container, root } = renderAboutPanel();
+
+    await act(async () => {
+      getButton(container, '检查更新').click();
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain('检查更新失败');
+
+    setLocale('en-US');
+    rerenderAboutPanel(root);
+
+    expect(container.textContent).toContain('Update check failed');
+    expect(container.textContent).not.toContain('检查更新失败');
+
     await cleanup(container, root);
   });
 });

@@ -1,4 +1,5 @@
 import { check, type Update } from '@tauri-apps/plugin-updater';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 const RELEASES_URL = 'https://github.com/xczl-785/Writer/releases/latest';
 const WINDOWS_NSIS_TARGET = 'windows-x86_64-nsis';
@@ -92,6 +93,8 @@ export async function installAppUpdate(
   }
 }
 
-export function openReleasePage(url: string = RELEASES_URL): void {
-  window.open(url, '_blank', 'noopener,noreferrer');
+export async function openReleasePage(
+  url: string = RELEASES_URL,
+): Promise<void> {
+  await openUrl(url);
 }
