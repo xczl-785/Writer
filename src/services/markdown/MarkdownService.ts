@@ -10,7 +10,7 @@ import TableHeader from '@tiptap/extension-table-header';
 
 export type EditorJSON = Record<string, unknown>;
 
-const manager = new MarkdownManager({
+export const markdownManager = new MarkdownManager({
   extensions: [
     StarterKit,
     Highlight,
@@ -31,10 +31,10 @@ const manager = new MarkdownManager({
 
 export const MarkdownService = {
   async parse(md: string): Promise<EditorJSON> {
-    return manager.parse(md);
+    return markdownManager.parse(md);
   },
 
   async serialize(doc: EditorJSON): Promise<string> {
-    return manager.serialize(doc);
+    return markdownManager.serialize(doc);
   },
 };
