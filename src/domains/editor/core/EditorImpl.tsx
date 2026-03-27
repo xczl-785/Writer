@@ -12,6 +12,7 @@ import {
 import { useEditor, type Editor as TiptapEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import { TaskItem, TaskList } from '@tiptap/extension-list';
 import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import BaseTableHeader from '@tiptap/extension-table-header';
@@ -198,6 +199,8 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         findReplaceShortcutExtension,
         BlockBoundaryExtension.configure({ showCodeBlock: false }),
         StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
+        TaskList,
+        TaskItem.configure({ nested: true }),
         Table.configure({ resizable: true, allowTableNodeSelection: false }),
         TableRow,
         BaseTableHeader.extend({
