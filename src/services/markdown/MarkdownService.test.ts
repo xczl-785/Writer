@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MarkdownService } from './MarkdownService';
+import { MarkdownService, markdownManager } from './MarkdownService';
 
 describe('MarkdownService Roundtrip', () => {
   const cases = [
@@ -73,5 +73,16 @@ describe('MarkdownService Roundtrip', () => {
     const output2 = await MarkdownService.serialize(doc2);
 
     expect(output1).toBe(output2);
+  });
+});
+
+describe('MarkdownService shared manager', () => {
+  it('exposes a shared markdownManager', async () => {
+    expect(markdownManager).toBeDefined();
+
+    const doc = await MarkdownService.parse('# Title');
+    const output = await MarkdownService.serialize(doc);
+
+    expect(output).toContain('# Title');
   });
 });

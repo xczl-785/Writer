@@ -70,6 +70,8 @@ import { EditorView } from '../view/EditorView';
 import {
   attachEditorMenuBridge,
   createEditorPasteDOMEvents,
+  createMarkdownClipboardTextParser,
+  createMarkdownClipboardTextSerializer,
   flushEditorOnBlur,
   openEditorContextMenu as openEditorContextMenuBridge,
   persistEditorUpdate,
@@ -257,6 +259,15 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       [activeFile, findReplaceShortcutExtension, toolbarShortcutExtension],
     );
 
+    const clipboardTextParser = useMemo(
+      () => createMarkdownClipboardTextParser(),
+      [],
+    );
+    const clipboardTextSerializer = useMemo(
+      () => createMarkdownClipboardTextSerializer(),
+      [],
+    );
+
     const editor = useEditor(
       {
         extensions,
@@ -264,6 +275,8 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         editorProps: {
           attributes: { class: 'editor-content focus:outline-none' },
           handleDOMEvents: createEditorPasteDOMEvents(handlePaste, editorRef),
+          clipboardTextParser,
+          clipboardTextSerializer,
           handleKeyDown: withSourceMarkers(
             [
               'instanceof CellSelection',
