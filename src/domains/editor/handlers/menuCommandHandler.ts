@@ -5,8 +5,9 @@
  */
 import type { Editor } from '@tiptap/react';
 import { t } from '../../../shared/i18n';
+import { readClipboardText } from '../../../services/runtime/ClipboardTextReader';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
-import { executePasteCommand } from '../integration';
+import { executePasteCommand, insertClipboardText } from '../integration';
 import { applyLinkAction } from '../hooks/linkActions';
 import { applyImageAction } from '../hooks/imageActions';
 
@@ -57,22 +58,30 @@ export function createMenuCommandHandler(
         execClipboardCommand('copy');
         return;
       case 'edit.paste':
-        executePasteCommand({
+        void executePasteCommand({
           focusEditor: () => {
             editor.chain().focus().run();
           },
           execDocumentCommand: (command) => execDocumentCommand(command),
+          readClipboardText,
+          insertClipboardText: (text, intent) => {
+            insertClipboardText(editor, text, intent);
+          },
           setStatus,
           clipboardDeniedMessage: t('status.menu.clipboardDenied'),
         });
         return;
       case 'edit.paste_plain':
-        executePasteCommand({
+        void executePasteCommand({
           intent: 'plain',
           focusEditor: () => {
             editor.chain().focus().run();
           },
           execDocumentCommand: (command) => execDocumentCommand(command),
+          readClipboardText,
+          insertClipboardText: (text, intent) => {
+            insertClipboardText(editor, text, intent);
+          },
           setStatus,
           clipboardDeniedMessage: t('status.menu.clipboardDenied'),
         });

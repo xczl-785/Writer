@@ -9,7 +9,9 @@ pub mod workspace;
 use cli::FileOpenState;
 use security::WorkspaceAllowlist;
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, Manager, RunEvent};
+use tauri::AppHandle;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use tauri::Emitter;
 use watcher::WatcherState;
 
 #[tauri::command]
@@ -36,8 +38,16 @@ fn get_pending_file_path(state: tauri::State<'_, FileOpenState>) -> Option<Strin
     state.get_and_clear_pending_file()
 }
 
+#[tauri::command]
+fn read_clipboard_text() -> Result<String, String> {
+    let mut clipboard = arboard::Clipboard::new().map_err(|err| err.to_string())?;
+    clipboard.get_text().map_err(|err| err.to_string())
+}
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 const FILE_OPEN_EVENT: &str = "writer:file-open";
 
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 fn emit_file_open_event(app: &AppHandle, file_path: String) {
     let _ = app.emit(FILE_OPEN_EVENT, file_path);
 }
@@ -65,6 +75,7 @@ pub fn run() {
             set_menu_locale,
             get_startup_file_path,
             get_pending_file_path,
+            read_clipboard_text,
             fs::list_tree,
             workspace::list_tree_batch,
             fs::read_file,
@@ -111,14 +122,14 @@ pub fn run() {
         })
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
-        .run(|app, event| {
+        .run(|_app, _event| {
             #[cfg(any(target_os = "macos", target_os = "ios"))]
-            if let RunEvent::Opened { urls } = event {
+            if let tauri::RunEvent::Opened { urls } = _event {
                 let files = cli::parse_urls_to_files(urls);
                 if let Some(file_path) = files.into_iter().next() {
-                    let file_open_state = app.state::<FileOpenState>();
+                    let file_open_state = _app.state::<FileOpenState>();
                     file_open_state.set_pending_file(file_path.clone());
-                    emit_file_open_event(&app, file_path);
+                    emit_file_open_event(&_app, file_path);
                 }
             }
         });

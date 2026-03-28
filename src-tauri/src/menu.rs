@@ -222,7 +222,14 @@ fn build_native_menu_with_locale<R: Runtime>(
                 "Settings",
                 Some("CmdOrCtrl+,"),
             )?,
-            &item(app, locale, "menu.file.exit", "退出", "Exit", Some("Alt+F4"))?,
+            &item(
+                app,
+                locale,
+                "menu.file.exit",
+                "退出",
+                "Exit",
+                Some("Alt+F4"),
+            )?,
         ],
     )?;
 
@@ -245,7 +252,14 @@ fn build_native_menu_with_locale<R: Runtime>(
                 Some("CmdOrCtrl+Shift+V"),
             )?,
             &select_all_item,
-            &item(app, locale, "menu.edit.find", "查找", "Find", Some("CmdOrCtrl+F"))?,
+            &item(
+                app,
+                locale,
+                "menu.edit.find",
+                "查找",
+                "Find",
+                Some("CmdOrCtrl+F"),
+            )?,
             &item(
                 app,
                 locale,
@@ -382,8 +396,22 @@ fn build_native_menu_with_locale<R: Runtime>(
         &tr(locale, "格式", "Format"),
         true,
         &[
-            &item(app, locale, "menu.format.bold", "加粗", "Bold", Some("CmdOrCtrl+B"))?,
-            &item(app, locale, "menu.format.italic", "斜体", "Italic", Some("CmdOrCtrl+I"))?,
+            &item(
+                app,
+                locale,
+                "menu.format.bold",
+                "加粗",
+                "Bold",
+                Some("CmdOrCtrl+B"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.format.italic",
+                "斜体",
+                "Italic",
+                Some("CmdOrCtrl+I"),
+            )?,
             &item(
                 app,
                 locale,
@@ -416,7 +444,14 @@ fn build_native_menu_with_locale<R: Runtime>(
                 "Highlight",
                 Some("Shift+CmdOrCtrl+H"),
             )?,
-            &item(app, locale, "menu.format.link", "链接", "Link", Some("CmdOrCtrl+K"))?,
+            &item(
+                app,
+                locale,
+                "menu.format.link",
+                "链接",
+                "Link",
+                Some("CmdOrCtrl+K"),
+            )?,
             &item(
                 app,
                 locale,
@@ -534,7 +569,10 @@ fn build_native_menu_with_locale<R: Runtime>(
 }
 
 pub fn emit_menu_command<R: Runtime>(app: &AppHandle<R>, id: &str) {
-    if matches!(id, "undo" | "redo" | "cut" | "copy" | "paste" | "select_all") {
+    if matches!(
+        id,
+        "undo" | "redo" | "cut" | "copy" | "paste" | "select_all"
+    ) {
         return;
     }
     let payload = MenuCommandEvent { id: id.to_string() };

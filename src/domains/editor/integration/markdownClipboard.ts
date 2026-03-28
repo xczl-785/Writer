@@ -1,7 +1,11 @@
 import { Slice, type ResolvedPos } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
+import type { Editor } from '@tiptap/react';
 import { markdownManager } from '../../../services/markdown/MarkdownService';
-import { consumeNextPasteIntent } from './pasteIntentController';
+import {
+  consumeNextPasteIntent,
+  type PasteIntent,
+} from './pasteIntentController';
 
 export const MARKDOWN_CLIPBOARD_MAX_PARSE_BYTES = 50 * 1024;
 
@@ -31,6 +35,25 @@ function createPlainTextSlice(
   return Slice.maxOpen(doc.content);
 }
 
+function createClipboardTextSlice(
+  text: string,
+  context: ResolvedPos,
+  plain: boolean,
+  view: EditorView,
+): Slice {
+  if (plain || shouldSkipMarkdownParsingForSize(text)) {
+    return createPlainTextSlice(text, context, view);
+  }
+
+  try {
+    const json = markdownManager.parse(text);
+    const doc = view.state.schema.nodeFromJSON(json);
+    return Slice.maxOpen(doc.content);
+  } catch {
+    return createPlainTextSlice(text, context, view);
+  }
+}
+
 export function createMarkdownClipboardTextParser() {
   return (
     text: string,
@@ -41,18 +64,25 @@ export function createMarkdownClipboardTextParser() {
     const intent = consumeNextPasteIntent();
     const shouldBypassMarkdown = plain || intent === 'plain';
 
-    if (shouldBypassMarkdown || shouldSkipMarkdownParsingForSize(text)) {
-      return createPlainTextSlice(text, context, view);
-    }
-
-    try {
-      const json = markdownManager.parse(text);
-      const doc = view.state.schema.nodeFromJSON(json);
-      return Slice.maxOpen(doc.content);
-    } catch {
-      return createPlainTextSlice(text, context, view);
-    }
+    return createClipboardTextSlice(text, context, shouldBypassMarkdown, view);
   };
+}
+
+export function insertClipboardText(
+  editor: Editor,
+  text: string,
+  intent: PasteIntent = 'default',
+): void {
+  const { view } = editor;
+  const { state } = view;
+  const slice = createClipboardTextSlice(
+    text,
+    state.selection.$from,
+    intent === 'plain',
+    view,
+  );
+
+  view.dispatch(state.tr.replaceSelection(slice).scrollIntoView());
 }
 
 export function createMarkdownClipboardTextSerializer() {
