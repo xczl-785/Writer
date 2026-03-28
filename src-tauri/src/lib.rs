@@ -8,6 +8,7 @@ pub mod workspace;
 
 use cli::FileOpenState;
 use security::WorkspaceAllowlist;
+use serde::Serialize;
 use std::sync::Mutex;
 use tauri::AppHandle;
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -39,9 +40,22 @@ fn get_pending_file_path(state: tauri::State<'_, FileOpenState>) -> Option<Strin
 }
 
 #[tauri::command]
-fn read_clipboard_text() -> Result<String, String> {
+fn read_clipboard_payload() -> Result<ClipboardPayload, String> {
     let mut clipboard = arboard::Clipboard::new().map_err(|err| err.to_string())?;
-    clipboard.get_text().map_err(|err| err.to_string())
+    let html = clipboard.get().html().ok();
+    let text = clipboard.get().text().ok();
+
+    if html.is_none() && text.is_none() {
+        return Err("Clipboard payload unavailable".to_string());
+    }
+
+    Ok(ClipboardPayload { html, text })
+}
+
+#[derive(Serialize)]
+struct ClipboardPayload {
+    html: Option<String>,
+    text: Option<String>,
 }
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -75,7 +89,7 @@ pub fn run() {
             set_menu_locale,
             get_startup_file_path,
             get_pending_file_path,
-            read_clipboard_text,
+            read_clipboard_payload,
             fs::list_tree,
             workspace::list_tree_batch,
             fs::read_file,

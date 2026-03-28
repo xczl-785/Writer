@@ -85,6 +85,10 @@ export function insertClipboardText(
   view.dispatch(state.tr.replaceSelection(slice).scrollIntoView());
 }
 
+export function insertClipboardHtml(editor: Editor, html: string): void {
+  editor.chain().focus().insertContent(html).run();
+}
+
 export function createMarkdownClipboardTextSerializer() {
   return (slice: Slice): string => {
     const json = slice.content.toJSON();
