@@ -133,8 +133,7 @@ mod tests {
             .expect("file url")
             .to_string();
 
-        let parsed =
-            parse_file_from_arg(&file_url).expect("expected file URL to be accepted");
+        let parsed = parse_file_from_arg(&file_url).expect("expected file URL to be accepted");
 
         assert_eq!(parsed, file_path.to_string_lossy());
     }

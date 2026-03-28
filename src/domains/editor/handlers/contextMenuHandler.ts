@@ -6,12 +6,18 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { MenuItem } from '../../../shared/components/ContextMenu/contextMenuRegistry';
+import { readClipboardPayload } from '../../../services/runtime/ClipboardTextReader';
 import {
   getCodeBlockContextMenuItems,
   getEditorContextMenuItems,
   getTableContextMenuItems,
 } from '../../../shared/components/ContextMenu/editorMenu';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
+import {
+  executePasteCommand,
+  insertClipboardHtml,
+  insertClipboardText,
+} from '../integration';
 
 export type ContextMenuOpener = (event: ReactMouseEvent) => void;
 
@@ -181,10 +187,39 @@ export function createContextMenuOpener(
           })
         : getEditorContextMenuItems({
             onPaste: () => {
-              editor.chain().focus().run();
-              if (!execDocumentCommand('paste')) {
-                setStatus('error', 'Paste requires clipboard permission');
-              }
+              void executePasteCommand({
+                focusEditor: () => {
+                  editor.chain().focus().run();
+                },
+                execDocumentCommand: (command) => execDocumentCommand(command),
+                readClipboardPayload,
+                insertClipboardText: (text, intent) => {
+                  insertClipboardText(editor, text, intent);
+                },
+                insertClipboardHtml: (html) => {
+                  insertClipboardHtml(editor, html);
+                },
+                setStatus,
+                clipboardDeniedMessage: 'Paste requires clipboard permission',
+              });
+            },
+            onPastePlain: () => {
+              void executePasteCommand({
+                intent: 'plain',
+                focusEditor: () => {
+                  editor.chain().focus().run();
+                },
+                execDocumentCommand: (command) => execDocumentCommand(command),
+                readClipboardPayload,
+                insertClipboardText: (text, intent) => {
+                  insertClipboardText(editor, text, intent);
+                },
+                insertClipboardHtml: (html) => {
+                  insertClipboardHtml(editor, html);
+                },
+                setStatus,
+                clipboardDeniedMessage: 'Paste requires clipboard permission',
+              });
             },
             onSelectAll: () => {
               editor.chain().focus().selectAll().run();

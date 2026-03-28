@@ -68,7 +68,9 @@ pub async fn parse_workspace_file(
 ) -> Result<WorkspaceConfig, String> {
     // 安全验证
     let guard = allowlist.lock().map_err(|e| e.to_string())?;
-    guard.validate_path(path, true).map_err(|e| format!("Security: {}", e))?;
+    guard
+        .validate_path(path, true)
+        .map_err(|e| format!("Security: {}", e))?;
     drop(guard);
 
     let content = fs::read_to_string(path).map_err(|e| e.to_string())?;
@@ -89,18 +91,19 @@ pub async fn save_workspace_file(
 
     // 安全验证
     let guard = allowlist.lock().map_err(|e| e.to_string())?;
-    guard.validate_path(path, false).map_err(|e| format!("Security: {}", e))?;
+    guard
+        .validate_path(path, false)
+        .map_err(|e| format!("Security: {}", e))?;
     drop(guard);
 
-    let content = serde_json::to_string_pretty(&config)
-        .map_err(|e: serde_json::Error| e.to_string())?;
+    let content =
+        serde_json::to_string_pretty(&config).map_err(|e: serde_json::Error| e.to_string())?;
 
     let target_path = Path::new(path);
     let parent = target_path.parent().ok_or("Invalid path")?;
 
     // 使用随机名称的临时文件
-    let mut temp_file = NamedTempFile::new_in(parent)
-        .map_err(|e: std::io::Error| e.to_string())?;
+    let mut temp_file = NamedTempFile::new_in(parent).map_err(|e: std::io::Error| e.to_string())?;
 
     #[cfg(unix)]
     {
@@ -109,10 +112,12 @@ pub async fn save_workspace_file(
             .map_err(|e: std::io::Error| e.to_string())?;
     }
 
-    temp_file.write_all(content.as_bytes())
+    temp_file
+        .write_all(content.as_bytes())
         .map_err(|e: std::io::Error| e.to_string())?;
 
-    temp_file.persist(target_path)
+    temp_file
+        .persist(target_path)
         .map_err(|e: tempfile::PersistError| format!("Failed to persist file: {}", e))?;
 
     Ok(())
@@ -136,7 +141,8 @@ pub fn resolve_relative_path(
 
     // 规范化路径
     let canonical = if resolved.exists() {
-        resolved.canonicalize()
+        resolved
+            .canonicalize()
             .map_err(|e| format!("Cannot resolve path: {}", e))?
     } else {
         resolved

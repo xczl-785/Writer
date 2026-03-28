@@ -5,6 +5,7 @@ import { t } from '../../../i18n';
 
 export interface EditorContextMenuActions {
   onPaste: () => void;
+  onPastePlain: () => void;
   onSelectAll: () => void;
   onCopyFullText: () => void;
   onInsertTable: () => void;
@@ -60,6 +61,13 @@ export function getEditorContextMenuItems(
       shortcut: 'Cmd+V',
       icon: <Copy size={14} />,
       action: actions.onPaste,
+    },
+    {
+      id: 'paste-plain',
+      label: t('editor.pastePlain'),
+      shortcut: 'Cmd+Shift+V',
+      icon: <Type size={14} />,
+      action: actions.onPastePlain,
     },
     {
       id: 'select-all',

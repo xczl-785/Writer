@@ -29,6 +29,7 @@ tokio = { version = "1", features = ["sync"] }
 notify = "6"
 tempfile = "3"
 url = "2"
+arboard = "3"
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-updater = "2"

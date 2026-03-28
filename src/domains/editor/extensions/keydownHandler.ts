@@ -4,6 +4,7 @@
 import { TextSelection } from '@tiptap/pm/state';
 import { CellSelection, deleteCellSelection } from '@tiptap/pm/tables';
 import type { EditorView } from '@tiptap/pm/view';
+import { setNextPasteIntent } from '../integration/pasteIntentController';
 
 /**
  * Creates a keydown handler for special editor key events:
@@ -17,6 +18,17 @@ export function createEditorKeyDownHandler() {
     if ((event.metaKey || event.ctrlKey) && event.key === 's') {
       event.preventDefault();
       console.log('Save triggered via Cmd+S');
+      return true;
+    }
+
+    // Cmd/Ctrl + Shift + V: plain paste intent
+    if (
+      (event.metaKey || event.ctrlKey) &&
+      event.shiftKey &&
+      event.key === 'v'
+    ) {
+      setNextPasteIntent('plain');
+      event.preventDefault();
       return true;
     }
 

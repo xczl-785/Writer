@@ -5,16 +5,32 @@ import { fileURLToPath } from 'node:url';
 
 describe('Task list editor support', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  // TaskList and TaskItem extensions are registered in MarkdownService
   const markdownServiceTs = readFileSync(
     join(currentDir, '../../../services/markdown/MarkdownService.ts'),
     'utf-8',
   );
+  const editorImplTsx = readFileSync(
+    join(currentDir, 'EditorImpl.tsx'),
+    'utf-8',
+  );
+  const editorCss = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');
 
-  it('registers task list extensions in the editor runtime', () => {
+  it('registers task list extensions in markdown parsing', () => {
     expect(markdownServiceTs).toContain('@tiptap/extension-list');
     expect(markdownServiceTs).toContain('TaskList');
     expect(markdownServiceTs).toContain('TaskItem');
     expect(markdownServiceTs).toContain('TaskItem.configure({ nested: true })');
+  });
+
+  it('registers task list extensions in the editor runtime', () => {
+    expect(editorImplTsx).toContain('@tiptap/extension-list');
+    expect(editorImplTsx).toContain('TaskList');
+    expect(editorImplTsx).toContain('TaskItem.configure({ nested: true })');
+  });
+
+  it('applies dedicated task list styles in the editor runtime', () => {
+    expect(editorCss).toContain("ul[data-type='taskList']");
+    expect(editorCss).toContain("input[type='checkbox']");
+    expect(editorCss).toContain('list-style: none');
   });
 });

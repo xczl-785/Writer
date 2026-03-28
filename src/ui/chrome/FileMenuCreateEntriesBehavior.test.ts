@@ -7,6 +7,9 @@ describe('File menu create entries', () => {
   const fileMenu = WINDOWS_MENU_SCHEMA.find(
     (group) => group.id === 'menu.file',
   );
+  const editMenu = WINDOWS_MENU_SCHEMA.find(
+    (group) => group.id === 'menu.edit',
+  );
 
   it('defines file and folder create entries via a shared constant', () => {
     expect(FILE_MENU_CREATE_ITEMS).toEqual([
@@ -39,5 +42,21 @@ describe('File menu create entries', () => {
     expect(fileMenu?.items.slice(0, FILE_MENU_CREATE_ITEMS.length)).toEqual(
       FILE_MENU_CREATE_ITEMS,
     );
+  });
+
+  it('defines a dedicated plain paste entry in the edit menu schema', () => {
+    const pastePlainItem = editMenu?.items.find(
+      (item) => item.id === 'menu.edit.paste_plain',
+    );
+
+    expect(pastePlainItem).toEqual({
+      id: 'menu.edit.paste_plain',
+      labelKey: 'menu.edit.pastePlain',
+      fallbackLabels: {
+        'zh-CN': MESSAGES['zh-CN']['menu.edit.pastePlain'],
+        'en-US': MESSAGES['en-US']['menu.edit.pastePlain'],
+      },
+      accelerator: 'Ctrl+Shift+V',
+    });
   });
 });
