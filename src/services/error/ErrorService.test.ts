@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorService } from './ErrorService';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { useNotificationStore } from '../../state/slices/notificationSlice';
 
 describe('ErrorService', () => {
   beforeEach(() => {
@@ -11,6 +12,7 @@ describe('ErrorService', () => {
       lastSavedAt: null,
       saveError: null,
     });
+    useNotificationStore.getState().clearNotifications();
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -65,5 +67,37 @@ describe('ErrorService', () => {
     expect(result).toBeNull();
     expect(info?.category).toBe('network');
     expect(info?.reason).toBe('网络连接失败');
+  });
+
+  it('routes an explicit level2 error into the notification store', () => {
+    const info = ErrorService.handleWithInfo(
+      new Error('open failed'),
+      'workspace-open',
+      {
+        level: 'level2',
+        source: 'workspace-open',
+        reason: 'Failed to open workspace',
+        suggestion: 'Retry later',
+      },
+    );
+
+    expect(info.reason).toBe('Failed to open workspace');
+    expect(useNotificationStore.getState().level2Notification?.reason).toBe(
+      'Failed to open workspace',
+    );
+    expect(useStatusStore.getState().saveError).toBeNull();
+  });
+
+  it('routes an explicit level3 error into the notification store', () => {
+    ErrorService.handleWithInfo(new Error('unsafe close'), 'window-close', {
+      level: 'level3',
+      source: 'window-close',
+      reason: 'Unsafe to continue editing',
+      suggestion: 'Save or discard changes',
+    });
+
+    const level3 = useNotificationStore.getState().level3Notification;
+    expect(level3?.source).toBe('window-close');
+    expect(level3?.level).toBe('level3');
   });
 });

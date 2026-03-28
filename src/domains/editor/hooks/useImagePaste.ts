@@ -8,6 +8,22 @@ import { generateUniqueFilename, saveAndInsertImageFile } from './imageActions';
 export { generateUniqueFilename };
 
 export const useImagePaste = (editor: Editor | null = null) => {
+  const showLevel2PasteError = (
+    error: unknown,
+    source: string,
+    reason: string,
+    suggestion: string,
+  ): void => {
+    useStatusStore.getState().setStatus('idle', null);
+    ErrorService.handleWithInfo(error, source, {
+      level: 'level2',
+      source,
+      reason,
+      suggestion,
+      dedupeKey: source,
+    });
+  };
+
   const activeFile = useWorkspaceStore((state) => state.activeFile);
   const folders = useWorkspaceStore((state) => state.folders);
   const currentPath = folders[0]?.path ?? null;
@@ -30,9 +46,12 @@ export const useImagePaste = (editor: Editor | null = null) => {
         handled = true;
         if (!allowedTypes.some((type) => type === item.type)) {
           ErrorService.log(item.type, 'Unsupported image format');
-          useStatusStore
-            .getState()
-            .setStatus('error', 'Failed to paste image: unsupported format');
+          showLevel2PasteError(
+            new Error('Failed to paste image: unsupported format'),
+            'editor-paste-image-format',
+            'Failed to paste image: unsupported format',
+            'Paste a PNG, JPG, WEBP, or supported image file.',
+          );
           continue;
         }
         const file = item.getAsFile();
@@ -40,12 +59,12 @@ export const useImagePaste = (editor: Editor | null = null) => {
 
         if (file.size > EDITOR_CONFIG.image.maxUploadBytes) {
           ErrorService.log(file.size, 'Image too large (max 10MB)');
-          useStatusStore
-            .getState()
-            .setStatus(
-              'error',
-              'Failed to paste image: image too large (max 10MB)',
-            );
+          showLevel2PasteError(
+            new Error('Failed to paste image: image too large (max 10MB)'),
+            'editor-paste-image-size',
+            'Failed to paste image: image too large (max 10MB)',
+            'Paste an image smaller than 10MB.',
+          );
           continue;
         }
 

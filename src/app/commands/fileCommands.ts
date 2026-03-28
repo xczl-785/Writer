@@ -27,6 +27,7 @@ import {
   useWorkspaceStore,
 } from '../../domains/workspace/state/workspaceStore';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { ErrorService } from '../../services/error/ErrorService';
 import { t } from '../../shared/i18n';
 
 export type CleanupFn = () => void;
@@ -58,6 +59,23 @@ function hasWorkspaceContext(): boolean {
 function canSaveWorkspace(): boolean {
   const workspaceContext = getWorkspaceContext(useWorkspaceStore.getState());
   return workspaceContext !== 'none';
+}
+
+function showLevel2CommandError(
+  error: unknown,
+  source: string,
+  reason: string,
+  suggestion: string,
+  dedupeKey = source,
+): void {
+  useStatusStore.getState().setStatus('idle', null);
+  ErrorService.handleWithInfo(error, source, {
+    level: 'level2',
+    source,
+    reason,
+    suggestion,
+    dedupeKey,
+  });
 }
 
 export function registerFileCommands(
@@ -115,7 +133,13 @@ export function registerFileCommands(
         selectedRootFolderPath,
       );
       if (!result.ok) {
-        useStatusStore.getState().setStatus('error', result.error);
+        showLevel2CommandError(
+          new Error(result.error),
+          'menu-close-folder',
+          result.error,
+          'Retry closing the folder.',
+          `menu-close-folder:${selectedRootFolderPath}`,
+        );
         return;
       }
 
@@ -166,7 +190,13 @@ export function registerFileCommands(
           status.markSaved(t('status.menu.saved'));
         }
       } catch {
-        status.setStatus('error', t('status.menu.saveFailed'));
+        showLevel2CommandError(
+          new Error(t('status.menu.saveFailed')),
+          'menu-save-file',
+          t('status.menu.saveFailed'),
+          'Retry saving the file.',
+          `menu-save-file:${path}`,
+        );
       }
     }),
   );

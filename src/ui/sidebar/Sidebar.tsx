@@ -61,6 +61,7 @@ import {
   X,
 } from 'lucide-react';
 import { t } from '../../shared/i18n';
+import { ErrorService } from '../../services/error/ErrorService';
 
 type GhostNode = {
   parentPath: string | null;
@@ -127,6 +128,48 @@ export function Sidebar({
   isExternalDragOver = false,
   dragClassificationType = null,
 }: SidebarProps) {
+  const sidebarSuggestion = useCallback(
+    (
+      key:
+        | 'create'
+        | 'copyPath'
+        | 'reveal'
+        | 'delete'
+        | 'move'
+        | 'rename',
+    ): string => {
+      switch (key) {
+        case 'create':
+          return t('sidebar.tryDifferent');
+        case 'copyPath':
+          return t('sidebar.copyRetrySuggestion');
+        case 'reveal':
+          return t('sidebar.revealRetrySuggestion');
+        case 'delete':
+          return t('sidebar.deleteRetrySuggestion');
+        case 'move':
+          return t('sidebar.moveRetrySuggestion');
+        case 'rename':
+          return t('sidebar.renameRetrySuggestion');
+      }
+    },
+    [],
+  );
+
+  const showLevel2SidebarError = useCallback(
+    (error: unknown, source: string, reason: string, suggestion: string) => {
+      useStatusStore.getState().setStatus('idle', null);
+      ErrorService.handleWithInfo(error, source, {
+        level: 'level2',
+        source,
+        reason,
+        suggestion,
+        dedupeKey: source,
+      });
+    },
+    [],
+  );
+
   // V6 状态获取 - 使用 selector 模式
   const rootFolders = useFileTreeStore((state) => state.rootFolders);
   const selectedPath = useFileTreeStore((state) => state.selectedPath);
@@ -375,14 +418,13 @@ export function Sidebar({
 
       cancelCreate();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (trigger === 'enter') {
-        useStatusStore
-          .getState()
-          .setStatus('error', `Failed to create: ${message}`);
-      } else {
-        cancelCreate();
-      }
+      cancelCreate();
+      showLevel2SidebarError(
+        error,
+        'sidebar-create',
+        t('sidebar.createFailed'),
+        sidebarSuggestion('create'),
+      );
     }
   };
 
@@ -406,7 +448,12 @@ export function Sidebar({
       await navigator.clipboard.writeText(path);
       useStatusStore.getState().setStatus('idle', t('sidebar.pathCopied'));
     } catch {
-      useStatusStore.getState().setStatus('error', t('sidebar.copyFailed'));
+      showLevel2SidebarError(
+        new Error(t('sidebar.copyFailed')),
+        'sidebar-copy-path',
+        t('sidebar.copyFailed'),
+        sidebarSuggestion('copyPath'),
+      );
     }
   };
 
@@ -414,7 +461,12 @@ export function Sidebar({
     try {
       await FsService.revealInFileManager(path);
     } catch {
-      useStatusStore.getState().setStatus('error', t('sidebar.revealFailed'));
+      showLevel2SidebarError(
+        new Error(t('sidebar.revealFailed')),
+        'sidebar-reveal',
+        t('sidebar.revealFailed'),
+        sidebarSuggestion('reveal'),
+      );
     }
   };
 
@@ -438,10 +490,12 @@ export function Sidebar({
     try {
       await fileActions.deletePath(node.path);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      useStatusStore
-        .getState()
-        .setStatus('error', `${t('sidebar.deleteFailed')}: ${message}`);
+      showLevel2SidebarError(
+        error,
+        'sidebar-delete',
+        t('sidebar.deleteFailed'),
+        sidebarSuggestion('delete'),
+      );
     }
   };
 
@@ -675,12 +729,15 @@ export function Sidebar({
       );
 
       if (!result.ok) {
-        useStatusStore
-          .getState()
-          .setStatus('error', result.error || t('sidebar.moveFailed'));
+        showLevel2SidebarError(
+          new Error(t('sidebar.moveFailed')),
+          'sidebar-move',
+          t('sidebar.moveFailed'),
+          sidebarSuggestion('move'),
+        );
       }
     },
-    [dragState, dropState, t],
+    [dragState, dropState, showLevel2SidebarError, sidebarSuggestion],
   );
 
   const commandCtx = {
@@ -829,6 +886,7 @@ export function Sidebar({
               onOpenContextMenu={(e, n) =>
                 openNodeContextMenu(e, n, rootFolder.workspacePath)
               }
+              onShowLevel2Error={showLevel2SidebarError}
               onRequestRenameStart={(path) => setRenamingPath(path)}
               onRequestRenameEnd={() => setRenamingPath(null)}
               onSelect={(path) => setSelectedPath(path)}
@@ -1164,6 +1222,7 @@ export function Sidebar({
             onGhostCancel={cancelCreate}
             onRequestRenameStart={(path) => setRenamingPath(path)}
             onRequestRenameEnd={() => setRenamingPath(null)}
+            onShowLevel2Error={showLevel2SidebarError}
             className="flex-1"
           />
         ) : (
@@ -1237,6 +1296,7 @@ function FileTreeNode({
   onGhostCommit,
   onGhostCancel,
   onOpenContextMenu,
+  onShowLevel2Error,
   onRequestRenameStart,
   onRequestRenameEnd,
   onSelect,
@@ -1259,6 +1319,12 @@ function FileTreeNode({
   onGhostCommit: (name: string, trigger: InlineCommitTrigger) => Promise<void>;
   onGhostCancel: () => void;
   onOpenContextMenu: (event: React.MouseEvent, node: FileNode) => void;
+  onShowLevel2Error: (
+    error: unknown,
+    source: string,
+    reason: string,
+    suggestion: string,
+  ) => void;
   onRequestRenameStart: (path: string) => void;
   onRequestRenameEnd: () => void;
   onSelect: (path: string) => void;
@@ -1390,12 +1456,12 @@ function FileTreeNode({
 
       onSelect(newPath);
     } catch (error) {
-      if (trigger === 'enter') {
-        const message = error instanceof Error ? error.message : String(error);
-        useStatusStore
-          .getState()
-          .setStatus('error', `Failed to rename: ${message}`);
-      }
+      onShowLevel2Error(
+        error,
+        'sidebar-rename',
+        t('sidebar.renameFailed'),
+        t('sidebar.renameRetrySuggestion'),
+      );
       setRenameDraft(oldName);
     } finally {
       setIsRenaming(false);
@@ -1596,6 +1662,7 @@ function FileTreeNode({
                 onGhostCommit={onGhostCommit}
                 onGhostCancel={onGhostCancel}
                 onOpenContextMenu={onOpenContextMenu}
+                onShowLevel2Error={onShowLevel2Error}
                 onRequestRenameStart={onRequestRenameStart}
                 onRequestRenameEnd={onRequestRenameEnd}
                 onSelect={onSelect}

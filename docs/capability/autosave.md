@@ -128,3 +128,20 @@ schedule 调用时通过 useStatusStore.markDirty() 标记脏状态。
 ## Archive Pointer
 
 - None. This is a first-version capability document.
+
+---
+
+## 2026-03-28 Current Truth Update
+
+### CT-001: Autosave failures now route to Level 1
+
+Autosave save failures call `ErrorService.handleWithInfo(...)` with `level: 'level1'`,
+`source: 'autosave'`, and a retry action.
+
+**Evidence**: `src/domains/file/services/AutosaveService.ts`
+
+### CT-002: Successful autosave retry clears the active Level 1 notification
+
+When autosave eventually succeeds, the active `autosave` Level 1 notification is dismissed.
+
+**Evidence**: `src/domains/file/services/AutosaveService.ts`

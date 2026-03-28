@@ -29,6 +29,7 @@ export interface StatusActions {
   markDirty: () => void;
   markSaving: (path: string) => void;
   markSaved: (message?: string) => void;
+  markSaveFailed: (message?: string | null) => void;
   setSaveError: (
     reason: string,
     suggestion: string,
@@ -74,6 +75,15 @@ export const useStatusStore = create<StatusState & StatusActions>((set) => ({
       saveStatus: 'saved',
       saveError: null,
       lastSavedAt: Date.now(),
+    })),
+
+  markSaveFailed: (message = null) =>
+    set((state) => ({
+      ...state,
+      status: 'error',
+      message,
+      saveStatus: 'error',
+      saveError: null,
     })),
 
   setSaveError: (reason, suggestion, options) =>

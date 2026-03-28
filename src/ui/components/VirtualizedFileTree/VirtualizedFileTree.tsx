@@ -89,6 +89,12 @@ interface RowProps {
   onGhostCommit: (name: string, trigger: InlineCommitTrigger) => Promise<void>;
   onGhostCancel: () => void;
   onRequestRenameEnd: () => void;
+  onShowLevel2Error: (
+    error: unknown,
+    source: string,
+    reason: string,
+    suggestion: string,
+  ) => void;
 }
 
 // List API 类型
@@ -119,6 +125,7 @@ function TreeNodeRow({
   onGhostCommit,
   onGhostCancel,
   onRequestRenameEnd,
+  onShowLevel2Error,
 }: {
   index: number;
   style: React.CSSProperties;
@@ -224,12 +231,12 @@ function TreeNodeRow({
       await fileActions.renamePath(node.path, newPath);
       onSelect(newPath);
     } catch (error) {
-      if (trigger === 'enter') {
-        const message = error instanceof Error ? error.message : String(error);
-        useStatusStore
-          .getState()
-          .setStatus('error', `Failed to rename: ${message}`);
-      }
+      onShowLevel2Error(
+        error,
+        'sidebar-rename',
+        t('sidebar.renameFailed'),
+        t('sidebar.renameRetrySuggestion'),
+      );
       setRenameDraft(oldName);
     } finally {
       onRequestRenameEnd();
@@ -418,6 +425,12 @@ interface VirtualizedFileTreeProps {
   onGhostCancel: () => void;
   onRequestRenameStart: (path: string) => void;
   onRequestRenameEnd: () => void;
+  onShowLevel2Error: (
+    error: unknown,
+    source: string,
+    reason: string,
+    suggestion: string,
+  ) => void;
   className?: string;
 }
 
@@ -438,6 +451,7 @@ export function VirtualizedFileTree({
   onGhostCommit,
   onGhostCancel,
   onRequestRenameEnd,
+  onShowLevel2Error,
   className = '',
 }: VirtualizedFileTreeProps): React.ReactElement {
   const listRef = useRef<ListImperativeAPI>(null);
@@ -462,6 +476,7 @@ export function VirtualizedFileTree({
     onGhostCommit,
     onGhostCancel,
     onRequestRenameEnd,
+    onShowLevel2Error,
   };
 
   // 滚动到选中项

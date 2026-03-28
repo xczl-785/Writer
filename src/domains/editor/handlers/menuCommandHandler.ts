@@ -6,6 +6,8 @@
 import type { Editor } from '@tiptap/react';
 import { t } from '../../../shared/i18n';
 import { readClipboardPayload } from '../../../services/runtime/ClipboardTextReader';
+import { useStatusStore } from '../../../state/slices/statusSlice';
+import { ErrorService } from '../../../services/error/ErrorService';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
 import {
   executePasteCommand,
@@ -23,6 +25,18 @@ export function createMenuCommandHandler(
   setStatus: (status: 'idle' | 'error', message: string) => void,
   setIsOutlineOpen: (value: boolean | ((prev: boolean) => boolean)) => void,
 ): MenuCommandHandler {
+  const showLevel2ClipboardError = (source: string): void => {
+    const message = t('status.menu.clipboardDenied');
+    useStatusStore.getState().setStatus('idle', null);
+    ErrorService.handleWithInfo(new Error(message), source, {
+      level: 'level2',
+      source,
+      reason: message,
+      suggestion: 'Retry the clipboard command or check clipboard permission.',
+      dedupeKey: source,
+    });
+  };
+
   const execDocumentCommand = (command: 'cut' | 'copy' | 'paste'): boolean =>
     typeof document.execCommand === 'function' && document.execCommand(command);
 
@@ -33,14 +47,17 @@ export function createMenuCommandHandler(
     }
   };
 
-  const execClipboardCommand = (command: 'cut' | 'copy' | 'paste'): void => {
+  const execClipboardCommand = (
+    command: 'cut' | 'copy' | 'paste',
+    source: string,
+  ): void => {
     editor.chain().focus().run();
 
     if (execDocumentCommand(command)) {
       return;
     }
 
-    setStatus('error', t('status.menu.clipboardDenied'));
+    showLevel2ClipboardError(source);
   };
 
   return (event: Event) => {
@@ -56,10 +73,10 @@ export function createMenuCommandHandler(
         runEditorCommand(() => editor.chain().focus().redo().run());
         return;
       case 'edit.cut':
-        execClipboardCommand('cut');
+        execClipboardCommand('cut', 'menu-edit-cut');
         return;
       case 'edit.copy':
-        execClipboardCommand('copy');
+        execClipboardCommand('copy', 'menu-edit-copy');
         return;
       case 'edit.paste':
         void executePasteCommand({
@@ -74,7 +91,7 @@ export function createMenuCommandHandler(
           insertClipboardHtml: (html) => {
             insertClipboardHtml(editor, html);
           },
-          setStatus,
+          setStatus: () => showLevel2ClipboardError('menu-edit-paste'),
           clipboardDeniedMessage: t('status.menu.clipboardDenied'),
         });
         return;
@@ -92,7 +109,7 @@ export function createMenuCommandHandler(
           insertClipboardHtml: (html) => {
             insertClipboardHtml(editor, html);
           },
-          setStatus,
+          setStatus: () => showLevel2ClipboardError('menu-edit-paste-plain'),
           clipboardDeniedMessage: t('status.menu.clipboardDenied'),
         });
         return;

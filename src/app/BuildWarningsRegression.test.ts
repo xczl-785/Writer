@@ -77,10 +77,6 @@ describe('build warning regression', () => {
       join(srcRoot, 'ui', 'sidebar', 'Sidebar.tsx'),
       'utf-8',
     );
-    const multiRootTree = readFileSync(
-      join(srcRoot, 'ui', 'sidebar', 'MultiRootFileTree.tsx'),
-      'utf-8',
-    );
     const virtualizedTree = readFileSync(
       join(
         srcRoot,
@@ -109,12 +105,6 @@ describe('build warning regression', () => {
     expect(sidebar).toContain(
       "import { FsSafety } from '../../domains/file/services/FsSafety';",
     );
-    expect(multiRootTree).toContain(
-      "import { fileActions } from '../../domains/file/services/fileActions';",
-    );
-    expect(multiRootTree).toContain(
-      "import { FsSafety } from '../../domains/file/services/FsSafety';",
-    );
     expect(virtualizedTree).toContain(
       "import { fileActions } from '../../../domains/file/services/fileActions';",
     );
@@ -130,10 +120,6 @@ describe('build warning regression', () => {
     );
     const domainFileTreeNode = readFileSync(
       join(srcRoot, 'domains', 'file', 'ui', 'FileTreeNode.tsx'),
-      'utf-8',
-    );
-    const domainMultiRootTree = readFileSync(
-      join(srcRoot, 'domains', 'file', 'ui', 'MultiRootFileTree.tsx'),
       'utf-8',
     );
     const workspaceActions = readFileSync(
@@ -170,12 +156,6 @@ describe('build warning regression', () => {
     expect(domainFileTreeNode).toContain(
       "import { useWorkspaceStore } from '../../workspace/state/workspaceStore';",
     );
-    expect(domainMultiRootTree).toContain(
-      "} from '../../workspace/state/workspaceStore';",
-    );
-    expect(domainMultiRootTree).not.toContain(
-      "import { addFolderToWorkspaceByDialog } from '../../workspace/services/WorkspaceManager';",
-    );
     expect(workspaceActions).toContain(
       "import { useEditorStore } from '../../editor/state/editorStore';",
     );
@@ -207,5 +187,11 @@ describe('build warning regression', () => {
     expect(existsSync(join(srcRoot, 'state', 'actions', 'index.ts'))).toBe(
       false,
     );
+    expect(
+      existsSync(join(srcRoot, 'ui', 'sidebar', 'MultiRootFileTree.tsx')),
+    ).toBe(false);
+    expect(
+      existsSync(join(srcRoot, 'domains', 'file', 'ui', 'MultiRootFileTree.tsx')),
+    ).toBe(false);
   });
 });

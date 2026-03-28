@@ -10,6 +10,22 @@ import { joinPath, getRelativePath } from '../../../shared/utils/pathUtils';
 const shouldShowImageRenderDiagnostic = (): boolean =>
   import.meta.env?.VITE_SHOW_IMAGE_DIAGNOSTIC === '1';
 
+const showLevel2ImageError = (
+  error: unknown,
+  source: string,
+  reason: string,
+  suggestion: string,
+): void => {
+  useStatusStore.getState().setStatus('idle', null);
+  ErrorService.handleWithInfo(error, source, {
+    level: 'level2',
+    source,
+    reason,
+    suggestion,
+    dedupeKey: source,
+  });
+};
+
 export type ApplyImageActionResult =
   | 'applied'
   | 'cancelled'
@@ -62,17 +78,23 @@ export async function saveAndInsertImageFile(
   const allowedTypes = EDITOR_CONFIG.image.allowedMimeTypes;
   if (!allowedTypes.some((type) => type === file.type)) {
     ErrorService.log(file.type, 'Unsupported image format');
-    useStatusStore
-      .getState()
-      .setStatus('error', 'Failed to insert image: unsupported format');
+    showLevel2ImageError(
+      new Error('Failed to insert image: unsupported format'),
+      'editor-insert-image-format',
+      'Failed to insert image: unsupported format',
+      'Choose a PNG, JPG, WEBP, or supported image file.',
+    );
     return 'failed';
   }
 
   if (file.size > EDITOR_CONFIG.image.maxUploadBytes) {
     ErrorService.log(file.size, 'Image too large (max 10MB)');
-    useStatusStore
-      .getState()
-      .setStatus('error', 'Failed to insert image: image too large (max 10MB)');
+    showLevel2ImageError(
+      new Error('Failed to insert image: image too large (max 10MB)'),
+      'editor-insert-image-size',
+      'Failed to insert image: image too large (max 10MB)',
+      'Choose an image smaller than 10MB.',
+    );
     return 'failed';
   }
 
@@ -113,7 +135,12 @@ export async function saveAndInsertImageFile(
 
     return 'applied';
   } catch (error) {
-    ErrorService.handle(error, 'Failed to save image', 'Failed to save image');
+    showLevel2ImageError(
+      error,
+      'editor-insert-image-save',
+      'Failed to save image',
+      'Retry inserting the image.',
+    );
     return 'failed';
   }
 }

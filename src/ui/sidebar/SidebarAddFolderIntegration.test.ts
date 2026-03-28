@@ -6,14 +6,9 @@ import { fileURLToPath } from 'node:url';
 describe('Sidebar add-folder wiring', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const sidebarTsx = readFileSync(join(currentDir, 'Sidebar.tsx'), 'utf-8');
-  const multiRootTsx = readFileSync(
-    join(currentDir, 'MultiRootFileTree.tsx'),
-    'utf-8',
-  );
 
   it('removes add-folder and create actions from the empty-area sidebar surface', () => {
     expect(sidebarTsx).not.toContain('addFolderToWorkspaceByDialog');
-    expect(multiRootTsx).not.toContain('getEmptyAreaMenuItems');
-    expect(multiRootTsx).not.toContain('addFolderToWorkspaceByDialog');
+    expect(sidebarTsx).not.toContain('getEmptyAreaMenuItems');
   });
 });

@@ -128,3 +128,28 @@ ErrorInfo.action 包含 label 和 run 回调，可用于显示重试按钮。
 ## Archive Pointer
 
 - None. This is a first-version capability document.
+
+---
+
+## 2026-03-28 Current Truth Update
+
+### CT-001: ErrorService now supports presentation-level routing
+
+`ErrorService.handleWithInfo(...)` supports `level`, `source`, `dedupeKey`, and `actions`.
+When `level` is `level1`, `level2`, or `level3`, the error routes into `notificationSlice`
+instead of writing to `saveError`.
+
+**Evidence**: `src/services/error/ErrorService.ts`
+
+### CT-002: Global notification host is part of the active error path
+
+Level 2 top toast and Level 3 editor overlay banner are rendered by `NotificationHost`.
+
+**Evidence**: `src/ui/notifications/NotificationHost.tsx`, `src/app/App.tsx`
+
+### CT-003: Save lane and notification lane are now separate
+
+`statusSlice` remains the save/status lane. Global error presentation is handled by
+`notificationSlice`. Level 1 is reused by save-adjacent recoverable failures.
+
+**Evidence**: `src/state/slices/statusSlice.ts`, `src/state/slices/notificationSlice.ts`

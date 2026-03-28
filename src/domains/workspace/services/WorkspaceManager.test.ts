@@ -3,8 +3,10 @@ import { openFile } from './WorkspaceManager';
 import { useWorkspaceStore } from '../state/workspaceStore';
 import { useEditorStore } from '../../editor/state/editorStore';
 import { useStatusStore } from '../../../state/slices/statusSlice';
+import { useNotificationStore } from '../../../state/slices/notificationSlice';
 import { FsService } from '../../file/services/FsService';
 import { AutosaveService } from '../../file/services/AutosaveService';
+import { t } from '../../../shared/i18n';
 
 vi.mock('../../file/services/FsService', () => ({
   FsService: {
@@ -34,6 +36,7 @@ describe('WorkspaceManager - openFile', () => {
       lastSavedAt: null,
       saveError: null,
     });
+    useNotificationStore.getState().clearNotifications();
   });
 
   it('should open a file successfully', async () => {
@@ -94,8 +97,43 @@ describe('WorkspaceManager - openFile', () => {
 
     await openFile(path);
 
-    expect(useStatusStore.getState().status).toBe('error');
-    expect(useStatusStore.getState().message).toBe('Failed to open file');
+    expect(useStatusStore.getState().status).toBe('idle');
+    expect(useStatusStore.getState().message).toBeNull();
+    expect(useNotificationStore.getState().level2Notification?.reason).toBe(
+      t('file.openFailed'),
+    );
+    expect(
+      useNotificationStore.getState().level2Notification?.actions?.[0]?.label,
+    ).toBe(t('error.retry'));
     expect(useWorkspaceStore.getState().activeFile).toBeNull();
+  });
+
+  it('routes active flush failures to level2 notifications', async () => {
+    const oldPath = '/path/to/old.txt';
+
+    useWorkspaceStore.setState({
+      activeFile: oldPath,
+      openFiles: [oldPath],
+      folders: [],
+    });
+    useEditorStore.setState({
+      fileStates: {
+        [oldPath]: {
+          content: 'dirty',
+          cursor: { line: 0, column: 0 },
+          isDirty: true,
+        },
+      },
+    });
+    vi.mocked(AutosaveService.flush).mockRejectedValue(new Error('Save failed'));
+
+    await openFile('/path/to/new.txt');
+
+    expect(useNotificationStore.getState().level2Notification?.reason).toBe(
+      t('workspace.openFileFlushFailed'),
+    );
+    expect(
+      useNotificationStore.getState().level2Notification?.actions?.[0]?.label,
+    ).toBe(t('error.retry'));
   });
 });
