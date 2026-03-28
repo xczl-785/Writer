@@ -12,6 +12,7 @@ import {
   getTableContextMenuItems,
 } from '../../../shared/components/ContextMenu/editorMenu';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
+import { executePasteCommand } from '../integration';
 
 export type ContextMenuOpener = (event: ReactMouseEvent) => void;
 
@@ -181,10 +182,25 @@ export function createContextMenuOpener(
           })
         : getEditorContextMenuItems({
             onPaste: () => {
-              editor.chain().focus().run();
-              if (!execDocumentCommand('paste')) {
-                setStatus('error', 'Paste requires clipboard permission');
-              }
+              executePasteCommand({
+                focusEditor: () => {
+                  editor.chain().focus().run();
+                },
+                execDocumentCommand: (command) => execDocumentCommand(command),
+                setStatus,
+                clipboardDeniedMessage: 'Paste requires clipboard permission',
+              });
+            },
+            onPastePlain: () => {
+              executePasteCommand({
+                intent: 'plain',
+                focusEditor: () => {
+                  editor.chain().focus().run();
+                },
+                execDocumentCommand: (command) => execDocumentCommand(command),
+                setStatus,
+                clipboardDeniedMessage: 'Paste requires clipboard permission',
+              });
             },
             onSelectAll: () => {
               editor.chain().focus().selectAll().run();
