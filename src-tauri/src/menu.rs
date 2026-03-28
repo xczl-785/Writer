@@ -236,6 +236,14 @@ fn build_native_menu_with_locale<R: Runtime>(
             &cut_item,
             &copy_item,
             &paste_item,
+            &item(
+                app,
+                locale,
+                "menu.edit.paste_plain",
+                "纯粘贴",
+                "Paste as Plain Text",
+                Some("CmdOrCtrl+Shift+V"),
+            )?,
             &select_all_item,
             &item(app, locale, "menu.edit.find", "查找", "Find", Some("CmdOrCtrl+F"))?,
             &item(

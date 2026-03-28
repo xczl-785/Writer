@@ -1,6 +1,7 @@
 import { Slice, type ResolvedPos } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
 import { markdownManager } from '../../../services/markdown/MarkdownService';
+import { consumeNextPasteIntent } from './pasteIntentController';
 
 export const MARKDOWN_CLIPBOARD_MAX_PARSE_BYTES = 50 * 1024;
 
@@ -37,7 +38,10 @@ export function createMarkdownClipboardTextParser() {
     plain: boolean,
     view: EditorView,
   ): Slice => {
-    if (plain || shouldSkipMarkdownParsingForSize(text)) {
+    const intent = consumeNextPasteIntent();
+    const shouldBypassMarkdown = plain || intent === 'plain';
+
+    if (shouldBypassMarkdown || shouldSkipMarkdownParsingForSize(text)) {
       return createPlainTextSlice(text, context, view);
     }
 

@@ -3,103 +3,123 @@
 ## Quick Read
 
 - **id**: `markdown-clipboard`
-- **name**: Markdown �����崦��
-- **summary**: Ϊ�༭���ṩ Markdown ���ı�ճ��������ѡ���������л������ڴ�ճ���������ı�������ʧ��ʱ����Ϊԭʼ�ı�
-- **scope**: �����༭�� `clipboardTextParser` / `clipboardTextSerializer` ���롢Markdown ����/���л����á����ı����˹��򣻲����� HTML ���������ȼ�������ͼƬճ���洢��·��Ctrl+A ѡ������
+- **name**: Markdown Clipboard
+- **summary**: Parse pasted plain text as Markdown by default, provide Writer-owned pure-paste bypass, and serialize copied selections back to Markdown text.
+- **scope**: Editor clipboard parser/serializer wiring, Writer-owned paste intent lifecycle, plain-text paste fallback rules, menu/context/shortcut pure-paste entry points, and regression boundaries with image paste.
 - **entry_points**:
   - `EditorImpl -> editorProps.clipboardTextParser`
   - `EditorImpl -> editorProps.clipboardTextSerializer`
   - `createMarkdownClipboardTextParser`
   - `createMarkdownClipboardTextSerializer`
+  - `PasteIntentController`
+  - `menu.edit.paste_plain`
+  - `context menu -> paste-plain`
+  - `Cmd/Ctrl+Shift+V`
 - **shared_with**: none
 - **check_on_change**:
-  - ��ͨ���ı�ճ���Ƿ�ᱻ����Ϊ�ṹ�� Markdown
-  - ��ճ���Ƿ��Բ���ԭʼ�ı�
-  - ͼƬճ����·�Ƿ�δ�� Markdown ��������
-  - ���ƺ�Ĵ��ı��Ƿ����ȶ����� Markdown
-- **last_verified**: 2026-03-27
+  - normal plain-text paste still parses Markdown
+  - pure paste still inserts raw text
+  - pure-paste intent is consumed once and does not leak to the next paste
+  - image paste is still handled by the image path
+  - menu, context menu, and shortcut stay aligned
+- **last_verified**: 2026-03-28
 
 ---
 
 ## Capability Summary
 
-Markdown �����崦������������ ProseMirror/Tiptap �ļ������ı������ϣ����������нӹܵײ� DOM paste/copy���༭�����յ����ı�����������ʱ�������ȳ��԰� Markdown �����ɽṹ�� Slice���ڴ�ճ��ģʽ�������ı������ʧ��ʱ���˻�Ϊ�������зֵ�ԭʼ�ı����롣����ѡ��ʱ���Ὣ Slice ���°�װΪ doc ��ͨ������ `markdownManager` ���л�Ϊ Markdown �ı���
+Writer uses ProseMirror clipboard hooks for plain-text clipboard conversion. Normal text paste is parsed through the shared `markdownManager`, while pure-paste flows are controlled by Writer itself through a one-shot paste intent boundary instead of relying only on ProseMirror's internal `plain` flag.
 
-������������ HTML ���������ݺ�ͼƬճ����·���HTML ���ȼ����ֱ༭��Ĭ����Ϊ��ͼƬ������ `handleDOMEvents` ������ͼƬ�������̡�������ֻ���𡰴��ı� Markdown����һ���ʶ���ת�롣
+This capability owns text clipboard behavior only. HTML-rich paste priority remains with the editor's default clipboard handling, and image clipboard items remain handled by the image-paste path before text parsing is involved.
 
 ---
 
 ## Entries
 
-| Entry                                            | Trigger                      | Evidence                                                    | Notes                          |
-| ------------------------------------------------ | ---------------------------- | ----------------------------------------------------------- | ------------------------------ |
-| `EditorImpl.editorProps.clipboardTextParser`     | �༭���յ��ı�ճ������            | `src/domains/editor/core/EditorImpl.tsx:271-280`            | ճ���ı����                      |
-| `EditorImpl.editorProps.clipboardTextSerializer` | �༭������/����ѡ��Ϊ�ı�         | `src/domains/editor/core/EditorImpl.tsx:271-280`            | �����ı�����                    |
-| `createMarkdownClipboardTextParser`              | ProseMirror �����ı���������  | `src/domains/editor/integration/markdownClipboard.ts:33-52` | �����������˲���                |
-| `createMarkdownClipboardTextSerializer`          | ProseMirror �����ı����л����� | `src/domains/editor/integration/markdownClipboard.ts:54-67` | ���𵼳� Markdown                |
-| `markdownManager`                                | Markdown parse/serialize     | `src/services/markdown/MarkdownService.ts:13-39`            | ���������������ظ�����������ʵ�� |
+| Entry                                                                | Trigger                                      | Evidence                                                                                                                                        | Notes                              |
+| -------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `EditorImpl.editorProps.clipboardTextParser`                         | text paste reaches ProseMirror parser branch | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | main parse entry                   |
+| `EditorImpl.editorProps.clipboardTextSerializer`                     | text copy/cut requests plain text            | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | main serialize entry               |
+| `createMarkdownClipboardTextParser`                                  | plain-text paste conversion                  | `src/domains/editor/integration/markdownClipboard.ts`                                                                                           | consumes Writer-owned intent first |
+| `createMarkdownClipboardTextSerializer`                              | selection to Markdown text                   | `src/domains/editor/integration/markdownClipboard.ts`                                                                                           | uses shared markdown manager       |
+| `setNextPasteIntent / consumeNextPasteIntent / clearNextPasteIntent` | pure-paste intent lifecycle                  | `src/domains/editor/integration/pasteIntentController.ts`                                                                                       | one-shot boundary                  |
+| `executePasteCommand`                                                | menu/context paste bridge                    | `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                          | shared paste execution helper      |
+| `menu.edit.paste_plain`                                              | edit menu plain paste                        | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs` | command and native menu route      |
+| `context menu -> paste-plain`                                        | editor context menu plain paste              | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                         | context path                       |
+| `Cmd/Ctrl+Shift+V`                                                   | keyboard pure paste                          | `src/domains/editor/extensions/keydownHandler.ts`                                                                                               | arms one-shot plain intent         |
 
 ---
 
 ## Current Rules
 
-### CR-001: ���ӹܴ��ı���������������л�
+### CR-001: Writer wires Markdown clipboard conversion through official editor clipboard hooks
 
-�༭��ͨ�� `clipboardTextParser` �� `clipboardTextSerializer` ���� Markdown ����������������д `handleDOMEvents` �ļ���ͼƬճ����·��Ҳ���滻 HTML ���������ȼ���
+The editor uses `clipboardTextParser` and `clipboardTextSerializer` for text conversion rather than custom low-level DOM text parsing.
 
-**Evidence**: `src/domains/editor/core/EditorImpl.tsx:271-280`, `src/domains/editor/integration/pasteBridge.ts:10-16`, `src/domains/editor/hooks/useImagePaste.ts:15-62`
+**Evidence**: `src/domains/editor/core/EditorImpl.tsx`, `src/domains/editor/integration/markdownClipboard.ts`
 
----
+### CR-002: Normal plain-text paste parses Markdown into structured content
 
-### CR-002: ��ͨ���ı�ճ�����ȳ��԰� Markdown ����
+When neither ProseMirror `plain` nor Writer-owned pure-paste intent requests bypass, the parser calls `markdownManager.parse(text)` and converts the result into a schema-backed `Slice`.
 
-�� `plain !== true` ���ı���Сδ������ֵʱ��`createMarkdownClipboardTextParser` ����ù��� `markdownManager.parse(text)`���ٰ���ǰ schema ���� Slice ���༭�����롣
+**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`, `src/services/markdown/MarkdownService.ts`
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts:33-47`, `src/services/markdown/MarkdownService.ts:13-39`
+### CR-003: Writer owns pure-paste intent explicitly
 
----
+Pure-paste behavior is not inferred only from ProseMirror internals. Writer sets next-paste intent through a dedicated controller and the parser consumes that intent once.
 
-### CR-003: ��ճ�������ƹ� Markdown ����
+**Evidence**: `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/markdownClipboard.ts`
 
-�� ProseMirror �� `plain === true` �����ı�������ʱ��������ֱ�ӹ���ԭʼ�ı� Slice������ Markdown �ṹ��ת����
+### CR-004: Pure paste bypasses Markdown parsing and inserts raw text
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts:39-41`
+If ProseMirror passes `plain === true` or Writer-owned intent resolves to `plain`, the parser creates paragraph-based raw-text content instead of running Markdown structure conversion.
 
----
+**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`
 
-### CR-004: �����ı����� Markdown ����
+### CR-005: Pure-paste intent is one-shot and must not leak
 
-���ı� UTF-8 �ֽ������� `50 * 1024` ʱ��������ֱ�ӻ��˵�ԭʼ�ı����룬�����ƴ���ı�ճ��ʱ�Ľ����ɱ�����ա�
+After parser consumption, the next-paste intent resets to `default`. Paste-command failure paths also reset pending plain intent before reporting permission errors.
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts:5-10`, `src/domains/editor/integration/markdownClipboard.ts:39-41`
+**Evidence**: `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`
 
----
+### CR-006: Oversized or parse-failing input falls back to raw text
 
-### CR-005: ����ʧ�ܻ���Ϊ�������зֵ�ԭʼ�ı�
+If input exceeds the parse threshold or Markdown parsing throws, Writer falls back to raw-text paragraph insertion.
 
-Markdown ������ schema �ָ�ʧ��ʱ�������������쳣�����ı��������з�Ϊ����ڵ㣻ÿ������̳е�ǰ����λ�� marks���Ա��ֻ����ı�ճ�����顣
+**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts:13-31`, `src/domains/editor/integration/markdownClipboard.ts:44-50`
+### CR-007: Copied selections serialize back to Markdown text
 
----
+Selected slice content is wrapped as a `doc` payload and serialized through the shared `markdownManager`.
 
-### CR-006: ����ѡ��ʱ���� Markdown �ı�
+**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`, `src/services/markdown/MarkdownService.ts`
 
-�ı����л����Ὣѡ�� Slice ��װΪ `doc` �ṹ����ͨ������ `markdownManager.serialize(...)` ��� Markdown�������ݷ��ؿ��ַ�����
+### CR-008: Menu, context menu, and shortcut all arm the same pure-paste path
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts:54-67`, `src/services/markdown/MarkdownService.ts:32-39`
+The edit menu plain-paste item, context menu plain-paste item, and `Cmd/Ctrl+Shift+V` all resolve to the same Writer-owned pure-paste intent boundary.
+
+**Evidence**: `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/domains/editor/handlers/contextMenuHandler.ts`, `src/domains/editor/extensions/keydownHandler.ts`
+
+### CR-009: Image paste stays outside this capability's conversion path
+
+Clipboard image items are still handled by the image-paste hook, which prevents default only for image items and leaves text conversion behavior unchanged.
+
+**Evidence**: `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`
 
 ---
 
 ## Impact Surface
 
-| Area                   | What to check                                                  | Evidence                                                                                                               |
-| ---------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| EditorImpl ���������   | `clipboardTextParser` / `clipboardTextSerializer` �Ƿ�����ȷ���� | `src/domains/editor/core/EditorImpl.tsx:262-280`                                                                       |
-| Markdown ���������     | ��ͨճ������ճ���������ı����쳣�����߼��Ƿ�һ��                        | `src/domains/editor/integration/markdownClipboard.ts`                                                                  |
-| ���� Markdown �������� | Markdown ��չ���ϱ仯�󣬼��������/���л��Ƿ�ͬ����Ӱ��                   | `src/services/markdown/MarkdownService.ts`                                                                             |
-| ͼƬճ����·               | ͼƬ MIME clipboard item �Ƿ�������������ͼƬ����                   | `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`                           |
-| ��Ϊ����                | Markdown �������ͬ�����������ˡ����л������Ƿ�ͨ��                    | `src/domains/editor/integration/markdownClipboard.test.ts`, `src/domains/editor/core/EditorClipboardContracts.test.ts` |
+| Area                     | What to check                                                       | Evidence                                                                                                                                                                                                                                                                                              |
+| ------------------------ | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Editor wiring            | parser/serializer still mounted correctly                           | `src/domains/editor/core/EditorImpl.tsx`                                                                                                                                                                                                                                                              |
+| Paste intent lifecycle   | one-shot consume and clear-on-failure behavior                      | `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                                                                                                                     |
+| Markdown parser behavior | normal paste, pure paste, oversize fallback, parse-failure fallback | `src/domains/editor/integration/markdownClipboard.ts`                                                                                                                                                                                                                                                 |
+| Keyboard entry           | shortcut sets plain intent only for `Cmd/Ctrl+Shift+V`              | `src/domains/editor/extensions/keydownHandler.ts`                                                                                                                                                                                                                                                     |
+| Edit menu path           | menu command id and native menu item stay aligned                   | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                                                                                                                                                       |
+| Context menu path        | plain-paste item exists and uses shared paste bridge                | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                                                                                                                                                                               |
+| Image paste              | image clipboard items still bypass text parsing                     | `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`                                                                                                                                                                                                          |
+| Behavior tests           | parser, command, context, and shortcut contracts remain covered     | `src/domains/editor/integration/markdownClipboard.test.ts`, `src/domains/editor/integration/pasteIntentController.test.ts`, `src/domains/editor/handlers/menuCommandHandler.test.ts`, `src/domains/editor/handlers/contextMenuHandler.test.ts`, `src/domains/editor/core/EditorTableControls.test.ts` |
 
 ---
 
@@ -113,21 +133,23 @@ Markdown ������ schema �ָ�ʧ��ʱ���������
 
 ## Uncertainties
 
-- ��ǰ��ԭʼ�ı����ˡ����ð������жεĶ��乹�췽ʽ�����������ֱ������л�����̬������༭��Ĭ�ϴ��ı���������һ�£����������Ҫ����ϸ�������б��棬��Ҫ�����������
-- ��ǰδ������չ HTML clipboard import/export����δ����Ҫ�� HTML �� Markdown ֮�������ȼ�Э�̣�Ӧ��Ϊ���������������
+- Current pure-paste cleanup is one-shot plus command-failure reset. If future product scope requires blur/timeout cleanup independent of parser consumption, that should extend `PasteIntentController` rather than spreading more state across handlers.
+- The capability still does not own generalized HTML clipboard import/export prioritization. That remains editor-default behavior outside this capability.
 
 ---
 
 ## Known Consumers
 
-| Consumer               | Usage                                        | Evidence                                              |
-| ---------------------- | -------------------------------------------- | ----------------------------------------------------- |
-| `EditorImpl`           | �� Markdown ��������������༭��ʵ��             | `src/domains/editor/core/EditorImpl.tsx:262-280`      |
-| `markdownClipboard.ts` | ͳһ���ؼ�������������л��߼�                     | `src/domains/editor/integration/markdownClipboard.ts` |
-| `MarkdownService`      | �ṩ���� `markdownManager` ֧�� parse/serialize | `src/services/markdown/MarkdownService.ts`            |
+| Consumer                   | Usage                                            | Evidence                                                  |
+| -------------------------- | ------------------------------------------------ | --------------------------------------------------------- |
+| `EditorImpl`               | mounts clipboard parser and serializer           | `src/domains/editor/core/EditorImpl.tsx`                  |
+| `markdownClipboard.ts`     | text clipboard parse/serialize core              | `src/domains/editor/integration/markdownClipboard.ts`     |
+| `pasteIntentController.ts` | owns next-paste intent state                     | `src/domains/editor/integration/pasteIntentController.ts` |
+| `pasteCommandBridge.ts`    | shared paste execution for menu/context actions  | `src/domains/editor/integration/pasteCommandBridge.ts`    |
+| `MarkdownService`          | shared `markdownManager` parse/serialize support | `src/services/markdown/MarkdownService.ts`                |
 
 ---
 
 ## Archive Pointer
 
-- None. This is a first-version capability document.
+- None. This remains the current capability document.

@@ -224,6 +224,15 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
         accelerator: 'Ctrl+V',
       },
       {
+        id: 'menu.edit.paste_plain',
+        labelKey: 'menu.edit.pastePlain',
+        fallbackLabels: {
+          'zh-CN': '纯粘贴',
+          'en-US': 'Paste as Plain Text',
+        },
+        accelerator: 'Ctrl+Shift+V',
+      },
+      {
         id: 'menu.edit.select_all',
         labelKey: 'menu.edit.selectAll',
         fallbackLabels: { 'zh-CN': '全选', 'en-US': 'Select All' },
