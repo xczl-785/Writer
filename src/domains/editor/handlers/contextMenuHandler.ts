@@ -6,14 +6,18 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { MenuItem } from '../../../shared/components/ContextMenu/contextMenuRegistry';
-import { readClipboardText } from '../../../services/runtime/ClipboardTextReader';
+import { readClipboardPayload } from '../../../services/runtime/ClipboardTextReader';
 import {
   getCodeBlockContextMenuItems,
   getEditorContextMenuItems,
   getTableContextMenuItems,
 } from '../../../shared/components/ContextMenu/editorMenu';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
-import { executePasteCommand, insertClipboardText } from '../integration';
+import {
+  executePasteCommand,
+  insertClipboardHtml,
+  insertClipboardText,
+} from '../integration';
 
 export type ContextMenuOpener = (event: ReactMouseEvent) => void;
 
@@ -188,9 +192,12 @@ export function createContextMenuOpener(
                   editor.chain().focus().run();
                 },
                 execDocumentCommand: (command) => execDocumentCommand(command),
-                readClipboardText,
+                readClipboardPayload,
                 insertClipboardText: (text, intent) => {
                   insertClipboardText(editor, text, intent);
+                },
+                insertClipboardHtml: (html) => {
+                  insertClipboardHtml(editor, html);
                 },
                 setStatus,
                 clipboardDeniedMessage: 'Paste requires clipboard permission',
@@ -203,9 +210,12 @@ export function createContextMenuOpener(
                   editor.chain().focus().run();
                 },
                 execDocumentCommand: (command) => execDocumentCommand(command),
-                readClipboardText,
+                readClipboardPayload,
                 insertClipboardText: (text, intent) => {
                   insertClipboardText(editor, text, intent);
+                },
+                insertClipboardHtml: (html) => {
+                  insertClipboardHtml(editor, html);
                 },
                 setStatus,
                 clipboardDeniedMessage: 'Paste requires clipboard permission',

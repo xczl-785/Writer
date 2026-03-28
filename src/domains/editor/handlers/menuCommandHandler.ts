@@ -5,9 +5,13 @@
  */
 import type { Editor } from '@tiptap/react';
 import { t } from '../../../shared/i18n';
-import { readClipboardText } from '../../../services/runtime/ClipboardTextReader';
+import { readClipboardPayload } from '../../../services/runtime/ClipboardTextReader';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
-import { executePasteCommand, insertClipboardText } from '../integration';
+import {
+  executePasteCommand,
+  insertClipboardHtml,
+  insertClipboardText,
+} from '../integration';
 import { applyLinkAction } from '../hooks/linkActions';
 import { applyImageAction } from '../hooks/imageActions';
 
@@ -63,9 +67,12 @@ export function createMenuCommandHandler(
             editor.chain().focus().run();
           },
           execDocumentCommand: (command) => execDocumentCommand(command),
-          readClipboardText,
+          readClipboardPayload,
           insertClipboardText: (text, intent) => {
             insertClipboardText(editor, text, intent);
+          },
+          insertClipboardHtml: (html) => {
+            insertClipboardHtml(editor, html);
           },
           setStatus,
           clipboardDeniedMessage: t('status.menu.clipboardDenied'),
@@ -78,9 +85,12 @@ export function createMenuCommandHandler(
             editor.chain().focus().run();
           },
           execDocumentCommand: (command) => execDocumentCommand(command),
-          readClipboardText,
+          readClipboardPayload,
           insertClipboardText: (text, intent) => {
             insertClipboardText(editor, text, intent);
+          },
+          insertClipboardHtml: (html) => {
+            insertClipboardHtml(editor, html);
           },
           setStatus,
           clipboardDeniedMessage: t('status.menu.clipboardDenied'),

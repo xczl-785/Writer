@@ -7,11 +7,12 @@ import {
   type MenuItem,
 } from '../../../shared/components/ContextMenu/contextMenuRegistry';
 
-const readClipboardTextMock = vi.fn();
+const readClipboardPayloadMock = vi.fn();
 const insertClipboardTextMock = vi.fn();
+const insertClipboardHtmlMock = vi.fn();
 
 vi.mock('../../../services/runtime/ClipboardTextReader', () => ({
-  readClipboardText: () => readClipboardTextMock(),
+  readClipboardPayload: () => readClipboardPayloadMock(),
 }));
 
 vi.mock('../integration', async () => {
@@ -24,6 +25,8 @@ vi.mock('../integration', async () => {
       text: string,
       intent: 'default' | 'plain',
     ) => insertClipboardTextMock(editor, text, intent),
+    insertClipboardHtml: (editor: Editor, html: string) =>
+      insertClipboardHtmlMock(editor, html),
   };
 });
 
@@ -50,8 +53,9 @@ describe('createContextMenuOpener', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    readClipboardTextMock.mockReset();
+    readClipboardPayloadMock.mockReset();
     insertClipboardTextMock.mockReset();
+    insertClipboardHtmlMock.mockReset();
     chain.focus.mockReturnValue(chain);
     chain.run.mockReturnValue(true);
   });
@@ -97,14 +101,18 @@ describe('createContextMenuOpener', () => {
 
     expect(execCommand).toHaveBeenCalledWith('paste');
     expect(readText).not.toHaveBeenCalled();
-    expect(readClipboardTextMock).not.toHaveBeenCalled();
+    expect(readClipboardPayloadMock).not.toHaveBeenCalled();
     expect(insertClipboardTextMock).not.toHaveBeenCalled();
+    expect(insertClipboardHtmlMock).not.toHaveBeenCalled();
   });
 
   it('exposes a separate plain paste context action', async () => {
     const execCommand = vi.fn(() => true);
     let capturedItems: MenuItem[] = [];
-    readClipboardTextMock.mockResolvedValue('# heading');
+    readClipboardPayloadMock.mockResolvedValue({
+      html: '<p>rich</p>',
+      text: '# heading',
+    });
 
     Object.defineProperty(document, 'execCommand', {
       configurable: true,
@@ -139,11 +147,12 @@ describe('createContextMenuOpener', () => {
     await Promise.resolve();
 
     expect(execCommand).not.toHaveBeenCalled();
-    expect(readClipboardTextMock).toHaveBeenCalledTimes(1);
+    expect(readClipboardPayloadMock).toHaveBeenCalledTimes(1);
     expect(insertClipboardTextMock).toHaveBeenCalledWith(
       editor,
       '# heading',
       'plain',
     );
+    expect(insertClipboardHtmlMock).not.toHaveBeenCalled();
   });
 });

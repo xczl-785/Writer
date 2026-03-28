@@ -20,7 +20,7 @@
   - normal plain-text paste still parses Markdown
   - pure paste still inserts raw text
   - pure-paste intent is consumed once and does not leak to the next paste
-  - application-driven normal paste still prefers native paste before falling back to explicit text insertion
+  - application-driven normal paste still prefers native paste before falling back to explicit clipboard payload insertion
   - image paste is still handled by the image path
   - menu, context menu, and shortcut stay aligned
 - **last_verified**: 2026-03-28
@@ -31,7 +31,7 @@
 
 Writer uses ProseMirror clipboard hooks for plain-text clipboard conversion. Normal text paste is parsed through the shared `markdownManager`, while pure-paste flows are controlled by Writer itself through a one-shot paste intent boundary instead of relying only on ProseMirror's internal `plain` flag.
 
-For application-driven paste entry points such as the custom editor context menu and explicit plain-paste commands, Writer now prefers native paste when possible and falls back to explicit clipboard text reading when the host runtime denies `document.execCommand('paste')`. HTML-rich paste priority still remains with the editor's default clipboard handling when native paste succeeds, and image clipboard items remain handled by the image-paste path before text parsing is involved.
+For application-driven paste entry points such as the custom editor context menu and explicit plain-paste commands, Writer now prefers native paste when possible and falls back to explicit clipboard payload reading when the host runtime denies `document.execCommand('paste')`. In that fallback path, normal paste prefers HTML payload and only falls back to plain text when HTML is unavailable. Image clipboard items still remain handled by the image-paste path before text parsing is involved.
 
 ---
 
@@ -45,7 +45,7 @@ For application-driven paste entry points such as the custom editor context menu
 | `createMarkdownClipboardTextSerializer`                              | selection to Markdown text                   | `src/domains/editor/integration/markdownClipboard.ts`                                                                                           | uses shared markdown manager       |
 | `setNextPasteIntent / consumeNextPasteIntent / clearNextPasteIntent` | pure-paste intent lifecycle                  | `src/domains/editor/integration/pasteIntentController.ts`                                                                                       | one-shot boundary                  |
 | `executePasteCommand`                                                | menu/context paste bridge                    | `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                          | shared paste execution helper      |
-| `readClipboardText`                                                  | desktop/web clipboard text fallback          | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                           | Tauri command first on desktop     |
+| `readClipboardPayload`                                               | desktop/web clipboard payload fallback       | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                           | returns HTML/text when available   |
 | `menu.edit.paste_plain`                                              | edit menu plain paste                        | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs` | command and native menu route      |
 | `context menu -> paste-plain`                                        | editor context menu plain paste              | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                         | context path                       |
 | `Cmd/Ctrl+Shift+V`                                                   | keyboard pure paste                          | `src/domains/editor/extensions/keydownHandler.ts`                                                                                               | arms one-shot plain intent         |
@@ -84,9 +84,9 @@ After parser consumption, the next-paste intent resets to `default`. Paste-comma
 
 **Evidence**: `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`
 
-### CR-006: Application-driven normal paste prefers native paste and falls back to explicit text insertion
+### CR-006: Application-driven normal paste prefers native paste and falls back to explicit payload insertion
 
-When Writer itself initiates a paste action from menu or context-menu handlers, it tries the host native paste path first. If the runtime denies that path, Writer reads clipboard text explicitly and inserts it through the same Markdown/plain-text conversion rules.
+When Writer itself initiates a paste action from menu or context-menu handlers, it tries the host native paste path first. If the runtime denies that path, Writer reads clipboard payload explicitly. Normal paste prefers HTML insertion and only falls back to plain text insertion when HTML is unavailable.
 
 **Evidence**: `src/domains/editor/integration/pasteCommandBridge.ts`, `src/services/runtime/ClipboardTextReader.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/domains/editor/handlers/contextMenuHandler.ts`
 
@@ -118,17 +118,17 @@ Clipboard image items are still handled by the image-paste hook, which prevents 
 
 ## Impact Surface
 
-| Area                     | What to check                                                       | Evidence                                                                                                                                                                                                                                                                                              |
-| ------------------------ | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Editor wiring            | parser/serializer still mounted correctly                           | `src/domains/editor/core/EditorImpl.tsx`                                                                                                                                                                                                                                                              |
-| Paste intent lifecycle   | one-shot consume and clear-on-failure behavior                      | `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                                                                                                                     |
-| Clipboard text fallback  | desktop/web explicit text read path for app-driven paste            | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                                                                                                                                                                                 |
-| Markdown parser behavior | normal paste, pure paste, oversize fallback, parse-failure fallback | `src/domains/editor/integration/markdownClipboard.ts`                                                                                                                                                                                                                                                 |
-| Keyboard entry           | shortcut sets plain intent only for `Cmd/Ctrl+Shift+V`              | `src/domains/editor/extensions/keydownHandler.ts`                                                                                                                                                                                                                                                     |
-| Edit menu path           | menu command id and native menu item stay aligned                   | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                                                                                                                                                       |
-| Context menu path        | plain-paste item exists and uses shared paste bridge                | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                                                                                                                                                                               |
-| Image paste              | image clipboard items still bypass text parsing                     | `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`                                                                                                                                                                                                          |
-| Behavior tests           | parser, command, context, and shortcut contracts remain covered     | `src/domains/editor/integration/markdownClipboard.test.ts`, `src/domains/editor/integration/pasteIntentController.test.ts`, `src/domains/editor/handlers/menuCommandHandler.test.ts`, `src/domains/editor/handlers/contextMenuHandler.test.ts`, `src/domains/editor/core/EditorTableControls.test.ts` |
+| Area                       | What to check                                                       | Evidence                                                                                                                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Editor wiring              | parser/serializer still mounted correctly                           | `src/domains/editor/core/EditorImpl.tsx`                                                                                                                                                                                                                                                              |
+| Paste intent lifecycle     | one-shot consume and clear-on-failure behavior                      | `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                                                                                                                     |
+| Clipboard payload fallback | desktop/web explicit HTML/text read path for app-driven paste       | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                                                                                                                                                                                 |
+| Markdown parser behavior   | normal paste, pure paste, oversize fallback, parse-failure fallback | `src/domains/editor/integration/markdownClipboard.ts`                                                                                                                                                                                                                                                 |
+| Keyboard entry             | shortcut sets plain intent only for `Cmd/Ctrl+Shift+V`              | `src/domains/editor/extensions/keydownHandler.ts`                                                                                                                                                                                                                                                     |
+| Edit menu path             | menu command id and native menu item stay aligned                   | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                                                                                                                                                       |
+| Context menu path          | plain-paste item exists and uses shared paste bridge                | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                                                                                                                                                                               |
+| Image paste                | image clipboard items still bypass text parsing                     | `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`                                                                                                                                                                                                          |
+| Behavior tests             | parser, command, context, and shortcut contracts remain covered     | `src/domains/editor/integration/markdownClipboard.test.ts`, `src/domains/editor/integration/pasteIntentController.test.ts`, `src/domains/editor/handlers/menuCommandHandler.test.ts`, `src/domains/editor/handlers/contextMenuHandler.test.ts`, `src/domains/editor/core/EditorTableControls.test.ts` |
 
 ---
 
@@ -143,7 +143,7 @@ Clipboard image items are still handled by the image-paste hook, which prevents 
 ## Uncertainties
 
 - Current pure-paste cleanup is one-shot plus command-failure reset. If future product scope requires blur/timeout cleanup independent of parser consumption, that should extend `PasteIntentController` rather than spreading more state across handlers.
-- Application-driven normal paste falls back to text-only insertion when host native paste is unavailable. That is intentional for reliability, but it means rich HTML fidelity still depends on native paste succeeding.
+- Application-driven normal paste now preserves HTML when HTML payload is available through the fallback reader. Remaining fidelity gaps mainly concern clipboard payload types outside HTML/text, such as images or editor-specific formats.
 
 ---
 
@@ -155,7 +155,7 @@ Clipboard image items are still handled by the image-paste hook, which prevents 
 | `markdownClipboard.ts`     | text clipboard parse/serialize core              | `src/domains/editor/integration/markdownClipboard.ts`     |
 | `pasteIntentController.ts` | owns next-paste intent state                     | `src/domains/editor/integration/pasteIntentController.ts` |
 | `pasteCommandBridge.ts`    | shared paste execution for menu/context actions  | `src/domains/editor/integration/pasteCommandBridge.ts`    |
-| `ClipboardTextReader`      | desktop/web clipboard text read fallback         | `src/services/runtime/ClipboardTextReader.ts`             |
+| `ClipboardTextReader`      | desktop/web clipboard HTML/text read fallback    | `src/services/runtime/ClipboardTextReader.ts`             |
 | `MarkdownService`          | shared `markdownManager` parse/serialize support | `src/services/markdown/MarkdownService.ts`                |
 
 ---

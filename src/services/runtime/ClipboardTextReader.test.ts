@@ -15,6 +15,7 @@ describe('ClipboardTextReader', () => {
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: {
+        read: vi.fn(),
         readText: vi.fn(),
       },
     });
@@ -22,14 +23,44 @@ describe('ClipboardTextReader', () => {
 
   it('uses tauri clipboard command in desktop runtime', async () => {
     (globalThis as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
-    invokeMock.mockResolvedValue('desktop text');
+    invokeMock.mockResolvedValue({ html: '<b>desktop</b>', text: 'desktop' });
     const mod = await import('./ClipboardTextReader');
 
-    await expect(mod.readClipboardText()).resolves.toBe('desktop text');
-    expect(invokeMock).toHaveBeenCalledWith('read_clipboard_text');
+    await expect(mod.readClipboardPayload()).resolves.toEqual({
+      html: '<b>desktop</b>',
+      text: 'desktop',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('read_clipboard_payload');
   });
 
-  it('uses navigator clipboard outside tauri runtime', async () => {
+  it('uses navigator clipboard rich payload outside tauri runtime', async () => {
+    const read = vi.fn().mockResolvedValue([
+      {
+        types: ['text/html', 'text/plain'],
+        getType: vi.fn(async (type: string) => {
+          if (type === 'text/html') {
+            return new Blob(['<p>browser</p>'], { type });
+          }
+          return new Blob(['browser'], { type });
+        }),
+      },
+    ]);
+    const readText = vi.fn().mockResolvedValue('browser text');
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { read, readText },
+    });
+    const mod = await import('./ClipboardTextReader');
+
+    await expect(mod.readClipboardPayload()).resolves.toEqual({
+      html: '<p>browser</p>',
+      text: 'browser',
+    });
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(invokeMock).not.toHaveBeenCalled();
+  });
+
+  it('falls back to plain text when rich clipboard read is unavailable', async () => {
     const readText = vi.fn().mockResolvedValue('browser text');
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -37,8 +68,9 @@ describe('ClipboardTextReader', () => {
     });
     const mod = await import('./ClipboardTextReader');
 
-    await expect(mod.readClipboardText()).resolves.toBe('browser text');
-    expect(readText).toHaveBeenCalledTimes(1);
-    expect(invokeMock).not.toHaveBeenCalled();
+    await expect(mod.readClipboardPayload()).resolves.toEqual({
+      html: null,
+      text: 'browser text',
+    });
   });
 });

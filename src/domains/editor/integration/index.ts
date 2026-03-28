@@ -8,6 +8,7 @@ export {
   setNextPasteIntent,
 } from './pasteIntentController';
 export {
+  insertClipboardHtml,
   createMarkdownClipboardTextParser,
   createMarkdownClipboardTextSerializer,
   insertClipboardText,
