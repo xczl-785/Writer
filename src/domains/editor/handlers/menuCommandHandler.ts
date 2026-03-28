@@ -6,6 +6,7 @@
 import type { Editor } from '@tiptap/react';
 import { t } from '../../../shared/i18n';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
+import { executePasteCommand } from '../integration';
 import { applyLinkAction } from '../hooks/linkActions';
 import { applyImageAction } from '../hooks/imageActions';
 
@@ -56,7 +57,25 @@ export function createMenuCommandHandler(
         execClipboardCommand('copy');
         return;
       case 'edit.paste':
-        execClipboardCommand('paste');
+        executePasteCommand({
+          focusEditor: () => {
+            editor.chain().focus().run();
+          },
+          execDocumentCommand: (command) => execDocumentCommand(command),
+          setStatus,
+          clipboardDeniedMessage: t('status.menu.clipboardDenied'),
+        });
+        return;
+      case 'edit.paste_plain':
+        executePasteCommand({
+          intent: 'plain',
+          focusEditor: () => {
+            editor.chain().focus().run();
+          },
+          execDocumentCommand: (command) => execDocumentCommand(command),
+          setStatus,
+          clipboardDeniedMessage: t('status.menu.clipboardDenied'),
+        });
         return;
       case 'edit.select_all':
         runEditorCommand(() => editor.chain().focus().selectAll().run());

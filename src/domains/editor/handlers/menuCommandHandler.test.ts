@@ -65,6 +65,32 @@ describe('createMenuCommandHandler', () => {
     expect(setStatus).not.toHaveBeenCalled();
   });
 
+  it('uses document paste command for plain paste entry', () => {
+    const setStatus = vi.fn();
+    const execCommand = vi.fn(() => true);
+
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommand,
+    });
+
+    const handler = createMenuCommandHandler(
+      editor,
+      { openFindPanel: vi.fn() },
+      setStatus,
+      vi.fn(),
+    );
+
+    handler(
+      new CustomEvent('writer:editor-command', {
+        detail: { id: 'edit.paste_plain' },
+      }),
+    );
+
+    expect(execCommand).toHaveBeenCalledWith('paste');
+    expect(setStatus).not.toHaveBeenCalled();
+  });
+
   it('reports clipboard denial when native paste command is unavailable', () => {
     const setStatus = vi.fn();
 

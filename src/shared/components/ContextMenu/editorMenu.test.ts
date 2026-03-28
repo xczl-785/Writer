@@ -12,6 +12,7 @@ describe('editorMenu', () => {
   it('returns base editor context items', () => {
     const items = getEditorContextMenuItems({
       onPaste: noop,
+      onPastePlain: noop,
       onSelectAll: noop,
       onCopyFullText: noop,
       onInsertTable: noop,
@@ -21,6 +22,7 @@ describe('editorMenu', () => {
 
     expect(ids).toEqual([
       'paste',
+      'paste-plain',
       'select-all',
       'copy-full-text',
       'insert-table',

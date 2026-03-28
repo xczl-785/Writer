@@ -76,4 +76,42 @@ describe('createContextMenuOpener', () => {
     expect(execCommand).toHaveBeenCalledWith('paste');
     expect(readText).not.toHaveBeenCalled();
   });
+
+  it('exposes a separate plain paste context action', () => {
+    const execCommand = vi.fn(() => true);
+    let capturedItems: MenuItem[] = [];
+
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommand,
+    });
+
+    const open = createContextMenuOpener(
+      editor,
+      {
+        open: (_x, _y, items) => {
+          capturedItems = items;
+        },
+      },
+      vi.fn().mockResolvedValue(undefined),
+      vi.fn(),
+    );
+
+    open({
+      preventDefault: vi.fn(),
+      clientX: 10,
+      clientY: 20,
+    } as unknown as ReactMouseEvent);
+
+    const plainPasteItem = capturedItems.find(
+      (item): item is Extract<MenuItem, { id: string }> =>
+        isMenuItem(item) && item.id === 'paste-plain',
+    );
+
+    expect(plainPasteItem).toBeDefined();
+
+    plainPasteItem?.action();
+
+    expect(execCommand).toHaveBeenCalledWith('paste');
+  });
 });
