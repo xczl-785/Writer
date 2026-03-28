@@ -10,5 +10,6 @@ export {
 export {
   createMarkdownClipboardTextParser,
   createMarkdownClipboardTextSerializer,
+  insertClipboardText,
 } from './markdownClipboard';
 export { persistEditorUpdate, flushEditorOnBlur } from './persistenceBridge';

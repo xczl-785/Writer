@@ -369,17 +369,14 @@ pub struct CopyResult {
 ///
 /// 支持自动重命名、隐藏文件和无扩展名文件
 #[tauri::command]
-pub async fn copy_file_with_result(
-    source: String,
-    target: String,
-) -> Result<CopyResult, String> {
+pub async fn copy_file_with_result(source: String, target: String) -> Result<CopyResult, String> {
     // 1. 规范化源路径（使用 canonicalize 解析符号链接和相对路径）
-    let source_path = normalize_source_path(&source)
-        .ok_or_else(|| format!("Invalid source path: {}", source))?;
+    let source_path =
+        normalize_source_path(&source).ok_or_else(|| format!("Invalid source path: {}", source))?;
 
     // 2. 规范化目标路径（仅规范化父目录，保留原始文件名）
-    let target_path = normalize_target_path(&target)
-        .ok_or_else(|| format!("Invalid target path: {}", target))?;
+    let target_path =
+        normalize_target_path(&target).ok_or_else(|| format!("Invalid target path: {}", target))?;
 
     // 3. 校验源文件存在
     if !Path::new(&source_path).exists() {
@@ -404,8 +401,8 @@ pub async fn copy_file_with_result(
     };
 
     // 6. 执行复制（保持元数据）
-    let bytes_written = std::fs::copy(&source_path, &final_path)
-        .map_err(|e| format!("Copy failed: {}", e))?;
+    let bytes_written =
+        std::fs::copy(&source_path, &final_path).map_err(|e| format!("Copy failed: {}", e))?;
 
     Ok(CopyResult {
         actual_path: final_path,

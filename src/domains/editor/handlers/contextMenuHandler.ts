@@ -6,13 +6,14 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { MenuItem } from '../../../shared/components/ContextMenu/contextMenuRegistry';
+import { readClipboardText } from '../../../services/runtime/ClipboardTextReader';
 import {
   getCodeBlockContextMenuItems,
   getEditorContextMenuItems,
   getTableContextMenuItems,
 } from '../../../shared/components/ContextMenu/editorMenu';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
-import { executePasteCommand } from '../integration';
+import { executePasteCommand, insertClipboardText } from '../integration';
 
 export type ContextMenuOpener = (event: ReactMouseEvent) => void;
 
@@ -182,22 +183,30 @@ export function createContextMenuOpener(
           })
         : getEditorContextMenuItems({
             onPaste: () => {
-              executePasteCommand({
+              void executePasteCommand({
                 focusEditor: () => {
                   editor.chain().focus().run();
                 },
                 execDocumentCommand: (command) => execDocumentCommand(command),
+                readClipboardText,
+                insertClipboardText: (text, intent) => {
+                  insertClipboardText(editor, text, intent);
+                },
                 setStatus,
                 clipboardDeniedMessage: 'Paste requires clipboard permission',
               });
             },
             onPastePlain: () => {
-              executePasteCommand({
+              void executePasteCommand({
                 intent: 'plain',
                 focusEditor: () => {
                   editor.chain().focus().run();
                 },
                 execDocumentCommand: (command) => execDocumentCommand(command),
+                readClipboardText,
+                insertClipboardText: (text, intent) => {
+                  insertClipboardText(editor, text, intent);
+                },
                 setStatus,
                 clipboardDeniedMessage: 'Paste requires clipboard permission',
               });
