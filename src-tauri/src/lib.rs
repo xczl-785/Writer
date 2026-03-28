@@ -13,6 +13,8 @@ use std::sync::Mutex;
 use tauri::AppHandle;
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 use tauri::Emitter;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use tauri::Manager;
 use watcher::WatcherState;
 
 #[tauri::command]
