@@ -17,4 +17,10 @@ describe('Mac paste menu behavior', () => {
     expect(menuRs).toContain('PredefinedMenuItem::paste');
     expect(menuRs).toContain('PredefinedMenuItem::select_all');
   });
+
+  it('adds an explicit native plain paste item next to the predefined paste entry', () => {
+    expect(menuRs).toContain('menu.edit.paste_plain');
+    expect(menuRs).toContain('Paste as Plain Text');
+    expect(menuRs).toContain('Some("CmdOrCtrl+Shift+V")');
+  });
 });

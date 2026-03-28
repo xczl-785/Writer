@@ -47,6 +47,12 @@ export function registerEditCommands(): CleanupFn {
   );
 
   cleanups.push(
+    menuCommandBus.register('menu.edit.paste_plain', () =>
+      emitEditorCommand('edit.paste_plain'),
+    ),
+  );
+
+  cleanups.push(
     menuCommandBus.register('menu.edit.select_all', () =>
       emitEditorCommand('edit.select_all'),
     ),

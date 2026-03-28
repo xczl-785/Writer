@@ -3,6 +3,29 @@ import type { Editor } from '@tiptap/react';
 import { t } from '../../../shared/i18n';
 import { createMenuCommandHandler } from './menuCommandHandler';
 
+const readClipboardPayloadMock = vi.fn();
+const insertClipboardTextMock = vi.fn();
+const insertClipboardHtmlMock = vi.fn();
+
+vi.mock('../../../services/runtime/ClipboardTextReader', () => ({
+  readClipboardPayload: () => readClipboardPayloadMock(),
+}));
+
+vi.mock('../integration', async () => {
+  const actual =
+    await vi.importActual<typeof import('../integration')>('../integration');
+  return {
+    ...actual,
+    insertClipboardText: (
+      editor: Editor,
+      text: string,
+      intent: 'default' | 'plain',
+    ) => insertClipboardTextMock(editor, text, intent),
+    insertClipboardHtml: (editor: Editor, html: string) =>
+      insertClipboardHtmlMock(editor, html),
+  };
+});
+
 describe('createMenuCommandHandler', () => {
   const chain = {
     focus: vi.fn(),
@@ -21,6 +44,9 @@ describe('createMenuCommandHandler', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    readClipboardPayloadMock.mockReset();
+    insertClipboardTextMock.mockReset();
+    insertClipboardHtmlMock.mockReset();
     chain.focus.mockReturnValue(chain);
     chain.run.mockReturnValue(true);
     chain.undo.mockReturnValue(chain);
@@ -62,11 +88,87 @@ describe('createMenuCommandHandler', () => {
 
     expect(execCommand).toHaveBeenCalledWith('paste');
     expect(readText).not.toHaveBeenCalled();
+    expect(readClipboardPayloadMock).not.toHaveBeenCalled();
+    expect(insertClipboardTextMock).not.toHaveBeenCalled();
+    expect(insertClipboardHtmlMock).not.toHaveBeenCalled();
     expect(setStatus).not.toHaveBeenCalled();
   });
 
-  it('reports clipboard denial when native paste command is unavailable', () => {
+  it('uses explicit clipboard text insertion for plain paste entry', async () => {
     const setStatus = vi.fn();
+    const execCommand = vi.fn(() => true);
+    readClipboardPayloadMock.mockResolvedValue({
+      html: '<p>rich</p>',
+      text: '# heading',
+    });
+
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: execCommand,
+    });
+
+    const handler = createMenuCommandHandler(
+      editor,
+      { openFindPanel: vi.fn() },
+      setStatus,
+      vi.fn(),
+    );
+
+    handler(
+      new CustomEvent('writer:editor-command', {
+        detail: { id: 'edit.paste_plain' },
+      }),
+    );
+
+    await Promise.resolve();
+
+    expect(execCommand).not.toHaveBeenCalled();
+    expect(readClipboardPayloadMock).toHaveBeenCalledTimes(1);
+    expect(insertClipboardTextMock).toHaveBeenCalledWith(
+      editor,
+      '# heading',
+      'plain',
+    );
+    expect(insertClipboardHtmlMock).not.toHaveBeenCalled();
+    expect(setStatus).not.toHaveBeenCalled();
+  });
+
+  it('uses html payload for normal paste fallback when native paste is unavailable', async () => {
+    const setStatus = vi.fn();
+    readClipboardPayloadMock.mockResolvedValue({
+      html: '<p>rich</p>',
+      text: 'rich',
+    });
+
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: vi.fn(() => false),
+    });
+
+    const handler = createMenuCommandHandler(
+      editor,
+      { openFindPanel: vi.fn() },
+      setStatus,
+      vi.fn(),
+    );
+
+    handler(
+      new CustomEvent('writer:editor-command', {
+        detail: { id: 'edit.paste' },
+      }),
+    );
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(insertClipboardHtmlMock).toHaveBeenCalledWith(editor, '<p>rich</p>');
+    expect(insertClipboardTextMock).not.toHaveBeenCalled();
+    expect(setStatus).not.toHaveBeenCalled();
+  });
+
+  it('reports clipboard denial when native paste command fallback also fails', async () => {
+    const setStatus = vi.fn();
+    readClipboardPayloadMock.mockRejectedValue(new Error('denied'));
 
     Object.defineProperty(document, 'execCommand', {
       configurable: true,
@@ -90,6 +192,10 @@ describe('createMenuCommandHandler', () => {
       }),
     );
 
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(readClipboardPayloadMock).toHaveBeenCalledTimes(1);
     expect(setStatus).toHaveBeenCalledWith(
       'error',
       t('status.menu.clipboardDenied'),
