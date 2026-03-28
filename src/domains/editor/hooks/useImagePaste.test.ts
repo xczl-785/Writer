@@ -40,6 +40,7 @@ const createStatusState = (setStatus = vi.fn()) => ({
   markDirty: vi.fn(),
   markSaving: vi.fn(),
   markSaved: vi.fn(),
+  markSaveFailed: vi.fn(),
   setSaveError: vi.fn(),
 });
 
@@ -110,7 +111,7 @@ describe('useImagePaste', () => {
     );
   });
 
-  it('should reject unsupported image formats and set status error', async () => {
+  it('should reject unsupported image formats and clear legacy status lane', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const setStatusMock = vi.fn();
     vi.mocked(useStatusStore.getState).mockReturnValue(
@@ -137,15 +138,12 @@ describe('useImagePaste', () => {
       '[Unsupported image format]',
       'image/gif',
     );
-    expect(setStatusMock).toHaveBeenCalledWith(
-      'error',
-      'Failed to paste image: unsupported format',
-    );
+    expect(setStatusMock).toHaveBeenCalledWith('idle', null);
     expect(mockEditor.commands.setImage).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
 
-  it('should reject large images and set status error', async () => {
+  it('should reject large images and clear legacy status lane', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const setStatusMock = vi.fn();
     vi.mocked(useStatusStore.getState).mockReturnValue(
@@ -172,15 +170,12 @@ describe('useImagePaste', () => {
       '[Image too large (max 10MB)]',
       11 * 1024 * 1024,
     );
-    expect(setStatusMock).toHaveBeenCalledWith(
-      'error',
-      'Failed to paste image: image too large (max 10MB)',
-    );
+    expect(setStatusMock).toHaveBeenCalledWith('idle', null);
     expect(mockEditor.commands.setImage).not.toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
 
-  it('should set status error when save fails', async () => {
+  it('should log the level2 image-save source when save fails', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const setStatusMock = vi.fn();
     vi.mocked(useStatusStore.getState).mockReturnValue(
@@ -212,10 +207,10 @@ describe('useImagePaste', () => {
     await handlePaste(mockEvent);
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      '[Failed to save image]',
+      '[editor-insert-image-save]',
       expect.any(Error),
     );
-    expect(setStatusMock).toHaveBeenCalledWith('error', 'Failed to save image');
+    expect(setStatusMock).toHaveBeenCalledWith('idle', null);
     consoleSpy.mockRestore();
   });
 

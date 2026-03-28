@@ -2,6 +2,7 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import { workspaceActions } from './workspaceActions';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { ErrorService } from '../../../services/error/ErrorService';
+import type { NotificationAction } from '../../../state/slices/notificationSlice';
 import {
   getWorkspaceContext,
   useWorkspaceStore,
@@ -13,6 +14,25 @@ import {
 } from '../../../ui/statusbar/workspaceIndicator';
 import { t } from '../../../shared/i18n';
 import { getSupportedExtensions } from '../../file/utils/fileTypeUtils';
+
+const showLevel2WorkspaceError = (
+  error: unknown,
+  source: string,
+  reason: string,
+  suggestion: string,
+  dedupeKey = source,
+  actions?: NotificationAction[],
+): void => {
+  useStatusStore.getState().setStatus('idle', null);
+  ErrorService.handleWithInfo(error, source, {
+    level: 'level2',
+    source,
+    reason,
+    suggestion,
+    dedupeKey,
+    actions,
+  });
+};
 
 const normalizeDialogPath = (selected: unknown): string | null => {
   const pickPath = (value: unknown): string | null => {
@@ -58,27 +78,32 @@ const normalizeDialogPath = (selected: unknown): string | null => {
 
 export const openFile = async (path: string): Promise<void> => {
   try {
-    useStatusStore.getState().setStatus('loading', 'Opening file...');
+    useStatusStore.getState().setStatus('loading', t('file.opening'));
 
     const result = await workspaceActions.openFile(path);
     if (!result.ok) {
-      useStatusStore
-        .getState()
-        .setStatus(
-          'error',
-          result.reason === 'active-flush-failed'
-            ? 'Failed to save changes'
-            : 'Failed to save target file',
-        );
+      showLevel2WorkspaceError(
+        new Error(result.reason),
+        'workspace-open-file',
+        result.reason === 'active-flush-failed'
+          ? t('workspace.openFileFlushFailed')
+          : t('workspace.openFileTargetSaveFailed'),
+        t('workspace.openRetryAfterSaveSuggestion'),
+        `workspace-open-file:${result.reason}`,
+        [{ label: t('error.retry'), run: () => void openFile(path) }],
+      );
       return;
     }
 
     useStatusStore.getState().setStatus('idle');
   } catch (error) {
-    ErrorService.handle(
+    showLevel2WorkspaceError(
       error,
-      `Failed to open file ${path}`,
-      'Failed to open file',
+      'workspace-open-file',
+      t('file.openFailed'),
+      t('workspace.openRetrySuggestion'),
+      `workspace-open-file:${path}`,
+      [{ label: t('error.retry'), run: () => void openFile(path) }],
     );
   }
 };
@@ -123,7 +148,14 @@ export const openFileWithDialog = async (): Promise<string | null> => {
 
     const result = await workspaceActions.openFile(path);
     if (!result.ok) {
-      useStatusStore.getState().setStatus('error', t('file.openFailed'));
+      showLevel2WorkspaceError(
+        new Error(result.reason),
+        'workspace-open-file-dialog',
+        t('file.openFailed'),
+        t('workspace.openRetrySuggestion'),
+        `workspace-open-file-dialog:${result.reason}`,
+        [{ label: t('error.retry'), run: () => void openFile(path) }],
+      );
       return null;
     }
 
@@ -133,10 +165,13 @@ export const openFileWithDialog = async (): Promise<string | null> => {
     useStatusStore.getState().setStatus('idle');
     return path;
   } catch (error) {
-    ErrorService.handle(
+    showLevel2WorkspaceError(
       error,
-      'Failed to open file dialog',
-      'Failed to open file',
+      'workspace-open-file-dialog',
+      t('file.openFailed'),
+      t('workspace.openRetrySuggestion'),
+      'workspace-open-file-dialog',
+      [{ label: t('error.retry'), run: () => void openFileWithDialog() }],
     );
     return null;
   }
@@ -166,7 +201,7 @@ export const openWorkspace = async (): Promise<void> => {
       return;
     }
 
-    useStatusStore.getState().setStatus('loading', 'Loading workspace...');
+    useStatusStore.getState().setStatus('loading', t('workspace.loading'));
 
     try {
       const nodeCount = await workspaceActions.loadWorkspace(path);
@@ -175,24 +210,30 @@ export const openWorkspace = async (): Promise<void> => {
         .getState()
         .setStatus('idle', `Workspace loaded: ${nodeCount} item(s)`);
     } catch (error) {
-      ErrorService.handle(
+      showLevel2WorkspaceError(
         error,
-        'Failed to load file tree',
-        'Failed to load workspace files',
+        'workspace-open-folder',
+        t('workspace.openFolderFailed'),
+        t('workspace.openWorkspaceRetrySuggestion'),
+        `workspace-open-folder:${path}`,
+        [{ label: t('error.retry'), run: () => void openWorkspaceAtPath(path) }],
       );
     }
   } catch (error) {
-    ErrorService.handle(
+    showLevel2WorkspaceError(
       error,
-      'Failed to open dialog',
-      'Failed to open directory dialog',
+      'workspace-open-folder-dialog',
+      t('workspace.openFolderDialogFailed'),
+      t('workspace.openFolderDialogRetrySuggestion'),
+      'workspace-open-folder-dialog',
+      [{ label: t('error.retry'), run: () => void openWorkspace() }],
     );
   }
 };
 
 export const openWorkspaceAtPath = async (path: string): Promise<boolean> => {
   try {
-    useStatusStore.getState().setStatus('loading', 'Loading workspace...');
+    useStatusStore.getState().setStatus('loading', t('workspace.loading'));
 
     const nodeCount = await workspaceActions.loadWorkspace(path);
     await RecentItemsService.addFolder(path);
@@ -201,10 +242,13 @@ export const openWorkspaceAtPath = async (path: string): Promise<boolean> => {
       .setStatus('idle', `Workspace loaded: ${nodeCount} item(s)`);
     return true;
   } catch (error) {
-    ErrorService.handle(
+    showLevel2WorkspaceError(
       error,
-      'Failed to load file tree',
-      'Failed to load workspace files',
+      'workspace-open-folder',
+      t('workspace.openFolderFailed'),
+      t('workspace.openWorkspaceRetrySuggestion'),
+      `workspace-open-folder:${path}`,
+      [{ label: t('error.retry'), run: () => void openWorkspaceAtPath(path) }],
     );
     return false;
   }
@@ -233,12 +277,19 @@ export const addFolderToWorkspaceByDialog = async (): Promise<void> => {
       return;
     }
 
-    useStatusStore.getState().setStatus('error', result.error);
+    showLevel2WorkspaceError(
+      new Error(result.error),
+      'workspace-add-folder-dialog',
+      result.error,
+      'Retry adding the folder to the workspace.',
+      `workspace-add-folder-dialog:${path}`,
+    );
   } catch (error) {
-    ErrorService.handle(
+    showLevel2WorkspaceError(
       error,
-      'Failed to open add-folder dialog',
       'Failed to add folder to workspace',
+      'Retry adding the folder to the workspace.',
+      'workspace-add-folder-dialog',
     );
   }
 };
@@ -256,13 +307,20 @@ export const addFolderPathToWorkspace = async (
       return true;
     }
 
-    useStatusStore.getState().setStatus('error', result.error);
+    showLevel2WorkspaceError(
+      new Error(result.error),
+      'workspace-add-folder',
+      result.error,
+      'Retry adding the folder to the workspace.',
+      `workspace-add-folder:${path}`,
+    );
     return false;
   } catch (error) {
-    ErrorService.handle(
+    showLevel2WorkspaceError(
       error,
       'Failed to add folder to workspace',
-      'Failed to add folder to workspace',
+      'Retry adding the folder to the workspace.',
+      `workspace-add-folder:${path}`,
     );
     return false;
   }
@@ -339,12 +397,20 @@ export const openWorkspaceFile = async (): Promise<void> => {
       return;
     }
 
-    useStatusStore.getState().setStatus('error', result.errorMessage);
+    showLevel2WorkspaceError(
+      new Error(result.errorMessage),
+      'workspace-open-file',
+      result.errorMessage,
+      'Retry opening the workspace file.',
+      `workspace-open-workspace-file:${path}`,
+    );
   } catch (error) {
-    ErrorService.handle(
+    showLevel2WorkspaceError(
       error,
-      'Failed to open workspace file dialog',
+      'workspace-open-workspace-file-dialog',
       'Failed to open workspace file',
+      'Retry opening the workspace file.',
+      'workspace-open-workspace-file-dialog',
     );
   }
 };
@@ -381,17 +447,24 @@ export const saveWorkspaceFileByDialog = async (): Promise<void> => {
 
     const result = await workspaceActions.saveWorkspaceFile(path);
     if (!result.ok) {
-      useStatusStore.getState().setStatus('error', result.error);
+      showLevel2WorkspaceError(
+        new Error(result.error),
+        'workspace-save-dialog',
+        result.error,
+        'Retry saving the workspace.',
+        `workspace-save-dialog:${path}`,
+      );
       return;
     }
 
     await RecentItemsService.addWorkspace(path, getWorkspaceFileBaseName(path));
     useStatusStore.getState().setStatus('idle', 'Workspace saved');
   } catch (error) {
-    ErrorService.handle(
+    showLevel2WorkspaceError(
       error,
-      'Failed to save workspace file',
       'Failed to save workspace',
+      'Retry saving the workspace.',
+      'workspace-save-dialog',
     );
   }
 };
@@ -414,7 +487,13 @@ export const saveCurrentWorkspace = async (): Promise<void> => {
 
     const result = await workspaceActions.saveWorkspaceFile(existingPath);
     if (!result.ok) {
-      useStatusStore.getState().setStatus('error', result.error);
+      showLevel2WorkspaceError(
+        new Error(result.error),
+        'workspace-save-current',
+        result.error,
+        'Retry saving the workspace.',
+        `workspace-save-current:${existingPath}`,
+      );
       return;
     }
 
@@ -424,10 +503,11 @@ export const saveCurrentWorkspace = async (): Promise<void> => {
     );
     useStatusStore.getState().setStatus('idle', 'Workspace saved');
   } catch (error) {
-    ErrorService.handle(
+    showLevel2WorkspaceError(
       error,
-      'Failed to save current workspace',
       'Failed to save workspace',
+      'Retry saving the workspace.',
+      'workspace-save-current',
     );
   }
 };

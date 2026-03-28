@@ -11,6 +11,7 @@ import {
 } from '../domains/workspace/state/workspaceStore';
 import { useEditorStore } from '../domains/editor/state/editorStore';
 import { useStatusStore } from '../state/slices/statusSlice';
+import { useNotificationStore } from '../state/slices/notificationSlice';
 import { useSettingsStore } from '../domains/settings/state/settingsStore';
 import { useViewModeStore } from '../state/slices/viewModeSlice';
 import { StatusBar } from '../ui/statusbar/StatusBar';
@@ -60,6 +61,7 @@ import { AboutWriterPanel } from '../ui/components/About';
 import { useViewportTier } from '../ui/layout/useViewportTier';
 import { useFocusZenWakeup } from '../ui/layout/useFocusZenWakeup';
 import { AppChrome } from './AppChrome';
+import { NotificationHost } from '../ui/notifications/NotificationHost';
 import { createAppChromeModel } from '../ui/chrome/chromeState';
 import { getWorkspaceIndicatorLabel } from '../ui/statusbar/workspaceIndicator';
 import {
@@ -222,6 +224,50 @@ function App() {
     useStatusStore.getState().setStatus('idle', t('status.menu.todo'));
   });
 
+  const showLevel2AppError = useCallback(
+    (
+      error: unknown,
+      source: string,
+      reason: string,
+      suggestion: string,
+      dedupeKey = source,
+      retryAction?: () => void,
+    ) => {
+      useStatusStore.getState().setStatus('idle', null);
+      ErrorService.handleWithInfo(error, source, {
+        level: 'level2',
+        source,
+        reason,
+        suggestion,
+        dedupeKey,
+        actions: retryAction
+          ? [{ label: t('error.retry'), run: retryAction }]
+          : undefined,
+      });
+    },
+    [],
+  );
+
+  const showCloseFailureBanner = useCallback((error: unknown) => {
+    useStatusStore.getState().setStatus('idle', null);
+    ErrorService.handleWithInfo(error, 'window-close', {
+      level: 'level3',
+      source: 'window-close',
+      reason: t('close.saveChangesFailed'),
+      suggestion: getForceCloseHint(),
+      dedupeKey: 'window-close:save-failed',
+      actions: [
+        {
+          label: t('close.closeAnyway'),
+          run: () => {
+            forceCloseRequestedRef.current = true;
+            void getCurrentWindow().close();
+          },
+        },
+      ],
+    });
+  }, []);
+
   const toggleSidebar = useCallback(() => {
     const nextVisible = !sidebarVisibilityRef.current;
     setIsSidebarVisible(nextVisible);
@@ -311,52 +357,92 @@ function App() {
   // Handle selection from recent menu
   const handleSelectWorkspace = useCallback(async (path: string) => {
     try {
-      useStatusStore.getState().setStatus('loading', 'Loading workspace...');
+      useStatusStore.getState().setStatus('loading', t('workspace.loading'));
       const result = await workspaceActions.loadWorkspaceFile(path);
       if (result.ok) {
+        useNotificationStore.getState().dismissLevel2();
         await RecentItemsService.addWorkspace(path);
         useStatusStore.getState().setStatus('idle');
       } else {
-        useStatusStore.getState().setStatus('error', result.errorMessage);
+        showLevel2AppError(
+          new Error(result.errorMessage),
+          'app-recent-workspace',
+          result.errorMessage,
+          t('workspace.openWorkspaceRetrySuggestion'),
+          `app-recent-workspace:${path}`,
+          () => {
+            void handleSelectWorkspace(path);
+          },
+        );
       }
     } catch (error) {
-      ErrorService.handle(
+      showLevel2AppError(
         error,
-        'Failed to load workspace',
-        'Failed to load workspace',
+        'app-recent-workspace',
+        t('workspace.openWorkspaceFailed'),
+        t('workspace.openWorkspaceRetrySuggestion'),
+        `app-recent-workspace:${path}`,
+        () => {
+          void handleSelectWorkspace(path);
+        },
       );
     }
-  }, []);
+  }, [showLevel2AppError]);
 
   const handleSelectFolder = useCallback(async (path: string) => {
     try {
-      useStatusStore.getState().setStatus('loading', 'Loading folder...');
+      useStatusStore.getState().setStatus('loading', t('workspace.loading'));
       await workspaceActions.loadWorkspace(path);
+      useNotificationStore.getState().dismissLevel2();
       await RecentItemsService.addFolder(path);
       useStatusStore.getState().setStatus('idle');
     } catch (error) {
-      ErrorService.handle(
+      showLevel2AppError(
         error,
-        'Failed to load folder',
-        'Failed to load folder',
+        'app-recent-folder',
+        t('workspace.openFolderFailed'),
+        t('workspace.openFolderRetrySuggestion'),
+        `app-recent-folder:${path}`,
+        () => {
+          void handleSelectFolder(path);
+        },
       );
     }
-  }, []);
+  }, [showLevel2AppError]);
 
   const handleSelectFile = useCallback(async (path: string) => {
     try {
-      useStatusStore.getState().setStatus('loading', 'Opening file...');
+      useStatusStore.getState().setStatus('loading', t('file.opening'));
       const result = await workspaceActions.openFile(path);
       if (result.ok) {
+        useNotificationStore.getState().dismissLevel2();
         await RecentItemsService.addFile(path);
         useStatusStore.getState().setStatus('idle');
       } else {
-        useStatusStore.getState().setStatus('error', result.reason);
+        showLevel2AppError(
+          new Error(result.reason),
+          'app-recent-file',
+          t('file.openFailed'),
+          t('workspace.openRetrySuggestion'),
+          `app-recent-file:${path}:${result.reason}`,
+          () => {
+            void handleSelectFile(path);
+          },
+        );
       }
     } catch (error) {
-      ErrorService.handle(error, 'Failed to open file', 'Failed to open file');
+      showLevel2AppError(
+        error,
+        'app-recent-file',
+        t('file.openFailed'),
+        t('workspace.openRetrySuggestion'),
+        `app-recent-file:${path}`,
+        () => {
+          void handleSelectFile(path);
+        },
+      );
     }
-  }, []);
+  }, [showLevel2AppError]);
   const handleSelectRecentItem = useCallback(
     async (item: RecentItem) => {
       if (item.type === 'workspace') {
@@ -682,19 +768,36 @@ function App() {
   const openFileFromPath = useCallback(async (filePath: string) => {
     const exists = await FsService.checkExists(filePath);
     if (!exists) {
-      useStatusStore.getState().setStatus('error', t('fileDrop.fileNotFound'));
+      showLevel2AppError(
+        new Error('File not found'),
+        'startup-file-open',
+        t('fileDrop.fileNotFound'),
+        t('fileDrop.openFailed'),
+        `startup-file-open:${filePath}:missing`,
+        () => {
+          void openFileFromPath(filePath);
+        },
+      );
       return;
     }
 
     const result = await workspaceActions.openFile(filePath);
     if (result.ok) {
+      useNotificationStore.getState().dismissLevel2();
       useStatusStore.getState().setStatus('idle', t('fileDrop.openSuccess'));
     } else {
-      useStatusStore
-        .getState()
-        .setStatus('error', result.reason || t('fileDrop.openFailed'));
+      showLevel2AppError(
+        new Error(result.reason || t('fileDrop.openFailed')),
+        'startup-file-open',
+        t('fileDrop.openFailed'),
+        t('workspace.openRetrySuggestion'),
+        `startup-file-open:${filePath}:${result.reason ?? 'unknown'}`,
+        () => {
+          void openFileFromPath(filePath);
+        },
+      );
     }
-  }, []);
+  }, [showLevel2AppError]);
 
   useEffect(() => {
     let unlisten: UnlistenFn | undefined;
@@ -814,12 +917,12 @@ function App() {
               useEditorStore.getState().setDirty(path, false);
             }
 
+            useNotificationStore.getState().dismissLevel3();
             isProgrammaticCloseRef.current = true;
             forceCloseRequestedRef.current = false;
             await appWindow.close();
           } catch (error) {
-            ErrorService.log(error, 'Failed to autosave on close');
-            useStatusStore.getState().setStatus('error', getForceCloseHint());
+            showCloseFailureBanner(error);
             forceCloseRequestedRef.current = true;
             isProgrammaticCloseRef.current = false;
           } finally {
@@ -848,7 +951,7 @@ function App() {
         unlistenFn();
       }
     };
-  }, []);
+  }, [showCloseFailureBanner]);
 
   return (
     <div
@@ -888,6 +991,7 @@ function App() {
           ref={mainDropZoneRef}
           className="flex-1 flex flex-col relative min-w-0 h-full"
         >
+          <NotificationHost scope="editor" />
           {workspaceContext === 'none' && !hasOpenFile ? (
             <EmptyStateWorkspace
               onOpenFolder={handleOpenFolder}
@@ -986,6 +1090,7 @@ function App() {
           </aside>
         ) : null}
       </div>
+      <NotificationHost scope="global" />
       <StatusBar isFocusZen={isFocusZen} isVisibleInFocusZen={isFooterAwake} />
       <SettingsPanel
         isOpen={isSettingsOpen}

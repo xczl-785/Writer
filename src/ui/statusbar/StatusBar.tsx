@@ -10,6 +10,7 @@ import { FsService } from '../../domains/file/services/FsService';
 import { countCharacters } from './statusBarUtils';
 import { getWorkspaceIndicatorLabel } from './workspaceIndicator';
 import { t } from '../../shared/i18n';
+import { useNotificationStore } from '../../state/slices/notificationSlice';
 import './StatusBar.css';
 
 type StatusBarProps = {
@@ -23,6 +24,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 }) => {
   const { saveStatus, message, saveError, lastSavedAt, setStatus } =
     useStatusStore();
+  const { level1Notification } = useNotificationStore();
   const { folders, activeFile, workspaceFile, isDirty } = useWorkspaceStore();
   const { fileStates } = useEditorStore();
   const [isFaded, setIsFaded] = useState(false);
@@ -89,16 +91,16 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   }, [activeFile]);
 
   useEffect(() => {
-    if (saveStatus === 'saved' && message) {
+    if (!level1Notification && saveStatus === 'saved' && message) {
       const timer = setTimeout(() => {
         setStatus('idle', null);
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [saveStatus, message, setStatus]);
+  }, [level1Notification, saveStatus, message, setStatus]);
 
   useEffect(() => {
-    if (saveStatus !== 'saved' || lastSavedAt === null) {
+    if (level1Notification || saveStatus !== 'saved' || lastSavedAt === null) {
       const resetTimer = setTimeout(() => {
         setIsFaded(false);
       }, 0);
@@ -117,10 +119,21 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       clearTimeout(resetTimer);
       clearTimeout(timer);
     };
-  }, [lastSavedAt, saveStatus]);
+  }, [level1Notification, lastSavedAt, saveStatus]);
+
+  const activeLevel1 = level1Notification;
+  const activeError =
+    activeLevel1
+      ? {
+          reason: activeLevel1.reason,
+          suggestion: activeLevel1.suggestion,
+          action: activeLevel1.actions?.[0],
+        }
+      : saveError;
+  const displayStatus = activeLevel1 ? 'error' : saveStatus;
 
   const getStatusClass = () => {
-    switch (saveStatus) {
+    switch (displayStatus) {
       case 'dirty':
         return 'dirty';
       case 'saving':
@@ -133,14 +146,15 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   };
 
   const getStatusText = () => {
+    if (activeLevel1) return activeLevel1.reason;
     if (message) return message;
-    switch (saveStatus) {
+    switch (displayStatus) {
       case 'dirty':
         return t('status.unsaved');
       case 'saving':
         return t('status.saving');
       case 'error':
-        return saveError?.reason ?? t('status.saveFailed');
+        return activeError?.reason ?? t('status.saveFailed');
       default:
         return t('status.saved');
     }
@@ -156,17 +170,17 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       <div className="status-bar__left">
         <div className="status-indicator-wrap">
           <div className="status-indicator" />
-          {saveStatus === 'error' && saveError ? (
+          {displayStatus === 'error' && activeError ? (
             <div className="status-error-panel" role="tooltip">
-              <p className="status-error-title">{saveError.reason}</p>
-              <p className="status-error-suggestion">{saveError.suggestion}</p>
-              {saveError.action ? (
+              <p className="status-error-title">{activeError.reason}</p>
+              <p className="status-error-suggestion">{activeError.suggestion}</p>
+              {activeError.action ? (
                 <button
                   type="button"
                   className="status-error-action"
-                  onClick={() => saveError.action?.run()}
+                  onClick={() => activeError.action?.run()}
                 >
-                  {saveError.action.label}
+                  {activeError.action.label}
                 </button>
               ) : null}
             </div>

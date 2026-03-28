@@ -3,6 +3,11 @@ import {
   type SaveErrorAction,
   type SaveErrorCategory,
 } from '../../state/slices/statusSlice';
+import {
+  useNotificationStore,
+  type NotificationAction,
+  type NotificationLevel,
+} from '../../state/slices/notificationSlice';
 import { t } from '../../shared/i18n';
 
 /**
@@ -22,9 +27,13 @@ export interface ErrorInfo {
 
 interface ErrorInfoOptions {
   category?: ErrorCategory;
+  level?: NotificationLevel;
+  source?: string;
   reason?: string;
   suggestion?: string;
   action?: SaveErrorAction;
+  actions?: NotificationAction[];
+  dedupeKey?: string;
 }
 
 const toMessage = (error: unknown): string =>
@@ -116,6 +125,26 @@ function generateErrorInfo(
   };
 }
 
+function toNotificationActions(
+  options?: ErrorInfoOptions,
+): NotificationAction[] | undefined {
+  if (options?.actions?.length) {
+    return options.actions;
+  }
+
+  if (options?.action) {
+    return [options.action];
+  }
+
+  return undefined;
+}
+
+function shouldRouteToNotification(options?: ErrorInfoOptions): boolean {
+  return options?.level === 'level1' ||
+    options?.level === 'level2' ||
+    options?.level === 'level3';
+}
+
 export const ErrorService = {
   log(error: unknown, context: string): void {
     console.error(`[${context}]`, error);
@@ -139,6 +168,23 @@ export const ErrorService = {
   ): ErrorInfo {
     const info = generateErrorInfo(error, context, options);
     this.log(error, context);
+
+    if (shouldRouteToNotification(options)) {
+      const resolvedOptions = options!;
+      const level = resolvedOptions.level!;
+      useNotificationStore.getState().showNotification({
+        level,
+        source: resolvedOptions.source ?? context,
+        category: info.category,
+        reason: info.reason,
+        suggestion: info.suggestion,
+        actions: toNotificationActions(resolvedOptions),
+        dedupeKey: resolvedOptions.dedupeKey,
+        blocking: level === 'level3',
+      });
+      return info;
+    }
+
     useStatusStore.getState().setSaveError(info.reason, info.suggestion, {
       category: info.category,
       action: info.action,

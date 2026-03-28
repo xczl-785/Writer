@@ -3,6 +3,7 @@ import { useStatusStore } from '../../../state/slices/statusSlice';
 import { useEditorStore } from '../../editor/state/editorStore';
 import { EDITOR_CONFIG } from '../../../config/editor';
 import { ErrorService } from '../../../services/error/ErrorService';
+import { useNotificationStore } from '../../../state/slices/notificationSlice';
 
 const DEBOUNCE_MS = EDITOR_CONFIG.autosave.debounceMs;
 
@@ -12,6 +13,21 @@ interface PendingSave {
 }
 
 const pendingSaves = new Map<string, PendingSave>();
+const AUTOSAVE_SOURCE = 'autosave';
+
+const buildAutosaveFailure = (path: string, retry: () => void) => ({
+  level: 'level1' as const,
+  source: AUTOSAVE_SOURCE,
+  reason: `Failed to save ${path}`,
+  suggestion: 'Please check permissions or retry save.',
+  dedupeKey: `autosave:${path}`,
+  actions: [
+    {
+      label: 'Retry',
+      run: retry,
+    },
+  ],
+});
 
 export const AutosaveService = {
   schedule(path: string, content: string): void {
@@ -44,18 +60,17 @@ export const AutosaveService = {
         useStatusStore.getState().markSaving(path);
         await FsService.writeFileAtomic(path, content);
         useEditorStore.getState().setDirty(path, false);
+        useNotificationStore.getState().dismissLevel1(AUTOSAVE_SOURCE);
         useStatusStore.getState().markSaved('Saved');
       } catch (retryError) {
-        ErrorService.handleWithInfo(retryError, `Failed to autosave ${path}`, {
-          reason: `Failed to save ${path}`,
-          suggestion: 'Please check permissions or retry save.',
-          action: {
-            label: 'Retry',
-            run: () => {
-              void retrySave();
-            },
-          },
-        });
+        useStatusStore.getState().markSaveFailed(`Failed to save ${path}`);
+        ErrorService.handleWithInfo(
+          retryError,
+          `Failed to autosave ${path}`,
+          buildAutosaveFailure(path, () => {
+            void retrySave();
+          }),
+        );
       }
     };
 
@@ -63,18 +78,17 @@ export const AutosaveService = {
       useStatusStore.getState().markSaving(path);
       await FsService.writeFileAtomic(path, content);
       useEditorStore.getState().setDirty(path, false);
+      useNotificationStore.getState().dismissLevel1(AUTOSAVE_SOURCE);
       useStatusStore.getState().markSaved('Saved');
     } catch (error) {
-      ErrorService.handleWithInfo(error, `Failed to autosave ${path}`, {
-        reason: `Failed to save ${path}`,
-        suggestion: 'Please check permissions or retry save.',
-        action: {
-          label: 'Retry',
-          run: () => {
-            void retrySave();
-          },
-        },
-      });
+      useStatusStore.getState().markSaveFailed(`Failed to save ${path}`);
+      ErrorService.handleWithInfo(
+        error,
+        `Failed to autosave ${path}`,
+        buildAutosaveFailure(path, () => {
+          void retrySave();
+        }),
+      );
       throw error;
     }
   },

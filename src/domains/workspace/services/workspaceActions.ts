@@ -228,6 +228,10 @@ export const workspaceActions = {
   },
 
   async loadWorkspace(path: string): Promise<number> {
+    const nodes = await FsService.listTree(path);
+
+    await FileWatcherService.startWatching([path], handleFileChange);
+
     // V5 兼容：单文件夹模式
     useWorkspaceStore.setState({
       folders: [{ path, index: 0 }],
@@ -237,8 +241,6 @@ export const workspaceActions = {
       activeFile: null,
     });
     useEditorStore.setState({ fileStates: {} });
-
-    const nodes = await FsService.listTree(path);
     useFileTreeStore.getState().setRootFolders([
       {
         workspacePath: path,
@@ -250,9 +252,6 @@ export const workspaceActions = {
       expandedPaths: new Set([path]),
     });
     useFileTreeStore.getState().setSelectedPath(null);
-
-    // 启动文件监听
-    await FileWatcherService.startWatching([path], handleFileChange);
 
     return nodes.length;
   },

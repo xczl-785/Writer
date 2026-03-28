@@ -53,4 +53,12 @@ describe('WorkspaceManager behaviors', () => {
       'await workspaceActions.saveWorkspaceFile(existingPath)',
     );
   });
+
+  it('routes add-folder and save failures through level2 notifications', () => {
+    expect(source).toContain("'workspace-add-folder-dialog'");
+    expect(source).toContain("'workspace-add-folder'");
+    expect(source).toContain("'workspace-save-dialog'");
+    expect(source).toContain("'workspace-save-current'");
+    expect(source).toContain("level: 'level2'");
+  });
 });

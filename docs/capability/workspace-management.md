@@ -151,3 +151,21 @@
 ## Archive Pointer
 
 - None. This is a first-version capability document.
+
+---
+
+## 2026-03-28 Current Truth Update
+
+### CT-001: User-triggered workspace operation failures route to Level 2
+
+WorkspaceManager open/load/save/add-folder failures now use `ErrorService.handleWithInfo(...)`
+with `level: 'level2'` instead of directly writing status-bar errors.
+
+**Evidence**: `src/domains/workspace/services/WorkspaceManager.ts`
+
+### CT-002: Workspace drag/drop gating remains outside the notification system
+
+Rules such as `workspace.dragFoldersOnly` and editor-drop-disabled remain on the existing
+status/gate path and are not promoted to Level 2 or Level 3.
+
+**Evidence**: `src/app/App.tsx`, `src/domains/workspace/services/WorkspaceManager.ts`

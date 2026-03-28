@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Editor } from '@tiptap/react';
 import { t } from '../../../shared/i18n';
 import { createMenuCommandHandler } from './menuCommandHandler';
+import { useNotificationStore } from '../../../state/slices/notificationSlice';
+import { useStatusStore } from '../../../state/slices/statusSlice';
 
 const readClipboardPayloadMock = vi.fn();
 const insertClipboardTextMock = vi.fn();
@@ -44,6 +46,15 @@ describe('createMenuCommandHandler', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    useNotificationStore.getState().clearNotifications();
+    useStatusStore.setState({
+      status: 'idle',
+      message: null,
+      saveStatus: 'saved',
+      lastSavedAt: null,
+      saveError: null,
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     readClipboardPayloadMock.mockReset();
     insertClipboardTextMock.mockReset();
     insertClipboardHtmlMock.mockReset();
@@ -166,7 +177,7 @@ describe('createMenuCommandHandler', () => {
     expect(setStatus).not.toHaveBeenCalled();
   });
 
-  it('reports clipboard denial when native paste command fallback also fails', async () => {
+  it('routes clipboard denial through level2 when native paste fallback fails', async () => {
     const setStatus = vi.fn();
     readClipboardPayloadMock.mockRejectedValue(new Error('denied'));
 
@@ -196,9 +207,12 @@ describe('createMenuCommandHandler', () => {
     await Promise.resolve();
 
     expect(readClipboardPayloadMock).toHaveBeenCalledTimes(1);
-    expect(setStatus).toHaveBeenCalledWith(
-      'error',
+    expect(setStatus).not.toHaveBeenCalled();
+    expect(useNotificationStore.getState().level2Notification?.reason).toBe(
       t('status.menu.clipboardDenied'),
+    );
+    expect(useNotificationStore.getState().level2Notification?.source).toBe(
+      'menu-edit-paste',
     );
   });
 

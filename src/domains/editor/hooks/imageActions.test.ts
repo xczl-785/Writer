@@ -51,6 +51,7 @@ const createStatusState = (setStatus = vi.fn()) => ({
   markDirty: vi.fn(),
   markSaving: vi.fn(),
   markSaved: vi.fn(),
+  markSaveFailed: vi.fn(),
   setSaveError: vi.fn(),
 });
 
@@ -153,10 +154,7 @@ describe('imageActions', () => {
     });
 
     expect(result).toBe('failed');
-    expect(setStatus).toHaveBeenCalledWith(
-      'error',
-      'Failed to insert image: unsupported format',
-    );
+    expect(setStatus).toHaveBeenCalledWith('idle', null);
     expect(editor.commands.setImage).not.toHaveBeenCalled();
   });
 

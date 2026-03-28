@@ -302,6 +302,53 @@ describe('workspace watcher refresh behavior', () => {
     mocks.attachWatcherImplementation();
   });
 
+  it('does not leak partial workspace state when loadWorkspace fails from an empty shell', async () => {
+    mocks.listTree.mockRejectedValueOnce(new Error('Access denied'));
+
+    await expect(
+      workspaceActions.loadWorkspace('E:/blocked-workspace'),
+    ).rejects.toThrow('Access denied');
+
+    expect(mocks.workspaceState.folders).toEqual([]);
+    expect(mocks.workspaceState.activeFile).toBeNull();
+    expect(mocks.fileTreeState.rootFolders).toEqual([]);
+    expect(mocks.fileTreeState.selectedPath).toBeNull();
+  });
+
+  it('preserves the previous workspace when loadWorkspace fails during a switch', async () => {
+    mocks.workspaceState.folders = [{ path: 'E:/existing', index: 0 }];
+    mocks.workspaceState.activeFile = 'E:/existing/docs/note.md';
+    mocks.workspaceState.openFiles = ['E:/existing/docs/note.md'];
+    mocks.fileTreeState.rootFolders = [
+      {
+        workspacePath: 'E:/existing',
+        displayName: 'existing',
+        tree: initialNodes,
+      },
+    ];
+    mocks.fileTreeState.expandedPaths = new Set(['E:/existing']);
+    mocks.fileTreeState.selectedPath = 'E:/existing/docs/note.md';
+    mocks.listTree.mockRejectedValueOnce(new Error('Access denied'));
+
+    await expect(
+      workspaceActions.loadWorkspace('E:/blocked-workspace'),
+    ).rejects.toThrow('Access denied');
+
+    expect(mocks.workspaceState.folders).toEqual([
+      { path: 'E:/existing', index: 0 },
+    ]);
+    expect(mocks.workspaceState.activeFile).toBe('E:/existing/docs/note.md');
+    expect(mocks.workspaceState.openFiles).toEqual(['E:/existing/docs/note.md']);
+    expect(mocks.fileTreeState.rootFolders).toEqual([
+      {
+        workspacePath: 'E:/existing',
+        displayName: 'existing',
+        tree: initialNodes,
+      },
+    ]);
+    expect(mocks.fileTreeState.selectedPath).toBe('E:/existing/docs/note.md');
+  });
+
   it('refreshes the file tree when a watched child path is reported with Windows separators', async () => {
     mocks.listTree
       .mockResolvedValueOnce(initialNodes)

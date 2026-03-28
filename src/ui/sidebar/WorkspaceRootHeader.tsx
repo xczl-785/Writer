@@ -9,6 +9,7 @@ import { getWorkspaceRootMenuItems } from '../components/ContextMenu/workspaceRo
 import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 import { FsService } from '../../domains/file/services/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { ErrorService } from '../../services/error/ErrorService';
 import { FolderMissingState } from '../components/ErrorStates';
 
 // 纯线框风格的根文件夹图标组件
@@ -58,6 +59,20 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
 }) => {
   const contextMenu = useContextMenu();
 
+  const showLevel2SidebarError = useCallback(
+    (error: unknown, source: string, reason: string, suggestion: string) => {
+      useStatusStore.getState().setStatus('idle', null);
+      ErrorService.handleWithInfo(error, source, {
+        level: 'level2',
+        source,
+        reason,
+        suggestion,
+        dedupeKey: `${source}:${folder.workspacePath}`,
+      });
+    },
+    [folder.workspacePath],
+  );
+
   const toggleExpanded = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -76,28 +91,41 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
       folder.workspacePath,
     );
     if (!result.ok) {
-      useStatusStore
-        .getState()
-        .setStatus('error', `${t('workspace.removeFailed')}: ${result.error}`);
+      showLevel2SidebarError(
+        new Error(result.error),
+        'sidebar-root-remove',
+        t('workspace.removeFailed'),
+        t('workspace.removeRetrySuggestion'),
+      );
     }
-  }, [folder.workspacePath]);
+  }, [folder.workspacePath, showLevel2SidebarError]);
 
   const handleRevealInFinder = useCallback(async () => {
     try {
       await FsService.revealInFileManager(folder.workspacePath);
     } catch {
-      useStatusStore.getState().setStatus('error', t('sidebar.revealFailed'));
+      showLevel2SidebarError(
+        new Error(t('sidebar.revealFailed')),
+        'sidebar-root-reveal',
+        t('sidebar.revealFailed'),
+        t('sidebar.revealRetrySuggestion'),
+      );
     }
-  }, [folder.workspacePath]);
+  }, [folder.workspacePath, showLevel2SidebarError]);
 
   const handleCopyPath = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(folder.workspacePath);
       useStatusStore.getState().setStatus('idle', t('sidebar.pathCopied'));
     } catch {
-      useStatusStore.getState().setStatus('error', t('sidebar.copyFailed'));
+      showLevel2SidebarError(
+        new Error(t('sidebar.copyFailed')),
+        'sidebar-root-copy-path',
+        t('sidebar.copyFailed'),
+        t('sidebar.copyRetrySuggestion'),
+      );
     }
-  }, [folder.workspacePath]);
+  }, [folder.workspacePath, showLevel2SidebarError]);
 
   const handleContextMenu = useCallback(
     (event: React.MouseEvent) => {

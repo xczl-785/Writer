@@ -26,4 +26,11 @@ describe('WorkspaceRootHeader behavior markers', () => {
     expect(source).not.toContain('renameWorkspaceFolder');
     expect(source).not.toContain('InlineInput');
   });
+
+  it('routes root-folder operation failures through level2 notifications', () => {
+    expect(source).toContain("level: 'level2'");
+    expect(source).toContain("'sidebar-root-remove'");
+    expect(source).toContain("'sidebar-root-reveal'");
+    expect(source).toContain("'sidebar-root-copy-path'");
+  });
 });

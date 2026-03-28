@@ -1,0 +1,26 @@
+.notification-host {
+  pointer-events: none;
+}
+
+.notification-host__toast-region {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  width: min(480px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.notification-host__editor-region {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.notification-card {
+  pointer-events: auto;
+}

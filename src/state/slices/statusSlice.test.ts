@@ -48,4 +48,14 @@ describe('statusSlice save state', () => {
     expect(state.saveError?.action?.label).toBe('Retry');
     expect(state.saveError?.action?.run).toBe(retry);
   });
+
+  it('marks save failure without persisting save error details', () => {
+    useStatusStore.getState().markSaveFailed('Failed to save note.md');
+
+    const state = useStatusStore.getState();
+    expect(state.saveStatus).toBe('error');
+    expect(state.status).toBe('error');
+    expect(state.message).toBe('Failed to save note.md');
+    expect(state.saveError).toBeNull();
+  });
 });
