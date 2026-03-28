@@ -7,6 +7,10 @@ import {
   createMarkdownClipboardTextSerializer,
   shouldSkipMarkdownParsingForSize,
 } from './markdownClipboard';
+import {
+  clearNextPasteIntent,
+  setNextPasteIntent,
+} from './pasteIntentController';
 import { markdownManager } from '../../../services/markdown/MarkdownService';
 
 describe('markdownClipboard', () => {
@@ -39,6 +43,38 @@ describe('markdownClipboard', () => {
     expect(slice.content.textBetween(0, slice.content.size, '\n\n')).toContain(
       '# Title',
     );
+  });
+
+  it('prefers writer-owned plain paste intent over parser plain flag', () => {
+    const parser = createMarkdownClipboardTextParser();
+    const state = EditorState.create({ schema: basicSchema });
+    const view = { state } as never;
+
+    clearNextPasteIntent();
+    setNextPasteIntent('plain');
+
+    const slice = parser('# Title', state.selection.$from, false, view);
+
+    expect(slice.eq(Slice.empty)).toBe(false);
+    expect(slice.content.textBetween(0, slice.content.size, '\n\n')).toContain(
+      '# Title',
+    );
+    expect(slice.content.firstChild?.type.name).toBe('paragraph');
+  });
+
+  it('consumes writer-owned plain paste intent once without polluting next paste', () => {
+    const parser = createMarkdownClipboardTextParser();
+    const state = EditorState.create({ schema: basicSchema });
+    const view = { state } as never;
+
+    clearNextPasteIntent();
+    setNextPasteIntent('plain');
+
+    const plainSlice = parser('# Title', state.selection.$from, false, view);
+    const normalSlice = parser('# Title', state.selection.$from, false, view);
+
+    expect(plainSlice.content.firstChild?.type.name).toBe('paragraph');
+    expect(normalSlice.content.firstChild?.type.name).toBe('heading');
   });
 
   it('falls back to raw text insertion for oversized content', () => {
