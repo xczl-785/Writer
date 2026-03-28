@@ -142,7 +142,7 @@ Clipboard image items are still handled by the image-paste hook, which prevents 
 
 ## Uncertainties
 
-- Current pure-paste cleanup is one-shot plus command-failure reset. If future product scope requires blur/timeout cleanup independent of parser consumption, that should extend `PasteIntentController` rather than spreading more state across handlers.
+- Current pure-paste cleanup is intentionally limited to one-shot consumption plus command-failure reset. `blur / timeout cleanup` has been deferred as a follow-up state-hygiene improvement and should extend `PasteIntentController` rather than spreading more state across handlers.
 - Application-driven normal paste now preserves HTML when HTML payload is available through the fallback reader. Remaining fidelity gaps mainly concern clipboard payload types outside HTML/text, such as images or editor-specific formats.
 
 ---
