@@ -6,6 +6,7 @@ import { useWorkspaceStore } from '../../workspace/state/workspaceStore';
 import { FsService } from '../../file/services/FsService';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { ImageResolver } from '../../../services/images/ImageResolver';
+import { createStatusState } from '../../../test/helpers/statusStoreMocks';
 
 vi.mock('../../workspace/state/workspaceStore', () => ({
   useWorkspaceStore: vi.fn(),
@@ -29,20 +30,6 @@ vi.mock('../../../services/images/ImageResolver', () => ({
     resolve: vi.fn(),
   },
 }));
-
-const createStatusState = (setStatus = vi.fn()) => ({
-  status: 'idle' as const,
-  message: null as string | null,
-  saveStatus: 'saved' as const,
-  lastSavedAt: null as number | null,
-  saveError: null as { reason: string; suggestion: string } | null,
-  setStatus,
-  markDirty: vi.fn(),
-  markSaving: vi.fn(),
-  markSaved: vi.fn(),
-  markSaveFailed: vi.fn(),
-  setSaveError: vi.fn(),
-});
 
 describe('getRelativePath', () => {
   it('should handle same directory', () => {

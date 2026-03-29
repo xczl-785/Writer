@@ -1,7 +1,8 @@
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { workspaceActions } from './workspaceActions';
 import { useStatusStore } from '../../../state/slices/statusSlice';
-import { ErrorService } from '../../../services/error/ErrorService';
+import { showLevel2Notification } from '../../../services/error/level2Notification';
+import { createRetryAction } from '../../../services/error/retryActions';
 import type { NotificationAction } from '../../../state/slices/notificationSlice';
 import {
   getWorkspaceContext,
@@ -23,9 +24,8 @@ const showLevel2WorkspaceError = (
   dedupeKey = source,
   actions?: NotificationAction[],
 ): void => {
-  useStatusStore.getState().setStatus('idle', null);
-  ErrorService.handleWithInfo(error, source, {
-    level: 'level2',
+  showLevel2Notification({
+    error,
     source,
     reason,
     suggestion,
@@ -90,7 +90,7 @@ export const openFile = async (path: string): Promise<void> => {
           : t('workspace.openFileTargetSaveFailed'),
         t('workspace.openRetryAfterSaveSuggestion'),
         `workspace-open-file:${result.reason}`,
-        [{ label: t('error.retry'), run: () => void openFile(path) }],
+        [createRetryAction(() => void openFile(path))],
       );
       return;
     }
@@ -103,7 +103,7 @@ export const openFile = async (path: string): Promise<void> => {
       t('file.openFailed'),
       t('workspace.openRetrySuggestion'),
       `workspace-open-file:${path}`,
-      [{ label: t('error.retry'), run: () => void openFile(path) }],
+      [createRetryAction(() => void openFile(path))],
     );
   }
 };
@@ -154,7 +154,7 @@ export const openFileWithDialog = async (): Promise<string | null> => {
         t('file.openFailed'),
         t('workspace.openRetrySuggestion'),
         `workspace-open-file-dialog:${result.reason}`,
-        [{ label: t('error.retry'), run: () => void openFile(path) }],
+        [createRetryAction(() => void openFile(path))],
       );
       return null;
     }
@@ -171,7 +171,7 @@ export const openFileWithDialog = async (): Promise<string | null> => {
       t('file.openFailed'),
       t('workspace.openRetrySuggestion'),
       'workspace-open-file-dialog',
-      [{ label: t('error.retry'), run: () => void openFileWithDialog() }],
+      [createRetryAction(() => void openFileWithDialog())],
     );
     return null;
   }
@@ -216,7 +216,7 @@ export const openWorkspace = async (): Promise<void> => {
         t('workspace.openFolderFailed'),
         t('workspace.openWorkspaceRetrySuggestion'),
         `workspace-open-folder:${path}`,
-        [{ label: t('error.retry'), run: () => void openWorkspaceAtPath(path) }],
+        [createRetryAction(() => void openWorkspaceAtPath(path))],
       );
     }
   } catch (error) {
@@ -226,7 +226,7 @@ export const openWorkspace = async (): Promise<void> => {
       t('workspace.openFolderDialogFailed'),
       t('workspace.openFolderDialogRetrySuggestion'),
       'workspace-open-folder-dialog',
-      [{ label: t('error.retry'), run: () => void openWorkspace() }],
+      [createRetryAction(() => void openWorkspace())],
     );
   }
 };
@@ -248,7 +248,7 @@ export const openWorkspaceAtPath = async (path: string): Promise<boolean> => {
       t('workspace.openFolderFailed'),
       t('workspace.openWorkspaceRetrySuggestion'),
       `workspace-open-folder:${path}`,
-      [{ label: t('error.retry'), run: () => void openWorkspaceAtPath(path) }],
+      [createRetryAction(() => void openWorkspaceAtPath(path))],
     );
     return false;
   }

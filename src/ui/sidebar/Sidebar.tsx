@@ -61,7 +61,8 @@ import {
   X,
 } from 'lucide-react';
 import { t } from '../../shared/i18n';
-import { ErrorService } from '../../services/error/ErrorService';
+import { showLevel2Notification } from '../../services/error/level2Notification';
+import { getSidebarErrorMeta } from './sidebarErrorCatalog';
 
 type GhostNode = {
   parentPath: string | null;
@@ -128,39 +129,10 @@ export function Sidebar({
   isExternalDragOver = false,
   dragClassificationType = null,
 }: SidebarProps) {
-  const sidebarSuggestion = useCallback(
-    (
-      key:
-        | 'create'
-        | 'copyPath'
-        | 'reveal'
-        | 'delete'
-        | 'move'
-        | 'rename',
-    ): string => {
-      switch (key) {
-        case 'create':
-          return t('sidebar.tryDifferent');
-        case 'copyPath':
-          return t('sidebar.copyRetrySuggestion');
-        case 'reveal':
-          return t('sidebar.revealRetrySuggestion');
-        case 'delete':
-          return t('sidebar.deleteRetrySuggestion');
-        case 'move':
-          return t('sidebar.moveRetrySuggestion');
-        case 'rename':
-          return t('sidebar.renameRetrySuggestion');
-      }
-    },
-    [],
-  );
-
   const showLevel2SidebarError = useCallback(
     (error: unknown, source: string, reason: string, suggestion: string) => {
-      useStatusStore.getState().setStatus('idle', null);
-      ErrorService.handleWithInfo(error, source, {
-        level: 'level2',
+      showLevel2Notification({
+        error,
         source,
         reason,
         suggestion,
@@ -418,12 +390,13 @@ export function Sidebar({
 
       cancelCreate();
     } catch (error) {
+      const createError = getSidebarErrorMeta('create');
       cancelCreate();
       showLevel2SidebarError(
         error,
-        'sidebar-create',
-        t('sidebar.createFailed'),
-        sidebarSuggestion('create'),
+        createError.source,
+        createError.reason,
+        createError.suggestion,
       );
     }
   };
@@ -448,11 +421,12 @@ export function Sidebar({
       await navigator.clipboard.writeText(path);
       useStatusStore.getState().setStatus('idle', t('sidebar.pathCopied'));
     } catch {
+      const copyPathError = getSidebarErrorMeta('copyPath');
       showLevel2SidebarError(
-        new Error(t('sidebar.copyFailed')),
-        'sidebar-copy-path',
-        t('sidebar.copyFailed'),
-        sidebarSuggestion('copyPath'),
+        new Error(copyPathError.reason),
+        copyPathError.source,
+        copyPathError.reason,
+        copyPathError.suggestion,
       );
     }
   };
@@ -461,11 +435,12 @@ export function Sidebar({
     try {
       await FsService.revealInFileManager(path);
     } catch {
+      const revealError = getSidebarErrorMeta('reveal');
       showLevel2SidebarError(
-        new Error(t('sidebar.revealFailed')),
-        'sidebar-reveal',
-        t('sidebar.revealFailed'),
-        sidebarSuggestion('reveal'),
+        new Error(revealError.reason),
+        revealError.source,
+        revealError.reason,
+        revealError.suggestion,
       );
     }
   };
@@ -490,11 +465,12 @@ export function Sidebar({
     try {
       await fileActions.deletePath(node.path);
     } catch (error) {
+      const deleteError = getSidebarErrorMeta('delete');
       showLevel2SidebarError(
         error,
-        'sidebar-delete',
-        t('sidebar.deleteFailed'),
-        sidebarSuggestion('delete'),
+        deleteError.source,
+        deleteError.reason,
+        deleteError.suggestion,
       );
     }
   };
@@ -729,15 +705,16 @@ export function Sidebar({
       );
 
       if (!result.ok) {
+        const moveError = getSidebarErrorMeta('move');
         showLevel2SidebarError(
-          new Error(t('sidebar.moveFailed')),
-          'sidebar-move',
-          t('sidebar.moveFailed'),
-          sidebarSuggestion('move'),
+          new Error(moveError.reason),
+          moveError.source,
+          moveError.reason,
+          moveError.suggestion,
         );
       }
     },
-    [dragState, dropState, showLevel2SidebarError, sidebarSuggestion],
+    [dragState, dropState, showLevel2SidebarError],
   );
 
   const commandCtx = {
@@ -1456,11 +1433,12 @@ function FileTreeNode({
 
       onSelect(newPath);
     } catch (error) {
+      const renameError = getSidebarErrorMeta('rename');
       onShowLevel2Error(
         error,
-        'sidebar-rename',
-        t('sidebar.renameFailed'),
-        t('sidebar.renameRetrySuggestion'),
+        renameError.source,
+        renameError.reason,
+        renameError.suggestion,
       );
       setRenameDraft(oldName);
     } finally {

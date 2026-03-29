@@ -13,6 +13,7 @@ import type {
   WorkspaceActions,
   WorkspaceState,
 } from '../../workspace/state/workspaceStore';
+import { createStatusState } from '../../../test/helpers/statusStoreMocks';
 
 vi.mock('../../file/services/FsService', () => ({
   FsService: {
@@ -40,20 +41,6 @@ vi.mock('../../../services/images/ImageResolver', () => ({
     resolve: vi.fn(),
   },
 }));
-
-const createStatusState = (setStatus = vi.fn()) => ({
-  status: 'idle' as const,
-  message: null as string | null,
-  saveStatus: 'saved' as const,
-  lastSavedAt: null as number | null,
-  saveError: null as { reason: string; suggestion: string } | null,
-  setStatus,
-  markDirty: vi.fn(),
-  markSaving: vi.fn(),
-  markSaved: vi.fn(),
-  markSaveFailed: vi.fn(),
-  setSaveError: vi.fn(),
-});
 
 type WorkspaceStoreMock = typeof useWorkspaceStore & {
   getState: ReturnType<typeof vi.fn>;

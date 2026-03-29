@@ -9,8 +9,9 @@ import { getWorkspaceRootMenuItems } from '../components/ContextMenu/workspaceRo
 import { workspaceActions } from '../../domains/workspace/services/workspaceActions';
 import { FsService } from '../../domains/file/services/FsService';
 import { useStatusStore } from '../../state/slices/statusSlice';
-import { ErrorService } from '../../services/error/ErrorService';
+import { showLevel2Notification } from '../../services/error/level2Notification';
 import { FolderMissingState } from '../components/ErrorStates';
+import { getSidebarErrorMeta } from './sidebarErrorCatalog';
 
 // 纯线框风格的根文件夹图标组件
 const FolderOutlineIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -61,9 +62,8 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
 
   const showLevel2SidebarError = useCallback(
     (error: unknown, source: string, reason: string, suggestion: string) => {
-      useStatusStore.getState().setStatus('idle', null);
-      ErrorService.handleWithInfo(error, source, {
-        level: 'level2',
+      showLevel2Notification({
+        error,
         source,
         reason,
         suggestion,
@@ -91,11 +91,12 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
       folder.workspacePath,
     );
     if (!result.ok) {
+      const removeError = getSidebarErrorMeta('rootRemove');
       showLevel2SidebarError(
         new Error(result.error),
-        'sidebar-root-remove',
-        t('workspace.removeFailed'),
-        t('workspace.removeRetrySuggestion'),
+        removeError.source,
+        removeError.reason,
+        removeError.suggestion,
       );
     }
   }, [folder.workspacePath, showLevel2SidebarError]);
@@ -104,11 +105,12 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
     try {
       await FsService.revealInFileManager(folder.workspacePath);
     } catch {
+      const revealError = getSidebarErrorMeta('rootReveal');
       showLevel2SidebarError(
-        new Error(t('sidebar.revealFailed')),
-        'sidebar-root-reveal',
-        t('sidebar.revealFailed'),
-        t('sidebar.revealRetrySuggestion'),
+        new Error(revealError.reason),
+        revealError.source,
+        revealError.reason,
+        revealError.suggestion,
       );
     }
   }, [folder.workspacePath, showLevel2SidebarError]);
@@ -118,11 +120,12 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
       await navigator.clipboard.writeText(folder.workspacePath);
       useStatusStore.getState().setStatus('idle', t('sidebar.pathCopied'));
     } catch {
+      const copyPathError = getSidebarErrorMeta('rootCopyPath');
       showLevel2SidebarError(
-        new Error(t('sidebar.copyFailed')),
-        'sidebar-root-copy-path',
-        t('sidebar.copyFailed'),
-        t('sidebar.copyRetrySuggestion'),
+        new Error(copyPathError.reason),
+        copyPathError.source,
+        copyPathError.reason,
+        copyPathError.suggestion,
       );
     }
   }, [folder.workspacePath, showLevel2SidebarError]);

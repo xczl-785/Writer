@@ -153,3 +153,12 @@ Level 2 top toast and Level 3 editor overlay banner are rendered by `Notificatio
 `notificationSlice`. Level 1 is reused by save-adjacent recoverable failures.
 
 **Evidence**: `src/state/slices/statusSlice.ts`, `src/state/slices/notificationSlice.ts`
+
+### CT-004: Notification lane boundaries are now explicit
+
+- Level 1: save-adjacent recoverable failures that should stay anchored to the status bar
+- Level 2: user-triggered recoverable failures that should surface as a toast
+- Level 3: blocking, data-risk close failures that require an explicit user decision
+- Local inline `ErrorStates`: contextual empty/missing/drop-blocked UI, not part of the global notification lane
+
+**Evidence**: `src/domains/file/services/AutosaveService.ts`, `src/domains/workspace/services/WorkspaceManager.ts`, `src/app/App.tsx`, `src/ui/components/ErrorStates`

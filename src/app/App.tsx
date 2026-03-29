@@ -23,6 +23,8 @@ import {
   listenFileOpen,
 } from '../services/startup/StartupService';
 import { ErrorService } from '../services/error/ErrorService';
+import { showLevel2Notification } from '../services/error/level2Notification';
+import { createRetryAction } from '../services/error/retryActions';
 import { useNativeMenuBridge } from './useNativeMenuBridge';
 import { RecentWorkspacesMenu } from '../ui/components/RecentWorkspaces/RecentWorkspacesMenu';
 import {
@@ -233,16 +235,13 @@ function App() {
       dedupeKey = source,
       retryAction?: () => void,
     ) => {
-      useStatusStore.getState().setStatus('idle', null);
-      ErrorService.handleWithInfo(error, source, {
-        level: 'level2',
+      showLevel2Notification({
+        error,
         source,
         reason,
         suggestion,
         dedupeKey,
-        actions: retryAction
-          ? [{ label: t('error.retry'), run: retryAction }]
-          : undefined,
+        actions: retryAction ? [createRetryAction(retryAction)] : undefined,
       });
     },
     [],

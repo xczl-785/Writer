@@ -145,3 +145,13 @@ Autosave save failures call `ErrorService.handleWithInfo(...)` with `level: 'lev
 When autosave eventually succeeds, the active `autosave` Level 1 notification is dismissed.
 
 **Evidence**: `src/domains/file/services/AutosaveService.ts`
+
+### CT-003: Autosave stays on the save/status lane boundary
+
+Autosave is the canonical Level 1 case:
+
+- keep save-progress and save-result state in `statusSlice`
+- route recoverable autosave failures into `notificationSlice.level1Notification`
+- do not promote normal autosave failures to Level 2 toast or Level 3 banner
+
+**Evidence**: `src/domains/file/services/AutosaveService.ts`, `src/ui/statusbar/StatusBar.tsx`, `src/state/slices/statusSlice.ts`

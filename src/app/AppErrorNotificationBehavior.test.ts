@@ -9,11 +9,13 @@ describe('App error notification wiring', () => {
 
   it('routes startup and recent-item open failures through level2 notifications', () => {
     expect(source).toContain('const showLevel2AppError = useCallback(');
-    expect(source).toContain("level: 'level2'");
+    expect(source).toContain("from '../services/error/level2Notification'");
+    expect(source).toContain("from '../services/error/retryActions'");
+    expect(source).toContain('showLevel2Notification({');
+    expect(source).toContain('createRetryAction(');
     expect(source).toContain("'app-recent-workspace'");
     expect(source).toContain("'app-recent-file'");
     expect(source).toContain("'startup-file-open'");
-    expect(source).toContain("label: t('error.retry')");
     expect(source).toContain("t('file.openFailed')");
     expect(source).toContain("t('workspace.openRetrySuggestion')");
   });

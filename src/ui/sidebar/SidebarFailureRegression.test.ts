@@ -5,8 +5,12 @@ import { Sidebar } from './Sidebar';
 import { t } from '../../shared/i18n';
 import { useFileTreeStore } from '../../domains/file/state/fileStore';
 import { useWorkspaceStore } from '../../domains/workspace/state/workspaceStore';
-import { useNotificationStore } from '../../state/slices/notificationSlice';
 import { useStatusStore } from '../../state/slices/statusSlice';
+import { createStatusState } from '../../test/helpers/statusStoreMocks';
+import {
+  clearNotificationState,
+  expectLevel2Notification,
+} from '../../test/helpers/notificationAssertions';
 
 const {
   createFileMock,
@@ -117,21 +121,15 @@ describe('Sidebar failure handling', () => {
 
     useFileTreeStore.getState().clearState();
     useWorkspaceStore.getState().clearState();
-    useNotificationStore.getState().clearNotifications();
-    useStatusStore.setState({
-      status: 'idle',
-      message: null,
-      saveStatus: 'saved',
-      lastSavedAt: null,
-      saveError: null,
-    });
+    clearNotificationState();
+    useStatusStore.setState(createStatusState());
   });
 
   afterEach(() => {
     document.body.innerHTML = '';
     useFileTreeStore.getState().clearState();
     useWorkspaceStore.getState().clearState();
-    useNotificationStore.getState().clearNotifications();
+    clearNotificationState();
   });
 
   it('rolls back the ghost row and shows a level2 notification when create fails', async () => {
@@ -178,10 +176,10 @@ describe('Sidebar failure handling', () => {
     });
     await flushMicrotasks();
 
-    const notification = useNotificationStore.getState().level2Notification;
-    expect(notification?.source).toBe('sidebar-create');
-    expect(notification?.reason).toBe(t('sidebar.createFailed'));
-    expect(notification?.reason).not.toContain('Access denied');
+    expectLevel2Notification({
+      source: 'sidebar-create',
+      reason: t('sidebar.createFailed'),
+    });
     expect(
       Array.from(container.querySelectorAll('input')).some(
         (input) => (input as HTMLInputElement).value === 'draft',
@@ -242,10 +240,10 @@ describe('Sidebar failure handling', () => {
     });
     await flushMicrotasks();
 
-    const notification = useNotificationStore.getState().level2Notification;
-    expect(notification?.source).toBe('sidebar-rename');
-    expect(notification?.reason).toBe(t('sidebar.renameFailed'));
-    expect(notification?.reason).not.toContain('Access denied');
+    expectLevel2Notification({
+      source: 'sidebar-rename',
+      reason: t('sidebar.renameFailed'),
+    });
 
     await cleanup(container, root);
   });
