@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { VirtualizedFileTree } from './VirtualizedFileTree';
-import { t } from '../../../shared/i18n';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import type { VirtualizedTreeProps } from './types';
+import { getSidebarErrorMeta } from '../../sidebar/sidebarErrorCatalog';
+import { createStatusState } from '../../../test/helpers/statusStoreMocks';
 
 const { renamePathMock, flushAffectedFilesMock } = vi.hoisted(() => ({
   renamePathMock: vi.fn(),
@@ -85,13 +86,7 @@ describe('VirtualizedFileTree failure handling', () => {
   beforeEach(() => {
     renamePathMock.mockReset();
     flushAffectedFilesMock.mockReset();
-    useStatusStore.setState({
-      status: 'idle',
-      message: null,
-      saveStatus: 'saved',
-      lastSavedAt: null,
-      saveError: null,
-    });
+    useStatusStore.setState(createStatusState());
   });
 
   afterEach(() => {
@@ -147,11 +142,12 @@ describe('VirtualizedFileTree failure handling', () => {
       await Promise.resolve();
     });
 
+    const renameError = getSidebarErrorMeta('rename');
     expect(onShowLevel2Error).toHaveBeenCalledWith(
       expect.any(Error),
-      'sidebar-rename',
-      t('sidebar.renameFailed'),
-      t('sidebar.renameRetrySuggestion'),
+      renameError.source,
+      renameError.reason,
+      renameError.suggestion,
     );
 
     await cleanup(container, root);

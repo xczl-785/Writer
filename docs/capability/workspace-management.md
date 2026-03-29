@@ -169,3 +169,18 @@ Rules such as `workspace.dragFoldersOnly` and editor-drop-disabled remain on the
 status/gate path and are not promoted to Level 2 or Level 3.
 
 **Evidence**: `src/app/App.tsx`, `src/domains/workspace/services/WorkspaceManager.ts`
+
+### CT-003: Open-style workspace failures are the canonical Level 2 cases
+
+The following workspace flows belong to Level 2:
+
+- open file
+- open folder / workspace
+- reopen from recent items
+- open from startup path
+- save/load workspace file when the failure occurs inside the app layer
+
+These failures should provide retry actions through the global notification lane instead of
+falling back to status-bar-only errors.
+
+**Evidence**: `src/domains/workspace/services/WorkspaceManager.ts`, `src/app/App.tsx`, `src/services/error/retryActions.ts`

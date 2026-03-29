@@ -6,6 +6,7 @@ import { ImageResolver } from '../../../services/images/ImageResolver';
 import { ErrorService } from '../../../services/error/ErrorService';
 import { EDITOR_CONFIG } from '../../../config/editor';
 import { joinPath, getRelativePath } from '../../../shared/utils/pathUtils';
+import { t } from '../../../shared/i18n';
 
 const shouldShowImageRenderDiagnostic = (): boolean =>
   import.meta.env?.VITE_SHOW_IMAGE_DIAGNOSTIC === '1';
@@ -79,10 +80,10 @@ export async function saveAndInsertImageFile(
   if (!allowedTypes.some((type) => type === file.type)) {
     ErrorService.log(file.type, 'Unsupported image format');
     showLevel2ImageError(
-      new Error('Failed to insert image: unsupported format'),
+      new Error(t('image.insertUnsupported')),
       'editor-insert-image-format',
-      'Failed to insert image: unsupported format',
-      'Choose a PNG, JPG, WEBP, or supported image file.',
+      t('image.insertUnsupported'),
+      t('image.insertUnsupportedSuggestion'),
     );
     return 'failed';
   }
@@ -90,10 +91,10 @@ export async function saveAndInsertImageFile(
   if (file.size > EDITOR_CONFIG.image.maxUploadBytes) {
     ErrorService.log(file.size, 'Image too large (max 10MB)');
     showLevel2ImageError(
-      new Error('Failed to insert image: image too large (max 10MB)'),
+      new Error(t('image.insertTooLarge')),
       'editor-insert-image-size',
-      'Failed to insert image: image too large (max 10MB)',
-      'Choose an image smaller than 10MB.',
+      t('image.insertTooLarge'),
+      t('image.insertTooLargeSuggestion'),
     );
     return 'failed';
   }
@@ -138,8 +139,8 @@ export async function saveAndInsertImageFile(
     showLevel2ImageError(
       error,
       'editor-insert-image-save',
-      'Failed to save image',
-      'Retry inserting the image.',
+      t('image.saveFailed'),
+      t('image.insertRetrySuggestion'),
     );
     return 'failed';
   }

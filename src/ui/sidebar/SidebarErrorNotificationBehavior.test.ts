@@ -9,13 +9,15 @@ describe('Sidebar error notification wiring', () => {
 
   it('routes async sidebar file-operation failures through level2 notifications', () => {
     expect(source).toContain('const showLevel2SidebarError = useCallback(');
-    expect(source).toContain("level: 'level2'");
-    expect(source).toContain("'sidebar-copy-path'");
-    expect(source).toContain("'sidebar-reveal'");
-    expect(source).toContain("'sidebar-delete'");
-    expect(source).toContain("'sidebar-move'");
-    expect(source).toContain("'sidebar-create'");
-    expect(source).toContain("'sidebar-rename'");
+    expect(source).toContain("from '../../services/error/level2Notification'");
+    expect(source).toContain("from './sidebarErrorCatalog'");
+    expect(source).toContain('showLevel2Notification({');
+    expect(source).toContain("getSidebarErrorMeta('copyPath')");
+    expect(source).toContain("getSidebarErrorMeta('reveal')");
+    expect(source).toContain("getSidebarErrorMeta('delete')");
+    expect(source).toContain("getSidebarErrorMeta('move')");
+    expect(source).toContain("getSidebarErrorMeta('create')");
+    expect(source).toContain("getSidebarErrorMeta('rename')");
   });
 
   it('does not concatenate raw system error strings into sidebar-facing reasons', () => {

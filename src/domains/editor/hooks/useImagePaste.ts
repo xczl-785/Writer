@@ -4,6 +4,7 @@ import { ErrorService } from '../../../services/error/ErrorService';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { EDITOR_CONFIG } from '../../../config/editor';
 import { generateUniqueFilename, saveAndInsertImageFile } from './imageActions';
+import { t } from '../../../shared/i18n';
 
 export { generateUniqueFilename };
 
@@ -47,10 +48,10 @@ export const useImagePaste = (editor: Editor | null = null) => {
         if (!allowedTypes.some((type) => type === item.type)) {
           ErrorService.log(item.type, 'Unsupported image format');
           showLevel2PasteError(
-            new Error('Failed to paste image: unsupported format'),
+            new Error(t('image.pasteUnsupported')),
             'editor-paste-image-format',
-            'Failed to paste image: unsupported format',
-            'Paste a PNG, JPG, WEBP, or supported image file.',
+            t('image.pasteUnsupported'),
+            t('image.pasteUnsupportedSuggestion'),
           );
           continue;
         }
@@ -60,10 +61,10 @@ export const useImagePaste = (editor: Editor | null = null) => {
         if (file.size > EDITOR_CONFIG.image.maxUploadBytes) {
           ErrorService.log(file.size, 'Image too large (max 10MB)');
           showLevel2PasteError(
-            new Error('Failed to paste image: image too large (max 10MB)'),
+            new Error(t('image.pasteTooLarge')),
             'editor-paste-image-size',
-            'Failed to paste image: image too large (max 10MB)',
-            'Paste an image smaller than 10MB.',
+            t('image.pasteTooLarge'),
+            t('image.pasteTooLargeSuggestion'),
           );
           continue;
         }

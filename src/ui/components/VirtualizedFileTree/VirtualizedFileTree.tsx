@@ -26,6 +26,7 @@ import {
   InlineInput,
   type InlineCommitTrigger,
 } from '../../sidebar/InlineInput';
+import { getSidebarErrorMeta } from '../../sidebar/sidebarErrorCatalog';
 
 // 文件夹图标组件
 function FolderIcon({
@@ -231,11 +232,12 @@ function TreeNodeRow({
       await fileActions.renamePath(node.path, newPath);
       onSelect(newPath);
     } catch (error) {
+      const renameError = getSidebarErrorMeta('rename');
       onShowLevel2Error(
         error,
-        'sidebar-rename',
-        t('sidebar.renameFailed'),
-        t('sidebar.renameRetrySuggestion'),
+        renameError.source,
+        renameError.reason,
+        renameError.suggestion,
       );
       setRenameDraft(oldName);
     } finally {

@@ -7,6 +7,9 @@ import { useNotificationStore } from '../../../state/slices/notificationSlice';
 import { FsService } from '../../file/services/FsService';
 import { AutosaveService } from '../../file/services/AutosaveService';
 import { t } from '../../../shared/i18n';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 vi.mock('../../file/services/FsService', () => ({
   FsService: {
@@ -21,6 +24,9 @@ vi.mock('../../file/services/AutosaveService', () => ({
 }));
 
 describe('WorkspaceManager - openFile', () => {
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const source = readFileSync(join(currentDir, 'WorkspaceManager.ts'), 'utf-8');
+
   beforeEach(() => {
     vi.clearAllMocks();
     useWorkspaceStore.setState({
@@ -135,5 +141,11 @@ describe('WorkspaceManager - openFile', () => {
     expect(
       useNotificationStore.getState().level2Notification?.actions?.[0]?.label,
     ).toBe(t('error.retry'));
+  });
+
+  it('uses the shared retry action helper for open-failure notifications', () => {
+    expect(source).toContain("from '../../../services/error/retryActions'");
+    expect(source).toContain('createRetryAction(');
+    expect(source).not.toContain("label: t('error.retry')");
   });
 });
