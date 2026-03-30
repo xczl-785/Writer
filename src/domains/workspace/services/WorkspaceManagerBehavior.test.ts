@@ -59,6 +59,11 @@ describe('WorkspaceManager behaviors', () => {
     expect(source).toContain("'workspace-add-folder'");
     expect(source).toContain("'workspace-save-dialog'");
     expect(source).toContain("'workspace-save-current'");
-    expect(source).toContain("level: 'level2'");
+    // After the notification unification refactor, level2 routing is
+    // encapsulated in showLevel2Notification / showLevel2WorkspaceError.
+    // The source no longer contains the literal "level: 'level2'" — instead
+    // we verify it imports and uses the unified level2 helper.
+    expect(source).toContain('showLevel2WorkspaceError');
+    expect(source).toContain('showLevel2Notification');
   });
 });

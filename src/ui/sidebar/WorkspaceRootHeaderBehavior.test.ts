@@ -28,9 +28,14 @@ describe('WorkspaceRootHeader behavior markers', () => {
   });
 
   it('routes root-folder operation failures through level2 notifications', () => {
-    expect(source).toContain("level: 'level2'");
-    expect(source).toContain("'sidebar-root-remove'");
-    expect(source).toContain("'sidebar-root-reveal'");
-    expect(source).toContain("'sidebar-root-copy-path'");
+    // After the notification unification refactor, level2 routing is
+    // encapsulated in showLevel2Notification / showLevel2SidebarError, and
+    // error source strings live in sidebarErrorCatalog.
+    // Verify the component uses the unified level2 helper and the catalog.
+    expect(source).toContain('showLevel2SidebarError');
+    expect(source).toContain('showLevel2Notification');
+    expect(source).toContain("getSidebarErrorMeta('rootRemove')");
+    expect(source).toContain("getSidebarErrorMeta('rootReveal')");
+    expect(source).toContain("getSidebarErrorMeta('rootCopyPath')");
   });
 });
