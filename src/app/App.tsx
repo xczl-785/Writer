@@ -354,19 +354,32 @@ function App() {
   );
 
   // Handle selection from recent menu
-  const handleSelectWorkspace = useCallback(async (path: string) => {
-    try {
-      useStatusStore.getState().setStatus('loading', t('workspace.loading'));
-      const result = await workspaceActions.loadWorkspaceFile(path);
-      if (result.ok) {
-        useNotificationStore.getState().dismissLevel2();
-        await RecentItemsService.addWorkspace(path);
-        useStatusStore.getState().setStatus('idle');
-      } else {
+  const handleSelectWorkspace = useCallback(
+    async (path: string) => {
+      try {
+        useStatusStore.getState().setStatus('loading', t('workspace.loading'));
+        const result = await workspaceActions.loadWorkspaceFile(path);
+        if (result.ok) {
+          useNotificationStore.getState().dismissLevel2();
+          await RecentItemsService.addWorkspace(path);
+          useStatusStore.getState().setStatus('idle');
+        } else {
+          showLevel2AppError(
+            new Error(result.errorMessage),
+            'app-recent-workspace',
+            result.errorMessage,
+            t('workspace.openWorkspaceRetrySuggestion'),
+            `app-recent-workspace:${path}`,
+            () => {
+              void handleSelectWorkspace(path);
+            },
+          );
+        }
+      } catch (error) {
         showLevel2AppError(
-          new Error(result.errorMessage),
+          error,
           'app-recent-workspace',
-          result.errorMessage,
+          t('workspace.openWorkspaceFailed'),
           t('workspace.openWorkspaceRetrySuggestion'),
           `app-recent-workspace:${path}`,
           () => {
@@ -374,74 +387,70 @@ function App() {
           },
         );
       }
-    } catch (error) {
-      showLevel2AppError(
-        error,
-        'app-recent-workspace',
-        t('workspace.openWorkspaceFailed'),
-        t('workspace.openWorkspaceRetrySuggestion'),
-        `app-recent-workspace:${path}`,
-        () => {
-          void handleSelectWorkspace(path);
-        },
-      );
-    }
-  }, [showLevel2AppError]);
+    },
+    [showLevel2AppError],
+  );
 
-  const handleSelectFolder = useCallback(async (path: string) => {
-    try {
-      useStatusStore.getState().setStatus('loading', t('workspace.loading'));
-      await workspaceActions.loadWorkspace(path);
-      useNotificationStore.getState().dismissLevel2();
-      await RecentItemsService.addFolder(path);
-      useStatusStore.getState().setStatus('idle');
-    } catch (error) {
-      showLevel2AppError(
-        error,
-        'app-recent-folder',
-        t('workspace.openFolderFailed'),
-        t('workspace.openFolderRetrySuggestion'),
-        `app-recent-folder:${path}`,
-        () => {
-          void handleSelectFolder(path);
-        },
-      );
-    }
-  }, [showLevel2AppError]);
-
-  const handleSelectFile = useCallback(async (path: string) => {
-    try {
-      useStatusStore.getState().setStatus('loading', t('file.opening'));
-      const result = await workspaceActions.openFile(path);
-      if (result.ok) {
+  const handleSelectFolder = useCallback(
+    async (path: string) => {
+      try {
+        useStatusStore.getState().setStatus('loading', t('workspace.loading'));
+        await workspaceActions.loadWorkspace(path);
         useNotificationStore.getState().dismissLevel2();
-        await RecentItemsService.addFile(path);
+        await RecentItemsService.addFolder(path);
         useStatusStore.getState().setStatus('idle');
-      } else {
+      } catch (error) {
         showLevel2AppError(
-          new Error(result.reason),
+          error,
+          'app-recent-folder',
+          t('workspace.openFolderFailed'),
+          t('workspace.openFolderRetrySuggestion'),
+          `app-recent-folder:${path}`,
+          () => {
+            void handleSelectFolder(path);
+          },
+        );
+      }
+    },
+    [showLevel2AppError],
+  );
+
+  const handleSelectFile = useCallback(
+    async (path: string) => {
+      try {
+        useStatusStore.getState().setStatus('loading', t('file.opening'));
+        const result = await workspaceActions.openFile(path);
+        if (result.ok) {
+          useNotificationStore.getState().dismissLevel2();
+          await RecentItemsService.addFile(path);
+          useStatusStore.getState().setStatus('idle');
+        } else {
+          showLevel2AppError(
+            new Error(result.reason),
+            'app-recent-file',
+            t('file.openFailed'),
+            t('workspace.openRetrySuggestion'),
+            `app-recent-file:${path}:${result.reason}`,
+            () => {
+              void handleSelectFile(path);
+            },
+          );
+        }
+      } catch (error) {
+        showLevel2AppError(
+          error,
           'app-recent-file',
           t('file.openFailed'),
           t('workspace.openRetrySuggestion'),
-          `app-recent-file:${path}:${result.reason}`,
+          `app-recent-file:${path}`,
           () => {
             void handleSelectFile(path);
           },
         );
       }
-    } catch (error) {
-      showLevel2AppError(
-        error,
-        'app-recent-file',
-        t('file.openFailed'),
-        t('workspace.openRetrySuggestion'),
-        `app-recent-file:${path}`,
-        () => {
-          void handleSelectFile(path);
-        },
-      );
-    }
-  }, [showLevel2AppError]);
+    },
+    [showLevel2AppError],
+  );
   const handleSelectRecentItem = useCallback(
     async (item: RecentItem) => {
       if (item.type === 'workspace') {
@@ -764,39 +773,42 @@ function App() {
     scheduleTauriBridgeWarmup();
   }, []);
 
-  const openFileFromPath = useCallback(async (filePath: string) => {
-    const exists = await FsService.checkExists(filePath);
-    if (!exists) {
-      showLevel2AppError(
-        new Error('File not found'),
-        'startup-file-open',
-        t('fileDrop.fileNotFound'),
-        t('fileDrop.openFailed'),
-        `startup-file-open:${filePath}:missing`,
-        () => {
-          void openFileFromPath(filePath);
-        },
-      );
-      return;
-    }
+  const openFileFromPath = useCallback(
+    async (filePath: string) => {
+      const exists = await FsService.checkExists(filePath);
+      if (!exists) {
+        showLevel2AppError(
+          new Error('File not found'),
+          'startup-file-open',
+          t('fileDrop.fileNotFound'),
+          t('fileDrop.openFailed'),
+          `startup-file-open:${filePath}:missing`,
+          () => {
+            void openFileFromPath(filePath);
+          },
+        );
+        return;
+      }
 
-    const result = await workspaceActions.openFile(filePath);
-    if (result.ok) {
-      useNotificationStore.getState().dismissLevel2();
-      useStatusStore.getState().setStatus('idle', t('fileDrop.openSuccess'));
-    } else {
-      showLevel2AppError(
-        new Error(result.reason || t('fileDrop.openFailed')),
-        'startup-file-open',
-        t('fileDrop.openFailed'),
-        t('workspace.openRetrySuggestion'),
-        `startup-file-open:${filePath}:${result.reason ?? 'unknown'}`,
-        () => {
-          void openFileFromPath(filePath);
-        },
-      );
-    }
-  }, [showLevel2AppError]);
+      const result = await workspaceActions.openFile(filePath);
+      if (result.ok) {
+        useNotificationStore.getState().dismissLevel2();
+        useStatusStore.getState().setStatus('idle', t('fileDrop.openSuccess'));
+      } else {
+        showLevel2AppError(
+          new Error(result.reason || t('fileDrop.openFailed')),
+          'startup-file-open',
+          t('fileDrop.openFailed'),
+          t('workspace.openRetrySuggestion'),
+          `startup-file-open:${filePath}:${result.reason ?? 'unknown'}`,
+          () => {
+            void openFileFromPath(filePath);
+          },
+        );
+      }
+    },
+    [showLevel2AppError],
+  );
 
   useEffect(() => {
     let unlisten: UnlistenFn | undefined;
