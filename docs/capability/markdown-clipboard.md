@@ -22,6 +22,7 @@
   - pure-paste intent is consumed once and does not leak to the next paste
   - application-driven normal paste still prefers native paste before falling back to explicit clipboard payload insertion
   - image paste is still handled by the image path
+  - indentation retry activates only for sole-codeBlock degeneration and preserves genuine code blocks
   - menu, context menu, and shortcut stay aligned
 - **last_verified**: 2026-03-28
 
@@ -108,6 +109,12 @@ The edit menu plain-paste item, context menu plain-paste item, and `Cmd/Ctrl+Shi
 
 **Evidence**: `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/domains/editor/handlers/contextMenuHandler.ts`, `src/domains/editor/extensions/keydownHandler.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`
 
+### CR-011: Sole-codeBlock degeneration triggers normalization retry
+
+When Markdown parsing produces a doc containing exactly one `codeBlock` child, the parser checks for removable common indentation. If stripping common indent and re-parsing yields a structurally richer result (more nodes or different node types), the retried result is used. Otherwise the original parse stands.
+
+**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`, `src/domains/editor/integration/textNormalization.ts`
+
 ### CR-010: Image paste stays outside this capability's conversion path
 
 Clipboard image items are still handled by the image-paste hook, which prevents default only for image items and leaves text conversion behavior unchanged.
@@ -128,6 +135,7 @@ Clipboard image items are still handled by the image-paste hook, which prevents 
 | Edit menu path             | menu command id and native menu item stay aligned                   | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                                                                                                                                                       |
 | Context menu path          | plain-paste item exists and uses shared paste bridge                | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                                                                                                                                                                               |
 | Image paste                | image clipboard items still bypass text parsing                     | `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`                                                                                                                                                                                                          |
+| Text normalization         | indentation retry for sole-codeBlock degeneration                   | `src/domains/editor/integration/textNormalization.ts`                                                                                                                                                                                                                                                 |
 | Behavior tests             | parser, command, context, and shortcut contracts remain covered     | `src/domains/editor/integration/markdownClipboard.test.ts`, `src/domains/editor/integration/pasteIntentController.test.ts`, `src/domains/editor/handlers/menuCommandHandler.test.ts`, `src/domains/editor/handlers/contextMenuHandler.test.ts`, `src/domains/editor/core/EditorTableControls.test.ts` |
 
 ---

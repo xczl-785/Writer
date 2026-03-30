@@ -111,6 +111,68 @@ describe('markdownClipboard', () => {
     parseSpy.mockRestore();
   });
 
+  it('retries with dedented text when uniform indent causes sole codeBlock', () => {
+    const parser = createMarkdownClipboardTextParser();
+    const state = EditorState.create({ schema: basicSchema });
+    const view = { state } as never;
+
+    const indentedMarkdown = '    # Title\n    \n    some text';
+    const slice = parser(indentedMarkdown, state.selection.$from, false, view);
+
+    expect(slice.content.firstChild?.type.name).toBe('heading');
+  });
+
+  it('does not retry for fenced code block (no common indent)', () => {
+    const parseSpy = vi.spyOn(markdownManager, 'parse');
+    const parser = createMarkdownClipboardTextParser();
+    const state = EditorState.create({ schema: basicSchema });
+    const view = { state } as never;
+
+    const fenced = '```\nfunction foo() {}\n```';
+
+    // fenced code has no common indent → stripCommonIndent returns same text → no retry
+    // basicSchema lacks codeBlock, so nodeFromJSON would throw;
+    // we verify parse is called exactly once (no retry attempted)
+    try {
+      parser(fenced, state.selection.$from, false, view);
+    } catch {
+      // expected: basicSchema cannot instantiate codeBlock node
+    }
+
+    expect(parseSpy).toHaveBeenCalledTimes(1);
+    parseSpy.mockRestore();
+  });
+
+  it('does not retry when text has no common indent to strip', () => {
+    const parseSpy = vi.spyOn(markdownManager, 'parse');
+    const parser = createMarkdownClipboardTextParser();
+    const state = EditorState.create({ schema: basicSchema });
+    const view = { state } as never;
+
+    const noCommonIndent = '    only one indented line\nnot indented';
+
+    // mixed indent → not sole codeBlock → no retry, parse called once
+    try {
+      parser(noCommonIndent, state.selection.$from, false, view);
+    } catch {
+      // expected: basicSchema cannot instantiate codeBlock node
+    }
+
+    expect(parseSpy).toHaveBeenCalledTimes(1);
+    parseSpy.mockRestore();
+  });
+
+  it('retries with tab-indented text that causes sole codeBlock', () => {
+    const parser = createMarkdownClipboardTextParser();
+    const state = EditorState.create({ schema: basicSchema });
+    const view = { state } as never;
+
+    const tabIndented = '\t# Hello\n\t\n\tworld';
+    const slice = parser(tabIndented, state.selection.$from, false, view);
+
+    expect(slice.content.firstChild?.type.name).toBe('heading');
+  });
+
   it('serializes selected content to markdown text', () => {
     const serializer = createMarkdownClipboardTextSerializer();
     const doc = basicSchema.node('doc', null, [

@@ -6,6 +6,11 @@ import {
   consumeNextPasteIntent,
   type PasteIntent,
 } from './pasteIntentController';
+import {
+  stripCommonIndent,
+  isSoleDegenerateCodeBlock,
+  isRicherParse,
+} from './textNormalization';
 
 export const MARKDOWN_CLIPBOARD_MAX_PARSE_BYTES = 50 * 1024;
 
@@ -35,6 +40,14 @@ function createPlainTextSlice(
   return Slice.maxOpen(doc.content);
 }
 
+function tryMarkdownParse(text: string): Record<string, unknown> | null {
+  try {
+    return markdownManager.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 function createClipboardTextSlice(
   text: string,
   context: ResolvedPos,
@@ -45,13 +58,24 @@ function createClipboardTextSlice(
     return createPlainTextSlice(text, context, view);
   }
 
-  try {
-    const json = markdownManager.parse(text);
-    const doc = view.state.schema.nodeFromJSON(json);
-    return Slice.maxOpen(doc.content);
-  } catch {
+  const json = tryMarkdownParse(text);
+  if (!json) {
     return createPlainTextSlice(text, context, view);
   }
+
+  if (isSoleDegenerateCodeBlock(json)) {
+    const normalized = stripCommonIndent(text);
+    if (normalized !== text) {
+      const retryJson = tryMarkdownParse(normalized);
+      if (retryJson && isRicherParse(json, retryJson)) {
+        const doc = view.state.schema.nodeFromJSON(retryJson);
+        return Slice.maxOpen(doc.content);
+      }
+    }
+  }
+
+  const doc = view.state.schema.nodeFromJSON(json);
+  return Slice.maxOpen(doc.content);
 }
 
 export function createMarkdownClipboardTextParser() {
