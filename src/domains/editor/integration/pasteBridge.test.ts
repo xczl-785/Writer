@@ -9,7 +9,7 @@ describe('createEditorPasteDOMEvents', () => {
 
     const handlers = createEditorPasteDOMEvents(handlePaste, editorRef);
     const event = {} as ClipboardEvent;
-    const handled = handlers.paste({}, event);
+    const handled = handlers.paste({} as never, event);
 
     expect(handled).toBe(false);
     expect(handlePaste).toHaveBeenCalledWith(event, editorRef.current);
