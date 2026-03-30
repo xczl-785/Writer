@@ -87,7 +87,6 @@ export function createMarkdownClipboardTextParser() {
   ): Slice => {
     const intent = consumeNextPasteIntent();
     const shouldBypassMarkdown = plain || intent === 'plain';
-
     return createClipboardTextSlice(text, context, shouldBypassMarkdown, view);
   };
 }

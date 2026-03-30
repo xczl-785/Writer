@@ -22,6 +22,7 @@
   - pure-paste intent is consumed once and does not leak to the next paste
   - application-driven normal paste still prefers native paste before falling back to explicit clipboard payload insertion
   - image paste is still handled by the image path
+  - VSCode markdown paste is intercepted and routed through text/plain parser
   - indentation retry activates only for sole-codeBlock degeneration and preserves genuine code blocks
   - menu, context menu, and shortcut stay aligned
 - **last_verified**: 2026-03-28
@@ -50,6 +51,7 @@ For application-driven paste entry points such as the custom editor context menu
 | `menu.edit.paste_plain`                                              | edit menu plain paste                        | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs` | command and native menu route      |
 | `context menu -> paste-plain`                                        | editor context menu plain paste              | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                         | context path                       |
 | `Cmd/Ctrl+Shift+V`                                                   | keyboard pure paste                          | `src/domains/editor/extensions/keydownHandler.ts`                                                                                               | arms one-shot plain intent         |
+| `handleVSCodeMarkdownPaste`                                           | VSCode markdown paste interception           | `src/domains/editor/hooks/pasteHandler.ts`                                                                                                      | discards HTML, routes to text/plain |
 
 ---
 
@@ -109,9 +111,15 @@ The edit menu plain-paste item, context menu plain-paste item, and `Cmd/Ctrl+Shi
 
 **Evidence**: `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/domains/editor/handlers/contextMenuHandler.ts`, `src/domains/editor/extensions/keydownHandler.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`
 
-### CR-011: Sole-codeBlock degeneration triggers normalization retry
+### CR-011: VSCode markdown paste discards HTML and routes through text/plain
 
-When Markdown parsing produces a doc containing exactly one `codeBlock` child, the parser checks for removable common indentation. If stripping common indent and re-parsing yields a structurally richer result (more nodes or different node types), the retried result is used. Otherwise the original parse stands.
+When a paste event carries `vscode-editor-data` with `mode: "markdown"`, the paste handler intercepts the event before ProseMirror processes the HTML. VSCode's HTML payload is a code-editor rendering (monospace, pre-styled divs) that ProseMirror would misinterpret as a code block. The handler discards the HTML, reads `text/plain`, and routes it through the Markdown clipboard parser.
+
+**Evidence**: `src/domains/editor/hooks/pasteHandler.ts`
+
+### CR-012: Sole-codeBlock degeneration triggers normalization retry
+
+When Markdown parsing produces a doc containing exactly one `codeBlock` child, the parser checks for removable common indentation. If stripping common indent and re-parsing yields a structurally richer result (more nodes or different node types), the retried result is used. Otherwise the original parse stands. This is a secondary defense for non-VSCode sources that provide uniformly indented `text/plain`.
 
 **Evidence**: `src/domains/editor/integration/markdownClipboard.ts`, `src/domains/editor/integration/textNormalization.ts`
 
@@ -135,6 +143,7 @@ Clipboard image items are still handled by the image-paste hook, which prevents 
 | Edit menu path             | menu command id and native menu item stay aligned                   | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                                                                                                                                                       |
 | Context menu path          | plain-paste item exists and uses shared paste bridge                | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                                                                                                                                                                               |
 | Image paste                | image clipboard items still bypass text parsing                     | `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`                                                                                                                                                                                                          |
+| VSCode paste interception  | markdown pastes from VSCode bypass HTML and use text/plain          | `src/domains/editor/hooks/pasteHandler.ts`                                                                                                                                                                                                                                                            |
 | Text normalization         | indentation retry for sole-codeBlock degeneration                   | `src/domains/editor/integration/textNormalization.ts`                                                                                                                                                                                                                                                 |
 | Behavior tests             | parser, command, context, and shortcut contracts remain covered     | `src/domains/editor/integration/markdownClipboard.test.ts`, `src/domains/editor/integration/pasteIntentController.test.ts`, `src/domains/editor/handlers/menuCommandHandler.test.ts`, `src/domains/editor/handlers/contextMenuHandler.test.ts`, `src/domains/editor/core/EditorTableControls.test.ts` |
 
