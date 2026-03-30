@@ -129,9 +129,9 @@ describe('VirtualizedFileTree failure handling', () => {
       await Promise.resolve();
     });
 
-    const renameInput = container.querySelector('input') as
-      | HTMLInputElement
-      | null;
+    const renameInput = container.querySelector(
+      'input',
+    ) as HTMLInputElement | null;
     expect(renameInput).toBeDefined();
 
     changeInputValue(renameInput!, 'renamed');

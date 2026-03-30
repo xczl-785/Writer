@@ -128,7 +128,8 @@ describe('NotificationHost', () => {
     });
 
     const button = Array.from(container.querySelectorAll('button')).find(
-      (candidate) => candidate.getAttribute('aria-label') === 'Dismiss notification',
+      (candidate) =>
+        candidate.getAttribute('aria-label') === 'Dismiss notification',
     );
 
     await act(async () => {

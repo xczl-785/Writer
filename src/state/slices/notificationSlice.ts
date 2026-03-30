@@ -1,11 +1,7 @@
 import { create } from 'zustand';
 
 export type NotificationLevel = 'level1' | 'level2' | 'level3';
-export type NotificationCategory =
-  | 'user'
-  | 'system'
-  | 'network'
-  | 'permission';
+export type NotificationCategory = 'user' | 'system' | 'network' | 'permission';
 
 export interface NotificationAction {
   label: string;

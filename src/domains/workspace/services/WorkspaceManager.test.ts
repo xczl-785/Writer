@@ -131,7 +131,9 @@ describe('WorkspaceManager - openFile', () => {
         },
       },
     });
-    vi.mocked(AutosaveService.flush).mockRejectedValue(new Error('Save failed'));
+    vi.mocked(AutosaveService.flush).mockRejectedValue(
+      new Error('Save failed'),
+    );
 
     await openFile('/path/to/new.txt');
 

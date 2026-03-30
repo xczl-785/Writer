@@ -140,9 +140,11 @@ function toNotificationActions(
 }
 
 function shouldRouteToNotification(options?: ErrorInfoOptions): boolean {
-  return options?.level === 'level1' ||
+  return (
+    options?.level === 'level1' ||
     options?.level === 'level2' ||
-    options?.level === 'level3';
+    options?.level === 'level3'
+  );
 }
 
 export const ErrorService = {

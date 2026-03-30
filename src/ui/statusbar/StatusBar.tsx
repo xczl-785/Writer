@@ -122,14 +122,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   }, [level1Notification, lastSavedAt, saveStatus]);
 
   const activeLevel1 = level1Notification;
-  const activeError =
-    activeLevel1
-      ? {
-          reason: activeLevel1.reason,
-          suggestion: activeLevel1.suggestion,
-          action: activeLevel1.actions?.[0],
-        }
-      : saveError;
+  const activeError = activeLevel1
+    ? {
+        reason: activeLevel1.reason,
+        suggestion: activeLevel1.suggestion,
+        action: activeLevel1.actions?.[0],
+      }
+    : saveError;
   const displayStatus = activeLevel1 ? 'error' : saveStatus;
 
   const getStatusClass = () => {
@@ -173,7 +172,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           {displayStatus === 'error' && activeError ? (
             <div className="status-error-panel" role="tooltip">
               <p className="status-error-title">{activeError.reason}</p>
-              <p className="status-error-suggestion">{activeError.suggestion}</p>
+              <p className="status-error-suggestion">
+                {activeError.suggestion}
+              </p>
               {activeError.action ? (
                 <button
                   type="button"

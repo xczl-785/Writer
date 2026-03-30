@@ -338,7 +338,9 @@ describe('workspace watcher refresh behavior', () => {
       { path: 'E:/existing', index: 0 },
     ]);
     expect(mocks.workspaceState.activeFile).toBe('E:/existing/docs/note.md');
-    expect(mocks.workspaceState.openFiles).toEqual(['E:/existing/docs/note.md']);
+    expect(mocks.workspaceState.openFiles).toEqual([
+      'E:/existing/docs/note.md',
+    ]);
     expect(mocks.fileTreeState.rootFolders).toEqual([
       {
         workspacePath: 'E:/existing',

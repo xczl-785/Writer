@@ -6,7 +6,11 @@ export function clearNotificationState(): void {
 }
 
 export function expectLevel2Notification(
-  partial: Partial<NonNullable<ReturnType<typeof useNotificationStore.getState>['level2Notification']>>,
+  partial: Partial<
+    NonNullable<
+      ReturnType<typeof useNotificationStore.getState>['level2Notification']
+    >
+  >,
 ): void {
   expect(useNotificationStore.getState().level2Notification).toMatchObject(
     partial,

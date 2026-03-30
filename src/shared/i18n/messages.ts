@@ -544,7 +544,8 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'image.insertUnsupported': 'Failed to insert image: unsupported format',
     'image.insertUnsupportedSuggestion':
       'Choose a PNG, JPG, WEBP, or supported image file.',
-    'image.insertTooLarge': 'Failed to insert image: image too large (max 10MB)',
+    'image.insertTooLarge':
+      'Failed to insert image: image too large (max 10MB)',
     'image.insertTooLargeSuggestion': 'Choose an image smaller than 10MB.',
     'image.saveFailed': 'Failed to save image',
     'image.insertRetrySuggestion': 'Retry inserting the image.',

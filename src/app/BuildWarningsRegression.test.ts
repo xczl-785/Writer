@@ -191,7 +191,9 @@ describe('build warning regression', () => {
       existsSync(join(srcRoot, 'ui', 'sidebar', 'MultiRootFileTree.tsx')),
     ).toBe(false);
     expect(
-      existsSync(join(srcRoot, 'domains', 'file', 'ui', 'MultiRootFileTree.tsx')),
+      existsSync(
+        join(srcRoot, 'domains', 'file', 'ui', 'MultiRootFileTree.tsx'),
+      ),
     ).toBe(false);
   });
 });

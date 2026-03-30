@@ -216,7 +216,9 @@ describe('Sidebar failure handling', () => {
     });
 
     const { container, root } = renderSidebar();
-    const region = container.querySelector('[role="region"]') as HTMLElement | null;
+    const region = container.querySelector(
+      '[role="region"]',
+    ) as HTMLElement | null;
     expect(region).not.toBeNull();
 
     await act(async () => {
