@@ -36,6 +36,7 @@ import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
 import { showDeleteConfirmDialog } from '../components/Dialog';
 import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import { WorkspaceRootHeader } from './WorkspaceRootHeader';
+import { resolveDropTarget, type DropPosition } from './dragDropTargets';
 import {
   ensureMarkdownExtension,
   flattenFileNodes,
@@ -70,9 +71,6 @@ type GhostNode = {
   rootPath: string; // V6: 记录所属根路径
 };
 
-// 拖拽状态类型
-type DropPosition = 'inside' | 'above' | 'below';
-
 type DragState = {
   isDragging: boolean;
   dragPath: string | null;
@@ -83,6 +81,18 @@ type DragState = {
 type DropState = {
   dropTargetPath: string | null;
   dropPosition: DropPosition | null;
+};
+
+type DragHoverState = {
+  hoverTargetPath: string | null;
+  hoverTargetType: 'file' | 'directory' | null;
+  reason:
+    | 'directory'
+    | 'file-parent-directory'
+    | 'self-or-descendant'
+    | 'missing-drag-path'
+    | 'missing-candidate'
+    | null;
 };
 
 type FolderIconProps = {
@@ -219,7 +229,17 @@ export function Sidebar({
     dropTargetPath: null,
     dropPosition: null,
   });
+  const [dragHoverState, setDragHoverState] = useState<DragHoverState>({
+    hoverTargetPath: null,
+    hoverTargetType: null,
+    reason: null,
+  });
   const dragExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const dragStateRef = useRef(dragState);
+  dragStateRef.current = dragState;
+  const dropStateRef = useRef(dropState);
+  dropStateRef.current = dropState;
 
   const selectedNode = selectedPath
     ? findNodeByPath(allVisibleNodes, selectedPath)
@@ -331,7 +351,7 @@ export function Sidebar({
       expandNode(previewDirectoryPath);
       setGhostNode(ghost);
     },
-    [expandNode, selectedPath],
+    [expandNode],
   );
 
   const cancelCreate = () => {
@@ -544,6 +564,231 @@ export function Sidebar({
     workspaceActions.moveRootFolderDown(selectedPath);
   }, [selectedPath, rootFolders]);
 
+  // Helper: find nearest tree node element from event target
+  const findTreeNode = useCallback(
+    (target: EventTarget | null): HTMLElement | null => {
+      const el = target as HTMLElement | null;
+      if (!el?.closest) return null;
+      const node = el.closest('[data-tree-path]') as HTMLElement | null;
+      // Only match nodes inside our sidebar
+      if (node && sidebarRef.current?.contains(node)) return node;
+      return null;
+    },
+    [],
+  );
+
+  const syncDropState = useCallback((next: DropState) => {
+    dropStateRef.current = next;
+    setDropState(next);
+  }, []);
+
+  const syncDragHoverState = useCallback((next: DragHoverState) => {
+    setDragHoverState(next);
+  }, []);
+
+  const resolveDropStateFromNode = useCallback(
+    (treeNode: HTMLElement | null, ds: DragState): DropState => {
+      const resolved = resolveDropTarget(
+        treeNode
+          ? {
+              treePath: treeNode.dataset.treePath ?? null,
+              treeType:
+                (treeNode.dataset.treeType as
+                  | 'file'
+                  | 'directory'
+                  | undefined) ?? null,
+              treeRoot: treeNode.dataset.treeRoot ?? null,
+            }
+          : null,
+        ds,
+      );
+
+      return {
+        dropTargetPath: resolved.dropTargetPath,
+        dropPosition: resolved.dropPosition,
+      };
+    },
+    [],
+  );
+
+  // Document-level drag event handlers (capture phase)
+  // This bypasses React's event delegation which is unreliable in WebView2
+  useEffect(() => {
+    const onDragOver = (e: DragEvent) => {
+      const ds = dragStateRef.current;
+      if (!ds.isDragging || !ds.dragPath) return;
+
+      const treeNode = findTreeNode(e.target);
+      if (!treeNode) {
+        // Over sidebar but not on a tree node — allow drop to container
+        if (sidebarRef.current?.contains(e.target as Node)) {
+          e.preventDefault();
+          e.dataTransfer!.dropEffect = 'move';
+        }
+        syncDragHoverState({
+          hoverTargetPath: null,
+          hoverTargetType: null,
+          reason: null,
+        });
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const resolvedHover = resolveDropTarget(
+        {
+          treePath: treeNode.dataset.treePath ?? null,
+          treeType:
+            (treeNode.dataset.treeType as 'file' | 'directory' | undefined) ??
+            null,
+          treeRoot: treeNode.dataset.treeRoot ?? null,
+        },
+        ds,
+      );
+      syncDragHoverState({
+        hoverTargetPath: treeNode.dataset.treePath ?? null,
+        hoverTargetType:
+          (treeNode.dataset.treeType as 'file' | 'directory' | undefined) ??
+          null,
+        reason: resolvedHover.reason,
+      });
+
+      const nextDropState = resolveDropStateFromNode(treeNode, ds);
+      if (!nextDropState.dropTargetPath || !nextDropState.dropPosition) {
+        e.dataTransfer!.dropEffect = 'none';
+        syncDropState({ dropTargetPath: null, dropPosition: null });
+        return;
+      }
+
+      syncDropState(nextDropState);
+
+      if (treeNode.dataset.treeType === 'directory') {
+        const targetPath = nextDropState.dropTargetPath;
+
+        // Auto-expand folder after 500ms hover
+        if (dragExpandTimerRef.current === null) {
+          dragExpandTimerRef.current = setTimeout(() => {
+            toggleNode(targetPath);
+            dragExpandTimerRef.current = null;
+          }, 500);
+        }
+      } else {
+        if (dragExpandTimerRef.current) {
+          clearTimeout(dragExpandTimerRef.current);
+          dragExpandTimerRef.current = null;
+        }
+      }
+
+      e.dataTransfer!.dropEffect = 'move';
+    };
+
+    const onDrop = async (e: DragEvent) => {
+      const ds = dragStateRef.current;
+      if (!ds.isDragging || !ds.dragPath) return;
+
+      // Only handle drops inside sidebar
+      if (!sidebarRef.current?.contains(e.target as Node)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (dragExpandTimerRef.current) {
+        clearTimeout(dragExpandTimerRef.current);
+        dragExpandTimerRef.current = null;
+      }
+
+      const sourcePath = ds.dragPath;
+      const treeNode = findTreeNode(e.target);
+      const liveDropState =
+        dropStateRef.current.dropTargetPath && dropStateRef.current.dropPosition
+          ? dropStateRef.current
+          : resolveDropStateFromNode(treeNode, ds);
+
+      // Reset drag state
+      setDragState({
+        isDragging: false,
+        dragPath: null,
+        dragType: null,
+        dragRootPath: null,
+      });
+
+      const resolvedTarget = liveDropState.dropTargetPath;
+      const position = liveDropState.dropPosition;
+      syncDropState({ dropTargetPath: null, dropPosition: null });
+      syncDragHoverState({
+        hoverTargetPath: null,
+        hoverTargetType: null,
+        reason: null,
+      });
+
+      if (!position || !resolvedTarget) {
+        if (treeNode) {
+          useStatusStore.getState().setStatus('error', t('move.invalidTarget'));
+        }
+        return;
+      }
+
+      const result = await workspaceActions.moveNode(
+        sourcePath,
+        resolvedTarget,
+        position,
+      );
+
+      if (!result.ok) {
+        console.warn('[drag] move failed', {
+          sourcePath,
+          resolvedTarget,
+          position,
+          result,
+        });
+        const moveError = getSidebarErrorMeta('move');
+        showLevel2SidebarError(
+          new Error(moveError.reason),
+          moveError.source,
+          moveError.reason,
+          moveError.suggestion,
+        );
+      }
+    };
+
+    const onDragLeave = (e: DragEvent) => {
+      if (!dragStateRef.current.isDragging) return;
+      // Clear drop state only when leaving the sidebar entirely
+      if (
+        sidebarRef.current &&
+        !sidebarRef.current.contains(e.relatedTarget as Node | null)
+      ) {
+        if (dragExpandTimerRef.current) {
+          clearTimeout(dragExpandTimerRef.current);
+          dragExpandTimerRef.current = null;
+        }
+        syncDropState({ dropTargetPath: null, dropPosition: null });
+        syncDragHoverState({
+          hoverTargetPath: null,
+          hoverTargetType: null,
+          reason: null,
+        });
+      }
+    };
+
+    document.addEventListener('dragover', onDragOver, true);
+    document.addEventListener('drop', onDrop, true);
+    document.addEventListener('dragleave', onDragLeave, true);
+    return () => {
+      document.removeEventListener('dragover', onDragOver, true);
+      document.removeEventListener('drop', onDrop, true);
+      document.removeEventListener('dragleave', onDragLeave, true);
+    };
+  }, [
+    findTreeNode,
+    resolveDropStateFromNode,
+    showLevel2SidebarError,
+    syncDragHoverState,
+    syncDropState,
+    toggleNode,
+  ]);
+
   // 拖拽事件处理
   const handleDragStart = useCallback(
     (
@@ -582,140 +827,19 @@ export function Sidebar({
       dragType: null,
       dragRootPath: null,
     });
-    setDropState({
+    syncDropState({
       dropTargetPath: null,
       dropPosition: null,
     });
-  }, []);
+    syncDragHoverState({
+      hoverTargetPath: null,
+      hoverTargetType: null,
+      reason: null,
+    });
+  }, [syncDragHoverState, syncDropState]);
 
-  const handleDragOver = useCallback(
-    (e: React.DragEvent, targetPath: string, isDirectory: boolean) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (!dragState.isDragging || dragState.dragPath === targetPath) {
-        return;
-      }
-
-      // 不允许拖到子节点
-      if (targetPath.startsWith(dragState.dragPath + '/')) {
-        return;
-      }
-
-      // 计算放置位置
-      const rect = (e.target as HTMLElement).getBoundingClientRect();
-      const y = e.clientY - rect.top;
-      const height = rect.height;
-
-      let dropPosition: DropPosition;
-      if (isDirectory && y > height * 0.25 && y < height * 0.75) {
-        // 拖到文件夹内部
-        dropPosition = 'inside';
-
-        // 自动展开文件夹（悬停 500ms）
-        if (dragExpandTimerRef.current === null) {
-          dragExpandTimerRef.current = setTimeout(() => {
-            toggleNode(targetPath);
-            dragExpandTimerRef.current = null;
-          }, 500);
-        }
-      } else if (y <= height * 0.5) {
-        dropPosition = 'above';
-        // 清除展开定时器
-        if (dragExpandTimerRef.current) {
-          clearTimeout(dragExpandTimerRef.current);
-          dragExpandTimerRef.current = null;
-        }
-      } else {
-        dropPosition = 'below';
-        // 清除展开定时器
-        if (dragExpandTimerRef.current) {
-          clearTimeout(dragExpandTimerRef.current);
-          dragExpandTimerRef.current = null;
-        }
-      }
-
-      setDropState({
-        dropTargetPath: targetPath,
-        dropPosition,
-      });
-
-      // 设置拖拽效果
-      e.dataTransfer.dropEffect = 'move';
-    },
-    [dragState, toggleNode],
-  );
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-
-    // 清除展开定时器
-    if (dragExpandTimerRef.current) {
-      clearTimeout(dragExpandTimerRef.current);
-      dragExpandTimerRef.current = null;
-    }
-
-    // 只有当离开当前元素时才清除状态
-    const relatedTarget = e.relatedTarget as HTMLElement | null;
-    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
-      setDropState({
-        dropTargetPath: null,
-        dropPosition: null,
-      });
-    }
-  }, []);
-
-  const handleDrop = useCallback(
-    async (e: React.DragEvent, targetPath: string) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // 清除定时器
-      if (dragExpandTimerRef.current) {
-        clearTimeout(dragExpandTimerRef.current);
-        dragExpandTimerRef.current = null;
-      }
-
-      if (!dragState.isDragging || !dragState.dragPath) {
-        return;
-      }
-
-      const sourcePath = dragState.dragPath;
-      const dropPosition = dropState.dropPosition;
-
-      // 重置状态
-      setDragState({
-        isDragging: false,
-        dragPath: null,
-        dragType: null,
-        dragRootPath: null,
-      });
-      setDropState({
-        dropTargetPath: null,
-        dropPosition: null,
-      });
-
-      if (!dropPosition) return;
-
-      // 执行移动操作
-      const result = await workspaceActions.moveNode(
-        sourcePath,
-        targetPath,
-        dropPosition,
-      );
-
-      if (!result.ok) {
-        const moveError = getSidebarErrorMeta('move');
-        showLevel2SidebarError(
-          new Error(moveError.reason),
-          moveError.source,
-          moveError.reason,
-          moveError.suggestion,
-        );
-      }
-    },
-    [dragState, dropState, showLevel2SidebarError],
-  );
+  // Note: handleDragOver, handleDragLeave, handleDrop are handled by
+  // the document-level capture listener above (WebView2 compatibility).
 
   const commandCtx = {
     hasWorkspace: canCreateFromWorkspace(currentPath),
@@ -829,6 +953,16 @@ export function Sidebar({
               rootPath: rootFolder.workspacePath,
             });
           }}
+          isInternalDragActive={dragState.isDragging}
+          isDropTarget={
+            dropState.dropTargetPath === rootFolder.workspacePath &&
+            dropState.dropPosition === 'inside'
+          }
+          rootDataAttrs={{
+            'data-tree-path': rootFolder.workspacePath,
+            'data-tree-type': 'directory',
+            'data-tree-root': rootFolder.workspacePath,
+          }}
         />
 
         {ghostNode &&
@@ -869,12 +1003,10 @@ export function Sidebar({
               onSelect={(path) => setSelectedPath(path)}
               rootPath={rootFolder.workspacePath}
               dragState={dragState}
+              dragHoverState={dragHoverState}
               dropState={dropState}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
             />
           ))
         ) : null}
@@ -884,6 +1016,7 @@ export function Sidebar({
 
   return (
     <div
+      ref={sidebarRef}
       className="h-full w-64 flex-shrink-0 select-none border-r border-zinc-200 bg-zinc-50 flex flex-col"
       role="region"
       aria-label={t('sidebar.title')}
@@ -902,7 +1035,7 @@ export function Sidebar({
       }}
       onDragOver={(e) => {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
+        e.dataTransfer.dropEffect = dragState.isDragging ? 'move' : 'copy';
       }}
       onDragLeave={(e) => {
         if (e.currentTarget === e.target) {
@@ -1279,12 +1412,10 @@ function FileTreeNode({
   onSelect,
   rootPath,
   dragState,
+  dragHoverState,
   dropState,
   onDragStart,
   onDragEnd,
-  onDragOver,
-  onDragLeave,
-  onDrop,
 }: {
   node: FileNode;
   level: number;
@@ -1307,6 +1438,7 @@ function FileTreeNode({
   onSelect: (path: string) => void;
   rootPath: string;
   dragState: DragState;
+  dragHoverState: DragHoverState;
   dropState: DropState;
   onDragStart: (
     e: React.DragEvent,
@@ -1315,13 +1447,6 @@ function FileTreeNode({
     rootPath: string,
   ) => void;
   onDragEnd: () => void;
-  onDragOver: (
-    e: React.DragEvent,
-    targetPath: string,
-    isDirectory: boolean,
-  ) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, targetPath: string) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -1343,6 +1468,11 @@ function FileTreeNode({
 
   // 拖拽状态计算
   const isDraggingThis = dragState.dragPath === node.path;
+  const isHoverTarget = dragHoverState.hoverTargetPath === node.path;
+  const isFileDropProxyHover =
+    isHoverTarget &&
+    dragHoverState.hoverTargetType === 'file' &&
+    dragHoverState.reason === 'file-parent-directory';
   const isDropTarget = dropState.dropTargetPath === node.path;
   const dropPosition = isDropTarget ? dropState.dropPosition : null;
 
@@ -1452,18 +1582,6 @@ function FileTreeNode({
     onDragStart(e, node.path, node.type, rootPath);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    onDragOver(e, node.path, isDirectory);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    onDragLeave(e);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    onDrop(e, node.path);
-  };
-
   // 计算拖拽相关样式
   const getDragClasses = () => {
     const classes: string[] = [];
@@ -1476,19 +1594,15 @@ function FileTreeNode({
       classes.push('bg-blue-100 ring-2 ring-blue-400');
     }
 
+    if (isFileDropProxyHover) {
+      classes.push('bg-blue-50 ring-1 ring-blue-300');
+    }
+
     return classes.join(' ');
   };
 
   return (
     <div>
-      {/* 上方放置指示线 */}
-      {isDropTarget && dropPosition === 'above' && (
-        <div
-          className="h-0.5 bg-blue-500 mx-2 rounded-full"
-          style={{ marginLeft: `${level * 12 + 8}px` }}
-        />
-      )}
-
       <div
         className={`group relative flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer text-sm transition-colors duration-150 ease-in-out ${
           isDirectory
@@ -1513,9 +1627,9 @@ function FileTreeNode({
         draggable={true}
         onDragStart={handleDragStart}
         onDragEnd={onDragEnd}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        data-tree-path={node.path}
+        data-tree-type={node.type}
+        data-tree-root={rootPath}
         role="button"
         tabIndex={0}
         aria-expanded={isDirectory ? isExpanded : undefined}
@@ -1605,14 +1719,6 @@ function FileTreeNode({
         )}
       </div>
 
-      {/* 下方放置指示线 */}
-      {isDropTarget && dropPosition === 'below' && (
-        <div
-          className="h-0.5 bg-blue-500 mx-2 rounded-full"
-          style={{ marginLeft: `${level * 12 + 8}px` }}
-        />
-      )}
-
       {isDirectory && isExpanded && (
         <div>
           {ghostNode &&
@@ -1646,12 +1752,10 @@ function FileTreeNode({
                 onSelect={onSelect}
                 rootPath={rootPath}
                 dragState={dragState}
+                dragHoverState={dragHoverState}
                 dropState={dropState}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
               />
             ))}
         </div>

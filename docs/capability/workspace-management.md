@@ -184,3 +184,23 @@ These failures should provide retry actions through the global notification lane
 falling back to status-bar-only errors.
 
 **Evidence**: `src/domains/workspace/services/WorkspaceManager.ts`, `src/app/App.tsx`, `src/services/error/retryActions.ts`
+
+### CT-004: Sidebar tree drag/drop accepts folders directly and files as parent-directory proxies
+
+When a user drags a file or folder inside the sidebar tree, dropping on a directory still resolves
+to that directory. Dropping on a file resolves to the file's parent directory, so the dragged node
+moves beside the hovered file rather than treating the file itself as a container.
+
+This keeps the desktop tree interaction aligned with common file explorers while preserving the
+existing invalid-target protections for self and descendant drops.
+
+**Evidence**: `src/ui/sidebar/dragDropTargets.ts`, `src/ui/sidebar/Sidebar.tsx`
+
+### CT-005: moveNode normalizes parent-path derivation through shared path utilities
+
+`workspaceActions.moveNode(...)` now derives basename, parent paths, descendant checks, and joined
+destination paths through shared path helpers instead of manual string slicing. This keeps Windows
+backslash inputs and normalized slash inputs behaviorally equivalent, including sibling drops
+(`above` / `below`) where the target path itself may still contain backslashes.
+
+**Evidence**: `src/domains/workspace/services/workspaceActions.ts`
