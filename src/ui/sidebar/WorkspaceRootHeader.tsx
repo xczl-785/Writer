@@ -45,8 +45,6 @@ interface WorkspaceRootHeaderProps {
   /** 文件夹是否缺失（不存在或已移动） */
   isMissing?: boolean;
   onContextMenu?: (event: React.MouseEvent) => void;
-  /** Whether an internal drag is active (for drop target behavior) */
-  isInternalDragActive?: boolean;
   /** Whether this header is the current drop target */
   isDropTarget?: boolean;
   /** Data attributes for drag-drop targeting */
@@ -63,7 +61,6 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   onNewFolder,
   isMissing = false,
   onContextMenu,
-  isInternalDragActive = false,
   isDropTarget = false,
   rootDataAttrs,
 }) => {

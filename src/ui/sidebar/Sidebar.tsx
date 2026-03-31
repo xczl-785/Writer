@@ -953,7 +953,6 @@ export function Sidebar({
               rootPath: rootFolder.workspacePath,
             });
           }}
-          isInternalDragActive={dragState.isDragging}
           isDropTarget={
             dropState.dropTargetPath === rootFolder.workspacePath &&
             dropState.dropPosition === 'inside'
