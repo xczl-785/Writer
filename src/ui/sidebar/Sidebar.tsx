@@ -28,8 +28,8 @@ import {
   canCreateFromWorkspace,
   resolveCreateEntryExplorerCommand,
 } from '../../domains/workspace/services/createEntryCommands';
-import { resolveCreateGhostTarget } from '../../domains/workspace/services/createEntryTarget';
 import type { FileNode } from '../../state/types';
+import { useCreateEntry, type GhostNode } from './useCreateEntry';
 import { ContextMenu, useContextMenu } from '../components/ContextMenu';
 import { DragDropHint } from '../components/ErrorStates';
 import { getFileTreeMenuItems } from '../components/ContextMenu/fileTreeMenu';
@@ -38,7 +38,6 @@ import { InlineInput, type InlineCommitTrigger } from './InlineInput';
 import { WorkspaceRootHeader } from './WorkspaceRootHeader';
 import { resolveDropTarget, type DropPosition } from './dragDropTargets';
 import {
-  ensureMarkdownExtension,
   flattenFileNodes,
   findNodeByPath,
   filterVisibleNodes,
@@ -64,12 +63,6 @@ import {
 import { t } from '../../shared/i18n';
 import { showLevel2Notification } from '../../services/error/level2Notification';
 import { getSidebarErrorMeta } from './sidebarErrorCatalog';
-
-type GhostNode = {
-  parentPath: string | null;
-  type: 'file' | 'directory';
-  rootPath: string; // V6: 记录所属根路径
-};
 
 type DragState = {
   isDragging: boolean;
@@ -212,7 +205,28 @@ export function Sidebar({
     return currentPath;
   };
 
-  const [ghostNode, setGhostNode] = useState<GhostNode | null>(null);
+  const selectedNode = selectedPath
+    ? findNodeByPath(allVisibleNodes, selectedPath)
+    : null;
+
+  const {
+    ghostNode,
+    startCreate,
+    beginCreateWithGhost,
+    getCreateGhostTarget,
+    commitCreate,
+    cancelCreate,
+  } = useCreateEntry({
+    getRootPathForPath,
+    currentPath,
+    selectedPath,
+    selectedNodeType: selectedNode?.type ?? null,
+    activeFile,
+    expandNode,
+    setNodes,
+    setSelectedPath,
+  });
+
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameTrigger, setRenameTrigger] = useState(0);
   const [explorerFocus, setExplorerFocus] = useState(false);
@@ -240,10 +254,6 @@ export function Sidebar({
   dragStateRef.current = dragState;
   const dropStateRef = useRef(dropState);
   dropStateRef.current = dropState;
-
-  const selectedNode = selectedPath
-    ? findNodeByPath(allVisibleNodes, selectedPath)
-    : null;
 
   useEffect(() => {
     if (ghostNode || renamingPath) {
@@ -308,117 +318,6 @@ export function Sidebar({
     }
     setSelectedPath(match.path);
     void openFile(match.path);
-  };
-
-  const startCreate = (type: 'file' | 'directory') => {
-    // V6: ???????????????????????
-    const targetRootPath = getRootPathForPath(selectedPath) || currentPath;
-    if (!targetRootPath) {
-      return;
-    }
-
-    beginCreateWithGhost(
-      resolveCreateGhostTarget({
-        type,
-        rootPath: targetRootPath,
-        targetPath: selectedPath,
-        targetType: selectedNode?.type ?? null,
-        activeFile,
-      }),
-    );
-  };
-
-  const getCreateGhostTarget = useCallback(
-    (
-      type: 'file' | 'directory',
-      rootPath: string,
-      targetPath: string | null,
-      targetType: FileNode['type'] | null,
-    ): GhostNode =>
-      resolveCreateGhostTarget({
-        type,
-        rootPath,
-        targetPath,
-        targetType,
-        activeFile,
-      }),
-    [activeFile],
-  );
-
-  const beginCreateWithGhost = useCallback(
-    (ghost: GhostNode) => {
-      const previewDirectoryPath = ghost.parentPath ?? ghost.rootPath;
-      expandNode(previewDirectoryPath);
-      setGhostNode(ghost);
-    },
-    [expandNode],
-  );
-
-  const cancelCreate = () => {
-    setGhostNode(null);
-  };
-
-  const commitCreate = async (
-    nameRaw: string,
-    trigger: InlineCommitTrigger,
-  ): Promise<void> => {
-    if (!ghostNode) {
-      return;
-    }
-
-    const targetRootPath = ghostNode.rootPath;
-    if (!targetRootPath) {
-      return;
-    }
-
-    const trimmed = nameRaw.trim();
-    if (!trimmed) {
-      cancelCreate();
-      return;
-    }
-
-    const nodeName =
-      ghostNode.type === 'file' ? ensureMarkdownExtension(trimmed) : trimmed;
-
-    if (hasInvalidNodeName(nodeName)) {
-      if (trigger === 'enter') {
-        useStatusStore.getState().setStatus('error', t('sidebar.invalidName'));
-      } else {
-        cancelCreate();
-      }
-      return;
-    }
-
-    const basePath = ghostNode.parentPath || targetRootPath;
-    const fullPath = joinPath(basePath, nodeName);
-
-    try {
-      if (ghostNode.type === 'file') {
-        await FsService.createFile(fullPath);
-      } else {
-        await FsService.createDir(fullPath);
-      }
-
-      // V6: 刷新对应根文件夹的树
-      const refreshedNodes = await FsService.listTree(targetRootPath);
-      setNodes(targetRootPath, refreshedNodes);
-      setSelectedPath(fullPath);
-
-      if (ghostNode.type === 'file') {
-        await openFile(fullPath);
-      }
-
-      cancelCreate();
-    } catch (error) {
-      const createError = getSidebarErrorMeta('create');
-      cancelCreate();
-      showLevel2SidebarError(
-        error,
-        createError.source,
-        createError.reason,
-        createError.suggestion,
-      );
-    }
   };
 
   const beginRenameSelection = () => {
