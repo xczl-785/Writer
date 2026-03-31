@@ -208,8 +208,8 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
             openOnClick: false,
             HTMLAttributes: {
               class: 'editor-link',
-              target: null,   // Prevent Tauri WebView from opening links on click
-              rel: null,      // Not needed without target="_blank"
+              target: null, // Prevent Tauri WebView from opening links on click
+              rel: null, // Not needed without target="_blank"
             },
           },
         }),
