@@ -8,6 +8,7 @@ type EditorViewProps = {
   onEditorContextMenu: (event: ReactMouseEvent) => void;
   bubbleMenu?: ReactNode;
   ghostHint?: ReactNode;
+  linkTooltip?: ReactNode;
   slashMenu?: ReactNode;
   breadcrumb: ReactNode;
   findReplacePanel?: ReactNode;

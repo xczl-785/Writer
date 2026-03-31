@@ -166,11 +166,7 @@ export function BubbleMenu({
           onShowStatus={onShowStatus}
         />
       ) : (
-        <FormatModeContent
-          editor={editor}
-          onMouseDown={handleMouseDown}
-          onShowStatus={onShowStatus}
-        />
+        <FormatModeContent editor={editor} onMouseDown={handleMouseDown} />
       )}
     </div>
   );
@@ -181,11 +177,9 @@ export function BubbleMenu({
 function FormatModeContent({
   editor,
   onMouseDown,
-  onShowStatus,
 }: {
   editor: Editor;
   onMouseDown: (e: React.MouseEvent) => void;
-  onShowStatus: (message: string) => void;
 }) {
   const applyLink = () => {
     const currentHref = String(editor.getAttributes('link').href ?? '');
