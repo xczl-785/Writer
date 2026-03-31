@@ -7,9 +7,17 @@ English | [简体中文](./README.md)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 
 Writer is a local-first cross-platform Markdown desktop writing tool.  
-It aims to bring together **WYSIWYG-style editing, Markdown compatibility, and multi-file workspace management** in a lightweight desktop application, so users with different editing habits can enter a natural writing flow more easily.
+It brings together **WYSIWYG-style editing, Markdown compatibility, and multi-file workspace management** in one lightweight desktop application.
 
-> Current Status: In an active early development stage (v0.3.x). Core editing and file management capabilities are already in place.
+> Current status: under active development (v0.3.x), with the core editing and file-management workflow already in place.
+
+## 📦 Download
+
+Download the latest version from [Releases](https://github.com/xczl-785/Writer/releases).
+
+- Windows: `.msi` / `.exe`
+- macOS: `.dmg`
+- Linux: `.AppImage` / `.deb`
 
 ---
 
@@ -22,7 +30,7 @@ If you want to:
 - use familiar shortcuts like in traditional document tools
 - manage multiple local files and folders within one workspace
 
-then Writer is trying to solve exactly this combination of needs.
+then Writer is built around exactly this combination of needs.
 
 ---
 
@@ -84,11 +92,7 @@ Current support status:
 
 ## 📦 Download & Usage
 
-Download installers for your platform from the [Releases](https://github.com/xczl-785/Writer/releases) page.
-
-- Windows: `.msi` / `.exe`
-- macOS: `.dmg`
-- Linux: `.AppImage` / `.deb`
+Installers are published on the [Releases](https://github.com/xczl-785/Writer/releases) page.
 
 ---
 
