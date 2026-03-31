@@ -58,6 +58,8 @@ import {
   SlashInlineView,
   useBubbleMenu,
   BubbleMenu,
+  useLinkTooltip,
+  LinkTooltip,
   GhostHint,
 } from '../ui/menus';
 import {
@@ -160,6 +162,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       getSafeCoordsAtPos,
     );
     const bubbleMenuPosition = useBubbleMenu(editorRef.current);
+    const linkTooltipState = useLinkTooltip(editorRef.current);
 
     // Find replace & toolbar
     const findReplace = useFindReplace({
@@ -199,7 +202,13 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         toolbarShortcutExtension,
         findReplaceShortcutExtension,
         BlockBoundaryExtension.configure({ showCodeBlock: false }),
-        StarterKit.configure({ heading: { levels: [1, 2, 3, 4, 5, 6] } }),
+        StarterKit.configure({
+          heading: { levels: [1, 2, 3, 4, 5, 6] },
+          link: {
+            openOnClick: false,
+            HTMLAttributes: { class: 'editor-link' },
+          },
+        }),
         TaskList,
         TaskItem.configure({ nested: true }),
         Table.configure({ resizable: true, allowTableNodeSelection: false }),
@@ -347,6 +356,29 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       if (!editor) return;
       toolbarCommandRunnerRef.current = (id) => runToolbarCommand(editor, id);
     }, [editor, runToolbarCommand]);
+
+    // Toggle Ctrl/Cmd modifier class for link hover styling
+    useEffect(() => {
+      if (!editor) return;
+      const dom = editor.view.dom;
+      const add = () => dom.classList.add('link-mod-active');
+      const remove = () => dom.classList.remove('link-mod-active');
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Control' || e.key === 'Meta') add();
+      };
+      const onKeyUp = (e: KeyboardEvent) => {
+        if (e.key === 'Control' || e.key === 'Meta') remove();
+      };
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+      window.addEventListener('blur', remove);
+      return () => {
+        remove();
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('keyup', onKeyUp);
+        window.removeEventListener('blur', remove);
+      };
+    }, [editor]);
 
     // Force rerender on editor events
     useEffect(() => {
@@ -546,6 +578,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
               />
             }
             ghostHint={<GhostHint position={ghostHintPosition} />}
+            linkTooltip={<LinkTooltip state={linkTooltipState} />}
             slashMenu={
               <SlashMenuView
                 isOpen={slashSession.phase !== 'idle'}

@@ -14,6 +14,7 @@ type Props = {
   onEditorContextMenu: (event: ReactMouseEvent) => void;
   bubbleMenu?: ReactNode;
   ghostHint?: ReactNode;
+  linkTooltip?: ReactNode;
   slashMenu?: ReactNode;
   breadcrumb: ReactNode;
   findReplacePanel?: ReactNode;
@@ -31,6 +32,7 @@ export function EditorShell({
   onEditorContextMenu,
   bubbleMenu,
   ghostHint,
+  linkTooltip,
   slashMenu,
   breadcrumb,
   findReplacePanel,
@@ -167,6 +169,7 @@ export function EditorShell({
       <div className="editor-find-panel-host">{findReplacePanel}</div>
       {bubbleMenu}
       {ghostHint}
+      {linkTooltip}
       {slashMenu}
       <EditorContent
         editor={editor}

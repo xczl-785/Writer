@@ -342,6 +342,70 @@
   font-size: 11px;
 }
 
+/* ── Link display ────────────────────────────────────── */
+
+.ProseMirror .editor-link {
+  color: var(--color-action);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-action) 30%, transparent);
+  transition:
+    border-color 0.15s ease-out,
+    color 0.15s ease-out;
+  cursor: text;
+  border-radius: 1px;
+}
+
+.ProseMirror .editor-link:hover {
+  border-bottom-color: color-mix(in srgb, var(--color-action) 60%, transparent);
+}
+
+/* Ctrl/Cmd held — links become visibly clickable */
+.ProseMirror.link-mod-active .editor-link {
+  border-bottom-color: var(--color-action);
+  cursor: pointer;
+}
+
+.ProseMirror.link-mod-active .editor-link:hover {
+  background: color-mix(in srgb, var(--color-action) 8%, transparent);
+  border-bottom-style: solid;
+}
+
+/* ── Link tooltip ────────────────────────────────────── */
+
+.editor-link-tooltip {
+  position: fixed;
+  z-index: 35;
+  transform: translateX(-50%);
+  max-width: 400px;
+  padding: 4px 8px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border-main);
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-bubble);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  user-select: none;
+  animation: link-tooltip-in 0.12s ease-out;
+}
+
+@keyframes link-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ── Bubble menu ─────────────────────────────────────── */
+
 .editor-bubble-menu {
   position: fixed;
   z-index: 40;
@@ -384,6 +448,58 @@
 .editor-bubble-menu__button:hover {
   background: #3f3f46;
   color: #fafafa;
+}
+
+/* ── Bubble menu: link mode ──────────────────────────── */
+
+.editor-bubble-menu__link-bar,
+.editor-bubble-menu__link-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.editor-bubble-menu__link-href {
+  max-width: 200px;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: #93c5fd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: background-color 0.15s ease-out;
+}
+
+.editor-bubble-menu__link-href:hover {
+  background: #3f3f46;
+}
+
+.editor-bubble-menu__link-sep {
+  width: 1px;
+  height: 14px;
+  background: #3f3f46;
+  margin: 0 0.15rem;
+  flex-shrink: 0;
+}
+
+.editor-bubble-menu__link-input {
+  appearance: none;
+  border: 1px solid #52525b;
+  background: #27272a;
+  color: #fafafa;
+  border-radius: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  line-height: 1;
+  width: 200px;
+  outline: none;
+}
+
+.editor-bubble-menu__link-input:focus {
+  border-color: var(--color-action);
 }
 
 .editor-ghost-slash {

@@ -14,9 +14,14 @@ describe('Editor link behavior', () => {
     'utf-8',
   );
 
-  it('routes bubble menu and native menu link actions through shared link action helper', () => {
-    expect(bubbleMenuTs).toContain('applyLinkAction');
-    expect(bubbleMenuTs).not.toContain('Link editor coming soon');
+  it('provides link editing in bubble menu via inline UI and link mode', () => {
+    expect(bubbleMenuTs).toContain("mode: 'link'");
+    expect(bubbleMenuTs).toContain('LinkModeContent');
+    expect(bubbleMenuTs).toContain('.setLink(');
+    expect(bubbleMenuTs).toContain('.unsetLink()');
+  });
+
+  it('routes native menu link actions through shared link action helper', () => {
     expect(menuHandlerTs).toContain('applyLinkAction');
     expect(menuHandlerTs).not.toContain(
       "case 'format.link':\n      case 'format.image':",

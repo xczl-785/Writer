@@ -28,3 +28,10 @@ export {
   type GhostHintPosition,
   type GhostHintProps,
 } from './GhostHint';
+
+export {
+  useLinkTooltip,
+  LinkTooltip,
+  type LinkTooltipState,
+  type LinkTooltipProps,
+} from './LinkTooltip';

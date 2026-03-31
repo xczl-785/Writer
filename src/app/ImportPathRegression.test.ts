@@ -174,7 +174,7 @@ describe('import path regression', () => {
       "import { TOOLBAR_COMMANDS, type ToolbarCommandId } from '../../core/constants';",
     );
     expect(bubbleMenu).toContain(
-      "import { applyLinkAction } from '../../hooks/linkActions';",
+      "import { openUrl } from '@tauri-apps/plugin-opener';",
     );
     expect(editorView).toContain(
       "import { EditorShell } from '../ui/components/EditorShell';",
