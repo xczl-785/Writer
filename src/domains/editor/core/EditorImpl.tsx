@@ -77,6 +77,7 @@ import {
   openEditorContextMenu as openEditorContextMenuBridge,
   persistEditorUpdate,
 } from '../integration';
+import { handleEditorLinkClick } from '../handlers/linkClickHandler';
 import { hasActiveOverlayInDom } from '../domain';
 import '../../../ui/components/BlockBoundary/blockBoundary.css';
 import './Editor.css';
@@ -277,7 +278,10 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         content: '',
         editorProps: {
           attributes: { class: 'editor-content focus:outline-none' },
-          handleDOMEvents: createEditorPasteDOMEvents(handlePaste, editorRef),
+          handleDOMEvents: {
+            ...createEditorPasteDOMEvents(handlePaste, editorRef),
+            click: handleEditorLinkClick,
+          },
           clipboardTextParser,
           clipboardTextSerializer,
           handleKeyDown: withSourceMarkers(
