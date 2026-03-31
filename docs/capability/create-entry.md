@@ -25,6 +25,8 @@
 
 The create-entry capability handles all user-initiated creation of files and folders within the workspace file tree. It resolves the correct parent directory based on current selection and active file state, shows an inline "ghost" input for naming, applies validation rules (auto `.md` extension, invalid character rejection), and commits the new entry via the filesystem service. The capability spans from menu command registration through sidebar ghost node rendering to filesystem commit.
 
+The interaction orchestration (ghost state, target resolution, folder expansion, commit logic) is encapsulated in the `useCreateEntry` hook (`src/ui/sidebar/useCreateEntry.ts`). The Sidebar component consumes this hook and is responsible only for event binding, rendering, and prop forwarding.
+
 ---
 
 ## Entries
@@ -109,7 +111,7 @@ Ghost nodes are rendered inside the correct root folder group and the correct pa
 
 When creating inside a collapsed directory, the folder is expanded before the ghost node is shown.
 
-**Evidence**: `src/ui/sidebar/Sidebar.tsx:313-320`
+**Evidence**: `src/ui/sidebar/useCreateEntry.ts` (`beginCreateWithGhost`)
 
 ---
 
@@ -135,7 +137,7 @@ On commit:
 
 Step 4 的树刷新保证新建的空目录也会出现在文件树中（`build_tree` 不再过滤空目录，详见 file-system CR-007）。
 
-**Evidence**: `src/ui/sidebar/Sidebar.tsx:326-387`
+**Evidence**: `src/ui/sidebar/useCreateEntry.ts` (`commitCreate`)
 
 ---
 
@@ -160,7 +162,7 @@ All create commands check `canCreateFromWorkspace(currentPath)` before executing
 | File name validation      | Invalid names rejected, `.md` extension auto-appended                                   | `src/ui/sidebar/pathing.ts:12-47`                                                                                                                                                                                                                                                      |
 | Context menu integration  | File tree and root header context menus wire create callbacks correctly                 | `src/shared/components/ContextMenu/fileTreeMenu.tsx:41-58`, `src/shared/components/ContextMenu/workspaceRootMenu.tsx:34-48`                                                                                                                                                            |
 | Sidebar toolbar buttons   | FilePlus and FolderPlus buttons dispatch correct commands                               | `src/ui/sidebar/Sidebar.tsx:959-980`                                                                                                                                                                                                                                                   |
-| Create commit             | FsService calls, tree refresh, file open, status feedback                               | `src/ui/sidebar/Sidebar.tsx:360-387`                                                                                                                                                                                                                                                   |
+| Create commit             | FsService calls, tree refresh, file open, status feedback                               | `src/ui/sidebar/useCreateEntry.ts` (`commitCreate`)                                                                                                                                                                                                                                                   |
 | Tests                     | Unit tests for base path, integration tests for wiring                                  | `src/domains/workspace/services/createEntryTarget.test.ts`, `src/ui/sidebar/SidebarCreateTargetBehavior.test.ts`, `src/ui/sidebar/SidebarCreateCommandRouting.test.ts`, `src/ui/sidebar/WorkspaceRootHeaderCreateBehavior.test.ts`, `src/app/commands/fileCommandsNewBehavior.test.ts` |
 
 ---

@@ -10,6 +10,10 @@ describe('WorkspaceRootHeader create behavior markers', () => {
     'utf-8',
   );
   const sidebarSource = readFileSync(join(currentDir, 'Sidebar.tsx'), 'utf-8');
+  const hookSource = readFileSync(
+    join(currentDir, 'useCreateEntry.ts'),
+    'utf-8',
+  );
 
   it('wires root create callbacks into the workspace root menu', () => {
     expect(headerSource).toContain('onNewFile?: () => void;');
@@ -23,15 +27,9 @@ describe('WorkspaceRootHeader create behavior markers', () => {
   });
 
   it('expands collapsed folders before showing create previews', () => {
-    expect(sidebarSource).toContain(
-      'const expandNode = useFileTreeStore((state) => state.expandNode);',
-    );
-    expect(sidebarSource).toContain(
-      'const beginCreateWithGhost = useCallback(',
-    );
-    expect(sidebarSource).toContain(
+    expect(hookSource).toContain(
       'const previewDirectoryPath = ghost.parentPath ?? ghost.rootPath;',
     );
-    expect(sidebarSource).toContain('expandNode(previewDirectoryPath);');
+    expect(hookSource).toContain('expandNode(previewDirectoryPath);');
   });
 });

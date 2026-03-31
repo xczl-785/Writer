@@ -45,6 +45,10 @@ interface WorkspaceRootHeaderProps {
   /** 文件夹是否缺失（不存在或已移动） */
   isMissing?: boolean;
   onContextMenu?: (event: React.MouseEvent) => void;
+  /** Whether this header is the current drop target */
+  isDropTarget?: boolean;
+  /** Data attributes for drag-drop targeting */
+  rootDataAttrs?: Record<string, string>;
 }
 
 export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
@@ -57,6 +61,8 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
   onNewFolder,
   isMissing = false,
   onContextMenu,
+  isDropTarget = false,
+  rootDataAttrs,
 }) => {
   const contextMenu = useContextMenu();
 
@@ -181,7 +187,7 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
       <div
         className={`group flex items-center justify-between px-3 py-1.5 cursor-pointer transition-colors ${
           isSelected ? 'bg-zinc-100/80' : 'hover:bg-zinc-100/80'
-        }`}
+        } ${isDropTarget ? 'bg-blue-100 ring-2 ring-blue-400' : ''}`}
         onClick={handleRowClick}
         onContextMenu={handleContextMenu}
         tabIndex={0}
@@ -193,6 +199,7 @@ export const WorkspaceRootHeader: React.FC<WorkspaceRootHeaderProps> = ({
             toggleExpanded(e as unknown as React.MouseEvent);
           }
         }}
+        {...rootDataAttrs}
       >
         {/* 展开/折叠按钮 */}
         <div className="flex items-center min-w-0">

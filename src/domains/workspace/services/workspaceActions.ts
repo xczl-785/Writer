@@ -22,8 +22,10 @@ import { FileWatcherService } from '../../../services/filewatcher';
 import type { FileChangeEvent } from '../../../services/filewatcher';
 import {
   getBasename,
+  getParentPath,
   getRelativePath,
   isPathMatch,
+  joinPath,
   normalizePath,
   resolvePath,
 } from '../../../utils/pathUtils';
@@ -34,6 +36,7 @@ import {
   createWorkspaceLoadError,
   inferErrorType,
 } from '../../../types/WorkspaceErrors';
+import { showLevel2Toast } from '../../../services/notification/showLevel2Toast';
 
 interface WorkspaceSnapshot {
   folders: WorkspaceFolder[];
@@ -438,17 +441,12 @@ export const workspaceActions = {
 
       // 找到源和目标所属的根文件夹
       for (const folder of rootFolders) {
-        if (
-          sourcePath === folder.workspacePath ||
-          sourcePath.startsWith(folder.workspacePath + '/')
-        ) {
-          sourceRootPath = folder.workspacePath;
+        const wp = folder.workspacePath;
+        if (isPathMatch(wp, sourcePath)) {
+          sourceRootPath = wp;
         }
-        if (
-          targetPath === folder.workspacePath ||
-          targetPath.startsWith(folder.workspacePath + '/')
-        ) {
-          targetRootPath = folder.workspacePath;
+        if (isPathMatch(wp, targetPath)) {
+          targetRootPath = wp;
         }
       }
 
@@ -457,63 +455,107 @@ export const workspaceActions = {
       }
 
       // 不允许移动到自身或子节点
-      if (
-        sourcePath === targetPath ||
-        targetPath.startsWith(sourcePath + '/')
-      ) {
+      if (isPathMatch(sourcePath, targetPath)) {
         return { ok: false, error: 'Cannot move to self or descendant' };
       }
 
-      // 计算新路径
-      const sourceName = sourcePath.split('/').pop() || '';
-      let newParentPath: string;
-
-      if (dropPosition === 'inside') {
-        // 移动到文件夹内部
-        newParentPath = targetPath;
-      } else {
-        // 移动到目标节点的上方或下方
-        newParentPath =
-          targetPath.substring(0, targetPath.lastIndexOf('/')) ||
-          targetRootPath;
-        // 注意：文件系统通常按字母排序，所以这里只是移动文件，排序由文件系统决定
+      // 跨驱动器检测（Windows）
+      const sourceDrive = sourcePath.match(/^([a-zA-Z]:)/)?.[1]?.toUpperCase();
+      const targetDrive = targetPath.match(/^([a-zA-Z]:)/)?.[1]?.toUpperCase();
+      if (sourceDrive && targetDrive && sourceDrive !== targetDrive) {
+        return { ok: false, error: t('move.crossDrive') };
       }
 
-      const newPath = newParentPath
-        ? `${newParentPath}/${sourceName}`
-        : sourceName;
+      // 计算新路径
+      const sourceName = getBasename(sourcePath);
+      const newParentPath =
+        dropPosition === 'inside'
+          ? targetPath
+          : getParentPath(targetPath) || targetRootPath;
+
+      const newPath = joinPath(newParentPath, sourceName);
 
       // 检查是否需要实际移动（同目录不需要移动）
-      const currentParentPath =
-        sourcePath.substring(0, sourcePath.lastIndexOf('/')) || sourceRootPath;
-      if (currentParentPath === newParentPath && dropPosition !== 'inside') {
-        return { ok: true }; // 同目录，无需移动
+      const currentParentPath = getParentPath(sourcePath) || sourceRootPath;
+      if (normalizePath(currentParentPath) === normalizePath(newParentPath)) {
+        return { ok: true };
       }
 
-      // 刷新相关的文件
-      await FsSafety.flushAffectedFiles(sourcePath);
+      // 同名冲突检测
+      const exists = await FsService.checkExists(newPath);
+      if (exists) {
+        const targetDisplayName = getBasename(newParentPath);
+        const confirmed = await showConfirmDialog({
+          title: t('confirm.moveConflictTitle'),
+          message: t('confirm.moveConflict')
+            .replace('{name}', sourceName)
+            .replace('{target}', targetDisplayName),
+          kind: 'warning',
+          okLabel: t('confirm.replace'),
+          cancelLabel: t('confirm.cancel'),
+        });
+        if (!confirmed) {
+          return { ok: true }; // User cancelled, not an error
+        }
+        // Safe replace: rename target to temp, move source, then delete temp
+        // If move fails, restore target from temp
+        const tempPath = newPath + '.writer-move-backup';
+        await FsService.renameNode(newPath, tempPath);
+        try {
+          await FsSafety.flushAffectedFiles(sourcePath);
+          await FsService.renameNode(sourcePath, newPath);
+          // Move succeeded, clean up backup
+          await FsService.deleteNode(tempPath);
+        } catch (moveError) {
+          // Move failed, restore target from backup
+          try {
+            await FsService.renameNode(tempPath, newPath);
+          } catch {
+            // Restore also failed — surface original error
+          }
+          throw moveError;
+        }
 
-      // 执行文件系统移动
-      await FsService.renameNode(sourcePath, newPath);
+        // Also flush affected files in the replaced target
+        await FsSafety.flushAffectedFiles(newPath);
+      } else {
+        // 刷新相关的脏文件
+        await FsSafety.flushAffectedFiles(sourcePath);
+
+        // 执行文件系统移动
+        await FsService.renameNode(sourcePath, newPath);
+      }
 
       // 更新状态
       useWorkspaceStore.getState().renameFile(sourcePath, newPath);
       useEditorStore.getState().renameFile(sourcePath, newPath);
 
       // 刷新源和目标根文件夹的树
+      const fileTreeStore = useFileTreeStore.getState();
       if (sourceRootPath === targetRootPath) {
         const nodes = await FsService.listTree(sourceRootPath);
-        useFileTreeStore.getState().setNodes(sourceRootPath, nodes);
+        fileTreeStore.setNodes(sourceRootPath, nodes);
       } else {
-        // 跨根文件夹移动
         const sourceNodes = await FsService.listTree(sourceRootPath);
         const targetNodes = await FsService.listTree(targetRootPath);
-        useFileTreeStore.getState().setNodes(sourceRootPath, sourceNodes);
-        useFileTreeStore.getState().setNodes(targetRootPath, targetNodes);
+        fileTreeStore.setNodes(sourceRootPath, sourceNodes);
+        fileTreeStore.setNodes(targetRootPath, targetNodes);
       }
 
-      // 更新选中路径
-      useFileTreeStore.getState().setSelectedPath(newPath);
+      // 自动展开目标文件夹并选中移动后的节点
+      fileTreeStore.expandNode(newParentPath);
+      fileTreeStore.setSelectedPath(newPath);
+
+      // Show success toast via level2 with success tone
+      const targetDisplayName = getBasename(newParentPath);
+      showLevel2Toast({
+        tone: 'success',
+        source: 'workspace-move',
+        reason: t('move.success')
+          .replace('{name}', sourceName)
+          .replace('{target}', targetDisplayName),
+        dedupeKey: `workspace-move:${newPath}`,
+      });
 
       return { ok: true };
     } catch (error) {

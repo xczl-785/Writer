@@ -5,25 +5,41 @@ import { fileURLToPath } from 'node:url';
 
 describe('Sidebar error notification wiring', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const source = readFileSync(join(currentDir, 'Sidebar.tsx'), 'utf-8');
+  const sidebarSource = readFileSync(join(currentDir, 'Sidebar.tsx'), 'utf-8');
+  const hookSource = readFileSync(
+    join(currentDir, 'useCreateEntry.ts'),
+    'utf-8',
+  );
 
   it('routes async sidebar file-operation failures through level2 notifications', () => {
-    expect(source).toContain('const showLevel2SidebarError = useCallback(');
-    expect(source).toContain("from '../../services/error/level2Notification'");
-    expect(source).toContain("from './sidebarErrorCatalog'");
-    expect(source).toContain('showLevel2Notification({');
-    expect(source).toContain("getSidebarErrorMeta('copyPath')");
-    expect(source).toContain("getSidebarErrorMeta('reveal')");
-    expect(source).toContain("getSidebarErrorMeta('delete')");
-    expect(source).toContain("getSidebarErrorMeta('move')");
-    expect(source).toContain("getSidebarErrorMeta('create')");
-    expect(source).toContain("getSidebarErrorMeta('rename')");
+    expect(sidebarSource).toContain(
+      'const showLevel2SidebarError = useCallback(',
+    );
+    expect(sidebarSource).toContain(
+      "from '../../services/error/level2Notification'",
+    );
+    expect(sidebarSource).toContain("from './sidebarErrorCatalog'");
+    expect(sidebarSource).toContain('showLevel2Notification({');
+    expect(sidebarSource).toContain("getSidebarErrorMeta('copyPath')");
+    expect(sidebarSource).toContain("getSidebarErrorMeta('reveal')");
+    expect(sidebarSource).toContain("getSidebarErrorMeta('delete')");
+    expect(sidebarSource).toContain("getSidebarErrorMeta('move')");
+    expect(sidebarSource).toContain("getSidebarErrorMeta('rename')");
+  });
+
+  it('routes create-entry failures through level2 notifications in useCreateEntry hook', () => {
+    expect(hookSource).toContain("getSidebarErrorMeta('create')");
+    expect(hookSource).toContain('showLevel2Notification({');
   });
 
   it('does not concatenate raw system error strings into sidebar-facing reasons', () => {
-    expect(source).not.toContain('`Failed to create: ${message}`');
-    expect(source).not.toContain("`${t('sidebar.deleteFailed')}: ${message}`");
-    expect(source).not.toContain('`Failed to rename: ${message}`');
-    expect(source).not.toContain("result.error || t('sidebar.moveFailed')");
+    expect(sidebarSource).not.toContain('`Failed to create: ${message}`');
+    expect(sidebarSource).not.toContain(
+      "`${t('sidebar.deleteFailed')}: ${message}`",
+    );
+    expect(sidebarSource).not.toContain('`Failed to rename: ${message}`');
+    expect(sidebarSource).not.toContain(
+      "result.error || t('sidebar.moveFailed')",
+    );
   });
 });

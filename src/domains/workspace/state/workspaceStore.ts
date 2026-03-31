@@ -2,6 +2,11 @@
 // V6 工作区状态模型 - 支持多文件夹工作区
 
 import { create } from 'zustand';
+import {
+  isChildPath,
+  isPathMatch,
+  normalizePath,
+} from '../../../shared/utils/pathUtils';
 
 export interface WorkspaceFolder {
   path: string;
@@ -202,10 +207,14 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
 
     renameFile: (oldPath, newPath) =>
       set((state) => {
+        const normalizedOld = normalizePath(oldPath);
+        const normalizedNew = normalizePath(newPath);
+
         const replacePath = (filePath: string): string => {
-          if (filePath === oldPath) return newPath;
-          if (filePath.startsWith(oldPath + '/')) {
-            return newPath + filePath.slice(oldPath.length);
+          const normalized = normalizePath(filePath);
+          if (normalized === normalizedOld) return normalizedNew;
+          if (isChildPath(normalizedOld, normalized)) {
+            return normalizedNew + normalized.slice(normalizedOld.length);
           }
           return filePath;
         };
@@ -219,7 +228,7 @@ export const useWorkspaceStore = create<WorkspaceState & WorkspaceActions>(
     removePath: (path) =>
       set((state) => {
         const isMatch = (filePath: string): boolean =>
-          filePath === path || filePath.startsWith(path + '/');
+          isPathMatch(path, filePath);
 
         const newOpenFiles = state.openFiles.filter((f) => !isMatch(f));
         let newActiveFile = state.activeFile;
