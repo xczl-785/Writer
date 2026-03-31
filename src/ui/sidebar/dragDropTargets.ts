@@ -1,4 +1,5 @@
 import { getParentPath } from './pathing';
+import { isPathMatch } from '../../shared/utils/pathUtils';
 
 export type DropPosition = 'inside' | 'above' | 'below';
 
@@ -46,10 +47,7 @@ export function resolveDropTarget(
     };
   }
 
-  if (
-    candidate.treePath === drag.dragPath ||
-    candidate.treePath.startsWith(drag.dragPath + '/')
-  ) {
+  if (isPathMatch(drag.dragPath, candidate.treePath)) {
     return {
       dropTargetPath: null,
       dropPosition: null,
