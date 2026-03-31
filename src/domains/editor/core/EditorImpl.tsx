@@ -206,7 +206,11 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
           heading: { levels: [1, 2, 3, 4, 5, 6] },
           link: {
             openOnClick: false,
-            HTMLAttributes: { class: 'editor-link' },
+            HTMLAttributes: {
+              class: 'editor-link',
+              target: null,   // Prevent Tauri WebView from opening links on click
+              rel: null,      // Not needed without target="_blank"
+            },
           },
         }),
         TaskList,
