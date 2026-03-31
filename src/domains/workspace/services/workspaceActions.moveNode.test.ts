@@ -152,11 +152,11 @@ describe('workspaceActions.moveNode', () => {
       'E:\\Users\\29394\\Desktop\\Writer问题记录',
       [],
     );
-    expect(useNotificationStore.getState().level1Notification).toMatchObject({
-      level: 'level1',
+    expect(useNotificationStore.getState().level2Notification).toMatchObject({
+      level: 'level2',
+      tone: 'success',
       source: 'workspace-move',
       reason: 'move.success',
-      suggestion: 'move.success',
     });
   });
 

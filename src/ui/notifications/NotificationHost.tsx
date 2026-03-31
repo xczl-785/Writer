@@ -1,7 +1,38 @@
 import { useEffect } from 'react';
-import { AlertTriangle, ShieldAlert, X } from 'lucide-react';
-import { useNotificationStore } from '../../state/slices/notificationSlice';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  ShieldAlert,
+  X,
+} from 'lucide-react';
+import {
+  useNotificationStore,
+  type NotificationTone,
+} from '../../state/slices/notificationSlice';
 import './NotificationHost.css';
+
+const toneConfig: Record<
+  NotificationTone,
+  { iconBg: string; iconColor: string; Icon: typeof AlertTriangle }
+> = {
+  success: {
+    iconBg: 'bg-emerald-100',
+    iconColor: 'text-emerald-600',
+    Icon: CheckCircle2,
+  },
+  info: { iconBg: 'bg-blue-100', iconColor: 'text-blue-600', Icon: Info },
+  warning: {
+    iconBg: 'bg-amber-100',
+    iconColor: 'text-amber-600',
+    Icon: AlertTriangle,
+  },
+  error: {
+    iconBg: 'bg-red-100',
+    iconColor: 'text-red-600',
+    Icon: AlertTriangle,
+  },
+};
 
 type NotificationHostProps = {
   scope: 'global' | 'editor';
@@ -35,11 +66,16 @@ export function NotificationHost({ scope }: NotificationHostProps) {
       return null;
     }
 
+    const tone = level2Notification.tone ?? 'error';
+    const { iconBg, iconColor, Icon } = toneConfig[tone];
+
     return (
       <div className="notification-host notification-host__toast-region">
         <div className="notification-card mt-4 flex min-h-[52px] items-center gap-3 rounded-full border border-zinc-200 bg-white/90 px-4 py-2.5 shadow-lg backdrop-blur-md">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+          <div
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${iconBg}`}
+          >
+            <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-zinc-800">

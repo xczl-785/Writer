@@ -17,7 +17,6 @@ import {
   type WorkspaceFolder,
 } from '../state/workspaceStore';
 import { useStatusStore } from '../../../state/slices/statusSlice';
-import { useNotificationStore } from '../../../state/slices/notificationSlice';
 import { WorkspaceStatePersistence } from './WorkspaceStatePersistence';
 import { FileWatcherService } from '../../../services/filewatcher';
 import type { FileChangeEvent } from '../../../services/filewatcher';
@@ -37,6 +36,7 @@ import {
   createWorkspaceLoadError,
   inferErrorType,
 } from '../../../types/WorkspaceErrors';
+import { showLevel2Toast } from '../../../services/notification/showLevel2Toast';
 
 interface WorkspaceSnapshot {
   folders: WorkspaceFolder[];
@@ -546,21 +546,15 @@ export const workspaceActions = {
       fileTreeStore.expandNode(newParentPath);
       fileTreeStore.setSelectedPath(newPath);
 
-      // Use a lightweight level1 notification for success instead of
-      // overloading the status-bar save lane.
+      // Show success toast via level2 with success tone
       const targetDisplayName = getBasename(newParentPath);
-      const successMessage = t('move.success')
-        .replace('{name}', sourceName)
-        .replace('{target}', targetDisplayName);
-      useStatusStore.getState().setStatus('idle', null);
-      useNotificationStore.getState().showNotification({
-        level: 'level1',
+      showLevel2Toast({
+        tone: 'success',
         source: 'workspace-move',
-        category: 'user',
-        reason: successMessage,
-        suggestion: successMessage,
+        reason: t('move.success')
+          .replace('{name}', sourceName)
+          .replace('{target}', targetDisplayName),
         dedupeKey: `workspace-move:${newPath}`,
-        ttlMs: 2500,
       });
 
       return { ok: true };
