@@ -10,6 +10,8 @@ import { useStatusStore } from '../../../state/slices/statusSlice';
 import { ErrorService } from '../../../services/error/ErrorService';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
 import {
+  executeCopyAsMarkdown,
+  executeCopyAsPlainText,
   executePasteCommand,
   insertClipboardHtml,
   insertClipboardText,
@@ -77,6 +79,14 @@ export function createMenuCommandHandler(
         return;
       case 'edit.copy':
         execClipboardCommand('copy', 'menu-edit-copy');
+        return;
+      case 'edit.copy_markdown':
+        editor.chain().focus().run();
+        void executeCopyAsMarkdown(editor);
+        return;
+      case 'edit.copy_plain':
+        editor.chain().focus().run();
+        void executeCopyAsPlainText(editor);
         return;
       case 'edit.paste':
         void executePasteCommand({

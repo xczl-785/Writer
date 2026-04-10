@@ -4,7 +4,7 @@ import { schema as basicSchema } from '@tiptap/pm/schema-basic';
 import { Slice } from '@tiptap/pm/model';
 import {
   createMarkdownClipboardTextParser,
-  createMarkdownClipboardTextSerializer,
+  createSmartClipboardTextSerializer,
   shouldSkipMarkdownParsingForSize,
 } from './markdownClipboard';
 import {
@@ -173,8 +173,11 @@ describe('markdownClipboard', () => {
     expect(slice.content.firstChild?.type.name).toBe('heading');
   });
 
-  it('serializes selected content to markdown text', () => {
-    const serializer = createMarkdownClipboardTextSerializer();
+  it('smart serializer strips heading syntax on a plain heading+paragraph selection', () => {
+    // With the new smart serializer the heading/paragraph combination
+    // contains no structural whitelist nodes, so the plain-text path
+    // is taken: the visible text is preserved but `#` syntax is gone.
+    const serializer = createSmartClipboardTextSerializer();
     const doc = basicSchema.node('doc', null, [
       basicSchema.node('heading', { level: 1 }, [basicSchema.text('Title')]),
       basicSchema.node('paragraph', null, [basicSchema.text('Body')]),
@@ -183,7 +186,8 @@ describe('markdownClipboard', () => {
 
     const text = serializer(slice);
 
-    expect(text).toContain('# Title');
+    expect(text).toContain('Title');
     expect(text).toContain('Body');
+    expect(text).not.toContain('#');
   });
 });

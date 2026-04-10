@@ -41,6 +41,18 @@ export function registerEditCommands(): CleanupFn {
   );
 
   cleanups.push(
+    menuCommandBus.register('menu.edit.copy_markdown', () =>
+      emitEditorCommand('edit.copy_markdown'),
+    ),
+  );
+
+  cleanups.push(
+    menuCommandBus.register('menu.edit.copy_plain', () =>
+      emitEditorCommand('edit.copy_plain'),
+    ),
+  );
+
+  cleanups.push(
     menuCommandBus.register('menu.edit.paste', () =>
       emitEditorCommand('edit.paste'),
     ),

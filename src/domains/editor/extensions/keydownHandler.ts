@@ -4,15 +4,26 @@
 import { TextSelection } from '@tiptap/pm/state';
 import { CellSelection, deleteCellSelection } from '@tiptap/pm/tables';
 import type { EditorView } from '@tiptap/pm/view';
+import type { Editor as TiptapEditor } from '@tiptap/react';
 import { setNextPasteIntent } from '../integration/pasteIntentController';
+import {
+  executeCopyAsMarkdown,
+  executeCopyAsPlainText,
+} from '../integration/copyCommandBridge';
+
+type EditorRef = { current: TiptapEditor | null };
 
 /**
  * Creates a keydown handler for special editor key events:
  * - Cmd/Ctrl+S: Save trigger (logged, actual save handled elsewhere)
+ * - Cmd/Ctrl+Shift+V: plain paste intent
+ * - Cmd/Ctrl+Shift+C: copy as Markdown (explicit override)
+ * - Cmd/Ctrl+Shift+Alt+C: copy as plain text (explicit override)
  * - Backspace/Delete in table cell selection: Delete cell content
  * - ArrowLeft at block start before table: Navigate into table
  */
-export function createEditorKeyDownHandler() {
+export function createEditorKeyDownHandler(options: { editorRef: EditorRef }) {
+  const { editorRef } = options;
   return (view: EditorView, event: KeyboardEvent): boolean => {
     // Cmd/Ctrl + S: Save
     if ((event.metaKey || event.ctrlKey) && event.key === 's') {
@@ -25,11 +36,44 @@ export function createEditorKeyDownHandler() {
     if (
       (event.metaKey || event.ctrlKey) &&
       event.shiftKey &&
-      event.key === 'v'
+      !event.altKey &&
+      (event.key === 'v' || event.key === 'V')
     ) {
       setNextPasteIntent('plain');
       event.preventDefault();
       return true;
+    }
+
+    // Cmd/Ctrl + Shift + Alt + C: copy as plain text (must come first
+    // because without Alt guarding the Markdown branch would also
+    // match when Alt is held).
+    if (
+      (event.metaKey || event.ctrlKey) &&
+      event.shiftKey &&
+      event.altKey &&
+      (event.key === 'c' || event.key === 'C')
+    ) {
+      const editor = editorRef.current;
+      if (editor) {
+        event.preventDefault();
+        void executeCopyAsPlainText(editor);
+        return true;
+      }
+    }
+
+    // Cmd/Ctrl + Shift + C: copy as Markdown
+    if (
+      (event.metaKey || event.ctrlKey) &&
+      event.shiftKey &&
+      !event.altKey &&
+      (event.key === 'c' || event.key === 'C')
+    ) {
+      const editor = editorRef.current;
+      if (editor) {
+        event.preventDefault();
+        void executeCopyAsMarkdown(editor);
+        return true;
+      }
     }
 
     // Backspace/Delete in table cell selection
