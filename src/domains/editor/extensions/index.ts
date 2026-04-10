@@ -6,3 +6,4 @@
 export { createToolbarShortcutExtension } from './toolbarShortcuts';
 export { createFindReplaceShortcutExtension } from './findReplaceShortcuts';
 export { createEditorKeyDownHandler } from './keydownHandler';
+export { LoadDocument } from './loadDocument';

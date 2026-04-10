@@ -36,6 +36,7 @@ import {
   createEditorKeyDownHandler,
   createFindReplaceShortcutExtension,
   createToolbarShortcutExtension,
+  LoadDocument,
 } from '../extensions';
 import { useTransientStatus } from '../hooks/useTransientStatus';
 import { useFindReplace } from '../hooks/useFindReplace';
@@ -259,6 +260,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
             };
           },
         }),
+        LoadDocument,
         Image.extend({
           addAttributes() {
             return {
@@ -408,8 +410,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         setIsLoading(true);
         try {
           const json = await MarkdownService.parse(content);
-          if (isMounted)
-            editor.commands.setContent(json, { emitUpdate: false });
+          if (isMounted) editor.commands.loadDocument(json);
         } catch (error) {
           ErrorService.handle(error, 'Failed to load editor content');
         } finally {
