@@ -30,6 +30,7 @@ import {
   createEditorKeyDownHandler,
   createFindReplaceShortcutExtension,
   createToolbarShortcutExtension,
+  LoadDocument,
 } from '../extensions';
 import { useTransientStatus } from '../hooks/useTransientStatus';
 import { useFindReplace } from '../hooks/useFindReplace';
@@ -198,6 +199,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         findReplaceShortcutExtension,
         CodeBlockSelectAll,
         BlockBoundaryExtension.configure({ showCodeBlock: false }),
+        LoadDocument,
         ...createEditorSchemaExtensions({ activeFile }),
       ],
       [activeFile, findReplaceShortcutExtension, toolbarShortcutExtension],
@@ -351,30 +353,29 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
           const json = await MarkdownService.parse(content);
           if (!isMounted) return;
           try {
-            editor.commands.setContent(json, { emitUpdate: false });
+            editor.commands.loadDocument(json);
           } catch (schemaError) {
             // Schema mismatch fallback: render the raw markdown source
             // as a single plain paragraph so the user can still read
             // and edit their file instead of being presented with an
             // empty editor. Capability markdown-clipboard CR-007.
+            // Still routed through loadDocument so the fallback load
+            // also respects editor-history CR-002/CR-003/CR-006.
             ErrorService.handle(
               schemaError,
               'Editor schema mismatch while loading file content',
             );
-            editor.commands.setContent(
-              {
-                type: 'doc',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: content
-                      ? [{ type: 'text', text: content }]
-                      : undefined,
-                  },
-                ],
-              },
-              { emitUpdate: false },
-            );
+            editor.commands.loadDocument({
+              type: 'doc',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: content
+                    ? [{ type: 'text', text: content }]
+                    : undefined,
+                },
+              ],
+            });
           }
         } catch (parseError) {
           ErrorService.handle(parseError, 'Failed to parse markdown content');

@@ -7,3 +7,4 @@ export { createToolbarShortcutExtension } from './toolbarShortcuts';
 export { createFindReplaceShortcutExtension } from './findReplaceShortcuts';
 export { createEditorKeyDownHandler } from './keydownHandler';
 export { CodeBlockSelectAll } from './codeBlockSelectAll';
+export { LoadDocument } from './loadDocument';
