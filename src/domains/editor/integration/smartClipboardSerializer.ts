@@ -2,19 +2,28 @@
  * Smart clipboard text serializer.
  *
  * Picks between Markdown source and plain text for the `text/plain`
- * clipboard channel based on the actual content of the user's selection:
+ * clipboard channel based on whether the user's selection crosses
+ * a structural block boundary:
  *
- *  - If the selection contains any structural node (list, task list,
- *    code block, blockquote, horizontal rule, table, inline code) the
- *    Markdown source is emitted — the syntax carries information the
- *    user would lose otherwise.
- *  - Otherwise the selection is projected to plain text with all
- *    visual-only marks (bold, italic, link, highlight, ...) stripped.
+ *  - **Detector A** — the slice wraps exactly one structural block
+ *    (e.g. a drag-selection that happened to include the whole code
+ *    block): emit the plain-text projection of that block.
+ *  - **Detector B** — the selection endpoints share a structural
+ *    ancestor (e.g. Ctrl+A inside a codeBlock, or a drag inside a
+ *    single blockquote / list item / table cell): emit the
+ *    plain-text projection.
+ *  - **Legacy fallback** — the slice contains a structural node
+ *    reachable via `descendants` but neither detector fired: the
+ *    selection genuinely crosses block boundaries, so the structural
+ *    syntax is needed. Emit Markdown source.
+ *  - Otherwise: plain text.
  *
  * The whitelist is the authoritative source for capability
- * `markdown-clipboard` CR-013.
+ * `markdown-clipboard` CR-013; the "wholly inside a structural
+ * block" exception is documented in the same CR.
  */
 import type { Node as ProseMirrorNode, Slice } from '@tiptap/pm/model';
+import type { EditorState, Selection } from '@tiptap/pm/state';
 import { markdownManager } from '../../../services/markdown/MarkdownService';
 
 export const STRUCTURAL_NODE_TYPES: ReadonlySet<string> = new Set([
@@ -39,6 +48,50 @@ export const STRUCTURAL_MARK_TYPES: ReadonlySet<string> = new Set([
   // Inline code is a mark in ProseMirror, not a node.
   'code',
 ]);
+
+/**
+ * Detector A: the slice is exactly one fully-closed structural
+ * block. A drag-selection that happens to include the whole block
+ * (boundaries included) produces such a slice. The block's syntax
+ * carries no information beyond its plain-text projection because
+ * the user clearly knows they are inside that block.
+ */
+export function isSliceJustOneStructuralBlock(slice: Slice): boolean {
+  if (slice.openStart !== 0 || slice.openEnd !== 0) return false;
+  if (slice.content.childCount !== 1) return false;
+  const child = slice.content.firstChild;
+  if (!child) return false;
+  return STRUCTURAL_NODE_TYPES.has(child.type.name);
+}
+
+/**
+ * Detector B: the selection endpoints share a structural ancestor.
+ * Walks the shared ancestor chain from `sharedDepth` down to (but
+ * not including) the doc root, returning true on the first node
+ * whose type is in the structural whitelist. When this fires, the
+ * user's selection is entirely contained within one structural
+ * block (codeBlock, blockquote, listItem, tableCell, ...) and the
+ * block's structural syntax is redundant with the text content.
+ *
+ * Note: the shared ancestor chain deliberately walks ALL depths
+ * from `sharedDepth` down to 1, not just the direct parent. This
+ * means a selection that spans two paragraphs inside the same
+ * blockquote still counts as "wholly inside one blockquote". The
+ * semantics of "cross-sibling-listItem" are flagged as a decision
+ * point in FIX-CODE-BLOCK-COPY.md §7 — the default implementation
+ * here picks Option X (sharedDepth simple form).
+ */
+export function isSelectionWhollyInsideStructuralBlock(
+  selection: Selection,
+): boolean {
+  const { $from, $to } = selection;
+  const sharedDepth = $from.sharedDepth($to.pos);
+  for (let d = sharedDepth; d > 0; d--) {
+    const nodeTypeName = $from.node(d).type.name;
+    if (STRUCTURAL_NODE_TYPES.has(nodeTypeName)) return true;
+  }
+  return false;
+}
 
 /**
  * Returns true when the slice contains any node or mark that would
@@ -119,12 +172,28 @@ export function serializeSliceAsMarkdown(slice: Slice): string {
 }
 
 /**
- * Factory for the ProseMirror `clipboardTextSerializer` prop: returns
- * the smart serializer that picks Markdown vs plain text based on
- * selection content.
+ * Factory for the ProseMirror `clipboardTextSerializer` prop.
+ *
+ * Accepts an optional `getEditorState` closure that the returned
+ * serializer dereferences at copy time to read the current
+ * selection. ProseMirror's `clipboardTextSerializer` hook does not
+ * receive state/view, so the closure is how Detector B gets access
+ * to the selection shape.
+ *
+ * Passing no argument keeps the legacy (slice-only) behavior for
+ * backward compatibility and unit tests that do not need Detector B.
  */
-export function createSmartClipboardTextSerializer() {
+export function createSmartClipboardTextSerializer(
+  getEditorState: () => EditorState | null = () => null,
+): (slice: Slice) => string {
   return (slice: Slice): string => {
+    const state = getEditorState();
+    if (state && isSelectionWhollyInsideStructuralBlock(state.selection)) {
+      return serializeSliceAsPlainText(slice);
+    }
+    if (isSliceJustOneStructuralBlock(slice)) {
+      return serializeSliceAsPlainText(slice);
+    }
     if (containsStructuralNode(slice)) {
       return serializeSliceAsMarkdown(slice);
     }

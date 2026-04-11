@@ -26,6 +26,7 @@ import {
 import { FindReplacePanel } from '../ui/components/FindReplacePanel';
 import { useImagePaste } from '../hooks/useImagePaste';
 import {
+  CodeBlockSelectAll,
   createEditorKeyDownHandler,
   createFindReplaceShortcutExtension,
   createToolbarShortcutExtension,
@@ -195,6 +196,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       () => [
         toolbarShortcutExtension,
         findReplaceShortcutExtension,
+        CodeBlockSelectAll,
         BlockBoundaryExtension.configure({ showCodeBlock: false }),
         ...createEditorSchemaExtensions({ activeFile }),
       ],
@@ -206,7 +208,10 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       [],
     );
     const clipboardTextSerializer = useMemo(
-      () => createSmartClipboardTextSerializer(),
+      () =>
+        createSmartClipboardTextSerializer(
+          () => editorRef.current?.state ?? null,
+        ),
       [],
     );
 

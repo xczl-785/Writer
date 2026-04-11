@@ -39,6 +39,9 @@
   - Mod-Alt-c stays bound to insert-code-block and is not reused
   - menu, context menu, and shortcut stay aligned
   - editor schema remains a superset of the MarkdownService schema (CR-018)
+  - Ctrl+A inside a codeBlock first selects the block's content; second press escalates to whole document
+  - Selection wholly inside a single blockquote / list item / table cell copies plain text (no `>`, `-`, `|` syntax)
+  - Selection that drag-wraps exactly one structural block (e.g. a whole code block including its boundaries) copies plain text, not Markdown with fences
 - **last_verified**: 2026-04-11
 
 ---
@@ -58,9 +61,11 @@ For application-driven paste entry points such as the custom editor context menu
 | `EditorImpl.editorProps.clipboardTextParser`                         | text paste reaches ProseMirror parser branch | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | main parse entry                   |
 | `EditorImpl.editorProps.clipboardTextSerializer`                     | text copy/cut requests plain text            | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | main serialize entry               |
 | `createMarkdownClipboardTextParser`                                  | plain-text paste conversion                  | `src/domains/editor/integration/markdownClipboard.ts`                                                                                           | consumes Writer-owned intent first |
-| `createSmartClipboardTextSerializer`                                 | text/plain copy routing                      | `src/domains/editor/integration/smartClipboardSerializer.ts:126`                                                                                | whitelist-driven plain vs markdown |
-| `executeCopyAsMarkdown` / `executeCopyAsPlainText`                   | explicit copy commands                       | `src/domains/editor/integration/copyCommandBridge.ts:95`, `:109`                                                                                | bypass smart router deterministically |
-| `editor.view.setProps({ clipboardSerializer })`                      | text/html copy channel                       | `src/domains/editor/core/EditorImpl.tsx:388-398`                                                                                                | DOMSerializer-backed rich channel  |
+| `createSmartClipboardTextSerializer`                                 | text/plain copy routing                      | `src/domains/editor/integration/smartClipboardSerializer.ts`                                                                                    | Detector A + Detector B + legacy fallback (CR-013) |
+| `isSliceJustOneStructuralBlock` / `isSelectionWhollyInsideStructuralBlock` | CR-013 Detectors A and B               | `src/domains/editor/integration/smartClipboardSerializer.ts`                                                                                    | single-block exception predicates   |
+| `CodeBlockSelectAll` extension                                       | Ctrl+A inside a codeBlock                    | `src/domains/editor/extensions/codeBlockSelectAll.ts`                                                                                           | CR-019: first press selects block content, second press escalates |
+| `executeCopyAsMarkdown` / `executeCopyAsPlainText`                   | explicit copy commands                       | `src/domains/editor/integration/copyCommandBridge.ts`                                                                                           | bypass smart router deterministically |
+| `editor.view.setProps({ clipboardSerializer })`                      | text/html copy channel                       | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | DOMSerializer-backed rich channel  |
 | `setNextPasteIntent / consumeNextPasteIntent / clearNextPasteIntent` | pure-paste intent lifecycle                  | `src/domains/editor/integration/pasteIntentController.ts`                                                                                       | one-shot boundary                  |
 | `executePasteCommand`                                                | menu/context paste bridge                    | `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                          | shared paste execution helper      |
 | `readClipboardPayload`                                               | desktop/web clipboard payload fallback       | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                           | returns HTML/text when available   |
@@ -166,31 +171,49 @@ Every mark type and node type registered in `MarkdownService`'s `markdownExtensi
 
 ---
 
-### CR-013: Structural node whitelist (single source of truth)
+### CR-013: Structural node whitelist + single-block-scoped plain-text exception
 
-The smart copy serializer determines its output format by checking whether the selected slice contains **any** node whose type name matches the following whitelist. The whitelist is the single source of truth for "this content cannot be losslessly expressed as plain text":
+The smart copy serializer decides between Markdown source and plain text by asking **whether the selection crosses a structural boundary**, not merely whether it contains a structural node. The rule can be stated in one sentence:
 
-| Node type           | Rationale                                                                 |
-| ------------------- | ------------------------------------------------------------------------- |
-| `bulletList`        | List structure carries semantic hierarchy                                 |
-| `orderedList`       | List structure carries numbering semantics                                |
-| `taskList`          | Task checkbox state is semantic, not visual                               |
-| `listItem` / `taskItem` | Implied by list ancestors; safety net                                 |
-| `codeBlock`         | Code fences and language identifiers are part of the content              |
-| `code` (inline mark) | Inline code backticks are semantic; users select them intentionally      |
-| `table` / `tableRow` / `tableCell` / `tableHeader` | Grid structure cannot be flattened losslessly |
-| `blockquote`        | Quotation attribution is semantic                                         |
-| `horizontalRule`    | A divider is content, not styling                                         |
+> _Ctrl+C emits plain text. It only emits Markdown when the selection crosses or wraps a structural block boundary._
 
-Nodes **not** on the whitelist (and therefore safe to project to plain text):
+Concretely, the serializer applies the following checks in order:
 
-- `paragraph`, `heading` (headings strip the `#` prefix — the visible text is what the user selected)
-- `hardBreak` (renders as `\n`)
-- Inline marks: `bold`, `italic`, `strike`, `underline`, `link`, `highlight`, etc.
+1. **Detector A — slice wraps exactly one structural block**: If `slice.openStart === 0 && slice.openEnd === 0 && slice.content.childCount === 1` and the single child's type is in the structural whitelist, the selection is a drag-select that happened to include the whole block and its boundaries. Output: plain text projection of that block.
+2. **Detector B — selection is wholly inside one structural block**: If the selection endpoints' shared ancestor chain (walked from `$from.sharedDepth($to.pos)` upward) contains any node whose type is in the structural whitelist, the selection lives inside that structural block. Output: plain text projection of the slice. Detector B is stateless and runs against the live editor selection via a closure injected into the serializer factory.
+3. **Legacy fallback — slice contains a structural node reachable via `descendants`**: If neither Detector A nor Detector B fires, fall back to the original check. If this returns true the selection genuinely crosses block boundaries (e.g. spans a paragraph followed by a list) and the structural syntax is needed to express it. Output: Markdown source.
+4. **Default**: Plain text projection.
 
-**Rationale**: Headings are explicitly **not** on the whitelist — selecting the visible text of a heading should give the user that text, not `# text`. If a user wants the Markdown source of a heading, they invoke the explicit "Copy as Markdown" entry (CR-015).
+**Cross-sibling semantics (Option X)**: Detector B walks ALL ancestor depths from `sharedDepth` down to 1, not just the direct parent. This means selections that cross sibling `listItem`s inside the same `bulletList`, or sibling `tableCell`s inside the same `table`, or two paragraphs inside the same `blockquote`, all count as "wholly inside one structural block" and route to plain text. The mental model is _"as long as you are still inside one structural container, the container's syntax is redundant with the text you already selected"_. If a user wants the Markdown syntax for such a selection, they invoke the explicit Copy as Markdown command (CR-015).
 
-**Evidence**: `src/domains/editor/integration/smartClipboardSerializer.ts:20-45` — `STRUCTURAL_NODE_TYPES` / `STRUCTURAL_MARK_TYPES` constants; `src/domains/editor/integration/smartClipboardSerializer.ts:47-72` — `containsStructuralNode(slice)` predicate. Regression test: `src/domains/editor/integration/smartClipboardSerializer.test.ts`.
+**Structural node whitelist** (single source of truth for Detectors A / B and the legacy fallback):
+
+| Node type                                          | Rationale                                                             |
+| -------------------------------------------------- | --------------------------------------------------------------------- |
+| `bulletList` / `orderedList` / `taskList`          | List structure carries semantic hierarchy and numbering / check state |
+| `listItem` / `taskItem`                            | Direct parent of inline content inside lists; Detector B anchor       |
+| `codeBlock`                                        | Code fences and language identifiers are part of the content          |
+| `blockquote`                                       | Quotation structure is semantic                                       |
+| `horizontalRule`                                   | Divider is content, not styling                                       |
+| `table` / `tableRow` / `tableCell` / `tableHeader` | Grid structure cannot be flattened losslessly across blocks           |
+
+**Structural mark whitelist** (checked separately in the legacy fallback — marks have no ancestor semantics):
+
+| Mark type | Rationale                                                          |
+| --------- | ------------------------------------------------------------------ |
+| `code`    | Inline code backticks are semantic; users select them to keep them |
+
+**Nodes intentionally NOT on the whitelist** (plain-text-safe):
+
+- `paragraph`, `heading` — the visible text is what the user selected; if they want `#` they use Copy as Markdown (CR-015)
+- `hardBreak` — renders as `\n`
+- All visual-only inline marks: `bold`, `italic`, `strike`, `underline`, `link`, `highlight`, etc.
+
+**Rationale for the single-block exception**: When a user's selection is confined to one structural block (or one structural container, per Option X), the block's structural syntax (fences, `>`, `-`, `|`) carries no information beyond what the plain text already conveys — the user knows they are inside that block and does not need the markup. Crossing a boundary is the only signal that the structure itself is part of what the user is copying.
+
+This rule is intentionally more aggressive than Typora's (which only special-cases `codeBlock` via `Ctrl+A`) and Obsidian's (which has no such handling at all). See `Writer-Docs-Internal/plans/FIX-CODE-BLOCK-COPY.md` §2 for the comparative study.
+
+**Evidence**: `src/domains/editor/integration/smartClipboardSerializer.ts` — `STRUCTURAL_NODE_TYPES` / `STRUCTURAL_MARK_TYPES` constants, `isSliceJustOneStructuralBlock`, `isSelectionWhollyInsideStructuralBlock`, `containsStructuralNode` predicates, and their composition in `createSmartClipboardTextSerializer(getEditorState)`. Regression coverage in `src/domains/editor/integration/smartClipboardSerializer.test.ts` "single-block refinement (CR-013 revision)" block (T1–T12).
 
 ---
 
@@ -243,6 +266,7 @@ When invoked, it bypasses the smart serializer and writes the plain-text project
 | `Cmd/Ctrl+C`              | Smart copy (CR-008) | Native browser copy event → ProseMirror clipboard hooks   |
 | `Cmd/Ctrl+Shift+C`        | Copy as Markdown    | `src/domains/editor/extensions/keydownHandler.ts`         |
 | `Cmd/Ctrl+Shift+Alt+C`    | Copy as Plain Text  | `src/domains/editor/extensions/keydownHandler.ts`         |
+| `Cmd/Ctrl+A` (in codeBlock) | Select block content (CR-019) | `src/domains/editor/extensions/codeBlockSelectAll.ts` |
 | `Cmd/Ctrl+V`              | Smart paste         | Existing paste pipeline (unchanged)                       |
 | `Cmd/Ctrl+Shift+V`        | Paste as Plain Text | Existing (CR-009, unchanged)                              |
 
@@ -251,8 +275,28 @@ When invoked, it bypasses the smart serializer and writes the plain-text project
 - `Mod-Alt-c` is reserved for **insert code block** (`src/domains/editor/core/constants.ts:156`) and must not be used for copy-related actions
 - `Mod-Shift-c` was previously unused; now claimed by Copy as Markdown
 - `Mod-Shift-Alt-c` was previously unused; now claimed by Copy as Plain Text
+- `Mod-a` is normally handled by ProseMirror's default `selectAll` command; `CodeBlockSelectAll` intercepts it ONLY when the cursor is inside a `codeBlock`, and even then declines (returns `false`) when the selection already matches the block content, which lets the default escalate to whole-document selection. No conflict with the default behavior outside code blocks.
 
-**Evidence**: `src/domains/editor/extensions/keydownHandler.ts`, `src/domains/editor/core/constants.ts:156`
+**Known limitation (Windows)**: `Ctrl+Shift+C` did not reliably trigger Copy as Markdown on Windows in release builds during the 2026-04-11 regression pass. The menu entries and context menu entries work correctly, but the keyboard path does not deliver the keydown event to the editor handler. Root cause not yet located — tracked as `current/跟踪/遗留问题.md` #13. Users on Windows should use the Edit menu or editor context menu until that is resolved.
+
+**Evidence**: `src/domains/editor/extensions/keydownHandler.ts`, `src/domains/editor/extensions/codeBlockSelectAll.ts`, `src/domains/editor/core/constants.ts:156`
+
+---
+
+### CR-019: Ctrl+A inside a code block first selects the block's content
+
+When the editor focus is inside a `codeBlock` node and the user invokes the `Mod-a` (Select All) keyboard shortcut, Writer intercepts the command and sets the selection to the code block's content range (`$from.start()` to `$from.end()`) instead of the document-wide selection produced by Tiptap's default behavior.
+
+**Escape hatch**: If the current selection already covers exactly the code block's content range (i.e. `selection.from === $from.start() && selection.to === $from.end()`), Writer declines to handle the shortcut and returns `false`, allowing ProseMirror's default `selectAll` command to fire and escalate the selection to the whole document. This gives users a natural "second press = whole doc" gesture **without** introducing any cross-keypress state tracking — the decision is computed solely from the current selection shape at call time.
+
+**Non-goals**:
+
+- This rule applies **only** to `codeBlock`. Ctrl+A in paragraph / heading / blockquote / list / table / root position keeps Tiptap's default (select whole document). Extending this rule to other block types would violate user muscle memory built from every other editor.
+- This is **not** a generalized "smart select" feature. It exists because users copying code overwhelmingly want "the code in this fence", and Ctrl+A is the most natural gesture for that intent.
+
+**Interaction with CR-013**: After the Ctrl+A override fires, the selection is a `TextSelection` with `$from.parent === $to.parent === codeBlock`. CR-013's Detector B immediately recognizes this as "wholly inside one structural block" and routes the subsequent copy to plain text projection. The two rules compose cleanly — CR-019 fixes the selection shape, CR-013 handles the serialization.
+
+**Evidence**: `src/domains/editor/extensions/codeBlockSelectAll.ts`, `src/domains/editor/extensions/index.ts` (export), `src/domains/editor/core/EditorImpl.tsx` (registration in the `extensions` memo next to the other shortcut-only extensions), and regression `src/domains/editor/extensions/codeBlockSelectAll.test.ts` (T13–T16).
 
 ---
 
@@ -264,6 +308,8 @@ When invoked, it bypasses the smart serializer and writes the plain-text project
 | Paste intent lifecycle     | one-shot consume and clear-on-failure behavior                      | `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                                                                                                                     |
 | Clipboard payload fallback | desktop/web explicit HTML/text read path for app-driven paste       | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                                                                                                                                                                                 |
 | Markdown parser behavior   | normal paste, pure paste, oversize fallback, parse-failure fallback | `src/domains/editor/integration/markdownClipboard.ts`                                                                                                                                                                                                                                                 |
+| Smart copy router          | Detector A / B / legacy fallback ordering and cross-sibling (Option X) semantics | `src/domains/editor/integration/smartClipboardSerializer.ts`, `src/domains/editor/integration/smartClipboardSerializer.test.ts` (single-block refinement)                                                                                                                                         |
+| Ctrl+A in codeBlock        | CR-019 single-level override + escape hatch via returning false     | `src/domains/editor/extensions/codeBlockSelectAll.ts`, `src/domains/editor/extensions/codeBlockSelectAll.test.ts`                                                                                                                                                                                    |
 | Keyboard entry             | shortcut sets plain intent only for `Cmd/Ctrl+Shift+V`              | `src/domains/editor/extensions/keydownHandler.ts`                                                                                                                                                                                                                                                     |
 | Edit menu path             | menu command id and native menu item stay aligned                   | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                                                                                                                                                       |
 | Context menu path          | plain-paste item exists and uses shared paste bridge                | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                                                                                                                                                                               |
@@ -286,6 +332,7 @@ When invoked, it bypasses the smart serializer and writes the plain-text project
 
 - Current pure-paste cleanup is intentionally limited to one-shot consumption plus command-failure reset. `blur / timeout cleanup` has been deferred as a follow-up state-hygiene improvement and should extend `PasteIntentController` rather than spreading more state across handlers.
 - Application-driven normal paste now preserves HTML when HTML payload is available through the fallback reader. Remaining fidelity gaps mainly concern clipboard payload types outside HTML/text, such as images or editor-specific formats.
+- **Windows `Ctrl+Shift+C` delivery** (2026-04-11): the CR-015 shortcut does not reliably trigger on Windows in release builds. Menu and context-menu paths work, only the keyboard path fails. Root cause not located — no Tiptap extension binds `Mod-Shift-c`, and the path from browser keydown to `createEditorKeyDownHandler` is opaque. Tracked as `current/跟踪/遗留问题.md` #13. Users should use the Edit menu / right-click menu until resolved.
 
 ---
 
