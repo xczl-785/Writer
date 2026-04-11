@@ -4,18 +4,26 @@
 
 - **id**: `markdown-clipboard`
 - **name**: Markdown Clipboard
-- **summary**: Parse pasted plain text as Markdown by default, provide Writer-owned pure-paste bypass, and serialize copied selections back to Markdown text.
-- **scope**: Editor clipboard parser/serializer wiring, Writer-owned paste intent lifecycle, application-driven paste fallback rules, menu/context/shortcut pure-paste entry points, and regression boundaries with image paste.
+- **summary**: Parse pasted plain text as Markdown by default, provide Writer-owned pure-paste bypass, and smart-serialize copied selections (plain text by default, Markdown only when selection contains structural nodes).
+- **scope**: Editor clipboard parser/serializer/HTML-serializer wiring, Writer-owned paste intent lifecycle, application-driven paste fallback rules, smart copy structural-node whitelist, explicit Copy-as-Markdown / Copy-as-Plain commands, menu/context/shortcut entry points for both paste and copy variants, and regression boundaries with image paste.
 - **entry_points**:
   - `EditorImpl -> editorProps.clipboardTextParser`
   - `EditorImpl -> editorProps.clipboardTextSerializer`
+  - `EditorImpl -> editorProps.clipboardSerializer` (HTML)
   - `createMarkdownClipboardTextParser`
-  - `createMarkdownClipboardTextSerializer`
+  - `createSmartClipboardTextSerializer`
+  - `serializeSliceAsMarkdown` / `serializeSliceAsPlainText` (explicit commands)
   - `PasteIntentController`
   - `menu.edit.paste_plain`
+  - `menu.edit.copy_markdown`
+  - `menu.edit.copy_plain`
   - `context menu -> paste-plain`
-  - `Cmd/Ctrl+Shift+V`
-- **shared_with**: none
+  - `context menu -> copy-as-markdown`
+  - `context menu -> copy-as-plain`
+  - `Cmd/Ctrl+Shift+V` (paste plain)
+  - `Cmd/Ctrl+Shift+C` (copy as Markdown)
+  - `Cmd/Ctrl+Shift+Alt+C` (copy as plain text)
+- **shared_with**: i18n (new menu labels), command-system (new commands)
 - **check_on_change**:
   - normal plain-text paste still parses Markdown
   - pure paste still inserts raw text
@@ -24,6 +32,11 @@
   - image paste is still handled by the image path
   - VSCode markdown paste is intercepted and routed through text/plain parser
   - indentation retry activates only for sole-codeBlock degeneration and preserves genuine code blocks
+  - default Ctrl+C on an inline selection inside formatted text produces plain text (no markdown syntax)
+  - default Ctrl+C on a selection containing a list / code block / table / blockquote / horizontal rule / inline code produces Markdown source
+  - default Ctrl+C writes both text/plain and text/html; explicit Copy-as-Plain writes only text/plain
+  - Copy as Markdown / Copy as Plain Text commands align across shortcut, menu, and context menu
+  - Mod-Alt-c stays bound to insert-code-block and is not reused
   - menu, context menu, and shortcut stay aligned
   - editor schema remains a superset of the MarkdownService schema (CR-018)
 - **last_verified**: 2026-04-11
@@ -45,7 +58,9 @@ For application-driven paste entry points such as the custom editor context menu
 | `EditorImpl.editorProps.clipboardTextParser`                         | text paste reaches ProseMirror parser branch | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | main parse entry                   |
 | `EditorImpl.editorProps.clipboardTextSerializer`                     | text copy/cut requests plain text            | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | main serialize entry               |
 | `createMarkdownClipboardTextParser`                                  | plain-text paste conversion                  | `src/domains/editor/integration/markdownClipboard.ts`                                                                                           | consumes Writer-owned intent first |
-| `createMarkdownClipboardTextSerializer`                              | selection to Markdown text                   | `src/domains/editor/integration/markdownClipboard.ts`                                                                                           | uses shared markdown manager       |
+| `createSmartClipboardTextSerializer`                                 | text/plain copy routing                      | `src/domains/editor/integration/smartClipboardSerializer.ts:126`                                                                                | whitelist-driven plain vs markdown |
+| `executeCopyAsMarkdown` / `executeCopyAsPlainText`                   | explicit copy commands                       | `src/domains/editor/integration/copyCommandBridge.ts:95`, `:109`                                                                                | bypass smart router deterministically |
+| `editor.view.setProps({ clipboardSerializer })`                      | text/html copy channel                       | `src/domains/editor/core/EditorImpl.tsx:388-398`                                                                                                | DOMSerializer-backed rich channel  |
 | `setNextPasteIntent / consumeNextPasteIntent / clearNextPasteIntent` | pure-paste intent lifecycle                  | `src/domains/editor/integration/pasteIntentController.ts`                                                                                       | one-shot boundary                  |
 | `executePasteCommand`                                                | menu/context paste bridge                    | `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                          | shared paste execution helper      |
 | `readClipboardPayload`                                               | desktop/web clipboard payload fallback       | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                           | returns HTML/text when available   |
@@ -100,11 +115,20 @@ If input exceeds the parse threshold, Markdown parsing throws, **or the parsed J
 
 **Evidence**: `src/domains/editor/integration/markdownClipboard.ts` — `tryMarkdownParse` guards the parse step, `tryNodeFromJSON` guards the schema resolution step, and the file-load path in `src/domains/editor/core/EditorImpl.tsx` wraps `editor.commands.setContent` in an inner try/catch that falls back to a single plain paragraph containing the raw markdown source.
 
-### CR-008: Copied selections serialize back to Markdown text
+### CR-008: Default copy uses structural-aware smart serialization
 
-Selected slice content is wrapped as a `doc` payload and serialized through the shared `markdownManager`.
+When the user invokes the default copy action (`Ctrl/Cmd+C`, system-level cut, drag-to-copy), Writer writes multiple MIME formats to the clipboard simultaneously:
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`, `src/services/markdown/MarkdownService.ts`
+- `text/plain`: determined by a deterministic **structural node whitelist** check against the selected slice
+  - If the selection contains **no** whitelisted structural nodes → plain-text projection (visible text only, inline marks stripped, block boundaries rendered as `\n\n`)
+  - If the selection contains **any** whitelisted structural node → Markdown source via shared `markdownManager.serialize`
+- `text/html`: ProseMirror default DOM serializer output (for rich-text targets)
+
+The whitelist is intentionally narrow and fully enumerated so the rule is explainable in one sentence: *"Ctrl+C gives you plain text; it only keeps Markdown syntax when the selection contains structural elements that would lose information without it."*
+
+**Rationale**: `text/plain` is the OS-universal fallback consumed by every target (Notepad, Slack, terminals, search boxes). Filling it unconditionally with Markdown syntax produces broken UX in the vast majority of copy destinations. At the same time, silently stripping structure when the user genuinely selected a list/code block/table would be a worse data-loss failure. The whitelist resolves both concerns deterministically.
+
+**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`, `src/services/markdown/MarkdownService.ts`, regression test `src/domains/editor/integration/markdownClipboard.test.ts`
 
 ### CR-009: Menu, context menu, and shortcut all align on Writer-owned pure-paste behavior
 
@@ -139,6 +163,96 @@ Every mark type and node type registered in `MarkdownService`'s `markdownExtensi
 **Enforcement**: `src/domains/editor/__tests__/schemaConsistency.test.ts` enumerates both schemas with `getSchema(...)` and asserts the subset relationship at the mark and node level. CI runs this test on every commit.
 
 **Evidence**: `src/domains/editor/core/editorExtensions.ts`, `src/services/markdown/MarkdownService.ts` (`markdownExtensions`), `src/domains/editor/__tests__/schemaConsistency.test.ts`
+
+---
+
+### CR-013: Structural node whitelist (single source of truth)
+
+The smart copy serializer determines its output format by checking whether the selected slice contains **any** node whose type name matches the following whitelist. The whitelist is the single source of truth for "this content cannot be losslessly expressed as plain text":
+
+| Node type           | Rationale                                                                 |
+| ------------------- | ------------------------------------------------------------------------- |
+| `bulletList`        | List structure carries semantic hierarchy                                 |
+| `orderedList`       | List structure carries numbering semantics                                |
+| `taskList`          | Task checkbox state is semantic, not visual                               |
+| `listItem` / `taskItem` | Implied by list ancestors; safety net                                 |
+| `codeBlock`         | Code fences and language identifiers are part of the content              |
+| `code` (inline mark) | Inline code backticks are semantic; users select them intentionally      |
+| `table` / `tableRow` / `tableCell` / `tableHeader` | Grid structure cannot be flattened losslessly |
+| `blockquote`        | Quotation attribution is semantic                                         |
+| `horizontalRule`    | A divider is content, not styling                                         |
+
+Nodes **not** on the whitelist (and therefore safe to project to plain text):
+
+- `paragraph`, `heading` (headings strip the `#` prefix — the visible text is what the user selected)
+- `hardBreak` (renders as `\n`)
+- Inline marks: `bold`, `italic`, `strike`, `underline`, `link`, `highlight`, etc.
+
+**Rationale**: Headings are explicitly **not** on the whitelist — selecting the visible text of a heading should give the user that text, not `# text`. If a user wants the Markdown source of a heading, they invoke the explicit "Copy as Markdown" entry (CR-015).
+
+**Evidence**: `src/domains/editor/integration/smartClipboardSerializer.ts:20-45` — `STRUCTURAL_NODE_TYPES` / `STRUCTURAL_MARK_TYPES` constants; `src/domains/editor/integration/smartClipboardSerializer.ts:47-72` — `containsStructuralNode(slice)` predicate. Regression test: `src/domains/editor/integration/smartClipboardSerializer.test.ts`.
+
+---
+
+### CR-014: HTML clipboard serializer is wired for rich-text targets
+
+Writer configures `editorProps.clipboardSerializer` (the DOM serializer) in addition to `clipboardTextSerializer` (the text serializer), so that rich-text paste targets (browsers, Word, Gmail, etc.) receive proper HTML instead of falling back to plain text. The HTML serializer uses ProseMirror's default DOM serializer derived from the editor schema.
+
+**Rationale**: Historically Writer only wired `clipboardTextSerializer`, leaving HTML to ProseMirror defaults. With the new plain-text-biased `text/plain` behavior (CR-008), a properly populated `text/html` channel becomes load-bearing — it is the format that rich targets consume to preserve formatting.
+
+**Evidence**: `src/domains/editor/core/EditorImpl.tsx:388-398` — post-mount `useEffect` attaches `DOMSerializer.fromSchema(editor.schema)` via `editor.view.setProps({ clipboardSerializer })`. Regression test: `src/domains/editor/core/EditorClipboardContracts.test.ts`.
+
+---
+
+### CR-015: Explicit "Copy as Markdown" command forces Markdown source output
+
+`Copy as Markdown` is a first-class command exposed via three entry points:
+
+- **Keyboard**: `Cmd/Ctrl+Shift+C`
+- **Edit menu**: `复制为 Markdown` / `Copy as Markdown`
+- **Editor context menu**: `复制为 Markdown` / `Copy as Markdown`
+
+When invoked, it bypasses the smart serializer (CR-008) and writes Markdown source via `markdownManager.serialize` into `text/plain`, regardless of selection shape. `text/html` still carries the HTML version per CR-014.
+
+**Rationale**: Deterministic escape hatch for users who specifically need Markdown source (e.g., pasting into another Markdown editor, documentation, or a chat where they want raw syntax).
+
+**Evidence**: `src/domains/editor/integration/copyCommandBridge.ts:95-107` (command core), `src/app/commands/editCommands.ts` (`menu.edit.copy_markdown`), `src/domains/editor/handlers/menuCommandHandler.ts` (`edit.copy_markdown` case), `src/domains/editor/handlers/contextMenuHandler.ts` (`onCopyAsMarkdown` binding), `src/domains/editor/extensions/keydownHandler.ts` (Mod-Shift-c branch), `src/ui/chrome/menuSchema.ts` (`menu.edit.copy_markdown` entry), `src-tauri/src/menu.rs` (native menu item). Regression test: `src/domains/editor/integration/copyCommandBridge.test.ts`.
+
+---
+
+### CR-016: Explicit "Copy as Plain Text" command forces plain-text output
+
+`Copy as Plain Text` is the reverse fallback to CR-015, exposed via three entry points:
+
+- **Keyboard**: `Cmd/Ctrl+Shift+Alt+C`
+- **Edit menu**: `复制为纯文本` / `Copy as Plain Text`
+- **Editor context menu**: `复制为纯文本` / `Copy as Plain Text`
+
+When invoked, it bypasses the smart serializer and writes the plain-text projection of the selection into `text/plain`, regardless of whether the selection contains whitelisted structural nodes. `text/html` is **omitted** (not written) in this path, so that rich-text targets also consume plain text.
+
+**Rationale**: Covers the scenario where the user intentionally wants to strip all formatting (e.g., copying a code snippet out of a fenced block for a non-code target, extracting text from a quoted block for citation). Without this entry, users selecting a code block have no way to get "just the code without the fences" besides manual post-edit.
+
+**Evidence**: `src/domains/editor/integration/copyCommandBridge.ts:109-118` (command core; `text/html` is deliberately NOT written — only `text/plain`), `src/app/commands/editCommands.ts` (`menu.edit.copy_plain`), `src/domains/editor/handlers/menuCommandHandler.ts` (`edit.copy_plain` case), `src/domains/editor/handlers/contextMenuHandler.ts` (`onCopyAsPlainText` binding), `src/domains/editor/extensions/keydownHandler.ts` (Mod-Shift-Alt-c branch), `src/ui/chrome/menuSchema.ts` (`menu.edit.copy_plain` entry), `src-tauri/src/menu.rs` (native menu item). Regression test: `src/domains/editor/integration/copyCommandBridge.test.ts` (`writes only text/plain and not text/html`).
+
+---
+
+### CR-017: Keyboard shortcut registry
+
+| Shortcut                  | Action              | Entry point                                               |
+| ------------------------- | ------------------- | --------------------------------------------------------- |
+| `Cmd/Ctrl+C`              | Smart copy (CR-008) | Native browser copy event → ProseMirror clipboard hooks   |
+| `Cmd/Ctrl+Shift+C`        | Copy as Markdown    | `src/domains/editor/extensions/keydownHandler.ts`         |
+| `Cmd/Ctrl+Shift+Alt+C`    | Copy as Plain Text  | `src/domains/editor/extensions/keydownHandler.ts`         |
+| `Cmd/Ctrl+V`              | Smart paste         | Existing paste pipeline (unchanged)                       |
+| `Cmd/Ctrl+Shift+V`        | Paste as Plain Text | Existing (CR-009, unchanged)                              |
+
+**Conflict audit**:
+
+- `Mod-Alt-c` is reserved for **insert code block** (`src/domains/editor/core/constants.ts:156`) and must not be used for copy-related actions
+- `Mod-Shift-c` was previously unused; now claimed by Copy as Markdown
+- `Mod-Shift-Alt-c` was previously unused; now claimed by Copy as Plain Text
+
+**Evidence**: `src/domains/editor/extensions/keydownHandler.ts`, `src/domains/editor/core/constants.ts:156`
 
 ---
 

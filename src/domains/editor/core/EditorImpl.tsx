@@ -67,11 +67,12 @@ import {
   attachEditorMenuBridge,
   createEditorPasteDOMEvents,
   createMarkdownClipboardTextParser,
-  createMarkdownClipboardTextSerializer,
+  createSmartClipboardTextSerializer,
   flushEditorOnBlur,
   openEditorContextMenu as openEditorContextMenuBridge,
   persistEditorUpdate,
 } from '../integration';
+import { DOMSerializer } from '@tiptap/pm/model';
 import { handleEditorLinkClick } from '../handlers/linkClickHandler';
 import { hasActiveOverlayInDom } from '../domain';
 import '../../../ui/components/BlockBoundary/blockBoundary.css';
@@ -205,7 +206,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       [],
     );
     const clipboardTextSerializer = useMemo(
-      () => createMarkdownClipboardTextSerializer(),
+      () => createSmartClipboardTextSerializer(),
       [],
     );
 
@@ -231,7 +232,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
               'TextSelection.near',
               "nodeBefore.type.name === 'table'",
             ],
-            createEditorKeyDownHandler(),
+            createEditorKeyDownHandler({ editorRef }),
           ),
         },
         onUpdate: async ({ editor }: { editor: TiptapEditor }) => {
@@ -306,6 +307,17 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         window.removeEventListener('keyup', onKeyUp);
         window.removeEventListener('blur', remove);
       };
+    }, [editor]);
+
+    // Wire the HTML clipboard serializer (text/html channel) so rich
+    // paste targets (Word, Gmail, Notion, ...) receive styled markup.
+    // Documented as a strong constraint in capability markdown-clipboard
+    // CR-014. Must run after editor mounts because DOMSerializer needs
+    // the compiled schema.
+    useEffect(() => {
+      if (!editor) return;
+      const clipboardSerializer = DOMSerializer.fromSchema(editor.schema);
+      editor.view.setProps({ clipboardSerializer });
     }, [editor]);
 
     // Force rerender on editor events

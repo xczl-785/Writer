@@ -13,6 +13,15 @@ import {
   isRicherParse,
 } from './textNormalization';
 
+export {
+  createSmartClipboardTextSerializer,
+  serializeSliceAsMarkdown,
+  serializeSliceAsPlainText,
+  containsStructuralNode,
+  STRUCTURAL_NODE_TYPES,
+  STRUCTURAL_MARK_TYPES,
+} from './smartClipboardSerializer';
+
 export const MARKDOWN_CLIPBOARD_MAX_PARSE_BYTES = 50 * 1024;
 
 export function shouldSkipMarkdownParsingForSize(text: string): boolean {
@@ -132,19 +141,4 @@ export function insertClipboardText(
 
 export function insertClipboardHtml(editor: Editor, html: string): void {
   editor.chain().focus().insertContent(html).run();
-}
-
-export function createMarkdownClipboardTextSerializer() {
-  return (slice: Slice): string => {
-    const json = slice.content.toJSON();
-
-    if (!json || (Array.isArray(json) && json.length === 0)) {
-      return '';
-    }
-
-    return markdownManager.serialize({
-      type: 'doc',
-      content: Array.isArray(json) ? json : [json],
-    });
-  };
 }

@@ -242,6 +242,22 @@ fn build_native_menu_with_locale<R: Runtime>(
             &redo_item,
             &cut_item,
             &copy_item,
+            &item(
+                app,
+                locale,
+                "menu.edit.copy_markdown",
+                "复制为 Markdown",
+                "Copy as Markdown",
+                Some("CmdOrCtrl+Shift+C"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.edit.copy_plain",
+                "复制为纯文本",
+                "Copy as Plain Text",
+                Some("CmdOrCtrl+Shift+Alt+C"),
+            )?,
             &paste_item,
             &item(
                 app,

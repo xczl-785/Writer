@@ -10,7 +10,18 @@ export {
 export {
   insertClipboardHtml,
   createMarkdownClipboardTextParser,
-  createMarkdownClipboardTextSerializer,
   insertClipboardText,
 } from './markdownClipboard';
+export {
+  createSmartClipboardTextSerializer,
+  serializeSliceAsMarkdown,
+  serializeSliceAsPlainText,
+  containsStructuralNode,
+  STRUCTURAL_NODE_TYPES,
+  STRUCTURAL_MARK_TYPES,
+} from './smartClipboardSerializer';
+export {
+  executeCopyAsMarkdown,
+  executeCopyAsPlainText,
+} from './copyCommandBridge';
 export { persistEditorUpdate, flushEditorOnBlur } from './persistenceBridge';

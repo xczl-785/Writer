@@ -8,6 +8,8 @@ export interface EditorContextMenuActions {
   onPastePlain: () => void;
   onSelectAll: () => void;
   onCopyFullText: () => void;
+  onCopyAsMarkdown: () => void;
+  onCopyAsPlainText: () => void;
   onInsertTable: () => void;
   onInsertQuote: () => void;
 }
@@ -81,6 +83,20 @@ export function getEditorContextMenuItems(
       label: t('editor.copyFullText'),
       icon: <Rows3 size={14} />,
       action: actions.onCopyFullText,
+    },
+    {
+      id: 'copy-as-markdown',
+      label: t('editor.copyAsMarkdown'),
+      shortcut: 'Cmd+Shift+C',
+      icon: <Copy size={14} />,
+      action: actions.onCopyAsMarkdown,
+    },
+    {
+      id: 'copy-as-plain',
+      label: t('editor.copyAsPlain'),
+      shortcut: 'Cmd+Shift+Alt+C',
+      icon: <Type size={14} />,
+      action: actions.onCopyAsPlainText,
     },
     divider(),
     {
