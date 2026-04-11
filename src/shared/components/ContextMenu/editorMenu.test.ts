@@ -15,6 +15,8 @@ describe('editorMenu', () => {
       onPastePlain: noop,
       onSelectAll: noop,
       onCopyFullText: noop,
+      onCopyAsMarkdown: noop,
+      onCopyAsPlainText: noop,
       onInsertTable: noop,
       onInsertQuote: noop,
     });
@@ -25,6 +27,8 @@ describe('editorMenu', () => {
       'paste-plain',
       'select-all',
       'copy-full-text',
+      'copy-as-markdown',
+      'copy-as-plain',
       'insert-table',
       'insert-quote',
     ]);

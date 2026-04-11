@@ -14,6 +14,8 @@ import {
 } from '../../../shared/components/ContextMenu/editorMenu';
 import { DEFAULT_TABLE_INSERT } from '../core/constants';
 import {
+  executeCopyAsMarkdown,
+  executeCopyAsPlainText,
   executePasteCommand,
   insertClipboardHtml,
   insertClipboardText,
@@ -226,6 +228,12 @@ export function createContextMenuOpener(
             },
             onCopyFullText: () => {
               void copyText(editor.getText(), 'Document copied');
+            },
+            onCopyAsMarkdown: () => {
+              void executeCopyAsMarkdown(editor);
+            },
+            onCopyAsPlainText: () => {
+              void executeCopyAsPlainText(editor);
             },
             onInsertTable: () => {
               editor.chain().focus().insertTable(DEFAULT_TABLE_INSERT).run();

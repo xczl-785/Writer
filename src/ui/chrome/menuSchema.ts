@@ -218,6 +218,24 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
         accelerator: 'Ctrl+C',
       },
       {
+        id: 'menu.edit.copy_markdown',
+        labelKey: 'menu.edit.copyMarkdown',
+        fallbackLabels: {
+          'zh-CN': '复制为 Markdown',
+          'en-US': 'Copy as Markdown',
+        },
+        accelerator: 'Ctrl+Shift+C',
+      },
+      {
+        id: 'menu.edit.copy_plain',
+        labelKey: 'menu.edit.copyPlain',
+        fallbackLabels: {
+          'zh-CN': '复制为纯文本',
+          'en-US': 'Copy as Plain Text',
+        },
+        accelerator: 'Ctrl+Shift+Alt+C',
+      },
+      {
         id: 'menu.edit.paste',
         labelKey: 'menu.edit.paste',
         fallbackLabels: { 'zh-CN': '粘贴', 'en-US': 'Paste' },
