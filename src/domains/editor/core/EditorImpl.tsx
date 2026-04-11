@@ -10,20 +10,13 @@ import {
   useState,
 } from 'react';
 import { useEditor, type Editor as TiptapEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import { TaskItem, TaskList } from '@tiptap/extension-list';
-import { Table } from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import BaseTableHeader from '@tiptap/extension-table-header';
-import BaseTableCell from '@tiptap/extension-table-cell';
+import { createEditorSchemaExtensions } from './editorExtensions';
 import { useEditorStore } from '../state/editorStore';
 import { useFileTreeStore } from '../../file/state/fileStore';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { useWorkspaceStore } from '../../workspace/state/workspaceStore';
 import { ErrorService } from '../../../services/error/ErrorService';
 import { MarkdownService } from '../../../services/markdown/MarkdownService';
-import { ImageResolver } from '../../../services/images/ImageResolver';
 import { t } from '../../../shared/i18n';
 import {
   DEFAULT_TABLE_INSERT,
@@ -202,76 +195,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         toolbarShortcutExtension,
         findReplaceShortcutExtension,
         BlockBoundaryExtension.configure({ showCodeBlock: false }),
-        StarterKit.configure({
-          heading: { levels: [1, 2, 3, 4, 5, 6] },
-          link: {
-            openOnClick: false,
-            HTMLAttributes: {
-              class: 'editor-link',
-              target: null, // Prevent Tauri WebView from opening links on click
-              rel: null, // Not needed without target="_blank"
-            },
-          },
-        }),
-        TaskList,
-        TaskItem.configure({ nested: true }),
-        Table.configure({ resizable: true, allowTableNodeSelection: false }),
-        TableRow,
-        BaseTableHeader.extend({
-          addAttributes() {
-            return {
-              ...this.parent?.(),
-              textAlign: {
-                default: 'left',
-                renderHTML: (attributes) =>
-                  attributes.textAlign
-                    ? { style: `text-align: ${attributes.textAlign}` }
-                    : {},
-              },
-              borderHidden: {
-                default: false,
-                renderHTML: (attributes) =>
-                  attributes.borderHidden
-                    ? { style: 'border-style: none' }
-                    : {},
-              },
-            };
-          },
-        }),
-        BaseTableCell.extend({
-          addAttributes() {
-            return {
-              ...this.parent?.(),
-              textAlign: {
-                default: 'left',
-                renderHTML: (attributes) =>
-                  attributes.textAlign
-                    ? { style: `text-align: ${attributes.textAlign}` }
-                    : {},
-              },
-              borderHidden: {
-                default: false,
-                renderHTML: (attributes) =>
-                  attributes.borderHidden
-                    ? { style: 'border-style: none' }
-                    : {},
-              },
-            };
-          },
-        }),
-        Image.extend({
-          addAttributes() {
-            return {
-              ...this.parent?.(),
-              src: {
-                default: null,
-                renderHTML: (attributes) => ({
-                  src: ImageResolver.resolve(attributes.src, activeFile),
-                }),
-              },
-            };
-          },
-        }),
+        ...createEditorSchemaExtensions({ activeFile }),
       ],
       [activeFile, findReplaceShortcutExtension, toolbarShortcutExtension],
     );
@@ -408,10 +332,35 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         setIsLoading(true);
         try {
           const json = await MarkdownService.parse(content);
-          if (isMounted)
+          if (!isMounted) return;
+          try {
             editor.commands.setContent(json, { emitUpdate: false });
-        } catch (error) {
-          ErrorService.handle(error, 'Failed to load editor content');
+          } catch (schemaError) {
+            // Schema mismatch fallback: render the raw markdown source
+            // as a single plain paragraph so the user can still read
+            // and edit their file instead of being presented with an
+            // empty editor. Capability markdown-clipboard CR-007.
+            ErrorService.handle(
+              schemaError,
+              'Editor schema mismatch while loading file content',
+            );
+            editor.commands.setContent(
+              {
+                type: 'doc',
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: content
+                      ? [{ type: 'text', text: content }]
+                      : undefined,
+                  },
+                ],
+              },
+              { emitUpdate: false },
+            );
+          }
+        } catch (parseError) {
+          ErrorService.handle(parseError, 'Failed to parse markdown content');
         } finally {
           if (isMounted) setIsLoading(false);
         }

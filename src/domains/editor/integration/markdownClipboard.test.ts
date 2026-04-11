@@ -173,6 +173,49 @@ describe('markdownClipboard', () => {
     expect(slice.content.firstChild?.type.name).toBe('heading');
   });
 
+  it('falls back to plain text when parsed JSON references unknown mark types', () => {
+    // Regression for the 2026-04-11 bug: `==highlight==` is parsed
+    // into a JSON payload containing a `highlight` mark which the
+    // basic schema does not know about. Before the fix, this threw
+    // from `schema.nodeFromJSON` and the paste disappeared. After the
+    // fix, `tryNodeFromJSON` returns null and the parser falls back
+    // to a plain-text slice so the user still sees their text.
+    const parser = createMarkdownClipboardTextParser();
+    const state = EditorState.create({ schema: basicSchema });
+    const view = { state } as never;
+
+    const input = 'before ==highlight== after';
+    expect(() =>
+      parser(input, state.selection.$from, false, view),
+    ).not.toThrow();
+
+    const slice = parser(input, state.selection.$from, false, view);
+    expect(slice.size).toBeGreaterThan(0);
+    const flattened = slice.content.textBetween(0, slice.content.size, '\n\n');
+    expect(flattened).toContain('before');
+    expect(flattened).toContain('after');
+  });
+
+  it('falls back to plain text when parsed JSON references unknown node types', () => {
+    // Defense test for the schema-resolution guard when a NODE type
+    // (not a mark) is unknown. basicSchema has no `taskList`, so any
+    // markdown task list will hit tryNodeFromJSON and fall back.
+    const parser = createMarkdownClipboardTextParser();
+    const state = EditorState.create({ schema: basicSchema });
+    const view = { state } as never;
+
+    const input = '- [ ] first\n- [x] second';
+    expect(() =>
+      parser(input, state.selection.$from, false, view),
+    ).not.toThrow();
+
+    const slice = parser(input, state.selection.$from, false, view);
+    expect(slice.size).toBeGreaterThan(0);
+    const flattened = slice.content.textBetween(0, slice.content.size, '\n\n');
+    expect(flattened).toContain('first');
+    expect(flattened).toContain('second');
+  });
+
   it('serializes selected content to markdown text', () => {
     const serializer = createMarkdownClipboardTextSerializer();
     const doc = basicSchema.node('doc', null, [

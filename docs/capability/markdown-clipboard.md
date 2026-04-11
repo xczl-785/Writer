@@ -25,7 +25,8 @@
   - VSCode markdown paste is intercepted and routed through text/plain parser
   - indentation retry activates only for sole-codeBlock degeneration and preserves genuine code blocks
   - menu, context menu, and shortcut stay aligned
-- **last_verified**: 2026-03-28
+  - editor schema remains a superset of the MarkdownService schema (CR-018)
+- **last_verified**: 2026-04-11
 
 ---
 
@@ -93,11 +94,11 @@ When Writer itself initiates a paste action from menu or context-menu handlers, 
 
 **Evidence**: `src/domains/editor/integration/pasteCommandBridge.ts`, `src/services/runtime/ClipboardTextReader.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/domains/editor/handlers/contextMenuHandler.ts`
 
-### CR-007: Oversized or parse-failing input falls back to raw text
+### CR-007: Oversized, parse-failing, or schema-mismatched input falls back to raw text
 
-If input exceeds the parse threshold or Markdown parsing throws, Writer falls back to raw-text paragraph insertion.
+If input exceeds the parse threshold, Markdown parsing throws, **or the parsed JSON contains node/mark types unknown to the editor schema**, Writer falls back to raw-text paragraph insertion rather than silently dropping the paste. The third clause is defense in depth for CR-018: if the invariant is ever violated, the user still gets their text instead of a no-op key press or an empty editor after a file load.
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`
+**Evidence**: `src/domains/editor/integration/markdownClipboard.ts` — `tryMarkdownParse` guards the parse step, `tryNodeFromJSON` guards the schema resolution step, and the file-load path in `src/domains/editor/core/EditorImpl.tsx` wraps `editor.commands.setContent` in an inner try/catch that falls back to a single plain paragraph containing the raw markdown source.
 
 ### CR-008: Copied selections serialize back to Markdown text
 
@@ -128,6 +129,16 @@ When Markdown parsing produces a doc containing exactly one `codeBlock` child, t
 Clipboard image items are still handled by the image-paste hook, which prevents default only for image items and leaves text conversion behavior unchanged.
 
 **Evidence**: `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`
+
+### CR-018: Editor schema must be a superset of MarkdownService schema
+
+Every mark type and node type registered in `MarkdownService`'s `markdownExtensions` list MUST also be registered in the editor's `createEditorSchemaExtensions` list. Violating this invariant corrupts the round-trip: `markdownManager.parse(text)` can produce JSON that `editor.state.schema.nodeFromJSON` cannot resolve, causing `Ctrl+V`, file loads, and right-click paste to fail silently.
+
+**Rationale**: The clipboard text parser and the file-load path both take the shape `markdown → JSON → editor doc`. If the midpoint JSON carries a type unknown to the editor schema, ProseMirror throws from deep inside `nodeFromJSON`. In the paste path the throw is swallowed by the DOM event handler after `event.preventDefault()` has already fired, so the user sees "the Ctrl+V key did nothing". In the file-load path the user sees an empty editor with a silent status bar error. The schema-mismatch bug caused by the missing `Highlight` extension (2026-04-11) was a direct violation of this invariant.
+
+**Enforcement**: `src/domains/editor/__tests__/schemaConsistency.test.ts` enumerates both schemas with `getSchema(...)` and asserts the subset relationship at the mark and node level. CI runs this test on every commit.
+
+**Evidence**: `src/domains/editor/core/editorExtensions.ts`, `src/services/markdown/MarkdownService.ts` (`markdownExtensions`), `src/domains/editor/__tests__/schemaConsistency.test.ts`
 
 ---
 
