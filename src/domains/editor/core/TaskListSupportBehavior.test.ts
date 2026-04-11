@@ -9,8 +9,8 @@ describe('Task list editor support', () => {
     join(currentDir, '../../../services/markdown/MarkdownService.ts'),
     'utf-8',
   );
-  const editorImplTsx = readFileSync(
-    join(currentDir, 'EditorImpl.tsx'),
+  const editorExtensionsTs = readFileSync(
+    join(currentDir, 'editorExtensions.ts'),
     'utf-8',
   );
   const editorCss = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');
@@ -23,9 +23,11 @@ describe('Task list editor support', () => {
   });
 
   it('registers task list extensions in the editor runtime', () => {
-    expect(editorImplTsx).toContain('@tiptap/extension-list');
-    expect(editorImplTsx).toContain('TaskList');
-    expect(editorImplTsx).toContain('TaskItem.configure({ nested: true })');
+    expect(editorExtensionsTs).toContain('@tiptap/extension-list');
+    expect(editorExtensionsTs).toContain('TaskList');
+    expect(editorExtensionsTs).toContain(
+      'TaskItem.configure({ nested: true })',
+    );
   });
 
   it('applies dedicated task list styles in the editor runtime', () => {
