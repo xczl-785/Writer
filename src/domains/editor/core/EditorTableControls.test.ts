@@ -15,7 +15,9 @@ describe('Editor table controls contracts', () => {
   });
 
   it('keydown handler does not intercept unrelated key events', () => {
-    const handler = createEditorKeyDownHandler();
+    const handler = createEditorKeyDownHandler({
+      editorRef: { current: null },
+    });
     const event = new KeyboardEvent('keydown', { key: 'a' });
     const view = {
       state: { selection: {} },
@@ -25,7 +27,9 @@ describe('Editor table controls contracts', () => {
   });
 
   it('handles Cmd/Ctrl+S with preventDefault to avoid browser save dialog', () => {
-    const handler = createEditorKeyDownHandler();
+    const handler = createEditorKeyDownHandler({
+      editorRef: { current: null },
+    });
     const preventDefault = vi.fn();
     const event = {
       key: 's',
@@ -46,7 +50,9 @@ describe('Editor table controls contracts', () => {
   });
 
   it('uses Cmd/Ctrl+Shift+V to arm one-shot plain paste intent', () => {
-    const handler = createEditorKeyDownHandler();
+    const handler = createEditorKeyDownHandler({
+      editorRef: { current: null },
+    });
     const preventDefault = vi.fn();
     const event = {
       key: 'v',

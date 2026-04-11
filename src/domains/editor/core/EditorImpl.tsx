@@ -10,20 +10,13 @@ import {
   useState,
 } from 'react';
 import { useEditor, type Editor as TiptapEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import { TaskItem, TaskList } from '@tiptap/extension-list';
-import { Table } from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import BaseTableHeader from '@tiptap/extension-table-header';
-import BaseTableCell from '@tiptap/extension-table-cell';
+import { createEditorSchemaExtensions } from './editorExtensions';
 import { useEditorStore } from '../state/editorStore';
 import { useFileTreeStore } from '../../file/state/fileStore';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { useWorkspaceStore } from '../../workspace/state/workspaceStore';
 import { ErrorService } from '../../../services/error/ErrorService';
 import { MarkdownService } from '../../../services/markdown/MarkdownService';
-import { ImageResolver } from '../../../services/images/ImageResolver';
 import { t } from '../../../shared/i18n';
 import {
   DEFAULT_TABLE_INSERT,
@@ -33,6 +26,7 @@ import {
 import { FindReplacePanel } from '../ui/components/FindReplacePanel';
 import { useImagePaste } from '../hooks/useImagePaste';
 import {
+  CodeBlockSelectAll,
   createEditorKeyDownHandler,
   createFindReplaceShortcutExtension,
   createToolbarShortcutExtension,
@@ -75,11 +69,12 @@ import {
   attachEditorMenuBridge,
   createEditorPasteDOMEvents,
   createMarkdownClipboardTextParser,
-  createMarkdownClipboardTextSerializer,
+  createSmartClipboardTextSerializer,
   flushEditorOnBlur,
   openEditorContextMenu as openEditorContextMenuBridge,
   persistEditorUpdate,
 } from '../integration';
+import { DOMSerializer } from '@tiptap/pm/model';
 import { handleEditorLinkClick } from '../handlers/linkClickHandler';
 import { hasActiveOverlayInDom } from '../domain';
 import '../../../ui/components/BlockBoundary/blockBoundary.css';
@@ -202,78 +197,10 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       () => [
         toolbarShortcutExtension,
         findReplaceShortcutExtension,
+        CodeBlockSelectAll,
         BlockBoundaryExtension.configure({ showCodeBlock: false }),
-        StarterKit.configure({
-          heading: { levels: [1, 2, 3, 4, 5, 6] },
-          link: {
-            openOnClick: false,
-            HTMLAttributes: {
-              class: 'editor-link',
-              target: null, // Prevent Tauri WebView from opening links on click
-              rel: null, // Not needed without target="_blank"
-            },
-          },
-        }),
-        TaskList,
-        TaskItem.configure({ nested: true }),
-        Table.configure({ resizable: true, allowTableNodeSelection: false }),
-        TableRow,
-        BaseTableHeader.extend({
-          addAttributes() {
-            return {
-              ...this.parent?.(),
-              textAlign: {
-                default: 'left',
-                renderHTML: (attributes) =>
-                  attributes.textAlign
-                    ? { style: `text-align: ${attributes.textAlign}` }
-                    : {},
-              },
-              borderHidden: {
-                default: false,
-                renderHTML: (attributes) =>
-                  attributes.borderHidden
-                    ? { style: 'border-style: none' }
-                    : {},
-              },
-            };
-          },
-        }),
-        BaseTableCell.extend({
-          addAttributes() {
-            return {
-              ...this.parent?.(),
-              textAlign: {
-                default: 'left',
-                renderHTML: (attributes) =>
-                  attributes.textAlign
-                    ? { style: `text-align: ${attributes.textAlign}` }
-                    : {},
-              },
-              borderHidden: {
-                default: false,
-                renderHTML: (attributes) =>
-                  attributes.borderHidden
-                    ? { style: 'border-style: none' }
-                    : {},
-              },
-            };
-          },
-        }),
         LoadDocument,
-        Image.extend({
-          addAttributes() {
-            return {
-              ...this.parent?.(),
-              src: {
-                default: null,
-                renderHTML: (attributes) => ({
-                  src: ImageResolver.resolve(attributes.src, activeFile),
-                }),
-              },
-            };
-          },
-        }),
+        ...createEditorSchemaExtensions({ activeFile }),
       ],
       [activeFile, findReplaceShortcutExtension, toolbarShortcutExtension],
     );
@@ -283,7 +210,10 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       [],
     );
     const clipboardTextSerializer = useMemo(
-      () => createMarkdownClipboardTextSerializer(),
+      () =>
+        createSmartClipboardTextSerializer(
+          () => editorRef.current?.state ?? null,
+        ),
       [],
     );
 
@@ -309,7 +239,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
               'TextSelection.near',
               "nodeBefore.type.name === 'table'",
             ],
-            createEditorKeyDownHandler(),
+            createEditorKeyDownHandler({ editorRef }),
           ),
         },
         onUpdate: async ({ editor }: { editor: TiptapEditor }) => {
@@ -386,6 +316,17 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       };
     }, [editor]);
 
+    // Wire the HTML clipboard serializer (text/html channel) so rich
+    // paste targets (Word, Gmail, Notion, ...) receive styled markup.
+    // Documented as a strong constraint in capability markdown-clipboard
+    // CR-014. Must run after editor mounts because DOMSerializer needs
+    // the compiled schema.
+    useEffect(() => {
+      if (!editor) return;
+      const clipboardSerializer = DOMSerializer.fromSchema(editor.schema);
+      editor.view.setProps({ clipboardSerializer });
+    }, [editor]);
+
     // Force rerender on editor events
     useEffect(() => {
       if (!editor) return;
@@ -410,9 +351,34 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         setIsLoading(true);
         try {
           const json = await MarkdownService.parse(content);
-          if (isMounted) editor.commands.loadDocument(json);
-        } catch (error) {
-          ErrorService.handle(error, 'Failed to load editor content');
+          if (!isMounted) return;
+          try {
+            editor.commands.loadDocument(json);
+          } catch (schemaError) {
+            // Schema mismatch fallback: render the raw markdown source
+            // as a single plain paragraph so the user can still read
+            // and edit their file instead of being presented with an
+            // empty editor. Capability markdown-clipboard CR-007.
+            // Still routed through loadDocument so the fallback load
+            // also respects editor-history CR-002/CR-003/CR-006.
+            ErrorService.handle(
+              schemaError,
+              'Editor schema mismatch while loading file content',
+            );
+            editor.commands.loadDocument({
+              type: 'doc',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: content
+                    ? [{ type: 'text', text: content }]
+                    : undefined,
+                },
+              ],
+            });
+          }
+        } catch (parseError) {
+          ErrorService.handle(parseError, 'Failed to parse markdown content');
         } finally {
           if (isMounted) setIsLoading(false);
         }

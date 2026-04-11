@@ -2,6 +2,7 @@ import { Slice, type ResolvedPos } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
 import type { Editor } from '@tiptap/react';
 import { markdownManager } from '../../../services/markdown/MarkdownService';
+import { ErrorService } from '../../../services/error/ErrorService';
 import {
   consumeNextPasteIntent,
   type PasteIntent,
@@ -11,6 +12,15 @@ import {
   isSoleDegenerateCodeBlock,
   isRicherParse,
 } from './textNormalization';
+
+export {
+  createSmartClipboardTextSerializer,
+  serializeSliceAsMarkdown,
+  serializeSliceAsPlainText,
+  containsStructuralNode,
+  STRUCTURAL_NODE_TYPES,
+  STRUCTURAL_MARK_TYPES,
+} from './smartClipboardSerializer';
 
 export const MARKDOWN_CLIPBOARD_MAX_PARSE_BYTES = 50 * 1024;
 
@@ -48,6 +58,26 @@ function tryMarkdownParse(text: string): Record<string, unknown> | null {
   }
 }
 
+/**
+ * Converts parsed Markdown JSON into a slice against the editor
+ * schema. Returns null if the JSON contains types unknown to the
+ * editor schema — callers MUST fall back to a plain-text slice so the
+ * paste does not silently disappear (capability markdown-clipboard
+ * CR-007 / CR-018 defense in depth).
+ */
+function tryNodeFromJSON(
+  view: EditorView,
+  json: Record<string, unknown>,
+): Slice | null {
+  try {
+    const doc = view.state.schema.nodeFromJSON(json);
+    return Slice.maxOpen(doc.content);
+  } catch (error) {
+    ErrorService.log(error, 'markdown clipboard: schema mismatch');
+    return null;
+  }
+}
+
 function createClipboardTextSlice(
   text: string,
   context: ResolvedPos,
@@ -68,14 +98,15 @@ function createClipboardTextSlice(
     if (normalized !== text) {
       const retryJson = tryMarkdownParse(normalized);
       if (retryJson && isRicherParse(json, retryJson)) {
-        const doc = view.state.schema.nodeFromJSON(retryJson);
-        return Slice.maxOpen(doc.content);
+        const retrySlice = tryNodeFromJSON(view, retryJson);
+        if (retrySlice) return retrySlice;
       }
     }
   }
 
-  const doc = view.state.schema.nodeFromJSON(json);
-  return Slice.maxOpen(doc.content);
+  const slice = tryNodeFromJSON(view, json);
+  if (slice) return slice;
+  return createPlainTextSlice(text, context, view);
 }
 
 export function createMarkdownClipboardTextParser() {
@@ -110,19 +141,4 @@ export function insertClipboardText(
 
 export function insertClipboardHtml(editor: Editor, html: string): void {
   editor.chain().focus().insertContent(html).run();
-}
-
-export function createMarkdownClipboardTextSerializer() {
-  return (slice: Slice): string => {
-    const json = slice.content.toJSON();
-
-    if (!json || (Array.isArray(json) && json.length === 0)) {
-      return '';
-    }
-
-    return markdownManager.serialize({
-      type: 'doc',
-      content: Array.isArray(json) ? json : [json],
-    });
-  };
 }
