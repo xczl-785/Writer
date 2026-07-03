@@ -10,12 +10,13 @@ import {
   executeCopyAsMarkdown,
   executeCopyAsPlainText,
 } from '../integration/copyCommandBridge';
+import { menuCommandBus } from '../../../core/command/menuCommandBus';
 
 type EditorRef = { current: TiptapEditor | null };
 
 /**
  * Creates a keydown handler for special editor key events:
- * - Cmd/Ctrl+S: Save trigger (logged, actual save handled elsewhere)
+ * - Cmd/Ctrl+S: Dispatch current file save command
  * - Cmd/Ctrl+Shift+V: plain paste intent
  * - Cmd/Ctrl+Shift+C: copy as Markdown (explicit override)
  * - Cmd/Ctrl+Shift+Alt+C: copy as plain text (explicit override)
@@ -28,7 +29,7 @@ export function createEditorKeyDownHandler(options: { editorRef: EditorRef }) {
     // Cmd/Ctrl + S: Save
     if ((event.metaKey || event.ctrlKey) && event.key === 's') {
       event.preventDefault();
-      console.log('Save triggered via Cmd+S');
+      menuCommandBus.dispatch('menu.file.save');
       return true;
     }
 

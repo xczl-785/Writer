@@ -1,5 +1,34 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const mocks = vi.hoisted(() => {
+  const status = {
+    setStatus: vi.fn(),
+    markSaving: vi.fn(),
+    markSaved: vi.fn(),
+  };
+  const editor = {
+    fileStates: {} as Record<string, { content: string }>,
+    setDirty: vi.fn(),
+  };
+  const workspace = {
+    activeFile: null as string | null,
+    closeFile: vi.fn(),
+    folders: [] as string[],
+    workspaceFile: null as string | null,
+    isDirty: false,
+    openFiles: [] as string[],
+  };
+
+  return {
+    autosaveIsPending: vi.fn(() => false),
+    autosaveFlush: vi.fn(() => Promise.resolve()),
+    fsWriteFileAtomic: vi.fn(() => Promise.resolve()),
+    status,
+    editor,
+    workspace,
+  };
+});
+
 vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => ({ close: vi.fn(() => Promise.resolve()) }),
 }));
@@ -12,20 +41,20 @@ vi.mock('../../domains/file/state/fileStore', () => ({
 
 vi.mock('../../domains/file/services/AutosaveService', () => ({
   AutosaveService: {
-    isPending: vi.fn(() => false),
-    flush: vi.fn(() => Promise.resolve()),
+    isPending: mocks.autosaveIsPending,
+    flush: mocks.autosaveFlush,
   },
 }));
 
 vi.mock('../../domains/file/services/FsService', () => ({
   FsService: {
-    writeFileAtomic: vi.fn(() => Promise.resolve()),
+    writeFileAtomic: mocks.fsWriteFileAtomic,
   },
 }));
 
 vi.mock('../../domains/editor/state/editorStore', () => ({
   useEditorStore: {
-    getState: () => ({ fileStates: {}, setDirty: vi.fn() }),
+    getState: () => mocks.editor,
   },
 }));
 
@@ -47,26 +76,11 @@ vi.mock('../../domains/workspace/services/WorkspaceManager', () => ({
 
 vi.mock('../../domains/workspace/state/workspaceStore', () => ({
   getWorkspaceContext: vi.fn(() => 'folder'),
-  useWorkspaceStore: {
-    getState: () => ({
-      activeFile: null,
-      closeFile: vi.fn(),
-      folders: [],
-      workspaceFile: null,
-      isDirty: false,
-      openFiles: [],
-    }),
-  },
+  useWorkspaceStore: { getState: () => mocks.workspace },
 }));
 
 vi.mock('../../state/slices/statusSlice', () => ({
-  useStatusStore: {
-    getState: () => ({
-      setStatus: vi.fn(),
-      markSaving: vi.fn(),
-      markSaved: vi.fn(),
-    }),
-  },
+  useStatusStore: { getState: () => mocks.status },
 }));
 
 vi.mock('../../shared/i18n', () => ({
@@ -79,6 +93,9 @@ import { menuCommandBus } from '../../ui/commands/menuCommandBus';
 describe('fileCommands create behavior', () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.clearAllMocks();
+    mocks.workspace.activeFile = null;
+    mocks.editor.fileStates = {};
     document.body.innerHTML = '';
   });
 
@@ -147,6 +164,62 @@ describe('fileCommands create behavior', () => {
       'writer:sidebar-command',
       received as EventListener,
     );
+    unregister();
+  });
+
+  it('flushes the pending autosave buffer when saving the active file', async () => {
+    mocks.workspace.activeFile = '/tmp/current.md';
+    mocks.editor.fileStates = {
+      '/tmp/current.md': { content: 'pending content' },
+    };
+    mocks.autosaveIsPending.mockReturnValue(true);
+    const unregister = registerFileCommands(vi.fn(), true, vi.fn(), vi.fn());
+
+    expect(menuCommandBus.dispatch('menu.file.save')).toBe(true);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mocks.status.markSaving).toHaveBeenCalledWith('/tmp/current.md');
+    expect(mocks.autosaveFlush).toHaveBeenCalledWith('/tmp/current.md');
+    expect(mocks.fsWriteFileAtomic).not.toHaveBeenCalled();
+
+    unregister();
+  });
+
+  it('writes current content atomically and clears dirty state when no autosave is pending', async () => {
+    let resolveWrite!: () => void;
+    const writePromise = new Promise<void>((resolve) => {
+      resolveWrite = resolve;
+    });
+    mocks.workspace.activeFile = '/tmp/current.md';
+    mocks.editor.fileStates = {
+      '/tmp/current.md': { content: '# Current content' },
+    };
+    mocks.autosaveIsPending.mockReturnValue(false);
+    mocks.fsWriteFileAtomic.mockReturnValueOnce(writePromise);
+    const unregister = registerFileCommands(vi.fn(), true, vi.fn(), vi.fn());
+
+    expect(menuCommandBus.dispatch('menu.file.save')).toBe(true);
+    await Promise.resolve();
+
+    expect(mocks.status.markSaving).toHaveBeenCalledWith('/tmp/current.md');
+    expect(mocks.fsWriteFileAtomic).toHaveBeenCalledWith(
+      '/tmp/current.md',
+      '# Current content',
+    );
+    expect(mocks.editor.setDirty).not.toHaveBeenCalled();
+    expect(mocks.status.markSaved).not.toHaveBeenCalled();
+
+    resolveWrite();
+    await writePromise;
+    await Promise.resolve();
+
+    expect(mocks.editor.setDirty).toHaveBeenCalledWith(
+      '/tmp/current.md',
+      false,
+    );
+    expect(mocks.status.markSaved).toHaveBeenCalledWith('status.menu.saved');
+
     unregister();
   });
 });

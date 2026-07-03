@@ -5,13 +5,13 @@ import { Extension } from '@tiptap/core';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { TOOLBAR_COMMANDS, type ToolbarCommandId } from '../core/constants';
 
-type EditorRef = { current: TiptapEditor | null };
+export type ToolbarShortcutRuntime = {
+  runToolbarCommand: (id: ToolbarCommandId) => boolean;
+  getEditor: () => TiptapEditor | null;
+};
 
 export function createToolbarShortcutExtension(
-  toolbarCommandRunnerRef: {
-    current: (id: ToolbarCommandId) => boolean;
-  },
-  editorRef: EditorRef,
+  runtime: ToolbarShortcutRuntime,
 ) {
   return Extension.create({
     name: 'editor-toolbar-shortcuts',
@@ -21,14 +21,15 @@ export function createToolbarShortcutExtension(
       // Register toolbar command shortcuts
       for (const cmd of TOOLBAR_COMMANDS) {
         if (!cmd.shortcut) continue;
-        shortcuts[cmd.shortcut] = () => toolbarCommandRunnerRef.current(cmd.id);
+        shortcuts[cmd.shortcut] = () => runtime.runToolbarCommand(cmd.id);
       }
 
       // Register heading shortcuts (Mod-1 to Mod-6)
       for (let i = 1; i <= 6; i++) {
         shortcuts[`Mod-${i}`] = () => {
-          if (editorRef.current) {
-            return editorRef.current
+          const editor = runtime.getEditor();
+          if (editor) {
+            return editor
               .chain()
               .focus()
               .toggleHeading({ level: i as 1 | 2 | 3 | 4 | 5 | 6 })

@@ -44,6 +44,22 @@ describe('File menu create entries', () => {
     );
   });
 
+  it('defines current-file save in the file menu schema', () => {
+    const saveItem = fileMenu?.items.find(
+      (item) => item.id === 'menu.file.save',
+    );
+
+    expect(saveItem).toEqual({
+      id: 'menu.file.save',
+      labelKey: 'menu.file.save',
+      fallbackLabels: {
+        'zh-CN': MESSAGES['zh-CN']['menu.file.save'],
+        'en-US': MESSAGES['en-US']['menu.file.save'],
+      },
+      accelerator: 'Ctrl+S',
+    });
+  });
+
   it('defines a dedicated plain paste entry in the edit menu schema', () => {
     const pastePlainItem = editMenu?.items.find(
       (item) => item.id === 'menu.edit.paste_plain',

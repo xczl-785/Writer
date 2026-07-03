@@ -140,6 +140,14 @@ fn build_native_menu_with_locale<R: Runtime>(
             &item(
                 app,
                 locale,
+                "menu.file.save",
+                "保存",
+                "Save",
+                Some("CmdOrCtrl+S"),
+            )?,
+            &item(
+                app,
+                locale,
                 "menu.file.add_folder_to_workspace",
                 "将文件夹添加到工作区…",
                 "Add Folder to Workspace…",

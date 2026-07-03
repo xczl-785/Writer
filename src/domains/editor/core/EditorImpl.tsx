@@ -19,8 +19,10 @@ import {
 import { FindReplacePanel } from '../ui/components/FindReplacePanel';
 import { useImagePaste } from '../hooks/useImagePaste';
 import {
+  type ToolbarShortcutRuntime,
   createFindReplaceShortcutExtension,
   createToolbarShortcutExtension,
+  type FindReplaceShortcutRuntime,
 } from '../extensions';
 import { useTransientStatus } from '../hooks/useTransientStatus';
 import { useFindReplace } from '../hooks/useFindReplace';
@@ -59,6 +61,30 @@ import { WriterEditorBreadcrumb } from '../ui/components/WriterEditorBreadcrumb'
 import '../../../ui/components/BlockBoundary/blockBoundary.css';
 import './Editor.css';
 import type { EditorHandle, EditorProps } from './editorTypes';
+
+type EditorShortcutRuntime = ToolbarShortcutRuntime &
+  FindReplaceShortcutRuntime & {
+    setEditor: (editor: TiptapEditor | null) => void;
+    setToolbarCommandRunner: (
+      runner: (id: ToolbarCommandId) => boolean,
+    ) => void;
+  };
+
+function createEditorShortcutRuntime(): EditorShortcutRuntime {
+  let editor: TiptapEditor | null = null;
+  let toolbarCommandRunner: (id: ToolbarCommandId) => boolean = () => false;
+
+  return {
+    getEditor: () => editor,
+    runToolbarCommand: (id) => toolbarCommandRunner(id),
+    setEditor: (nextEditor) => {
+      editor = nextEditor;
+    },
+    setToolbarCommandRunner: (runner) => {
+      toolbarCommandRunner = runner;
+    },
+  };
+}
 
 export const EDITOR_SOURCE_MARKERS = [
   'Mod-f',
@@ -102,8 +128,9 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
 
     const content = activeFile ? fileStates[activeFile]?.content || '' : '';
     const editorRef = useRef<TiptapEditor | null>(null);
-    const toolbarCommandRunnerRef = useRef<(id: ToolbarCommandId) => boolean>(
-      () => false,
+    const shortcutRuntime = useMemo(() => createEditorShortcutRuntime(), []);
+    const [currentEditor, setCurrentEditor] = useState<TiptapEditor | null>(
+      null,
     );
     const [hasEditorWidgetFocus, setHasEditorWidgetFocus] = useState(false);
     const [editorRevision, forceEditorRevision] = useState(0);
@@ -122,23 +149,23 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       executeCommand,
       hoverIndex,
     } = useSlashMenu({
-      editor: editorRef.current,
+      editor: currentEditor,
       defaultTableInsert: DEFAULT_TABLE_INSERT,
       getSafeCoordsAtPos,
     });
 
     // Ghost hint & bubble menu
     const ghostHintPosition = useGhostHint(
-      editorRef.current,
+      currentEditor,
       slashSession.phase,
       getSafeCoordsAtPos,
     );
-    const bubbleMenuPosition = useBubbleMenu(editorRef.current);
-    const linkTooltipState = useLinkTooltip(editorRef.current);
+    const bubbleMenuPosition = useBubbleMenu(currentEditor);
+    const linkTooltipState = useLinkTooltip(currentEditor);
 
     // Find replace & toolbar
     const findReplace = useFindReplace({
-      editor: editorRef.current,
+      editor: currentEditor,
       editorRevision,
       setTransientStatus,
     });
@@ -152,11 +179,14 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       setTransientStatus,
       setDestructiveStatus,
     });
+    const toolbarShortcutRuntime: ToolbarShortcutRuntime = shortcutRuntime;
+    const findReplaceShortcutRuntime: FindReplaceShortcutRuntime =
+      shortcutRuntime;
 
     // Extensions
     const toolbarShortcutExtension = useMemo(
-      () => createToolbarShortcutExtension(toolbarCommandRunnerRef, editorRef),
-      [],
+      () => createToolbarShortcutExtension(toolbarShortcutRuntime),
+      [toolbarShortcutRuntime],
     );
     const findReplaceShortcutExtension = useMemo(
       () =>
@@ -164,9 +194,9 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
           openFindPanel: findReplace.openFindPanel,
           undo,
           redo,
-          editorRef,
+          runtime: findReplaceShortcutRuntime,
         }),
-      [findReplace.openFindPanel, redo, undo],
+      [findReplace.openFindPanel, findReplaceShortcutRuntime, redo, undo],
     );
 
     const instanceExtensions = useMemo(
@@ -189,6 +219,11 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       setDirty,
       onEditorRevisionChange,
     });
+
+    useEffect(() => {
+      shortcutRuntime.setEditor(editor);
+      setCurrentEditor(editor);
+    }, [editor, shortcutRuntime]);
 
     const layoutModel = useMemo(
       () => createEditorLayoutModel(viewportTier),
@@ -215,9 +250,10 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
 
     // Update toolbar command runner
     useEffect(() => {
-      if (!editor) return;
-      toolbarCommandRunnerRef.current = (id) => runToolbarCommand(editor, id);
-    }, [editor, runToolbarCommand]);
+      shortcutRuntime.setToolbarCommandRunner(
+        editor ? (id) => runToolbarCommand(editor, id) : () => false,
+      );
+    }, [editor, runToolbarCommand, shortcutRuntime]);
 
     // Toggle Ctrl/Cmd modifier class for link hover styling
     useEffect(() => {

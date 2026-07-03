@@ -4,15 +4,17 @@
 import { Extension } from '@tiptap/core';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 
-type EditorRef = { current: TiptapEditor | null };
+export type FindReplaceShortcutRuntime = {
+  getEditor: () => TiptapEditor | null;
+};
 
 export function createFindReplaceShortcutExtension(args: {
   openFindPanel: (mode: 'find' | 'replace') => void;
   undo: (editor: TiptapEditor) => boolean;
   redo: (editor: TiptapEditor) => boolean;
-  editorRef: EditorRef;
+  runtime: FindReplaceShortcutRuntime;
 }) {
-  const { openFindPanel, undo, redo, editorRef } = args;
+  const { openFindPanel, undo, redo, runtime } = args;
 
   return Extension.create({
     name: 'editor-find-replace-shortcuts',
@@ -27,15 +29,18 @@ export function createFindReplaceShortcutExtension(args: {
           return true;
         },
         'Mod-z': () => {
-          if (editorRef.current) return undo(editorRef.current);
+          const editor = runtime.getEditor();
+          if (editor) return undo(editor);
           return false;
         },
         'Mod-y': () => {
-          if (editorRef.current) return redo(editorRef.current);
+          const editor = runtime.getEditor();
+          if (editor) return redo(editor);
           return false;
         },
         'Mod-Shift-z': () => {
-          if (editorRef.current) return redo(editorRef.current);
+          const editor = runtime.getEditor();
+          if (editor) return redo(editor);
           return false;
         },
       };

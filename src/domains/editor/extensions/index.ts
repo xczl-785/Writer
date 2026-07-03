@@ -3,8 +3,14 @@
  *
  * This module provides TipTap editor extensions for the Writer application.
  */
-export { createToolbarShortcutExtension } from './toolbarShortcuts';
-export { createFindReplaceShortcutExtension } from './findReplaceShortcuts';
+export {
+  createToolbarShortcutExtension,
+  type ToolbarShortcutRuntime,
+} from './toolbarShortcuts';
+export {
+  createFindReplaceShortcutExtension,
+  type FindReplaceShortcutRuntime,
+} from './findReplaceShortcuts';
 export { createEditorKeyDownHandler } from './keydownHandler';
 export { CodeBlockSelectAll } from './codeBlockSelectAll';
 export { LoadDocument } from './loadDocument';

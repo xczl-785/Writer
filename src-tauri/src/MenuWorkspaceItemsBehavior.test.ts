@@ -8,9 +8,13 @@ describe('native file menu workspace items', () => {
   const source = readFileSync(join(currentDir, 'menu.rs'), 'utf-8');
 
   it('includes dedicated workspace save commands in the file menu', () => {
+    expect(source).toContain('"menu.file.save"');
+    expect(source).toContain('"保存"');
+    expect(source).toContain('"Save"');
+    expect(source).toContain('Some("CmdOrCtrl+S")');
     expect(source).toContain('"menu.file.save_workspace"');
     expect(source).toContain('"保存工作区"');
     expect(source).toContain('"menu.file.save_workspace_as"');
-    expect(source).toContain('"工作区另存为..."');
+    expect(source).toContain('"工作区另存为…"');
   });
 });

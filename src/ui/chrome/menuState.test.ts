@@ -57,6 +57,9 @@ describe('menuState', () => {
     expect(
       isMenuItemEnabledForState('menu.file.close_file', activeFileState),
     ).toBe(true);
+    expect(isMenuItemEnabledForState('menu.file.save', activeFileState)).toBe(
+      true,
+    );
   });
 
   it('enables recent-history actions only when recent items exist', () => {

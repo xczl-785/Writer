@@ -74,6 +74,12 @@ export const WINDOWS_MENU_SCHEMA: MenuSchemaGroup[] = [
         separator: true,
       },
       {
+        id: 'menu.file.save',
+        labelKey: 'menu.file.save',
+        fallbackLabels: { 'zh-CN': '保存', 'en-US': 'Save' },
+        accelerator: 'Ctrl+S',
+      },
+      {
         id: 'menu.file.add_folder_to_workspace',
         labelKey: 'workspace.addFolderToWorkspace',
         fallbackLabels: {
