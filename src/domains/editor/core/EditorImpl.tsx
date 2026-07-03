@@ -9,14 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useEditor, type Editor as TiptapEditor } from '@tiptap/react';
-import { createEditorSchemaExtensions } from './editorExtensions';
-import { useEditorStore } from '../state/editorStore';
-import { useFileTreeStore } from '../../file/state/fileStore';
-import { useStatusStore } from '../../../state/slices/statusSlice';
-import { useWorkspaceStore } from '../../workspace/state/workspaceStore';
-import { ErrorService } from '../../../services/error/ErrorService';
-import { MarkdownService } from '../../../services/markdown/MarkdownService';
+import { type Editor as TiptapEditor } from '@tiptap/react';
 import { t } from '../../../shared/i18n';
 import {
   DEFAULT_TABLE_INSERT,
@@ -26,11 +19,8 @@ import {
 import { FindReplacePanel } from '../ui/components/FindReplacePanel';
 import { useImagePaste } from '../hooks/useImagePaste';
 import {
-  CodeBlockSelectAll,
-  createEditorKeyDownHandler,
   createFindReplaceShortcutExtension,
   createToolbarShortcutExtension,
-  LoadDocument,
 } from '../extensions';
 import { useTransientStatus } from '../hooks/useTransientStatus';
 import { useFindReplace } from '../hooks/useFindReplace';
@@ -39,14 +29,7 @@ import {
   ContextMenu,
   useContextMenu,
 } from '../../../ui/components/ContextMenu';
-import { Breadcrumb } from '../../../ui/components/Breadcrumb';
-import {
-  buildActiveFileBreadcrumb,
-  type BreadcrumbItem,
-} from '../../../ui/components/Breadcrumb/useBreadcrumb';
-import { openFile } from '../../workspace/services/WorkspaceManager';
 import { Outline } from '../../../ui/components/Outline';
-import { BlockBoundaryExtension } from '../../../ui/components/BlockBoundary';
 import {
   useSlashMenu,
   SlashMenuView,
@@ -67,16 +50,12 @@ import { createEditorLayoutModel } from './EditorLayoutModel';
 import { EditorView } from '../view/EditorView';
 import {
   attachEditorMenuBridge,
-  createEditorPasteDOMEvents,
-  createMarkdownClipboardTextParser,
-  createSmartClipboardTextSerializer,
-  flushEditorOnBlur,
   openEditorContextMenu as openEditorContextMenuBridge,
-  persistEditorUpdate,
 } from '../integration';
-import { DOMSerializer } from '@tiptap/pm/model';
-import { handleEditorLinkClick } from '../handlers/linkClickHandler';
 import { hasActiveOverlayInDom } from '../domain';
+import { useEditorStateFacade } from './EditorStateFacade';
+import { useEditorInstanceController } from './useEditorInstanceController';
+import { WriterEditorBreadcrumb } from '../ui/components/WriterEditorBreadcrumb';
 import '../../../ui/components/BlockBoundary/blockBoundary.css';
 import './Editor.css';
 import type { EditorHandle, EditorProps } from './editorTypes';
@@ -102,9 +81,6 @@ export const EDITOR_SOURCE_MARKERS = [
   String.raw`markdown.replace(/\xA0/g, ' ')`,
 ] as const;
 
-const withSourceMarkers = <T,>(_markers: readonly string[], value: T): T =>
-  value;
-
 export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
   (
     {
@@ -116,10 +92,11 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
     },
     ref,
   ) => {
-    const { activeFile, folders } = useWorkspaceStore();
-    const { setStatus } = useStatusStore();
-    const { setSelectedPath, expandNode } = useFileTreeStore();
-    const { fileStates, updateFileContent, setDirty } = useEditorStore();
+    const {
+      workspace: { activeFile, folders },
+      status: { setStatus },
+      editor: { fileStates, updateFileContent, setDirty },
+    } = useEditorStateFacade();
     const { handlePaste } = useImagePaste();
     const contextMenu = useContextMenu();
 
@@ -128,9 +105,8 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
     const toolbarCommandRunnerRef = useRef<(id: ToolbarCommandId) => boolean>(
       () => false,
     );
-    const [isLoading, setIsLoading] = useState(false);
     const [hasEditorWidgetFocus, setHasEditorWidgetFocus] = useState(false);
-    const [editorRevision, forceRerender] = useState(0);
+    const [editorRevision, forceEditorRevision] = useState(0);
     const [isOutlineOpen, setIsOutlineOpen] = useState(false);
 
     // Custom hooks
@@ -193,76 +169,26 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       [findReplace.openFindPanel, redo, undo],
     );
 
-    const extensions = useMemo(
-      () => [
-        toolbarShortcutExtension,
-        findReplaceShortcutExtension,
-        CodeBlockSelectAll,
-        BlockBoundaryExtension.configure({ showCodeBlock: false }),
-        LoadDocument,
-        ...createEditorSchemaExtensions({ activeFile }),
-      ],
-      [activeFile, findReplaceShortcutExtension, toolbarShortcutExtension],
+    const instanceExtensions = useMemo(
+      () => [toolbarShortcutExtension, findReplaceShortcutExtension],
+      [findReplaceShortcutExtension, toolbarShortcutExtension],
     );
 
-    const clipboardTextParser = useMemo(
-      () => createMarkdownClipboardTextParser(),
-      [],
-    );
-    const clipboardTextSerializer = useMemo(
-      () =>
-        createSmartClipboardTextSerializer(
-          () => editorRef.current?.state ?? null,
-        ),
+    const onEditorRevisionChange = useCallback(
+      () => forceEditorRevision((t) => t + 1),
       [],
     );
 
-    const editor = useEditor(
-      {
-        extensions,
-        content: '',
-        editorProps: {
-          attributes: { class: 'editor-content focus:outline-none' },
-          handleDOMEvents: {
-            ...createEditorPasteDOMEvents(handlePaste, editorRef),
-            click: handleEditorLinkClick,
-          },
-          clipboardTextParser,
-          clipboardTextSerializer,
-          handleKeyDown: withSourceMarkers(
-            [
-              'instanceof CellSelection',
-              "event.key === 'Backspace'",
-              "event.key === 'Delete'",
-              'deleteCellSelection',
-              "event.key === 'ArrowLeft'",
-              'TextSelection.near',
-              "nodeBefore.type.name === 'table'",
-            ],
-            createEditorKeyDownHandler({ editorRef }),
-          ),
-        },
-        onUpdate: async ({ editor }: { editor: TiptapEditor }) => {
-          await persistEditorUpdate({
-            editor,
-            activeFile,
-            isLoading,
-            updateFileContent,
-            setDirty,
-          });
-        },
-        onBlur: () => {
-          flushEditorOnBlur(activeFile);
-        },
-        onCreate: ({ editor }: { editor: TiptapEditor }) => {
-          editorRef.current = editor;
-        },
-        onDestroy: () => {
-          editorRef.current = null;
-        },
-      },
-      [activeFile],
-    );
+    const { editor } = useEditorInstanceController({
+      activeFile,
+      content,
+      editorRef,
+      extensions: instanceExtensions,
+      handlePaste,
+      updateFileContent,
+      setDirty,
+      onEditorRevisionChange,
+    });
 
     const layoutModel = useMemo(
       () => createEditorLayoutModel(viewportTier),
@@ -315,80 +241,6 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         window.removeEventListener('blur', remove);
       };
     }, [editor]);
-
-    // Wire the HTML clipboard serializer (text/html channel) so rich
-    // paste targets (Word, Gmail, Notion, ...) receive styled markup.
-    // Documented as a strong constraint in capability markdown-clipboard
-    // CR-014. Must run after editor mounts because DOMSerializer needs
-    // the compiled schema.
-    useEffect(() => {
-      if (!editor) return;
-      const clipboardSerializer = DOMSerializer.fromSchema(editor.schema);
-      editor.view.setProps({ clipboardSerializer });
-    }, [editor]);
-
-    // Force rerender on editor events
-    useEffect(() => {
-      if (!editor) return;
-      const update = () => forceRerender((t) => t + 1);
-      editor.on('selectionUpdate', update);
-      editor.on('transaction', update);
-      editor.on('focus', update);
-      editor.on('blur', update);
-      return () => {
-        editor.off('selectionUpdate', update);
-        editor.off('transaction', update);
-        editor.off('focus', update);
-        editor.off('blur', update);
-      };
-    }, [editor]);
-
-    // Load content when activeFile changes
-    useEffect(() => {
-      if (!editor || !activeFile) return;
-      let isMounted = true;
-      const loadContent = async () => {
-        setIsLoading(true);
-        try {
-          const json = await MarkdownService.parse(content);
-          if (!isMounted) return;
-          try {
-            editor.commands.loadDocument(json);
-          } catch (schemaError) {
-            // Schema mismatch fallback: render the raw markdown source
-            // as a single plain paragraph so the user can still read
-            // and edit their file instead of being presented with an
-            // empty editor. Capability markdown-clipboard CR-007.
-            // Still routed through loadDocument so the fallback load
-            // also respects editor-history CR-002/CR-003/CR-006.
-            ErrorService.handle(
-              schemaError,
-              'Editor schema mismatch while loading file content',
-            );
-            editor.commands.loadDocument({
-              type: 'doc',
-              content: [
-                {
-                  type: 'paragraph',
-                  content: content
-                    ? [{ type: 'text', text: content }]
-                    : undefined,
-                },
-              ],
-            });
-          }
-        } catch (parseError) {
-          ErrorService.handle(parseError, 'Failed to parse markdown content');
-        } finally {
-          if (isMounted) setIsLoading(false);
-        }
-      };
-      loadContent();
-      return () => {
-        isMounted = false;
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeFile, editor]);
 
     // Close outline when file changes
     useEffect(() => {
@@ -457,9 +309,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       );
     if (!editor) return null;
 
-    const breadcrumbItems = buildActiveFileBreadcrumb(folders, activeFile);
     const isMinTier = viewportTier === 'min';
-    const compactFileName = activeFile.split(/[/\\]/).pop() ?? activeFile;
 
     const editorLayoutStyle: CSSProperties = {
       ['--editor-content-max-width' as string]: `${layoutModel.maxContentWidth}px`,
@@ -467,17 +317,6 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
       ['--editor-content-padding-inline' as string]: `${layoutModel.contentPaddingInline}px`,
       ['--editor-content-padding-bottom' as string]:
         layoutModel.contentPaddingBottom,
-    };
-
-    const handleBreadcrumbClick = (item: BreadcrumbItem) => {
-      setSelectedPath(item.path);
-      if (item.type === 'file') {
-        void openFile(item.path);
-        return;
-      }
-      if (item.type === 'folder' || item.type === 'workspace') {
-        expandNode(item.path);
-      }
     };
 
     return (
@@ -496,22 +335,11 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
             onToggleOutline={() => setIsOutlineOpen((prev) => !prev)}
             onCloseOutline={() => setIsOutlineOpen(false)}
             breadcrumb={
-              <div className="editor-header__breadcrumb-inner">
-                {isMinTier ? (
-                  <div className="h-12 px-6 flex items-center text-sm text-zinc-500 min-w-0">
-                    <span className="shrink-0">... /</span>
-                    <span className="ml-1 font-semibold text-zinc-700 truncate">
-                      {compactFileName}
-                    </span>
-                  </div>
-                ) : (
-                  <Breadcrumb
-                    items={breadcrumbItems}
-                    onItemClick={handleBreadcrumbClick}
-                    className="h-12 px-6"
-                  />
-                )}
-              </div>
+              <WriterEditorBreadcrumb
+                activeFile={activeFile}
+                folders={folders}
+                isMinTier={isMinTier}
+              />
             }
             outlinePopover={
               <Outline

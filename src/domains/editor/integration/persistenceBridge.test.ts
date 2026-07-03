@@ -44,6 +44,28 @@ describe('persistenceBridge', () => {
     expect(AutosaveService.schedule).toHaveBeenCalledWith('/a.md', 'abc');
   });
 
+  it('does not serialize, dirty, or schedule autosave while loading', async () => {
+    const editor = {
+      getJSON: () => ({ type: 'doc' }),
+    } as unknown as TiptapEditor;
+
+    const updateFileContent = vi.fn();
+    const setDirty = vi.fn();
+
+    await persistEditorUpdate({
+      editor,
+      activeFile: '/a.md',
+      isLoading: true,
+      updateFileContent,
+      setDirty,
+    });
+
+    expect(MarkdownService.serialize).not.toHaveBeenCalled();
+    expect(updateFileContent).not.toHaveBeenCalled();
+    expect(setDirty).not.toHaveBeenCalled();
+    expect(AutosaveService.schedule).not.toHaveBeenCalled();
+  });
+
   it('flushes autosave only when active file is present', () => {
     flushEditorOnBlur('/a.md');
     flushEditorOnBlur(null);

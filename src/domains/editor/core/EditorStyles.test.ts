@@ -16,6 +16,8 @@ describe('Editor toolbar MVP', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const readEditor = () =>
     readFileSync(join(currentDir, 'Editor.tsx'), 'utf-8');
+  const readInstanceController = () =>
+    readFileSync(join(currentDir, 'useEditorInstanceController.ts'), 'utf-8');
   const readConstants = () =>
     readFileSync(join(currentDir, 'constants.ts'), 'utf-8');
 
@@ -119,21 +121,18 @@ describe('Editor toolbar MVP', () => {
   });
 
   it('does not force editor content to fixed full height', () => {
-    const editorImplTsx = readFileSync(
-      join(currentDir, 'EditorImpl.tsx'),
-      'utf-8',
-    );
-    expect(editorImplTsx).toContain(
+    const instanceControllerTs = readInstanceController();
+    expect(instanceControllerTs).toContain(
       "attributes: { class: 'editor-content focus:outline-none' }",
     );
-    expect(editorImplTsx).not.toContain(
+    expect(instanceControllerTs).not.toContain(
       "attributes: { class: 'editor-content h-full focus:outline-none' }",
     );
   });
 
   it('disables code block boundary indicator in editor composition', () => {
-    const editorTsx = readEditor();
-    expect(editorTsx).toContain(
+    const instanceControllerTs = readInstanceController();
+    expect(instanceControllerTs).toContain(
       'BlockBoundaryExtension.configure({ showCodeBlock: false })',
     );
   });

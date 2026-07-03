@@ -29,4 +29,27 @@ describe('Editor orchestrator composition', () => {
     expect(implTsx).toContain('<EditorView');
     expect(viewTsx).toContain('<EditorShell');
   });
+
+  it('keeps Tiptap instance wiring inside the editor instance controller', () => {
+    const implTsx = readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
+    const controllerTs = readFileSync(
+      join(currentDir, 'useEditorInstanceController.ts'),
+      'utf-8',
+    );
+
+    expect(implTsx).toContain('useEditorInstanceController');
+    expect(controllerTs).toContain('useEditor(');
+    expect(controllerTs).toContain('[activeFile]');
+  });
+
+  it('keeps active file loads routed through loadDocument only', () => {
+    const controllerTs = readFileSync(
+      join(currentDir, 'useEditorInstanceController.ts'),
+      'utf-8',
+    );
+
+    expect(controllerTs).toContain('editor.commands.loadDocument(json)');
+    expect(controllerTs).toContain('editor.commands.loadDocument({');
+    expect(controllerTs).not.toContain('editor.commands.setContent');
+  });
 });
