@@ -9,10 +9,12 @@
 - **entry_points**:
   - Writer-facing `FsService` 方法调用
   - internal runtime-core primitive implementation at `src/core/runtime/fsPrimitives.ts`
-- **shared_with**: none
+- **shared_with**:
+  - `save-core`
 - **check_on_change**:
   - FsService API 不变
   - runtime fs/config primitive 签名不变
+  - future save-core 接入前，`FsService.writeFileAtomic` 仍是 Writer adapter 的 throw/reject 文件写入入口
   - Tauri 命令签名同步
   - 类型定义一致
 - **last_verified**: 2026-03-21
@@ -22,6 +24,8 @@
 ## Capability Summary
 
 文件系统操作能力通过 FsService 维持统一、类型安全的 Writer-facing 文件操作入口。V1 边界下沉后，通用文件读写、路径检测、编码检测和配置文件读写由 `src/core/runtime/fsPrimitives.ts` 提供 runtime-core primitive，FsService 作为 Writer adapter 保持既有 API 并委托这些 primitive。调用方仍应依赖 FsService，不应绕过 adapter 直接调用 runtime-core primitive。
+
+V2 第一轮新增的 `src/core/save/*` 只是 future result-returning save-core port/types。当前生产 autosave adapter 仍直接调用 `FsService.writeFileAtomic`，并把其 throw/reject 语义交给 `SaveScheduler` failure path 处理。
 
 ---
 
@@ -121,12 +125,21 @@ FsService 仍是 Writer-facing 前端调用入口。目录树、工作区、创�
 
 ---
 
+### CR-009: save-core 尚未替代 FsService adapter
+
+`src/core/save/SavePort` 定义的是 future result-returning 保存端口。当前 Writer 生产保存仍由 `AutosaveService` adapter 调用 `FsService.writeFileAtomic`；未来若接入 save-core，需要显式把 `writeFileAtomic` 的 throw/reject 结果映射为 `SaveResult`。
+
+**Evidence**: `src/core/save/savePort.ts`、`src/core/save/saveTypes.ts`、`src/domains/file/services/AutosaveService.ts`、`src/domains/file/services/FsService.ts`
+
+---
+
 ## Impact Surface
 
 | Area              | What to check                                                                             | Evidence                                                                                             |
 | ----------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | FsService API     | 所有方法签名不变                                                                          | `src/domains/file/services/FsService.ts`                                                             |
 | Runtime primitive | 通用 fs/config primitive 签名和 Tauri command 映射不变；调用方仍经 FsService adapter 进入 | `src/core/runtime/fsPrimitives.ts`                                                                   |
+| Save core bridge  | future `SavePort` 接入前，生产保存仍使用 FsService throw/reject adapter 语义              | `src/core/save/savePort.ts`、`src/domains/file/services/AutosaveService.ts`                          |
 | Tauri 命令        | Rust 后端命令签名与前端调用匹配                                                           | `src-tauri/src/fs.rs`、`src-tauri/src/workspace.rs`、`src-tauri/src/config.rs`                       |
 | 类型定义          | FileNode、WorkspaceConfig、PathKind 等类型一致                                            | `src/state/types.ts`、`src/domains/file/services/FsService.ts:4-34`                                  |
 | 依赖服务          | AutosaveService、workspaceActions 等依赖调用正确                                          | `src/domains/file/services/AutosaveService.ts`、`src/domains/workspace/services/workspaceActions.ts` |
@@ -138,15 +151,15 @@ FsService 仍是 Writer-facing 前端调用入口。目录树、工作区、创�
 
 ## Shared Rules Dependency
 
-| Shared Rule | Dependency                 | Lifted |
-| ----------- | -------------------------- | ------ |
-| none        | No shared rules identified | no     |
+| Shared Rule | Dependency                                                                                                                      | Lifted |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| save-core   | FsService may provide the future adapter behind result-returning SavePort, but current production save path has not moved there | no     |
 
 ---
 
 ## Uncertainties
 
-- `src/services/fs/` 目录为空，可能为历史遗留或预留目录，需确认是否应删除
+- `src/services/fs/` 历史/预留路径当前不存在；如未来恢复该路径，需要先明确是否仍只是兼容入口。
 
 ---
 
