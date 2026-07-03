@@ -1,6 +1,6 @@
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
-use tauri::{AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 #[derive(Clone, Copy)]
 enum Locale {
@@ -11,6 +11,36 @@ enum Locale {
 #[derive(Clone, Serialize)]
 struct MenuCommandEvent {
     id: String,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum AppFlavor {
+    Writer,
+    QuickWrite,
+}
+
+fn app_flavor<R: Runtime>(app: &AppHandle<R>) -> AppFlavor {
+    let config = app.config();
+    let product_name = config.product_name.as_deref().unwrap_or_default();
+    let uses_quick_write_window = config
+        .app
+        .windows
+        .first()
+        .map(|window| window.url.to_string() == "quick-write.html")
+        .unwrap_or(false);
+
+    if config.identifier == "com.writer.quickwrite"
+        || product_name == "Writer QuickWrite"
+        || uses_quick_write_window
+    {
+        AppFlavor::QuickWrite
+    } else {
+        AppFlavor::Writer
+    }
+}
+
+pub fn is_quick_write_flavor<R: Runtime>(app: &AppHandle<R>) -> bool {
+    app_flavor(app) == AppFlavor::QuickWrite
 }
 
 fn locale_from_env() -> Locale {
@@ -73,6 +103,16 @@ pub fn build_native_menu_for_locale<R: Runtime>(
 }
 
 fn build_native_menu_with_locale<R: Runtime>(
+    app: &AppHandle<R>,
+    locale: Locale,
+) -> Result<Menu<R>, tauri::Error> {
+    match app_flavor(app) {
+        AppFlavor::Writer => build_writer_native_menu_with_locale(app, locale),
+        AppFlavor::QuickWrite => build_quick_write_native_menu_with_locale(app, locale),
+    }
+}
+
+fn build_writer_native_menu_with_locale<R: Runtime>(
     app: &AppHandle<R>,
     locale: Locale,
 ) -> Result<Menu<R>, tauri::Error> {
@@ -592,6 +632,217 @@ fn build_native_menu_with_locale<R: Runtime>(
     )
 }
 
+fn build_quick_write_native_menu_with_locale<R: Runtime>(
+    app: &AppHandle<R>,
+    locale: Locale,
+) -> Result<Menu<R>, tauri::Error> {
+    let file_menu = Submenu::with_items(
+        app,
+        &tr(locale, "文件", "File"),
+        true,
+        &[
+            &item(
+                app,
+                locale,
+                "menu.quick_write.open_file",
+                "打开文件…",
+                "Open File…",
+                Some("CmdOrCtrl+O"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.save_to",
+                "保存到…",
+                "Save To…",
+                Some("CmdOrCtrl+S"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.export_html",
+                "导出 HTML…",
+                "Export HTML…",
+                Some("CmdOrCtrl+Shift+E"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.print_to_pdf",
+                "打印为 PDF…",
+                "Print to PDF…",
+                Some("CmdOrCtrl+P"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.new_window",
+                "新建窗口",
+                "New Window",
+                Some("CmdOrCtrl+N"),
+            )?,
+            &PredefinedMenuItem::separator(app)?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.close",
+                "关闭",
+                "Close",
+                Some("CmdOrCtrl+W"),
+            )?,
+        ],
+    )?;
+
+    let edit_menu = Submenu::with_items(
+        app,
+        &tr(locale, "编辑", "Edit"),
+        true,
+        &[
+            &item(
+                app,
+                locale,
+                "menu.quick_write.edit_undo",
+                "撤销",
+                "Undo",
+                Some("CmdOrCtrl+Z"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.edit_cut",
+                "剪切",
+                "Cut",
+                Some("CmdOrCtrl+X"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.edit_copy",
+                "复制",
+                "Copy",
+                Some("CmdOrCtrl+C"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.edit_paste",
+                "粘贴",
+                "Paste",
+                Some("CmdOrCtrl+V"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.edit_select_all",
+                "全选",
+                "Select All",
+                Some("CmdOrCtrl+A"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.edit_find",
+                "查找",
+                "Find",
+                Some("CmdOrCtrl+F"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.edit_replace",
+                "替换",
+                "Replace",
+                Some("CmdOrCtrl+H"),
+            )?,
+        ],
+    )?;
+
+    let paragraph_menu = Submenu::with_items(
+        app,
+        &tr(locale, "段落", "Paragraph"),
+        true,
+        &[
+            &item(
+                app,
+                locale,
+                "menu.quick_write.paragraph_body",
+                "正文",
+                "Body",
+                Some("CmdOrCtrl+0"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.paragraph_heading",
+                "标题",
+                "Heading",
+                Some("CmdOrCtrl+1"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.paragraph_bulleted_list",
+                "无序列表",
+                "Bulleted List",
+                Some("Alt+CmdOrCtrl+U"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.paragraph_numbered_list",
+                "有序列表",
+                "Numbered List",
+                Some("Alt+CmdOrCtrl+O"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.paragraph_table",
+                "表格",
+                "Table",
+                Some("Alt+CmdOrCtrl+T"),
+            )?,
+        ],
+    )?;
+
+    let format_menu = Submenu::with_items(
+        app,
+        &tr(locale, "格式", "Format"),
+        true,
+        &[
+            &item(
+                app,
+                locale,
+                "menu.quick_write.format_bold",
+                "加粗",
+                "Bold",
+                Some("CmdOrCtrl+B"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.format_italic",
+                "斜体",
+                "Italic",
+                Some("CmdOrCtrl+I"),
+            )?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.format_link",
+                "链接",
+                "Link",
+                Some("CmdOrCtrl+K"),
+            )?,
+        ],
+    )?;
+
+    Menu::with_items(
+        app,
+        &[&file_menu, &edit_menu, &paragraph_menu, &format_menu],
+    )
+}
+
 pub fn emit_menu_command<R: Runtime>(app: &AppHandle<R>, id: &str) {
     if matches!(
         id,
@@ -600,5 +851,23 @@ pub fn emit_menu_command<R: Runtime>(app: &AppHandle<R>, id: &str) {
         return;
     }
     let payload = MenuCommandEvent { id: id.to_string() };
-    let _ = app.emit("writer://menu-command", payload);
+    emit_to_focused_webview_window_or_app(app, "writer://menu-command", payload);
+}
+
+pub fn emit_to_focused_webview_window_or_app<R, S>(app: &AppHandle<R>, event: &str, payload: S)
+where
+    R: Runtime,
+    S: Serialize + Clone,
+{
+    if let Some(window) = app
+        .webview_windows()
+        .into_values()
+        .find(|window| window.is_focused().unwrap_or(false))
+    {
+        if window.emit(event, payload.clone()).is_ok() {
+            return;
+        }
+    }
+
+    let _ = app.emit(event, payload);
 }

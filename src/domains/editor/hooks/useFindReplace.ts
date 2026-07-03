@@ -32,6 +32,14 @@ export function useFindReplace({
     return collectFindTextMatches(editor, findQuery);
   }, [editor, editorRevision, findQuery, isFindPanelOpen]);
 
+  useEffect(() => {
+    setActiveFindMatchIndex((index) => {
+      if (index < 0) return index;
+      if (!findMatches.length) return -1;
+      return Math.min(index, findMatches.length - 1);
+    });
+  }, [findMatches.length]);
+
   const openFindPanel = useCallback((mode: 'find' | 'replace') => {
     setIsFindPanelOpen(true);
     setIsReplaceMode(mode === 'replace');
@@ -134,7 +142,10 @@ export function useFindReplace({
       return;
     }
 
-    const index = activeFindMatchIndex < 0 ? 0 : activeFindMatchIndex;
+    const index =
+      activeFindMatchIndex < 0
+        ? 0
+        : Math.min(activeFindMatchIndex, findMatches.length - 1);
     const match = findMatches[index];
     if (!match) return;
 

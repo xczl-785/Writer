@@ -38,6 +38,20 @@ export const tauriFileContentPort: FileContentPort = {
   writeFileAtomic(path, content) {
     return invoke('write_file_atomic', { path, content });
   },
+
+  async ensureDir(path) {
+    try {
+      await invoke('create_dir', { path });
+    } catch (error) {
+      if (!isAlreadyExistsError(error)) {
+        throw error;
+      }
+    }
+  },
+
+  deleteFile(path) {
+    return invoke('delete_node', { path });
+  },
 };
 
 export const tauriPathInfoPort: PathInfoPort = {
@@ -114,10 +128,44 @@ export const tauriFileWatcherPort: FileWatcherRuntimePort = {
   },
 };
 
-export const tauriRuntimePorts: RuntimePorts = {
+export const tauriQuickWriteWindowPort: QuickWriteWindowPort = {
+  openNewTemporaryDocumentWindow() {
+    return invoke('open_quick_write_window');
+  },
+};
+
+export const tauriQuickWritePrintPort: QuickWritePrintPort = {
+  async printDocument() {
+    if (typeof window === 'undefined' || typeof window.print !== 'function') {
+      throw new Error('QuickWrite print runtime is not available');
+    }
+
+    window.print();
+  },
+};
+
+export type TauriRuntimePorts = RuntimePorts & {
+  quickWritePrint: QuickWritePrintPort;
+  quickWriteWindow: QuickWriteWindowPort;
+};
+
+interface QuickWritePrintPort {
+  printDocument(): Promise<void>;
+}
+
+interface QuickWriteWindowPort {
+  openNewTemporaryDocumentWindow(): Promise<void>;
+}
+
+export const tauriRuntimePorts: TauriRuntimePorts = {
   fileContent: tauriFileContentPort,
   pathInfo: tauriPathInfoPort,
   appConfig: tauriAppConfigPort,
   fileDialog: tauriFileDialogPort,
   startupFile: tauriStartupFilePort,
+  quickWritePrint: tauriQuickWritePrintPort,
+  quickWriteWindow: tauriQuickWriteWindowPort,
 };
+
+const isAlreadyExistsError = (error: unknown): boolean =>
+  typeof error === 'string' && error.includes('already exists');

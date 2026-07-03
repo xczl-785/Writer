@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { resolve } from 'node:path';
 
 const DEV_PORT = 43173;
 
@@ -14,6 +15,10 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      input: {
+        app: resolve(__dirname, 'index.html'),
+        quickWrite: resolve(__dirname, 'quick-write.html'),
+      },
       output: {
         manualChunks(id) {
           if (id.includes('/src/domains/editor/')) {

@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 export type SettingsLocalePreference = 'system' | 'zh-CN' | 'en-US';
+export type SettingsThemePreference = 'system' | 'light' | 'dark';
+export type SettingsEditorFontSize = 'small' | 'default' | 'large';
 
 export interface SettingsStorageAdapter {
   getItem: (key: string) => string | null;
@@ -31,12 +33,16 @@ export const LEGACY_LOCALE_PREFERENCE_KEY = 'writer.locale.preference';
 
 export interface SettingsState {
   localePreference: SettingsLocalePreference;
+  themePreference: SettingsThemePreference;
+  editorFontSize: SettingsEditorFontSize;
   typewriterEnabledByUser: boolean;
   focusZenEnabledByUser: boolean;
 }
 
 export interface SettingsActions {
   setLocalePreference: (preference: SettingsLocalePreference) => void;
+  setThemePreference: (preference: SettingsThemePreference) => void;
+  setEditorFontSize: (fontSize: SettingsEditorFontSize) => void;
   setTypewriterEnabledByUser: (enabled: boolean) => void;
   setFocusZenEnabledByUser: (enabled: boolean) => void;
 }
@@ -45,6 +51,8 @@ type PersistedSettings = SettingsState;
 
 const DEFAULT_SETTINGS: SettingsState = {
   localePreference: 'system',
+  themePreference: 'system',
+  editorFontSize: 'default',
   typewriterEnabledByUser: false,
   focusZenEnabledByUser: false,
 };
@@ -56,6 +64,24 @@ const normalizeLocalePreference = (
     return value;
   }
   return 'system';
+};
+
+const normalizeThemePreference = (
+  value: string | null | undefined,
+): SettingsThemePreference => {
+  if (value === 'system' || value === 'light' || value === 'dark') {
+    return value;
+  }
+  return 'system';
+};
+
+const normalizeEditorFontSize = (
+  value: string | null | undefined,
+): SettingsEditorFontSize => {
+  if (value === 'small' || value === 'default' || value === 'large') {
+    return value;
+  }
+  return 'default';
 };
 
 const readLegacyLocalePreference = (
@@ -86,6 +112,10 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       ...DEFAULT_SETTINGS,
       setLocalePreference: (preference) =>
         set({ localePreference: normalizeLocalePreference(preference) }),
+      setThemePreference: (preference) =>
+        set({ themePreference: normalizeThemePreference(preference) }),
+      setEditorFontSize: (fontSize) =>
+        set({ editorFontSize: normalizeEditorFontSize(fontSize) }),
       setTypewriterEnabledByUser: (enabled) =>
         set({ typewriterEnabledByUser: enabled }),
       setFocusZenEnabledByUser: (enabled) =>
@@ -96,6 +126,8 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
       storage,
       partialize: (state) => ({
         localePreference: state.localePreference,
+        themePreference: state.themePreference,
+        editorFontSize: state.editorFontSize,
         typewriterEnabledByUser: state.typewriterEnabledByUser,
         focusZenEnabledByUser: state.focusZenEnabledByUser,
       }),
@@ -107,6 +139,8 @@ export const useSettingsStore = create<SettingsState & SettingsActions>()(
         );
         const mergedState: PersistedSettings = {
           localePreference: normalizedLocale,
+          themePreference: normalizeThemePreference(persisted.themePreference),
+          editorFontSize: normalizeEditorFontSize(persisted.editorFontSize),
           typewriterEnabledByUser:
             persisted.typewriterEnabledByUser ??
             currentState.typewriterEnabledByUser,

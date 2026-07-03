@@ -1,5 +1,4 @@
 use serde::Serialize;
-use std::path::PathBuf;
 use std::sync::Mutex;
 use url::Url;
 
@@ -18,12 +17,13 @@ pub fn is_supported_file(path: &std::path::Path) -> bool {
     false
 }
 
+#[cfg(any(windows, target_os = "linux", test))]
 fn parse_file_from_arg(arg: &str) -> Option<String> {
     if arg.starts_with('-') {
         return None;
     }
 
-    let direct_path = PathBuf::from(arg);
+    let direct_path = std::path::PathBuf::from(arg);
     if direct_path.exists() && is_supported_file(&direct_path) {
         return Some(direct_path.to_string_lossy().to_string());
     }
@@ -35,7 +35,7 @@ fn parse_file_from_arg(arg: &str) -> Option<String> {
             return None;
         }
     } else {
-        PathBuf::from(arg)
+        std::path::PathBuf::from(arg)
     };
 
     if path.exists() && is_supported_file(&path) {

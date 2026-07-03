@@ -5,8 +5,15 @@ export type SingleDocumentSessionStatus =
   | 'saving'
   | 'closed';
 
+export type SaveTargetKind = 'recovery' | 'file';
+
+export type DocumentKind = 'temporary' | 'file' | 'empty' | 'closed';
+
 export interface SingleDocumentSessionState {
   documentPath: string | null;
+  sourcePath?: string | null;
+  recoveryPath?: string | null;
+  saveTargetKind?: SaveTargetKind | null;
   status: SingleDocumentSessionStatus;
   contentVersion: number;
   savedVersion: number;
@@ -14,9 +21,19 @@ export interface SingleDocumentSessionState {
 
 export type SingleDocumentSessionEvent =
   | { type: 'opened'; path: string; contentVersion?: number }
+  | {
+      type: 'openedFile';
+      path: string;
+      contentVersion?: number;
+    }
+  | {
+      type: 'openedTemporary';
+      recoveryPath: string;
+      contentVersion?: number;
+    }
   | { type: 'edited' }
   | { type: 'saveStarted' }
-  | { type: 'saveSucceeded' }
+  | { type: 'saveSucceeded'; savedVersion: number }
   | { type: 'saveFailed' }
   | { type: 'closed' };
 
@@ -37,13 +54,43 @@ export const reduceSingleDocumentSession = (
       const contentVersion = event.contentVersion ?? 0;
       return {
         documentPath: event.path,
+        sourcePath: event.path,
+        recoveryPath: null,
+        saveTargetKind: 'file',
+        status: 'open',
+        contentVersion,
+        savedVersion: contentVersion,
+      };
+    }
+    case 'openedFile': {
+      const contentVersion = event.contentVersion ?? 0;
+      return {
+        documentPath: event.path,
+        sourcePath: event.path,
+        recoveryPath: null,
+        saveTargetKind: 'file',
+        status: 'open',
+        contentVersion,
+        savedVersion: contentVersion,
+      };
+    }
+    case 'openedTemporary': {
+      const contentVersion = event.contentVersion ?? 0;
+      return {
+        documentPath: null,
+        sourcePath: null,
+        recoveryPath: event.recoveryPath,
+        saveTargetKind: 'recovery',
         status: 'open',
         contentVersion,
         savedVersion: contentVersion,
       };
     }
     case 'edited':
-      if (!state.documentPath || state.status === 'closed') {
+      if (
+        (!state.documentPath && !state.recoveryPath) ||
+        state.status === 'closed'
+      ) {
         return state;
       }
       return {
@@ -53,21 +100,33 @@ export const reduceSingleDocumentSession = (
       };
     case 'saveStarted':
       return state.status === 'dirty' ? { ...state, status: 'saving' } : state;
-    case 'saveSucceeded':
-      return state.status === 'saving'
-        ? {
-            ...state,
-            status: 'open',
-            savedVersion: state.contentVersion,
-          }
-        : state;
+    case 'saveSucceeded': {
+      if (state.status === 'closed' || state.status === 'empty') {
+        return state;
+      }
+
+      const savedVersion = Math.min(
+        state.contentVersion,
+        Math.max(state.savedVersion, event.savedVersion),
+      );
+      return {
+        ...state,
+        status: savedVersion === state.contentVersion ? 'open' : 'dirty',
+        savedVersion,
+      };
+    }
     case 'saveFailed':
-      return state.status === 'saving' ? { ...state, status: 'dirty' } : state;
+      return state.status === 'saving' || state.status === 'dirty'
+        ? { ...state, status: 'dirty' }
+        : state;
     case 'closed':
       return {
         ...state,
         status: 'closed',
         documentPath: null,
+        sourcePath: null,
+        recoveryPath: null,
+        saveTargetKind: null,
       };
   }
 };

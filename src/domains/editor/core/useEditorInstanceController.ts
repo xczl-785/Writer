@@ -111,6 +111,15 @@ export function useEditorInstanceController({
       onBlur: () => {
         flushEditorOnBlur(activeFile);
       },
+      onMount: ({ editor }: { editor: TiptapEditor }) => {
+        const clipboardSerializer = DOMSerializer.fromSchema(editor.schema);
+        editor.setOptions({
+          editorProps: {
+            ...editor.options.editorProps,
+            clipboardSerializer,
+          },
+        });
+      },
       onCreate: ({ editor }: { editor: TiptapEditor }) => {
         editorRef.current = editor;
       },
@@ -120,12 +129,6 @@ export function useEditorInstanceController({
     },
     [activeFile],
   );
-
-  useEffect(() => {
-    if (!editor) return;
-    const clipboardSerializer = DOMSerializer.fromSchema(editor.schema);
-    editor.view.setProps({ clipboardSerializer });
-  }, [editor]);
 
   useEffect(() => {
     if (!editor) return;

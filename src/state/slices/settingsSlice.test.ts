@@ -17,6 +17,8 @@ describe('settingsSlice', () => {
 
     const state = useSettingsStore.getState();
     expect(state.localePreference).toBe('system');
+    expect(state.themePreference).toBe('system');
+    expect(state.editorFontSize).toBe('default');
     expect(state.typewriterEnabledByUser).toBe(false);
     expect(state.focusZenEnabledByUser).toBe(false);
   });
@@ -34,11 +36,40 @@ describe('settingsSlice', () => {
 
   it('persists user settings updates', async () => {
     const { useSettingsStore } = await loadStore();
+    useSettingsStore.getState().setThemePreference('dark');
+    useSettingsStore.getState().setEditorFontSize('large');
     useSettingsStore.getState().setTypewriterEnabledByUser(true);
     useSettingsStore.getState().setFocusZenEnabledByUser(true);
 
     const persisted = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    expect(persisted).toContain('"themePreference":"dark"');
+    expect(persisted).toContain('"editorFontSize":"large"');
     expect(persisted).toContain('"typewriterEnabledByUser":true');
     expect(persisted).toContain('"focusZenEnabledByUser":true');
+  });
+
+  it('normalizes invalid persisted setting values during merge', async () => {
+    window.localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          localePreference: 'bad-locale',
+          themePreference: 'bad-theme',
+          editorFontSize: 'giant',
+          typewriterEnabledByUser: true,
+          focusZenEnabledByUser: true,
+        },
+        version: 1,
+      }),
+    );
+
+    const { useSettingsStore } = await loadStore();
+    const state = useSettingsStore.getState();
+
+    expect(state.localePreference).toBe('system');
+    expect(state.themePreference).toBe('system');
+    expect(state.editorFontSize).toBe('default');
+    expect(state.typewriterEnabledByUser).toBe(true);
+    expect(state.focusZenEnabledByUser).toBe(true);
   });
 });

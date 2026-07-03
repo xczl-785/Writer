@@ -5,6 +5,7 @@ export interface SaveTarget {
 export interface SaveInput {
   target: SaveTarget;
   content: string;
+  contentVersion?: number;
 }
 
 export interface SaveSuccess {

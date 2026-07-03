@@ -17,6 +17,8 @@ export type Unlisten = () => void;
 export interface FileContentPort {
   readFile(path: string): Promise<string>;
   writeFileAtomic(path: string, content: string): Promise<void>;
+  ensureDir?(path: string): Promise<void>;
+  deleteFile?(path: string): Promise<void>;
 }
 
 export interface PathInfoPort {
