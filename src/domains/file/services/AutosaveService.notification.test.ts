@@ -75,5 +75,31 @@ describe('AutosaveService notifications', () => {
 
     expect(useNotificationStore.getState().level1Notification).toBeNull();
     expect(useStatusStore.getState().saveStatus).toBe('saved');
+    expect(useStatusStore.getState().message).toBe('Saved');
+    expect(
+      useEditorStore.getState().fileStates['/notes/today.md']?.isDirty,
+    ).toBe(false);
+  });
+
+  it('retries with the content captured at the failed save', async () => {
+    vi.mocked(FsService.writeFileAtomic)
+      .mockRejectedValueOnce(new Error('Permission denied'))
+      .mockResolvedValue(undefined);
+
+    AutosaveService.schedule('/notes/today.md', 'failed draft');
+    await expect(AutosaveService.flush('/notes/today.md')).rejects.toThrow(
+      'Permission denied',
+    );
+
+    const notification = useNotificationStore.getState().level1Notification;
+    AutosaveService.schedule('/notes/today.md', 'new pending draft');
+    notification?.actions?.[0]?.run();
+
+    await vi.waitFor(() => {
+      expect(FsService.writeFileAtomic).toHaveBeenLastCalledWith(
+        '/notes/today.md',
+        'failed draft',
+      );
+    });
   });
 });
