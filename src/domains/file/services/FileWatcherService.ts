@@ -1,10 +1,10 @@
 /**
  * FileWatcherService - 文件系统变化监听服务
- * 订阅后端 writer://file-change 事件，实现外部文件变化感知
+ * 通过 runtime adapter 订阅后端文件变化，实现外部文件变化感知
  */
 
-import { listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
+import { tauriFileWatcherPort } from '../../../services/runtime/TauriRuntimePorts';
+import type { Unlisten } from '../../../core/runtime';
 import { normalizePath } from '../../../utils/pathUtils';
 
 export interface FileChangeEvent {
@@ -20,7 +20,7 @@ interface FileWatcherServiceState {
   currentPaths: string[];
   eventListeners: ChangeCallback[];
   debounceTimers: Map<string, ReturnType<typeof setTimeout>>;
-  unlisten: (() => void) | null;
+  unlisten: Unlisten | null;
 }
 
 const state: FileWatcherServiceState = {
@@ -110,15 +110,12 @@ export const FileWatcherService = {
     state.eventListeners.push(onChange);
 
     // 监听后端推送的事件
-    const unlisten = await listen<{ kind: string; paths: string[] }>(
-      'writer://file-change',
-      (event) => {
-        handleBackendEvent(event.payload);
-      },
-    );
+    const unlisten = await tauriFileWatcherPort.listenFileChanges((payload) => {
+      handleBackendEvent(payload);
+    });
 
     // 调用后端启动监听
-    await invoke('start_watching', { paths: workspaceFolders });
+    await tauriFileWatcherPort.startWatching(workspaceFolders);
 
     state.isWatching = true;
     state.currentPaths = workspaceFolders;
@@ -133,7 +130,7 @@ export const FileWatcherService = {
 
     // 调用后端停止监听
     try {
-      await invoke('stop_watching');
+      await tauriFileWatcherPort.stopWatching();
     } catch (error) {
       console.error('Failed to stop watching:', error);
     }
@@ -175,7 +172,7 @@ export const FileWatcherService = {
     }
 
     try {
-      await invoke('update_watch_paths', { newPaths });
+      await tauriFileWatcherPort.updateWatchPaths(newPaths);
       state.currentPaths = newPaths;
     } catch (error) {
       console.error('Failed to update watch paths:', error);

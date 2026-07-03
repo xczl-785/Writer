@@ -1,5 +1,5 @@
-import { open, save } from '@tauri-apps/plugin-dialog';
 import { workspaceActions } from './workspaceActions';
+import { tauriRuntimePorts } from '../../../services/runtime/TauriRuntimePorts';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { showLevel2Notification } from '../../../services/error/level2Notification';
 import { createRetryAction } from '../../../services/error/retryActions';
@@ -117,7 +117,7 @@ export const openFile = async (path: string): Promise<void> => {
  */
 export const openFileWithDialog = async (): Promise<string | null> => {
   try {
-    const selected = await open({
+    const selected = await tauriRuntimePorts.fileDialog.open({
       title: t('file.openFileDialogTitle'),
       directory: false, // 单文件模式
       multiple: false,
@@ -186,7 +186,7 @@ export const handleOpenFileShortcut = async (): Promise<void> => {
 
 export const openWorkspace = async (): Promise<void> => {
   try {
-    const selected = await open({
+    const selected = await tauriRuntimePorts.fileDialog.open({
       directory: true,
       multiple: false,
       recursive: false,
@@ -256,7 +256,7 @@ export const openWorkspaceAtPath = async (path: string): Promise<boolean> => {
 
 export const addFolderToWorkspaceByDialog = async (): Promise<void> => {
   try {
-    const selected = await open({
+    const selected = await tauriRuntimePorts.fileDialog.open({
       directory: true,
       multiple: false,
       recursive: false,
@@ -367,7 +367,7 @@ export const handleDroppedFolderPaths = async (
 
 export const openWorkspaceFile = async (): Promise<void> => {
   try {
-    const selected = await open({
+    const selected = await tauriRuntimePorts.fileDialog.open({
       directory: false,
       multiple: false,
       filters: [
@@ -423,7 +423,7 @@ export const saveWorkspaceFileByDialog = async (): Promise<void> => {
       return;
     }
 
-    const selected = await save({
+    const selected = await tauriRuntimePorts.fileDialog.save({
       defaultPath: buildDefaultWorkspaceFileName(workspace),
       filters: [
         {

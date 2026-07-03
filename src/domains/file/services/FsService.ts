@@ -1,22 +1,17 @@
 import { invoke } from '@tauri-apps/api/core';
+import { tauriRuntimePorts } from '../../../services/runtime/TauriRuntimePorts';
 import {
-  checkExists,
-  detectFileEncoding,
-  getAppConfigDir,
-  getPathKind,
-  readFile,
-  readJsonFile,
-  writeFileAtomic,
-  writeJsonFile,
   type EncodingStatus,
+  type JsonValue,
   type PathKind,
-} from '../../../core/runtime/fsPrimitives';
+} from '../../../core/runtime';
 import type { FileNode } from '../../../state/types';
 
 export type {
   EncodingStatus,
+  JsonValue,
   PathKind,
-} from '../../../core/runtime/fsPrimitives';
+} from '../../../core/runtime';
 
 export interface FolderPathResult {
   path: string;
@@ -54,11 +49,11 @@ export const FsService = {
   },
 
   async readFile(path: string): Promise<string> {
-    return readFile(path);
+    return tauriRuntimePorts.fileContent.readFile(path);
   },
 
   async writeFileAtomic(path: string, content: string): Promise<void> {
-    return writeFileAtomic(path, content);
+    return tauriRuntimePorts.fileContent.writeFileAtomic(path, content);
   },
 
   async parseWorkspaceFile(path: string): Promise<WorkspaceConfig> {
@@ -97,7 +92,7 @@ export const FsService = {
   },
 
   async checkExists(path: string): Promise<boolean> {
-    return checkExists(path);
+    return tauriRuntimePorts.pathInfo.checkExists(path);
   },
 
   /**
@@ -114,23 +109,23 @@ export const FsService = {
   },
 
   async getPathKind(path: string): Promise<PathKind> {
-    return getPathKind(path);
+    return tauriRuntimePorts.pathInfo.getPathKind(path);
   },
 
   async detectFileEncoding(path: string): Promise<EncodingStatus> {
-    return detectFileEncoding(path);
+    return tauriRuntimePorts.pathInfo.detectFileEncoding(path);
   },
 
   // App config directory operations
   async getAppConfigDir(): Promise<string> {
-    return getAppConfigDir();
+    return tauriRuntimePorts.appConfig.getAppConfigDir();
   },
 
   async readJsonFile(path: string): Promise<unknown> {
-    return readJsonFile(path);
+    return tauriRuntimePorts.appConfig.readJsonFile(path);
   },
 
   async writeJsonFile(path: string, data: unknown): Promise<void> {
-    return writeJsonFile(path, data);
+    return tauriRuntimePorts.appConfig.writeJsonFile(path, data as JsonValue);
   },
 };

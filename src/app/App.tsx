@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from '@tauri-apps/api/core';
-import type { UnlistenFn } from '@tauri-apps/api/event';
 import { Editor } from '../domains/editor/core/Editor';
 import { StateDebug } from '../ui/StateDebug';
 import { Sidebar } from '../ui/sidebar/Sidebar';
@@ -22,6 +21,7 @@ import {
   getInitialFilePath,
   listenFileOpen,
 } from '../services/startup/StartupService';
+import type { Unlisten } from '../core/runtime';
 import { ErrorService } from '../services/error/ErrorService';
 import { showLevel2Notification } from '../services/error/level2Notification';
 import { createRetryAction } from '../services/error/retryActions';
@@ -811,7 +811,7 @@ function App() {
   );
 
   useEffect(() => {
-    let unlisten: UnlistenFn | undefined;
+    let unlisten: Unlisten | undefined;
     let mounted = true;
 
     const setup = async () => {

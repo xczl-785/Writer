@@ -1,4 +1,10 @@
-import { invoke } from '@tauri-apps/api/core';
+export type JsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
 export interface EncodingStatus {
   label: string;
@@ -6,42 +12,64 @@ export interface EncodingStatus {
 
 export type PathKind = 'file' | 'directory' | 'missing' | 'other';
 
-export async function readFile(path: string): Promise<string> {
-  return invoke('read_file', { path });
+export type Unlisten = () => void;
+
+export interface FileContentPort {
+  readFile(path: string): Promise<string>;
+  writeFileAtomic(path: string, content: string): Promise<void>;
 }
 
-export async function writeFileAtomic(
-  path: string,
-  content: string,
-): Promise<void> {
-  return invoke('write_file_atomic', { path, content });
+export interface PathInfoPort {
+  checkExists(path: string): Promise<boolean>;
+  getPathKind(path: string): Promise<PathKind>;
+  detectFileEncoding(path: string): Promise<EncodingStatus>;
 }
 
-export async function checkExists(path: string): Promise<boolean> {
-  return invoke('check_exists', { path });
+export interface AppConfigPort {
+  getAppConfigDir(): Promise<string>;
+  readJsonFile(path: string): Promise<JsonValue>;
+  writeJsonFile(path: string, data: JsonValue): Promise<void>;
 }
 
-export async function getPathKind(path: string): Promise<PathKind> {
-  return invoke('get_path_kind', { path });
+export interface FileDialogFilter {
+  name: string;
+  extensions: string[];
 }
 
-export async function detectFileEncoding(
-  path: string,
-): Promise<EncodingStatus> {
-  return invoke('detect_file_encoding', { path });
+export interface OpenFileDialogOptions {
+  title?: string;
+  filters?: FileDialogFilter[];
+  defaultPath?: string;
+  multiple?: boolean;
+  directory?: boolean;
+  recursive?: boolean;
+  canCreateDirectories?: boolean;
 }
 
-export async function getAppConfigDir(): Promise<string> {
-  return invoke('get_app_config_dir');
+export interface SaveFileDialogOptions {
+  title?: string;
+  filters?: FileDialogFilter[];
+  defaultPath?: string;
+  canCreateDirectories?: boolean;
 }
 
-export async function readJsonFile(path: string): Promise<unknown> {
-  return invoke('read_json_file', { path });
+export interface FileDialogPort {
+  open(options?: OpenFileDialogOptions): Promise<string | string[] | null>;
+  save(options?: SaveFileDialogOptions): Promise<string | null>;
 }
 
-export async function writeJsonFile(
-  path: string,
-  data: unknown,
-): Promise<void> {
-  return invoke('write_json_file', { path, data });
+export type StartupFileListener = (filePath: string) => void;
+
+export interface StartupFilePort {
+  getStartupFilePath(): Promise<string | null>;
+  getPendingFilePath(): Promise<string | null>;
+  listenFileOpen(listener: StartupFileListener): Promise<Unlisten>;
+}
+
+export interface RuntimePorts {
+  fileContent: FileContentPort;
+  pathInfo: PathInfoPort;
+  appConfig: AppConfigPort;
+  fileDialog: FileDialogPort;
+  startupFile: StartupFilePort;
 }

@@ -4,10 +4,11 @@
 
 - **id**: `single-document-session`
 - **name**: Single Document Session
-- **summary**: 定义单文档会话状态、事件和 reducer，当前尚未接入 Writer 生产路径
-- **scope**: 包括 single document session state/types/reducer/dirty 判断；不包括 workspace lifecycle、Sidebar/FileTree、RecentItems、StatusBar、生产 autosave 接入、随手写 App、独立包
+- **summary**: 定义单文档会话状态、事件、reducer 和纯 app-shell harness，当前尚未接入 Writer 生产路径
+- **scope**: 包括 single document session state/types/reducer/dirty 判断、app-shell harness 的 open/edit/requestSave/saveSettled/close 契约；不包括 workspace lifecycle、Sidebar/FileTree、RecentItems、StatusBar、生产 autosave 接入、随手写 App、独立包
 - **entry_points**:
   - `src/core/session/singleDocumentSession.ts`
+  - `src/core/session/singleDocumentSessionShell.ts`
   - `src/core/session/index.ts`
 - **shared_with**:
   - `autosave`
@@ -24,18 +25,22 @@
 
 Single Document Session 当前是 V2 第一轮新增的 core reducer，用于描述单个文档从 empty/open/dirty/saving/closed 的状态流转，并通过版本号判断 dirty。
 
+V4.5 增加 `singleDocumentSessionShell` 作为纯 app-shell harness，用来证明随手写 V5 可以围绕单文档 session、`SaveInput`/`SaveResult`、pending save 和 close view state 编排，而不依赖 Writer workspaceStore、file tree、recent 或 watcher。
+
 它还没有接入 Writer 生产路径。现有 workspaceStore、Sidebar/FileTree、RecentItems、StatusBar、autosave adapter 和 App close/navigation 逻辑仍沿用当前 Writer 实现。
 
 ---
 
 ## Entries
 
-| Entry                              | Trigger                        | Evidence                                    | Notes                              |
-| ---------------------------------- | ------------------------------ | ------------------------------------------- | ---------------------------------- |
-| `createEmptySingleDocumentSession` | 创建空会话 state               | `src/core/session/singleDocumentSession.ts` | 返回 empty/null path/版本 0        |
-| `reduceSingleDocumentSession`      | 根据 session event 归约 state  | `src/core/session/singleDocumentSession.ts` | 纯 reducer，不触发副作用           |
-| `isSingleDocumentSessionDirty`     | 比较 content/saved version     | `src/core/session/singleDocumentSession.ts` | 版本不一致即 dirty                 |
-| `src/core/session/index.ts`        | re-export core session surface | `src/core/session/index.ts`                 | 目前仅导出 single-document reducer |
+| Entry                                  | Trigger                        | Evidence                                         | Notes                                            |
+| -------------------------------------- | ------------------------------ | ------------------------------------------------ | ------------------------------------------------ |
+| `createEmptySingleDocumentSession`     | 创建空会话 state               | `src/core/session/singleDocumentSession.ts`      | 返回 empty/null path/版本 0                      |
+| `reduceSingleDocumentSession`          | 根据 session event 归约 state  | `src/core/session/singleDocumentSession.ts`      | 纯 reducer，不触发副作用                         |
+| `isSingleDocumentSessionDirty`         | 比较 content/saved version     | `src/core/session/singleDocumentSession.ts`      | 版本不一致即 dirty                               |
+| `reduceSingleDocumentSessionShell`     | 单文档 app shell 编排 harness  | `src/core/session/singleDocumentSessionShell.ts` | open/edit/requestSave/saveSettled/close 纯状态流 |
+| `selectSingleDocumentSessionShellView` | app shell 视图状态选择器       | `src/core/session/singleDocumentSessionShell.ts` | 暴露 canSave/canCloseWithoutSaving/pendingSave   |
+| `src/core/session/index.ts`            | re-export core session surface | `src/core/session/index.ts`                      | 目前仅导出 single-document reducer               |
 
 ---
 
@@ -73,14 +78,23 @@ Single Document Session 当前是 V2 第一轮新增的 core reducer，用于描
 
 ---
 
+### CR-005: app-shell harness 不得引入 Writer workspace 语义
+
+`singleDocumentSessionShell` 只编排单文档内容、session reducer、pending `SaveInput` 和 `SaveResult` 回填。它不得依赖 workspaceStore、file tree、RecentItems、FileWatcher、AutosaveService 或 UI service。
+
+**Evidence**: `src/core/session/singleDocumentSessionShell.ts`、`src/core/session/singleDocumentSessionShell.test.ts`
+
+---
+
 ## Impact Surface
 
 | Area                        | What to check                                                          | Evidence                                                                                                    |
 | --------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Reducer semantics           | open/edit/save success/save failure/close 生命周期不回退               | `src/core/session/singleDocumentSession.test.ts`                                                            |
+| Shell harness               | requestSave 生成 `SaveInput`，saveSettled 根据 `SaveResult` 回填状态   | `src/core/session/singleDocumentSessionShell.test.ts`                                                       |
 | Production boundary         | 不在未接入前改写 App/workspace autosave 当前真相                       | `src/app/App.tsx`、`src/domains/file/services/AutosaveService.ts`                                           |
 | Future autosave integration | pending autosave + Cmd+S/切文件/关闭窗口/dirty close workspace 需要 QA | `src/app/commands/fileCommands.ts`、`src/app/App.tsx`、`src/domains/workspace/services/WorkspaceManager.ts` |
-| Core purity                 | reducer 不 import Writer store、UI 或 services                         | `src/core/session/singleDocumentSession.ts`                                                                 |
+| Core purity                 | reducer 和 shell harness 不 import Writer store、UI 或 services        | `src/core/session/singleDocumentSession.ts`、`src/core/session/singleDocumentSessionShell.ts`               |
 
 ---
 
@@ -96,15 +110,17 @@ Single Document Session 当前是 V2 第一轮新增的 core reducer，用于描
 
 - 生产接入点、store 替换策略和 UI 状态映射尚未定义。
 - dirty close workspace 与 pending autosave 的最终策略仍需 V3 QA 后固化。
+- recovery draft manager、Save As、关闭保护 UI 不在 V4.5 harness 已完成范围内。
 
 ---
 
 ## Known Consumers
 
-| Consumer                     | Usage                                 | Evidence                                         |
-| ---------------------------- | ------------------------------------- | ------------------------------------------------ |
-| `src/core/session/index.ts`  | re-export session core public surface | `src/core/session/index.ts`                      |
-| `singleDocumentSession.test` | 验证当前 reducer 语义                 | `src/core/session/singleDocumentSession.test.ts` |
+| Consumer                          | Usage                                               | Evidence                                              |
+| --------------------------------- | --------------------------------------------------- | ----------------------------------------------------- |
+| `src/core/session/index.ts`       | re-export session core public surface               | `src/core/session/index.ts`                           |
+| `singleDocumentSession.test`      | 验证当前 reducer 语义                               | `src/core/session/singleDocumentSession.test.ts`      |
+| `singleDocumentSessionShell.test` | 验证 app-shell harness 不依赖 Writer workspace 语义 | `src/core/session/singleDocumentSessionShell.test.ts` |
 
 ---
 
