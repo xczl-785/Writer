@@ -4,15 +4,16 @@
 
 - **id**: `markdown-clipboard`
 - **name**: Markdown Clipboard
-- **summary**: Parse pasted plain text as Markdown by default, provide Writer-owned pure-paste bypass, and smart-serialize copied selections (plain text by default, Markdown only when selection contains structural nodes).
+- **summary**: Parse pasted plain text as Markdown by default, provide Writer-owned pure-paste bypass, and smart-serialize copied selections through editor-core clipboard services.
 - **scope**: Editor clipboard parser/serializer/HTML-serializer wiring, Writer-owned paste intent lifecycle, application-driven paste fallback rules, smart copy structural-node whitelist, explicit Copy-as-Markdown / Copy-as-Plain commands, menu/context/shortcut entry points for both paste and copy variants, and regression boundaries with image paste.
 - **entry_points**:
-  - `EditorImpl -> editorProps.clipboardTextParser`
-  - `EditorImpl -> editorProps.clipboardTextSerializer`
-  - `EditorImpl -> editorProps.clipboardSerializer` (HTML)
-  - `createMarkdownClipboardTextParser`
-  - `createSmartClipboardTextSerializer`
-  - `serializeSliceAsMarkdown` / `serializeSliceAsPlainText` (explicit commands)
+  - `useEditorInstanceController -> editorProps.clipboardTextParser`
+  - `useEditorInstanceController -> editorProps.clipboardTextSerializer`
+  - `useEditorInstanceController -> editorProps.clipboardSerializer` (HTML)
+  - core `createMarkdownClipboardTextParser`
+  - core `createSmartClipboardTextSerializer`
+  - core `serializeSliceAsMarkdown` / `serializeSliceAsPlainText` (explicit commands)
+  - Writer adapter `src/domains/editor/integration/markdownClipboard.ts`
   - `PasteIntentController`
   - `menu.edit.paste_plain`
   - `menu.edit.copy_markdown`
@@ -23,7 +24,7 @@
   - `Cmd/Ctrl+Shift+V` (paste plain)
   - `Cmd/Ctrl+Shift+C` (copy as Markdown)
   - `Cmd/Ctrl+Shift+Alt+C` (copy as plain text)
-- **shared_with**: i18n (new menu labels), command-system (new commands)
+- **shared_with**: none
 - **check_on_change**:
   - normal plain-text paste still parses Markdown
   - pure paste still inserts raw text
@@ -38,7 +39,7 @@
   - Copy as Markdown / Copy as Plain Text commands align across shortcut, menu, and context menu
   - Mod-Alt-c stays bound to insert-code-block and is not reused
   - menu, context menu, and shortcut stay aligned
-  - editor schema remains a superset of the MarkdownService schema (CR-018)
+  - core editor schema remains a superset of the core MarkdownService schema (CR-018)
   - Ctrl+A inside a codeBlock first selects the block's content; second press escalates to whole document
   - Selection wholly inside a single blockquote / list item / table cell copies plain text (no `>`, `-`, `|` syntax)
   - Selection that drag-wraps exactly one structural block (e.g. a whole code block including its boundaries) copies plain text, not Markdown with fences
@@ -48,31 +49,33 @@
 
 ## Capability Summary
 
-Writer uses ProseMirror clipboard hooks for plain-text clipboard conversion. Normal text paste is parsed through the shared `markdownManager`, while pure-paste flows are controlled by Writer itself through a one-shot paste intent boundary instead of relying only on ProseMirror's internal `plain` flag.
+Writer uses ProseMirror clipboard hooks for plain-text clipboard conversion. V1 boundary work moved the reusable parser, serializer, paste intent, text normalization, MarkdownService, and schema-extension implementation into `src/core/editor/*`. `useEditorInstanceController` mounts those hooks, while `EditorImpl` remains the Writer composition root around the editor experience.
 
 For application-driven paste entry points such as the custom editor context menu and explicit plain-paste commands, Writer now prefers native paste when possible and falls back to explicit clipboard payload reading when the host runtime denies `document.execCommand('paste')`. In that fallback path, normal paste prefers HTML payload and only falls back to plain text when HTML is unavailable. Image clipboard items still remain handled by the image-paste path before text parsing is involved.
+
+Menu and shortcut entry points consume command-system routes and i18n labels, but markdown-clipboard does not share binding rules with those capabilities.
 
 ---
 
 ## Entries
 
-| Entry                                                                | Trigger                                      | Evidence                                                                                                                                        | Notes                              |
-| -------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `EditorImpl.editorProps.clipboardTextParser`                         | text paste reaches ProseMirror parser branch | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | main parse entry                   |
-| `EditorImpl.editorProps.clipboardTextSerializer`                     | text copy/cut requests plain text            | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | main serialize entry               |
-| `createMarkdownClipboardTextParser`                                  | plain-text paste conversion                  | `src/domains/editor/integration/markdownClipboard.ts`                                                                                           | consumes Writer-owned intent first |
-| `createSmartClipboardTextSerializer`                                 | text/plain copy routing                      | `src/domains/editor/integration/smartClipboardSerializer.ts`                                                                                    | Detector A + Detector B + legacy fallback (CR-013) |
-| `isSliceJustOneStructuralBlock` / `isSelectionWhollyInsideStructuralBlock` | CR-013 Detectors A and B               | `src/domains/editor/integration/smartClipboardSerializer.ts`                                                                                    | single-block exception predicates   |
-| `CodeBlockSelectAll` extension                                       | Ctrl+A inside a codeBlock                    | `src/domains/editor/extensions/codeBlockSelectAll.ts`                                                                                           | CR-019: first press selects block content, second press escalates |
-| `executeCopyAsMarkdown` / `executeCopyAsPlainText`                   | explicit copy commands                       | `src/domains/editor/integration/copyCommandBridge.ts`                                                                                           | bypass smart router deterministically |
-| `editor.view.setProps({ clipboardSerializer })`                      | text/html copy channel                       | `src/domains/editor/core/EditorImpl.tsx`                                                                                                        | DOMSerializer-backed rich channel  |
-| `setNextPasteIntent / consumeNextPasteIntent / clearNextPasteIntent` | pure-paste intent lifecycle                  | `src/domains/editor/integration/pasteIntentController.ts`                                                                                       | one-shot boundary                  |
-| `executePasteCommand`                                                | menu/context paste bridge                    | `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                          | shared paste execution helper      |
-| `readClipboardPayload`                                               | desktop/web clipboard payload fallback       | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                           | returns HTML/text when available   |
-| `menu.edit.paste_plain`                                              | edit menu plain paste                        | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs` | command and native menu route      |
-| `context menu -> paste-plain`                                        | editor context menu plain paste              | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                         | context path                       |
-| `Cmd/Ctrl+Shift+V`                                                   | keyboard pure paste                          | `src/domains/editor/extensions/keydownHandler.ts`                                                                                               | arms one-shot plain intent         |
-| `handleVSCodeMarkdownPaste`                                           | VSCode markdown paste interception           | `src/domains/editor/hooks/pasteHandler.ts`                                                                                                      | discards HTML, routes to text/plain |
+| Entry                                                                      | Trigger                                      | Evidence                                                                                                                                        | Notes                                                             |
+| -------------------------------------------------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `useEditorInstanceController.editorProps.clipboardTextParser`              | text paste reaches ProseMirror parser branch | `src/domains/editor/core/useEditorInstanceController.ts`                                                                                        | main parse wiring                                                 |
+| `useEditorInstanceController.editorProps.clipboardTextSerializer`          | text copy/cut requests plain text            | `src/domains/editor/core/useEditorInstanceController.ts`                                                                                        | main serialize wiring                                             |
+| `createMarkdownClipboardTextParser`                                        | plain-text paste conversion                  | `src/core/editor/clipboard/markdownClipboard.ts`, `src/domains/editor/integration/markdownClipboard.ts` Writer adapter                          | consumes Writer-owned intent first                                |
+| `createSmartClipboardTextSerializer`                                       | text/plain copy routing                      | `src/core/editor/clipboard/smartClipboardSerializer.ts`, `src/domains/editor/integration/smartClipboardSerializer.ts` re-export                 | Detector A + Detector B + legacy fallback (CR-013)                |
+| `isSliceJustOneStructuralBlock` / `isSelectionWhollyInsideStructuralBlock` | CR-013 Detectors A and B                     | `src/core/editor/clipboard/smartClipboardSerializer.ts`                                                                                         | single-block exception predicates                                 |
+| `CodeBlockSelectAll` extension                                             | Ctrl+A inside a codeBlock                    | `src/domains/editor/extensions/codeBlockSelectAll.ts`                                                                                           | CR-019: first press selects block content, second press escalates |
+| `executeCopyAsMarkdown` / `executeCopyAsPlainText`                         | explicit copy commands                       | `src/domains/editor/integration/copyCommandBridge.ts`                                                                                           | bypass smart router deterministically                             |
+| `editor.view.setProps({ clipboardSerializer })`                            | text/html copy channel                       | `src/domains/editor/core/useEditorInstanceController.ts`                                                                                        | DOMSerializer-backed rich channel                                 |
+| `setNextPasteIntent / consumeNextPasteIntent / clearNextPasteIntent`       | pure-paste intent lifecycle                  | `src/core/editor/clipboard/pasteIntentController.ts`, `src/domains/editor/integration/pasteIntentController.ts` re-export                       | one-shot boundary                                                 |
+| `executePasteCommand`                                                      | menu/context paste bridge                    | `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                          | shared paste execution helper                                     |
+| `readClipboardPayload`                                                     | desktop/web clipboard payload fallback       | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                           | returns HTML/text when available                                  |
+| `menu.edit.paste_plain`                                                    | edit menu plain paste                        | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs` | command and native menu route                                     |
+| `context menu -> paste-plain`                                              | editor context menu plain paste              | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                         | context path                                                      |
+| `Cmd/Ctrl+Shift+V`                                                         | keyboard pure paste                          | `src/domains/editor/extensions/keydownHandler.ts`                                                                                               | arms one-shot plain intent                                        |
+| `handleVSCodeMarkdownPaste`                                                | VSCode markdown paste interception           | `src/domains/editor/hooks/pasteHandler.ts`                                                                                                      | discards HTML, routes to text/plain                               |
 
 ---
 
@@ -80,33 +83,33 @@ For application-driven paste entry points such as the custom editor context menu
 
 ### CR-001: Writer wires Markdown clipboard conversion through official editor clipboard hooks
 
-The editor uses `clipboardTextParser` and `clipboardTextSerializer` for text conversion rather than custom low-level DOM text parsing.
+The editor uses `clipboardTextParser` and `clipboardTextSerializer` for text conversion rather than custom low-level DOM text parsing. `useEditorInstanceController` owns the runtime wiring; the reusable implementation lives under `src/core/editor/clipboard`.
 
-**Evidence**: `src/domains/editor/core/EditorImpl.tsx`, `src/domains/editor/integration/markdownClipboard.ts`
+**Evidence**: `src/domains/editor/core/useEditorInstanceController.ts`, `src/core/editor/clipboard/markdownClipboard.ts`, `src/core/editor/clipboard/smartClipboardSerializer.ts`
 
 ### CR-002: Normal plain-text paste parses Markdown into structured content
 
 When neither ProseMirror `plain` nor Writer-owned pure-paste intent requests bypass, the parser calls `markdownManager.parse(text)` and converts the result into a schema-backed `Slice`.
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`, `src/services/markdown/MarkdownService.ts`
+**Evidence**: `src/core/editor/clipboard/markdownClipboard.ts`, `src/core/editor/markdown/MarkdownService.ts`, `src/services/markdown/MarkdownService.ts` re-export
 
 ### CR-003: Writer owns pure-paste intent explicitly
 
 Pure-paste behavior is not inferred only from ProseMirror internals. Writer sets next-paste intent through a dedicated controller and the parser consumes that intent once.
 
-**Evidence**: `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/markdownClipboard.ts`
+**Evidence**: `src/core/editor/clipboard/pasteIntentController.ts`, `src/core/editor/clipboard/markdownClipboard.ts`, `src/domains/editor/integration/markdownClipboard.ts` Writer adapter
 
 ### CR-004: Pure paste bypasses Markdown parsing and inserts raw text
 
 If ProseMirror passes `plain === true` or Writer-owned intent resolves to `plain`, the parser creates paragraph-based raw-text content instead of running Markdown structure conversion.
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`
+**Evidence**: `src/core/editor/clipboard/markdownClipboard.ts`
 
 ### CR-005: Pure-paste intent is one-shot and must not leak
 
 After parser consumption, the next-paste intent resets to `default`. Paste-command failure paths also reset pending plain intent before reporting permission errors.
 
-**Evidence**: `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`
+**Evidence**: `src/core/editor/clipboard/pasteIntentController.ts`, `src/domains/editor/integration/pasteIntentController.ts` re-export, `src/domains/editor/integration/pasteCommandBridge.ts`
 
 ### CR-006: Application-driven normal paste prefers native paste and falls back to explicit payload insertion
 
@@ -118,7 +121,7 @@ When Writer itself initiates a paste action from menu or context-menu handlers, 
 
 If input exceeds the parse threshold, Markdown parsing throws, **or the parsed JSON contains node/mark types unknown to the editor schema**, Writer falls back to raw-text paragraph insertion rather than silently dropping the paste. The third clause is defense in depth for CR-018: if the invariant is ever violated, the user still gets their text instead of a no-op key press or an empty editor after a file load.
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts` — `tryMarkdownParse` guards the parse step, `tryNodeFromJSON` guards the schema resolution step, and the file-load path in `src/domains/editor/core/EditorImpl.tsx` wraps `editor.commands.setContent` in an inner try/catch that falls back to a single plain paragraph containing the raw markdown source.
+**Evidence**: `src/core/editor/clipboard/markdownClipboard.ts` — `tryMarkdownParse` guards the parse step, `tryNodeFromJSON` guards the schema resolution step, and the file-load path in `src/domains/editor/core/useEditorInstanceController.ts` wraps `editor.commands.loadDocument` in an inner try/catch that falls back to a single plain paragraph containing the raw markdown source.
 
 ### CR-008: Default copy uses structural-aware smart serialization
 
@@ -129,11 +132,11 @@ When the user invokes the default copy action (`Ctrl/Cmd+C`, system-level cut, d
   - If the selection contains **any** whitelisted structural node → Markdown source via shared `markdownManager.serialize`
 - `text/html`: ProseMirror default DOM serializer output (for rich-text targets)
 
-The whitelist is intentionally narrow and fully enumerated so the rule is explainable in one sentence: *"Ctrl+C gives you plain text; it only keeps Markdown syntax when the selection contains structural elements that would lose information without it."*
+The whitelist is intentionally narrow and fully enumerated so the rule is explainable in one sentence: _"Ctrl+C gives you plain text; it only keeps Markdown syntax when the selection contains structural elements that would lose information without it."_
 
 **Rationale**: `text/plain` is the OS-universal fallback consumed by every target (Notepad, Slack, terminals, search boxes). Filling it unconditionally with Markdown syntax produces broken UX in the vast majority of copy destinations. At the same time, silently stripping structure when the user genuinely selected a list/code block/table would be a worse data-loss failure. The whitelist resolves both concerns deterministically.
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`, `src/services/markdown/MarkdownService.ts`, regression test `src/domains/editor/integration/markdownClipboard.test.ts`
+**Evidence**: `src/core/editor/clipboard/markdownClipboard.ts`, `src/core/editor/clipboard/smartClipboardSerializer.ts`, `src/core/editor/markdown/MarkdownService.ts`, regression test `src/domains/editor/integration/markdownClipboard.test.ts`
 
 ### CR-009: Menu, context menu, and shortcut all align on Writer-owned pure-paste behavior
 
@@ -151,7 +154,7 @@ When a paste event carries `vscode-editor-data` with `mode: "markdown"`, the pas
 
 When Markdown parsing produces a doc containing exactly one `codeBlock` child, the parser checks for removable common indentation. If stripping common indent and re-parsing yields a structurally richer result (more nodes or different node types), the retried result is used. Otherwise the original parse stands. This is a secondary defense for non-VSCode sources that provide uniformly indented `text/plain`.
 
-**Evidence**: `src/domains/editor/integration/markdownClipboard.ts`, `src/domains/editor/integration/textNormalization.ts`
+**Evidence**: `src/core/editor/clipboard/markdownClipboard.ts`, `src/core/editor/clipboard/textNormalization.ts`, `src/domains/editor/integration/textNormalization.ts` re-export
 
 ### CR-010: Image paste stays outside this capability's conversion path
 
@@ -161,13 +164,13 @@ Clipboard image items are still handled by the image-paste hook, which prevents 
 
 ### CR-018: Editor schema must be a superset of MarkdownService schema
 
-Every mark type and node type registered in `MarkdownService`'s `markdownExtensions` list MUST also be registered in the editor's `createEditorSchemaExtensions` list. Violating this invariant corrupts the round-trip: `markdownManager.parse(text)` can produce JSON that `editor.state.schema.nodeFromJSON` cannot resolve, causing `Ctrl+V`, file loads, and right-click paste to fail silently.
+Every mark type and node type registered in core `MarkdownService`'s `markdownExtensions` list MUST also be registered in the core editor schema extension list. Writer-specific schema concerns, such as image URL resolution, are injected through the `src/domains/editor/core/editorExtensions.ts` Writer adapter. Violating this invariant corrupts the round-trip: `markdownManager.parse(text)` can produce JSON that `editor.state.schema.nodeFromJSON` cannot resolve, causing `Ctrl+V`, file loads, and right-click paste to fail silently.
 
 **Rationale**: The clipboard text parser and the file-load path both take the shape `markdown → JSON → editor doc`. If the midpoint JSON carries a type unknown to the editor schema, ProseMirror throws from deep inside `nodeFromJSON`. In the paste path the throw is swallowed by the DOM event handler after `event.preventDefault()` has already fired, so the user sees "the Ctrl+V key did nothing". In the file-load path the user sees an empty editor with a silent status bar error. The schema-mismatch bug caused by the missing `Highlight` extension (2026-04-11) was a direct violation of this invariant.
 
 **Enforcement**: `src/domains/editor/__tests__/schemaConsistency.test.ts` enumerates both schemas with `getSchema(...)` and asserts the subset relationship at the mark and node level. CI runs this test on every commit.
 
-**Evidence**: `src/domains/editor/core/editorExtensions.ts`, `src/services/markdown/MarkdownService.ts` (`markdownExtensions`), `src/domains/editor/__tests__/schemaConsistency.test.ts`
+**Evidence**: `src/core/editor/schema/editorExtensions.ts`, `src/domains/editor/core/editorExtensions.ts` Writer adapter, `src/core/editor/markdown/MarkdownService.ts` (`markdownExtensions`), `src/services/markdown/MarkdownService.ts` re-export, `src/domains/editor/__tests__/schemaConsistency.test.ts`
 
 ---
 
@@ -213,7 +216,7 @@ Concretely, the serializer applies the following checks in order:
 
 This rule is intentionally more aggressive than Typora's (which only special-cases `codeBlock` via `Ctrl+A`) and Obsidian's (which has no such handling at all). See `Writer-Docs-Internal/plans/FIX-CODE-BLOCK-COPY.md` §2 for the comparative study.
 
-**Evidence**: `src/domains/editor/integration/smartClipboardSerializer.ts` — `STRUCTURAL_NODE_TYPES` / `STRUCTURAL_MARK_TYPES` constants, `isSliceJustOneStructuralBlock`, `isSelectionWhollyInsideStructuralBlock`, `containsStructuralNode` predicates, and their composition in `createSmartClipboardTextSerializer(getEditorState)`. Regression coverage in `src/domains/editor/integration/smartClipboardSerializer.test.ts` "single-block refinement (CR-013 revision)" block (T1–T12).
+**Evidence**: `src/core/editor/clipboard/smartClipboardSerializer.ts` — `STRUCTURAL_NODE_TYPES` / `STRUCTURAL_MARK_TYPES` constants, `isSliceJustOneStructuralBlock`, `isSelectionWhollyInsideStructuralBlock`, `containsStructuralNode` predicates, and their composition in `createSmartClipboardTextSerializer(getEditorState)`. The old `src/domains/editor/integration/smartClipboardSerializer.ts` path re-exports the core implementation. Regression coverage in `src/domains/editor/integration/smartClipboardSerializer.test.ts` "single-block refinement (CR-013 revision)" block (T1-T12).
 
 ---
 
@@ -223,7 +226,7 @@ Writer configures `editorProps.clipboardSerializer` (the DOM serializer) in addi
 
 **Rationale**: Historically Writer only wired `clipboardTextSerializer`, leaving HTML to ProseMirror defaults. With the new plain-text-biased `text/plain` behavior (CR-008), a properly populated `text/html` channel becomes load-bearing — it is the format that rich targets consume to preserve formatting.
 
-**Evidence**: `src/domains/editor/core/EditorImpl.tsx:388-398` — post-mount `useEffect` attaches `DOMSerializer.fromSchema(editor.schema)` via `editor.view.setProps({ clipboardSerializer })`. Regression test: `src/domains/editor/core/EditorClipboardContracts.test.ts`.
+**Evidence**: `src/domains/editor/core/useEditorInstanceController.ts` — post-mount `useEffect` attaches `DOMSerializer.fromSchema(editor.schema)` via `editor.view.setProps({ clipboardSerializer })`. `EditorImpl` remains the Writer composition root. Regression test: `src/domains/editor/core/EditorClipboardContracts.test.ts`.
 
 ---
 
@@ -261,14 +264,14 @@ When invoked, it bypasses the smart serializer and writes the plain-text project
 
 ### CR-017: Keyboard shortcut registry
 
-| Shortcut                  | Action              | Entry point                                               |
-| ------------------------- | ------------------- | --------------------------------------------------------- |
-| `Cmd/Ctrl+C`              | Smart copy (CR-008) | Native browser copy event → ProseMirror clipboard hooks   |
-| `Cmd/Ctrl+Shift+C`        | Copy as Markdown    | `src/domains/editor/extensions/keydownHandler.ts`         |
-| `Cmd/Ctrl+Shift+Alt+C`    | Copy as Plain Text  | `src/domains/editor/extensions/keydownHandler.ts`         |
-| `Cmd/Ctrl+A` (in codeBlock) | Select block content (CR-019) | `src/domains/editor/extensions/codeBlockSelectAll.ts` |
-| `Cmd/Ctrl+V`              | Smart paste         | Existing paste pipeline (unchanged)                       |
-| `Cmd/Ctrl+Shift+V`        | Paste as Plain Text | Existing (CR-009, unchanged)                              |
+| Shortcut                    | Action                        | Entry point                                             |
+| --------------------------- | ----------------------------- | ------------------------------------------------------- |
+| `Cmd/Ctrl+C`                | Smart copy (CR-008)           | Native browser copy event → ProseMirror clipboard hooks |
+| `Cmd/Ctrl+Shift+C`          | Copy as Markdown              | `src/domains/editor/extensions/keydownHandler.ts`       |
+| `Cmd/Ctrl+Shift+Alt+C`      | Copy as Plain Text            | `src/domains/editor/extensions/keydownHandler.ts`       |
+| `Cmd/Ctrl+A` (in codeBlock) | Select block content (CR-019) | `src/domains/editor/extensions/codeBlockSelectAll.ts`   |
+| `Cmd/Ctrl+V`                | Smart paste                   | Existing paste pipeline (unchanged)                     |
+| `Cmd/Ctrl+Shift+V`          | Paste as Plain Text           | Existing (CR-009, unchanged)                            |
 
 **Conflict audit**:
 
@@ -302,21 +305,21 @@ When the editor focus is inside a `codeBlock` node and the user invokes the `Mod
 
 ## Impact Surface
 
-| Area                       | What to check                                                       | Evidence                                                                                                                                                                                                                                                                                              |
-| -------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Editor wiring              | parser/serializer still mounted correctly                           | `src/domains/editor/core/EditorImpl.tsx`                                                                                                                                                                                                                                                              |
-| Paste intent lifecycle     | one-shot consume and clear-on-failure behavior                      | `src/domains/editor/integration/pasteIntentController.ts`, `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                                                                                                                     |
-| Clipboard payload fallback | desktop/web explicit HTML/text read path for app-driven paste       | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                                                                                                                                                                                 |
-| Markdown parser behavior   | normal paste, pure paste, oversize fallback, parse-failure fallback | `src/domains/editor/integration/markdownClipboard.ts`                                                                                                                                                                                                                                                 |
-| Smart copy router          | Detector A / B / legacy fallback ordering and cross-sibling (Option X) semantics | `src/domains/editor/integration/smartClipboardSerializer.ts`, `src/domains/editor/integration/smartClipboardSerializer.test.ts` (single-block refinement)                                                                                                                                         |
-| Ctrl+A in codeBlock        | CR-019 single-level override + escape hatch via returning false     | `src/domains/editor/extensions/codeBlockSelectAll.ts`, `src/domains/editor/extensions/codeBlockSelectAll.test.ts`                                                                                                                                                                                    |
-| Keyboard entry             | shortcut sets plain intent only for `Cmd/Ctrl+Shift+V`              | `src/domains/editor/extensions/keydownHandler.ts`                                                                                                                                                                                                                                                     |
-| Edit menu path             | menu command id and native menu item stay aligned                   | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                                                                                                                                                       |
-| Context menu path          | plain-paste item exists and uses shared paste bridge                | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                                                                                                                                                                               |
-| Image paste                | image clipboard items still bypass text parsing                     | `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`                                                                                                                                                                                                          |
-| VSCode paste interception  | markdown pastes from VSCode bypass HTML and use text/plain          | `src/domains/editor/hooks/pasteHandler.ts`                                                                                                                                                                                                                                                            |
-| Text normalization         | indentation retry for sole-codeBlock degeneration                   | `src/domains/editor/integration/textNormalization.ts`                                                                                                                                                                                                                                                 |
-| Behavior tests             | parser, command, context, and shortcut contracts remain covered     | `src/domains/editor/integration/markdownClipboard.test.ts`, `src/domains/editor/integration/pasteIntentController.test.ts`, `src/domains/editor/handlers/menuCommandHandler.test.ts`, `src/domains/editor/handlers/contextMenuHandler.test.ts`, `src/domains/editor/core/EditorTableControls.test.ts` |
+| Area                       | What to check                                                                    | Evidence                                                                                                                                                                                                                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Editor wiring              | parser/serializer still mounted correctly                                        | `src/domains/editor/core/useEditorInstanceController.ts`, `src/domains/editor/core/EditorImpl.tsx` composition root                                                                                                                                                                                   |
+| Paste intent lifecycle     | one-shot consume and clear-on-failure behavior                                   | `src/core/editor/clipboard/pasteIntentController.ts`, `src/domains/editor/integration/pasteIntentController.ts` re-export, `src/domains/editor/integration/pasteCommandBridge.ts`                                                                                                                     |
+| Clipboard payload fallback | desktop/web explicit HTML/text read path for app-driven paste                    | `src/services/runtime/ClipboardTextReader.ts`, `src-tauri/src/lib.rs`                                                                                                                                                                                                                                 |
+| Markdown parser behavior   | normal paste, pure paste, oversize fallback, parse-failure fallback              | `src/core/editor/clipboard/markdownClipboard.ts`, `src/domains/editor/integration/markdownClipboard.ts` Writer adapter                                                                                                                                                                                |
+| Smart copy router          | Detector A / B / legacy fallback ordering and cross-sibling (Option X) semantics | `src/core/editor/clipboard/smartClipboardSerializer.ts`, `src/domains/editor/integration/smartClipboardSerializer.ts` re-export, `src/domains/editor/integration/smartClipboardSerializer.test.ts` (single-block refinement)                                                                          |
+| Ctrl+A in codeBlock        | CR-019 single-level override + escape hatch via returning false                  | `src/domains/editor/extensions/codeBlockSelectAll.ts`, `src/domains/editor/extensions/codeBlockSelectAll.test.ts`                                                                                                                                                                                     |
+| Keyboard entry             | shortcut sets plain intent only for `Cmd/Ctrl+Shift+V`                           | `src/domains/editor/extensions/keydownHandler.ts`                                                                                                                                                                                                                                                     |
+| Edit menu path             | menu command id and native menu item stay aligned                                | `src/app/commands/editCommands.ts`, `src/domains/editor/handlers/menuCommandHandler.ts`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                                                                                                                                                       |
+| Context menu path          | plain-paste item exists and uses shared paste bridge                             | `src/shared/components/ContextMenu/editorMenu.tsx`, `src/domains/editor/handlers/contextMenuHandler.ts`                                                                                                                                                                                               |
+| Image paste                | image clipboard items still bypass text parsing                                  | `src/domains/editor/hooks/useImagePaste.ts`, `src/domains/editor/integration/pasteBridge.ts`                                                                                                                                                                                                          |
+| VSCode paste interception  | markdown pastes from VSCode bypass HTML and use text/plain                       | `src/domains/editor/hooks/pasteHandler.ts`                                                                                                                                                                                                                                                            |
+| Text normalization         | indentation retry for sole-codeBlock degeneration                                | `src/core/editor/clipboard/textNormalization.ts`, `src/domains/editor/integration/textNormalization.ts` re-export                                                                                                                                                                                     |
+| Behavior tests             | parser, command, context, and shortcut contracts remain covered                  | `src/domains/editor/integration/markdownClipboard.test.ts`, `src/domains/editor/integration/pasteIntentController.test.ts`, `src/domains/editor/handlers/menuCommandHandler.test.ts`, `src/domains/editor/handlers/contextMenuHandler.test.ts`, `src/domains/editor/core/EditorTableControls.test.ts` |
 
 ---
 
@@ -325,6 +328,8 @@ When the editor focus is inside a `codeBlock` node and the user invokes the `Mod
 | Shared Rule | Dependency                 | Lifted |
 | ----------- | -------------------------- | ------ |
 | none        | No shared rules identified | no     |
+
+Markdown Clipboard consumes command-system entry routes (`menu.edit.*`) and i18n menu labels, but those are integration consumers rather than shared rules. Keep menu IDs and labels aligned through the Entries / Impact Surface checks, not through `shared_with`.
 
 ---
 
@@ -338,14 +343,15 @@ When the editor focus is inside a `codeBlock` node and the user invokes the `Mod
 
 ## Known Consumers
 
-| Consumer                   | Usage                                            | Evidence                                                  |
-| -------------------------- | ------------------------------------------------ | --------------------------------------------------------- |
-| `EditorImpl`               | mounts clipboard parser and serializer           | `src/domains/editor/core/EditorImpl.tsx`                  |
-| `markdownClipboard.ts`     | text clipboard parse/serialize core              | `src/domains/editor/integration/markdownClipboard.ts`     |
-| `pasteIntentController.ts` | owns next-paste intent state                     | `src/domains/editor/integration/pasteIntentController.ts` |
-| `pasteCommandBridge.ts`    | shared paste execution for menu/context actions  | `src/domains/editor/integration/pasteCommandBridge.ts`    |
-| `ClipboardTextReader`      | desktop/web clipboard HTML/text read fallback    | `src/services/runtime/ClipboardTextReader.ts`             |
-| `MarkdownService`          | shared `markdownManager` parse/serialize support | `src/services/markdown/MarkdownService.ts`                |
+| Consumer                      | Usage                                                                          | Evidence                                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `useEditorInstanceController` | mounts clipboard parser and serializer                                         | `src/domains/editor/core/useEditorInstanceController.ts`                                                                  |
+| `EditorImpl`                  | Writer composition root around editor experience                               | `src/domains/editor/core/EditorImpl.tsx`                                                                                  |
+| `markdownClipboard.ts`        | core text clipboard parse/serialize implementation plus Writer logging adapter | `src/core/editor/clipboard/markdownClipboard.ts`, `src/domains/editor/integration/markdownClipboard.ts`                   |
+| `pasteIntentController.ts`    | owns next-paste intent state                                                   | `src/core/editor/clipboard/pasteIntentController.ts`, `src/domains/editor/integration/pasteIntentController.ts` re-export |
+| `pasteCommandBridge.ts`       | shared paste execution for menu/context actions                                | `src/domains/editor/integration/pasteCommandBridge.ts`                                                                    |
+| `ClipboardTextReader`         | desktop/web clipboard HTML/text read fallback                                  | `src/services/runtime/ClipboardTextReader.ts`                                                                             |
+| `MarkdownService`             | shared `markdownManager` parse/serialize support                               | `src/core/editor/markdown/MarkdownService.ts`, `src/services/markdown/MarkdownService.ts` re-export                       |
 
 ---
 

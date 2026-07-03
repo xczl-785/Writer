@@ -8,7 +8,10 @@
 - **scope**: 包括 undo/redo 快捷键、history 栈初始化/重置规则、文档加载不进入历史、文件切换清栈；不包括 autosave 脏标记、文件系统持久化
 - **entry_points**:
   - useUndoRedo hook（Mod-z / Mod-y / Mod-Shift-z）
-  - editor.commands.loadDocument（文档加载专用命令，待实现）
+  - `src/domains/editor/core/useEditorInstanceController.ts`
+  - editor.commands.loadDocument（文档加载专用命令）
+  - `src/core/editor/extensions/loadDocument.ts`
+  - 旧入口 `src/domains/editor/extensions/loadDocument.ts` re-export
   - ProseMirror history 插件（由 StarterKit 提供）
 - **shared_with**: autosave（共享"用户编辑 vs 程序加载"的区分语义）
 - **check_on_change**:
@@ -21,7 +24,7 @@
 
 ## Capability Summary
 
-Writer 使用 Tiptap 3.x 的 StarterKit，其内部依赖 ProseMirror `history` 插件维护 undo/redo 栈（默认深度 100）。本能力的核心约束是：**history 栈的生命周期必须与当前打开文档的 identity 严格对齐**——只有用户的真实编辑才应进入栈，任何"程序化文档加载"都不得污染栈；当 activeFile 变化时，栈必须彻底清空，不得跨文件残留。
+Writer 使用 Tiptap 3.x 的 StarterKit，其内部依赖 ProseMirror `history` 插件维护 undo/redo 栈（默认深度 100）。本能力的核心约束是：**history 栈的生命周期必须与当前打开文档的 identity 严格对齐**。V1 边界下沉后，editor 初始化、LoadDocument 注册和 schema wiring 由 `useEditorInstanceController` 承接；`EditorImpl` 只保留 Writer 薄编排/组合入口语义。
 
 历史栈污染会导致两类严重数据事故：
 
@@ -34,11 +37,12 @@ Writer 使用 Tiptap 3.x 的 StarterKit，其内部依赖 ProseMirror `history` 
 
 ## Entries
 
-| Entry              | Trigger                      | Evidence                                                                                           | Notes                                                |
-| ------------------ | ---------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| useUndoRedo        | Mod-z / Mod-y / Mod-Shift-z  | `src/domains/editor/extensions/findReplaceShortcuts.ts:29-40`、`src/domains/editor/hooks/useUndoRedo.ts` | 调用 editor.chain().focus().undo/redo().run()        |
-| StarterKit history | 编辑器初始化                  | `src/domains/editor/core/EditorImpl.tsx:205`                                                       | 由 StarterKit 默认启用，depth=100                     |
-| loadDocument 扩展  | activeFile 变化时加载内容    | `src/domains/editor/extensions/loadDocument.ts:42-90`                                             | 封装"解析 + 替换 doc + 不入栈 + 清栈"               |
+| Entry                       | Trigger                     | Evidence                                                                                                                    | Notes                                                     |
+| --------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| useUndoRedo                 | Mod-z / Mod-y / Mod-Shift-z | `src/domains/editor/extensions/findReplaceShortcuts.ts:29-40`、`src/domains/editor/hooks/useUndoRedo.ts`                    | 调用 editor.chain().focus().undo/redo().run()             |
+| useEditorInstanceController | editor 初始化与扩展 wiring  | `src/domains/editor/core/useEditorInstanceController.ts:54-121`                                                             | 组合传入扩展、LoadDocument、schema 扩展并调用 `useEditor` |
+| StarterKit history          | schema extension 初始化     | `src/core/editor/schema/editorExtensions.ts:41-51, 111-121`、`src/domains/editor/core/useEditorInstanceController.ts:54-61` | 由 StarterKit 默认启用，depth=100                         |
+| loadDocument 扩展           | activeFile 变化时加载内容   | `src/core/editor/extensions/loadDocument.ts:42-90`、`src/domains/editor/extensions/loadDocument.ts` re-export               | 封装"解析 + 替换 doc + 不入栈 + 清栈"                     |
 
 ---
 
@@ -48,7 +52,7 @@ Writer 使用 Tiptap 3.x 的 StarterKit，其内部依赖 ProseMirror `history` 
 
 ProseMirror history 插件使用 StarterKit 默认配置，depth=100，newGroupDelay=500ms。如无明确理由，不得修改该默认值。
 
-**Evidence**: StarterKit 默认值，`src/domains/editor/core/EditorImpl.tsx:205`
+**Evidence**: StarterKit 默认值；`src/core/editor/schema/editorExtensions.ts:41-51, 111-121` 由 core schema extension 提供 StarterKit，`src/domains/editor/core/useEditorInstanceController.ts:54-61, 77-121` 完成 editor 初始化和扩展挂载。
 
 ---
 
@@ -68,7 +72,7 @@ ProseMirror history 插件使用 StarterKit 默认配置，depth=100，newGroupD
 
 当编辑器从文件 A 切换到文件 B（activeFile identity 变化）时，必须在加载 B 内容的同一个 tick 内清空 undo 栈和 redo 栈。禁止跨文件保留历史，防止 undo 穿透到另一个文件的内容。
 
-**Evidence**: `src/domains/editor/extensions/loadDocument.ts:64-84`。实现方式：在 dispatch 替换 transaction 之后，同步调用 `editor.unregisterPlugin('history')` 卸载 ProseMirror history 插件（Tiptap `unregisterPlugin` 按 `history$` key 前缀匹配），再 `editor.registerPlugin(history({ depth: 100, newGroupDelay: 500 }))` 注册一个全新的 history 插件。全部走 Tiptap 公开 API，不依赖 prosemirror-history 任何内部 key。回归：`src/domains/editor/__tests__/editorHistory.test.ts` 中 `CR-003: switching files wipes undo history...` 用例。
+**Evidence**: `src/core/editor/extensions/loadDocument.ts:64-84`。旧 `src/domains/editor/extensions/loadDocument.ts` re-export 该 core 实现。实现方式：在 dispatch 替换 transaction 之后，同步调用 `editor.unregisterPlugin('history')` 卸载 ProseMirror history 插件（Tiptap `unregisterPlugin` 按 `history$` key 前缀匹配），再 `editor.registerPlugin(history({ depth: 100, newGroupDelay: 500 }))` 注册一个全新的 history 插件。全部走 Tiptap 公开 API，不依赖 prosemirror-history 任何内部 key。回归：`src/domains/editor/__tests__/editorHistory.test.ts` 中 `CR-003: switching files wipes undo history...` 用例。
 
 ---
 
@@ -102,21 +106,21 @@ loadDocument 在替换文档内容时，除了设置 `addToHistory: false`，还
 
 ## Impact Surface
 
-| Area                           | What to check                                        | Evidence                                                         |
-| ------------------------------ | ---------------------------------------------------- | ---------------------------------------------------------------- |
-| loadDocument 扩展              | 正确设置 addToHistory=false、清栈、不触发 onUpdate   | `src/domains/editor/extensions/loadDocument.ts:42-90`            |
-| EditorImpl useEffect([activeFile]) | 调用 loadDocument 而非 setContent                | `src/domains/editor/core/EditorImpl.tsx:405-425`                 |
-| useUndoRedo                    | 快捷键无误触、focus 正确                             | `src/domains/editor/hooks/useUndoRedo.ts`                        |
-| StarterKit 配置                | history 未被禁用，depth 未被误改                     | `src/domains/editor/core/EditorImpl.tsx:205`                     |
-| 回归测试                       | 首次加载后 undo 不清空、跨文件 undo 不穿透           | `src/domains/editor/__tests__/editorHistory.test.ts`             |
+| Area                                                | What to check                                      | Evidence                                                                                                      |
+| --------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| loadDocument 扩展                                   | 正确设置 addToHistory=false、清栈、不触发 onUpdate | `src/core/editor/extensions/loadDocument.ts:42-90`、`src/domains/editor/extensions/loadDocument.ts` re-export |
+| useEditorInstanceController useEffect([activeFile]) | 调用 loadDocument 而非 setContent                  | `src/domains/editor/core/useEditorInstanceController.ts`                                                      |
+| useUndoRedo                                         | 快捷键无误触、focus 正确                           | `src/domains/editor/hooks/useUndoRedo.ts`                                                                     |
+| StarterKit 配置                                     | history 未被禁用，depth 未被误改                   | `src/core/editor/schema/editorExtensions.ts`、`src/domains/editor/core/useEditorInstanceController.ts`        |
+| 回归测试                                            | 首次加载后 undo 不清空、跨文件 undo 不穿透         | `src/domains/editor/__tests__/editorHistory.test.ts`                                                          |
 
 ---
 
 ## Shared Rules Dependency
 
-| Shared Rule                          | Dependency                                                                              | Lifted |
-| ------------------------------------ | --------------------------------------------------------------------------------------- | ------ |
-| autosave "用户编辑 vs 程序加载" 区分 | loadDocument 同时承担"不进栈"与"不触发 autosave"双重职责，与 autosave 的脏标记链互斥  | no     |
+| Shared Rule                          | Dependency                                                                           | Lifted |
+| ------------------------------------ | ------------------------------------------------------------------------------------ | ------ |
+| autosave "用户编辑 vs 程序加载" 区分 | loadDocument 同时承担"不进栈"与"不触发 autosave"双重职责，与 autosave 的脏标记链互斥 | no     |
 
 ---
 
@@ -128,10 +132,11 @@ loadDocument 在替换文档内容时，除了设置 `addToHistory: false`，还
 
 ## Known Consumers
 
-| Consumer    | Usage                                           | Evidence                                           |
-| ----------- | ----------------------------------------------- | -------------------------------------------------- |
-| EditorImpl  | 首次加载、切换文件时调用 loadDocument           | `src/domains/editor/core/EditorImpl.tsx:405-425`   |
-| useUndoRedo | 消费 editor 的 undo/redo 命令                   | `src/domains/editor/hooks/useUndoRedo.ts`          |
+| Consumer                    | Usage                                            | Evidence                                                 |
+| --------------------------- | ------------------------------------------------ | -------------------------------------------------------- |
+| useEditorInstanceController | 首次加载、切换文件时调用 loadDocument            | `src/domains/editor/core/useEditorInstanceController.ts` |
+| EditorImpl                  | Writer 薄编排/组合入口，承接实例 controller 输出 | `src/domains/editor/core/EditorImpl.tsx`                 |
+| useUndoRedo                 | 消费 editor 的 undo/redo 命令                    | `src/domains/editor/hooks/useUndoRedo.ts`                |
 
 ---
 

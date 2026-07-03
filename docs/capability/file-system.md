@@ -4,13 +4,15 @@
 
 - **id**: `file-system`
 - **name**: 文件系统操作
-- **summary**: 封装所有 Tauri 文件系统操作，提供统一的前端调用入口
-- **scope**: 包括文件/目录 CRUD、路径类型检测、编码检测、原子写入、工作区文件解析；不包括自动保存、文件监听、拖拽处理
+- **summary**: 通过 FsService 维持统一前端文件 API，并将通用 fs/config primitive 下沉到 runtime-core
+- **scope**: 包括文件/目录 CRUD、路径类型检测、编码检测、原子写入、工作区文件解析、runtime fs/config primitive；不包括自动保存、文件监听、拖拽处理
 - **entry_points**:
-  - FsService 方法调用
+  - Writer-facing `FsService` 方法调用
+  - internal runtime-core primitive implementation at `src/core/runtime/fsPrimitives.ts`
 - **shared_with**: none
 - **check_on_change**:
   - FsService API 不变
+  - runtime fs/config primitive 签名不变
   - Tauri 命令签名同步
   - 类型定义一致
 - **last_verified**: 2026-03-21
@@ -19,33 +21,34 @@
 
 ## Capability Summary
 
-文件系统操作能力通过 FsService 封装所有 Tauri 后端文件系统调用，为前端提供统一、类型安全的文件操作入口。支持文件读写、目录创建、节点重命名/删除、原子写入、工作区文件解析、图片保存、配置文件读写等操作。FsService 采用对象字面量实现的单例模式，所有方法均为 async，返回 Promise。
+文件系统操作能力通过 FsService 维持统一、类型安全的 Writer-facing 文件操作入口。V1 边界下沉后，通用文件读写、路径检测、编码检测和配置文件读写由 `src/core/runtime/fsPrimitives.ts` 提供 runtime-core primitive，FsService 作为 Writer adapter 保持既有 API 并委托这些 primitive。调用方仍应依赖 FsService，不应绕过 adapter 直接调用 runtime-core primitive。
 
 ---
 
 ## Entries
 
-| Entry                         | Trigger            | Evidence                                         | Notes                         |
-| ----------------------------- | ------------------ | ------------------------------------------------ | ----------------------------- |
-| FsService.listTree            | 加载目录树         | `src/domains/file/services/FsService.ts:37-39`   | 调用 `list_tree`              |
-| FsService.listTreeBatch       | 批量加载多个根目录 | `src/domains/file/services/FsService.ts:41-43`   | 调用 `list_tree_batch`        |
-| FsService.readFile            | 读取文件内容       | `src/domains/file/services/FsService.ts:45-47`   | 调用 `read_file`              |
-| FsService.writeFileAtomic     | 原子写入文件       | `src/domains/file/services/FsService.ts:49-51`   | 调用 `write_file_atomic`      |
-| FsService.createFile          | 创建新文件         | `src/domains/file/services/FsService.ts:64-66`   | 调用 `create_file`            |
-| FsService.createDir           | 创建新目录         | `src/domains/file/services/FsService.ts:68-70`   | 调用 `create_dir`             |
-| FsService.renameNode          | 重命名/移动节点    | `src/domains/file/services/FsService.ts:72-74`   | 调用 `rename_node`            |
-| FsService.deleteNode          | 删除文件或目录     | `src/domains/file/services/FsService.ts:76-78`   | 调用 `delete_node`            |
-| FsService.revealInFileManager | 在文件管理器中显示 | `src/domains/file/services/FsService.ts:80-82`   | 调用 `reveal_in_file_manager` |
-| FsService.saveImage           | 保存图片（二进制） | `src/domains/file/services/FsService.ts:84-86`   | 调用 `save_image`             |
-| FsService.checkExists         | 检查路径是否存在   | `src/domains/file/services/FsService.ts:88-90`   | 调用 `check_exists`           |
-| FsService.copyFileWithResult  | 复制文件           | `src/domains/file/services/FsService.ts:98-103`  | 调用 `copy_file_with_result`  |
-| FsService.getPathKind         | 获取路径类型       | `src/domains/file/services/FsService.ts:105-107` | 调用 `get_path_kind`          |
-| FsService.detectFileEncoding  | 检测文件编码       | `src/domains/file/services/FsService.ts:109-111` | 调用 `detect_file_encoding`   |
-| FsService.parseWorkspaceFile  | 解析工作区文件     | `src/domains/file/services/FsService.ts:53-55`   | 调用 `parse_workspace_file`   |
-| FsService.saveWorkspaceFile   | 保存工作区文件     | `src/domains/file/services/FsService.ts:57-62`   | 调用 `save_workspace_file`    |
-| FsService.getAppConfigDir     | 获取应用配置目录   | `src/domains/file/services/FsService.ts:114-116` | 调用 `get_app_config_dir`     |
-| FsService.readJsonFile        | 读取 JSON 配置文件 | `src/domains/file/services/FsService.ts:118-120` | 调用 `read_json_file`         |
-| FsService.writeJsonFile       | 写入 JSON 配置文件 | `src/domains/file/services/FsService.ts:122-124` | 调用 `write_json_file`        |
+| Entry                         | Trigger            | Evidence                                         | V1 boundary note                                         |
+| ----------------------------- | ------------------ | ------------------------------------------------ | -------------------------------------------------------- |
+| FsService.listTree            | 加载目录树         | `src/domains/file/services/FsService.ts:48-50`   | Writer adapter 内直接调用 Tauri `list_tree`              |
+| FsService.listTreeBatch       | 批量加载多个根目录 | `src/domains/file/services/FsService.ts:52-54`   | Writer adapter 内直接调用 Tauri `list_tree_batch`        |
+| FsService.readFile            | 读取文件内容       | `src/domains/file/services/FsService.ts:56-58`   | 委托 runtime-core `readFile` primitive                   |
+| FsService.writeFileAtomic     | 原子写入文件       | `src/domains/file/services/FsService.ts:60-62`   | 委托 runtime-core `writeFileAtomic` primitive            |
+| FsService.parseWorkspaceFile  | 解析工作区文件     | `src/domains/file/services/FsService.ts:64-66`   | Writer adapter 内直接调用 Tauri `parse_workspace_file`   |
+| FsService.saveWorkspaceFile   | 保存工作区文件     | `src/domains/file/services/FsService.ts:68-73`   | Writer adapter 内直接调用 Tauri `save_workspace_file`    |
+| FsService.createFile          | 创建新文件         | `src/domains/file/services/FsService.ts:75-77`   | Writer adapter 内直接调用 Tauri `create_file`            |
+| FsService.createDir           | 创建新目录         | `src/domains/file/services/FsService.ts:79-81`   | Writer adapter 内直接调用 Tauri `create_dir`             |
+| FsService.renameNode          | 重命名/移动节点    | `src/domains/file/services/FsService.ts:83-85`   | Writer adapter 内直接调用 Tauri `rename_node`            |
+| FsService.deleteNode          | 删除文件或目录     | `src/domains/file/services/FsService.ts:87-89`   | Writer adapter 内直接调用 Tauri `delete_node`            |
+| FsService.revealInFileManager | 在文件管理器中显示 | `src/domains/file/services/FsService.ts:91-93`   | Writer adapter 内直接调用 Tauri `reveal_in_file_manager` |
+| FsService.saveImage           | 保存图片（二进制） | `src/domains/file/services/FsService.ts:95-97`   | Writer adapter 内直接调用 Tauri `save_image`             |
+| FsService.checkExists         | 检查路径是否存在   | `src/domains/file/services/FsService.ts:99-101`  | 委托 runtime-core `checkExists` primitive                |
+| FsService.copyFileWithResult  | 复制文件           | `src/domains/file/services/FsService.ts:109-114` | Writer adapter 内直接调用 Tauri `copy_file_with_result`  |
+| FsService.getPathKind         | 获取路径类型       | `src/domains/file/services/FsService.ts:116-118` | 委托 runtime-core `getPathKind` primitive                |
+| FsService.detectFileEncoding  | 检测文件编码       | `src/domains/file/services/FsService.ts:120-122` | 委托 runtime-core `detectFileEncoding` primitive         |
+| FsService.getAppConfigDir     | 获取应用配置目录   | `src/domains/file/services/FsService.ts:125-127` | 委托 runtime-core `getAppConfigDir` primitive            |
+| FsService.readJsonFile        | 读取 JSON 配置文件 | `src/domains/file/services/FsService.ts:129-131` | 委托 runtime-core `readJsonFile` primitive               |
+| FsService.writeJsonFile       | 写入 JSON 配置文件 | `src/domains/file/services/FsService.ts:133-135` | 委托 runtime-core `writeJsonFile` primitive              |
+| fsPrimitives                  | FsService 内部委托 | `src/core/runtime/fsPrimitives.ts:9-47`          | runtime-core primitive，不是 UI/业务调用入口             |
 
 ---
 
@@ -59,11 +62,11 @@ FsService 采用对象字面量实现，所有方法为 async，返回 Promise�
 
 ---
 
-### CR-002: 所有方法通过 Tauri invoke 调用
+### CR-002: FsService API 稳定，通用 primitive 委托到 runtime-core
 
-FsService 所有方法均通过 `@tauri-apps/api/core` 的 `invoke` 函数调用后端 Rust 命令。
+FsService 仍是 Writer-facing 前端调用入口。目录树、工作区、创建、重命名、删除、复制、图片保存等领域文件操作仍在 FsService adapter 内调用 Tauri `invoke`；通用文件读写、路径检测、编码检测和配置文件读写由 FsService 委托给 `src/core/runtime/fsPrimitives.ts`。UI 和业务服务不应直接依赖 runtime-core primitive。
 
-**Evidence**: `src/domains/file/services/FsService.ts:1`
+**Evidence**: `src/domains/file/services/FsService.ts:1-13, 47-134`、`src/core/runtime/fsPrimitives.ts`
 
 ---
 
@@ -120,15 +123,16 @@ FsService 所有方法均通过 `@tauri-apps/api/core` 的 `invoke` 函数调用
 
 ## Impact Surface
 
-| Area          | What to check                                    | Evidence                                                                                             |
-| ------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| FsService API | 所有方法签名不变                                 | `src/domains/file/services/FsService.ts`                                                             |
-| Tauri 命令    | Rust 后端命令签名与前端调用匹配                  | `src-tauri/src/fs.rs`、`src-tauri/src/workspace.rs`、`src-tauri/src/config.rs`                       |
-| 类型定义      | FileNode、WorkspaceConfig、PathKind 等类型一致   | `src/state/types.ts`、`src/domains/file/services/FsService.ts:4-34`                                  |
-| 依赖服务      | AutosaveService、workspaceActions 等依赖调用正确 | `src/domains/file/services/AutosaveService.ts`、`src/domains/workspace/services/workspaceActions.ts` |
-| 测试覆盖      | 文件操作相关测试通过                             | 搜索 `FsService` 相关测试文件                                                                        |
-| 空目录支持    | 空目录在文件树中正确显示                         | `src-tauri/src/fs.rs` 单元测试、前端 `flattenTree.test.ts`                                           |
-| 资源目录常量  | `ASSETS_DIR_NAME` 前后端一致                     | `src-tauri/src/fs.rs`、`src/config/editor.ts`、`src/domains/editor/hooks/imageActions.ts`            |
+| Area              | What to check                                                                             | Evidence                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| FsService API     | 所有方法签名不变                                                                          | `src/domains/file/services/FsService.ts`                                                             |
+| Runtime primitive | 通用 fs/config primitive 签名和 Tauri command 映射不变；调用方仍经 FsService adapter 进入 | `src/core/runtime/fsPrimitives.ts`                                                                   |
+| Tauri 命令        | Rust 后端命令签名与前端调用匹配                                                           | `src-tauri/src/fs.rs`、`src-tauri/src/workspace.rs`、`src-tauri/src/config.rs`                       |
+| 类型定义          | FileNode、WorkspaceConfig、PathKind 等类型一致                                            | `src/state/types.ts`、`src/domains/file/services/FsService.ts:4-34`                                  |
+| 依赖服务          | AutosaveService、workspaceActions 等依赖调用正确                                          | `src/domains/file/services/AutosaveService.ts`、`src/domains/workspace/services/workspaceActions.ts` |
+| 测试覆盖          | 文件操作相关测试通过                                                                      | 搜索 `FsService` 相关测试文件                                                                        |
+| 空目录支持        | 空目录在文件树中正确显示                                                                  | `src-tauri/src/fs.rs` 单元测试、前端 `flattenTree.test.ts`                                           |
+| 资源目录常量      | `ASSETS_DIR_NAME` 前后端一致                                                              | `src-tauri/src/fs.rs`、`src/config/editor.ts`、`src/domains/editor/hooks/imageActions.ts`            |
 
 ---
 
@@ -148,13 +152,14 @@ FsService 所有方法均通过 `@tauri-apps/api/core` 的 `invoke` 函数调用
 
 ## Known Consumers
 
-| Consumer          | Usage                | Evidence                                              |
-| ----------------- | -------------------- | ----------------------------------------------------- |
-| workspaceActions  | 文件读写、目录树加载 | `src/domains/workspace/services/workspaceActions.ts`  |
-| AutosaveService   | 原子写入             | `src/domains/file/services/AutosaveService.ts`        |
-| imageActions      | 图片保存             | `src/domains/editor/hooks/imageActions.ts`            |
-| persistenceBridge | 编辑器内容持久化     | `src/domains/editor/integration/persistenceBridge.ts` |
-| FileTreeNode      | 文件节点操作         | `src/domains/file/ui/FileTreeNode.tsx`                |
+| Consumer             | Usage                                    | Evidence                                              |
+| -------------------- | ---------------------------------------- | ----------------------------------------------------- |
+| workspaceActions     | 文件读写、目录树加载                     | `src/domains/workspace/services/workspaceActions.ts`  |
+| AutosaveService      | 原子写入                                 | `src/domains/file/services/AutosaveService.ts`        |
+| imageActions         | 图片保存                                 | `src/domains/editor/hooks/imageActions.ts`            |
+| persistenceBridge    | 编辑器内容持久化                         | `src/domains/editor/integration/persistenceBridge.ts` |
+| FileTreeNode         | 文件节点操作                             | `src/domains/file/ui/FileTreeNode.tsx`                |
+| runtime fsPrimitives | FsService 委托的通用 fs/config primitive | `src/core/runtime/fsPrimitives.ts`                    |
 
 ---
 
