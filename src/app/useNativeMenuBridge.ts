@@ -3,9 +3,22 @@ import { listen } from '@tauri-apps/api/event';
 import {
   menuCommandBus,
   type MenuCommandPayload,
-} from '../ui/commands/menuCommandBus';
+} from '../core/command/menuCommandBus';
 
-export function useNativeMenuBridge(onUnknownCommand: (id: string) => void) {
+export const NATIVE_MENU_COMMAND_EVENT = 'writer://menu-command';
+
+export interface NativeMenuBridgeOptions {
+  eventName?: string;
+  dispatch?: (id: string) => boolean;
+}
+
+export function useNativeMenuBridge(
+  onUnknownCommand: (id: string) => void,
+  options: NativeMenuBridgeOptions = {},
+) {
+  const eventName = options.eventName ?? NATIVE_MENU_COMMAND_EVENT;
+  const dispatch = options.dispatch ?? menuCommandBus.dispatch;
+
   useEffect(() => {
     let disposed = false;
     let cleanup: (() => void) | null = null;
@@ -13,12 +26,12 @@ export function useNativeMenuBridge(onUnknownCommand: (id: string) => void) {
     const setup = async () => {
       try {
         const unlisten = await listen<MenuCommandPayload>(
-          'writer://menu-command',
+          eventName,
           (event) => {
             if (disposed) return;
             const id = event.payload?.id;
             if (!id) return;
-            if (!menuCommandBus.dispatch(id)) {
+            if (!dispatch(id)) {
               onUnknownCommand(id);
             }
           },
@@ -37,5 +50,5 @@ export function useNativeMenuBridge(onUnknownCommand: (id: string) => void) {
         cleanup();
       }
     };
-  }, [onUnknownCommand]);
+  }, [dispatch, eventName, onUnknownCommand]);
 }

@@ -5,29 +5,49 @@ import { fileURLToPath } from 'node:url';
 
 describe('Task list editor support', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const markdownServiceTs = readFileSync(
+  const legacyMarkdownServiceTs = readFileSync(
     join(currentDir, '../../../services/markdown/MarkdownService.ts'),
     'utf-8',
   );
-  const editorExtensionsTs = readFileSync(
+  const coreMarkdownServiceTs = readFileSync(
+    join(currentDir, '../../../core/editor/markdown/MarkdownService.ts'),
+    'utf-8',
+  );
+  const legacyEditorExtensionsTs = readFileSync(
     join(currentDir, 'editorExtensions.ts'),
+    'utf-8',
+  );
+  const coreEditorExtensionsTs = readFileSync(
+    join(currentDir, '../../../core/editor/schema/editorExtensions.ts'),
     'utf-8',
   );
   const editorCss = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');
 
   it('registers task list extensions in markdown parsing', () => {
-    expect(markdownServiceTs).toContain('@tiptap/extension-list');
-    expect(markdownServiceTs).toContain('TaskList');
-    expect(markdownServiceTs).toContain('TaskItem');
-    expect(markdownServiceTs).toContain('TaskItem.configure({ nested: true })');
+    expect(coreMarkdownServiceTs).toContain('@tiptap/extension-list');
+    expect(coreMarkdownServiceTs).toContain('TaskList');
+    expect(coreMarkdownServiceTs).toContain('TaskItem');
+    expect(coreMarkdownServiceTs).toContain(
+      'TaskItem.configure({ nested: true })',
+    );
   });
 
   it('registers task list extensions in the editor runtime', () => {
-    expect(editorExtensionsTs).toContain('@tiptap/extension-list');
-    expect(editorExtensionsTs).toContain('TaskList');
-    expect(editorExtensionsTs).toContain(
+    expect(coreEditorExtensionsTs).toContain('@tiptap/extension-list');
+    expect(coreEditorExtensionsTs).toContain('TaskList');
+    expect(coreEditorExtensionsTs).toContain(
       'TaskItem.configure({ nested: true })',
     );
+  });
+
+  it('keeps legacy task list source paths as core re-exports', () => {
+    expect(legacyMarkdownServiceTs).toContain(
+      "export * from '../../core/editor/markdown/MarkdownService'",
+    );
+    expect(legacyEditorExtensionsTs).toContain(
+      '../../../core/editor/schema/editorExtensions',
+    );
+    expect(legacyEditorExtensionsTs).toContain('ImageResolver.resolve');
   });
 
   it('applies dedicated task list styles in the editor runtime', () => {

@@ -1,11 +1,22 @@
 import { invoke } from '@tauri-apps/api/core';
+import {
+  checkExists,
+  detectFileEncoding,
+  getAppConfigDir,
+  getPathKind,
+  readFile,
+  readJsonFile,
+  writeFileAtomic,
+  writeJsonFile,
+  type EncodingStatus,
+  type PathKind,
+} from '../../../core/runtime/fsPrimitives';
 import type { FileNode } from '../../../state/types';
 
-export interface EncodingStatus {
-  label: string;
-}
-
-export type PathKind = 'file' | 'directory' | 'missing' | 'other';
+export type {
+  EncodingStatus,
+  PathKind,
+} from '../../../core/runtime/fsPrimitives';
 
 export interface FolderPathResult {
   path: string;
@@ -43,11 +54,11 @@ export const FsService = {
   },
 
   async readFile(path: string): Promise<string> {
-    return invoke('read_file', { path });
+    return readFile(path);
   },
 
   async writeFileAtomic(path: string, content: string): Promise<void> {
-    return invoke('write_file_atomic', { path, content });
+    return writeFileAtomic(path, content);
   },
 
   async parseWorkspaceFile(path: string): Promise<WorkspaceConfig> {
@@ -86,7 +97,7 @@ export const FsService = {
   },
 
   async checkExists(path: string): Promise<boolean> {
-    return invoke('check_exists', { path });
+    return checkExists(path);
   },
 
   /**
@@ -103,23 +114,23 @@ export const FsService = {
   },
 
   async getPathKind(path: string): Promise<PathKind> {
-    return invoke('get_path_kind', { path });
+    return getPathKind(path);
   },
 
   async detectFileEncoding(path: string): Promise<EncodingStatus> {
-    return invoke('detect_file_encoding', { path });
+    return detectFileEncoding(path);
   },
 
   // App config directory operations
   async getAppConfigDir(): Promise<string> {
-    return invoke('get_app_config_dir');
+    return getAppConfigDir();
   },
 
   async readJsonFile(path: string): Promise<unknown> {
-    return invoke('read_json_file', { path });
+    return readJsonFile(path);
   },
 
   async writeJsonFile(path: string, data: unknown): Promise<void> {
-    return invoke('write_json_file', { path, data });
+    return writeJsonFile(path, data);
   },
 };

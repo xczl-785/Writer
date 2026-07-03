@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Editor } from '@tiptap/core';
-import Document from '@tiptap/extension-document';
-import Paragraph from '@tiptap/extension-paragraph';
-import Text from '@tiptap/extension-text';
-import { UndoRedo } from '@tiptap/extensions';
+import StarterKit from '@tiptap/starter-kit';
 import type { JSONContent } from '@tiptap/core';
 import { LoadDocument } from '../extensions/loadDocument';
 
@@ -38,7 +35,7 @@ interface Harness {
 function createHarness(): Harness {
   const onUpdate = vi.fn();
   const editor = new Editor({
-    extensions: [Document, Paragraph, Text, UndoRedo, LoadDocument],
+    extensions: [StarterKit, LoadDocument],
     content: '',
     onUpdate: () => {
       onUpdate();
