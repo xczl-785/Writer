@@ -7,9 +7,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
+import { getMountedEditorDom } from '../../hooks/editorViewAccess';
 
 const SHOW_DELAY_MS = 400;
 const HIDE_DELAY_MS = 150;
+const VIEW_RETRY_LIMIT = 20;
 
 export type LinkTooltipState = {
   open: boolean;
@@ -25,6 +27,8 @@ export function useLinkTooltip(editor: Editor | null) {
   const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentAnchorRef = useRef<HTMLAnchorElement | null>(null);
+  const viewRetryCountRef = useRef(0);
+  const [viewRetryToken, setViewRetryToken] = useState(0);
 
   const clearTimers = useCallback(() => {
     if (showTimerRef.current) {
@@ -45,7 +49,17 @@ export function useLinkTooltip(editor: Editor | null) {
 
   useEffect(() => {
     if (!editor) return;
-    const editorDom = editor.view.dom;
+    const editorDom = getMountedEditorDom(editor);
+    if (!editorDom) {
+      if (viewRetryCountRef.current < VIEW_RETRY_LIMIT) {
+        viewRetryCountRef.current += 1;
+        window.requestAnimationFrame(() =>
+          setViewRetryToken((token) => token + 1),
+        );
+      }
+      return;
+    }
+    viewRetryCountRef.current = 0;
 
     const onMouseOver = (event: MouseEvent) => {
       const anchor = (event.target as HTMLElement)?.closest?.(
@@ -105,7 +119,7 @@ export function useLinkTooltip(editor: Editor | null) {
       editorDom.removeEventListener('mouseleave', onMouseLeave);
       scrollContainer?.removeEventListener('scroll', onScroll);
     };
-  }, [editor, clearTimers, hide]);
+  }, [editor, clearTimers, hide, viewRetryToken]);
 
   return state;
 }

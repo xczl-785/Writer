@@ -10,7 +10,6 @@ import type { Editor } from '@tiptap/react';
 import { match } from 'pinyin-pro';
 import { t, getLocale } from '../../../../shared/i18n';
 import { isStrictSlashTriggerEligible } from './slashEligibility';
-import { applyImageAction } from '../../hooks/imageActions';
 import {
   isInsertTextLikeInput,
   isSlashTriggerChar,
@@ -32,9 +31,19 @@ export type SlashCommand = {
   run: (editor: Editor) => void;
 };
 
+export type SlashImageActionResult =
+  | 'applied'
+  | 'cancelled'
+  | 'failed'
+  | 'unavailable';
+export type SlashImageAction = (
+  editor: Editor,
+) => SlashImageActionResult | void | Promise<SlashImageActionResult | void>;
+
 export type UseSlashMenuOptions = {
   editor: Editor | null;
   defaultTableInsert: { rows: number; cols: number; withHeaderRow: boolean };
+  imageAction?: SlashImageAction;
   getSafeCoordsAtPos: (
     editor: Editor,
     pos: number,
@@ -54,8 +63,9 @@ export type UseSlashMenuResult = {
  */
 function createSlashCommands(
   defaultTableInsert: UseSlashMenuOptions['defaultTableInsert'],
+  imageAction?: SlashImageAction,
 ): SlashCommand[] {
-  return [
+  const commands: SlashCommand[] = [
     {
       id: 'heading1',
       group: 'basic',
@@ -186,17 +196,22 @@ function createSlashCommands(
         instance.chain().focus().setHorizontalRule().run();
       },
     },
-    {
+  ];
+
+  if (imageAction) {
+    commands.push({
       id: 'image',
       group: 'advanced',
       label: t('slash.image'),
       hint: '',
       keywords: ['img', 'picture', 'photo'],
       run: (instance) => {
-        void applyImageAction(instance);
+        void imageAction(instance);
       },
-    },
-  ];
+    });
+  }
+
+  return commands;
 }
 
 /**
@@ -237,6 +252,7 @@ function filterCommands(
 export function useSlashMenu({
   editor,
   defaultTableInsert,
+  imageAction,
   getSafeCoordsAtPos,
 }: UseSlashMenuOptions): UseSlashMenuResult {
   // State machine
@@ -249,8 +265,8 @@ export function useSlashMenu({
 
   // Commands
   const allCommands = useMemo(
-    () => createSlashCommands(defaultTableInsert),
-    [defaultTableInsert],
+    () => createSlashCommands(defaultTableInsert, imageAction),
+    [defaultTableInsert, imageAction],
   );
   const commands = useMemo(
     () => filterCommands(allCommands, session.query),

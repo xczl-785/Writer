@@ -30,26 +30,47 @@ describe('Editor orchestrator composition', () => {
     expect(viewTsx).toContain('<EditorShell');
   });
 
-  it('keeps Tiptap instance wiring inside the editor instance controller', () => {
+  it('keeps Tiptap instance wiring inside the shared single-document controller', () => {
     const implTsx = readFileSync(join(currentDir, 'EditorImpl.tsx'), 'utf-8');
-    const controllerTs = readFileSync(
+    const sharedControllerTs = readFileSync(
+      join(currentDir, 'useSingleDocumentEditorController.ts'),
+      'utf-8',
+    );
+    const workspaceAdapterTs = readFileSync(
       join(currentDir, 'useEditorInstanceController.ts'),
       'utf-8',
     );
 
     expect(implTsx).toContain('useEditorInstanceController');
-    expect(controllerTs).toContain('useEditor(');
-    expect(controllerTs).toContain('[activeFile]');
+    expect(workspaceAdapterTs).toContain('useSingleDocumentEditorController');
+    expect(workspaceAdapterTs).toContain('loadKey: activeFile');
+    expect(sharedControllerTs).toContain('useEditor(');
+    expect(sharedControllerTs).toContain('[loadKey]');
   });
 
-  it('keeps active file loads routed through loadDocument only', () => {
-    const controllerTs = readFileSync(
+  it('keeps Writer workspace persistence in the editor instance adapter', () => {
+    const workspaceAdapterTs = readFileSync(
       join(currentDir, 'useEditorInstanceController.ts'),
       'utf-8',
     );
 
-    expect(controllerTs).toContain('editor.commands.loadDocument(json)');
-    expect(controllerTs).toContain('editor.commands.loadDocument({');
-    expect(controllerTs).not.toContain('editor.commands.setContent');
+    expect(workspaceAdapterTs).toContain('updateFileContent(activeFile');
+    expect(workspaceAdapterTs).toContain('setDirty(activeFile, true)');
+    expect(workspaceAdapterTs).toContain('AutosaveService.schedule');
+    expect(workspaceAdapterTs).toContain('flushEditorOnBlur(activeFile)');
+  });
+
+  it('keeps active file loads routed through loadDocument only', () => {
+    const sharedControllerTs = readFileSync(
+      join(currentDir, 'useSingleDocumentEditorController.ts'),
+      'utf-8',
+    );
+
+    expect(sharedControllerTs).toContain('editor.commands.loadDocument(json)');
+    expect(sharedControllerTs).toContain(
+      'editor.commands.loadDocument(createPlainTextDocument(content))',
+    );
+    expect(sharedControllerTs).toContain('Failed to parse markdown content');
+    expect(sharedControllerTs).not.toContain('editor.commands.setContent');
   });
 });

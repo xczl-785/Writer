@@ -13,9 +13,10 @@ vi.mock('../../../services/runtime/ClipboardTextReader', () => ({
   readClipboardPayload: () => readClipboardPayloadMock(),
 }));
 
-vi.mock('../integration', async () => {
-  const actual =
-    await vi.importActual<typeof import('../integration')>('../integration');
+vi.mock('../integration/markdownClipboard', async () => {
+  const actual = await vi.importActual<
+    typeof import('../integration/markdownClipboard')
+  >('../integration/markdownClipboard');
   return {
     ...actual,
     insertClipboardText: (
@@ -238,6 +239,29 @@ describe('createMenuCommandHandler', () => {
 
     expect(chain.toggleUnderline).toHaveBeenCalled();
     expect(chain.toggleHighlight).toHaveBeenCalled();
+    expect(setStatus).not.toHaveBeenCalled();
+  });
+
+  it('runs image command through the injected image action port', async () => {
+    const setStatus = vi.fn();
+    const imageAction = vi.fn(() => Promise.resolve('applied' as const));
+    const handler = createMenuCommandHandler(
+      editor,
+      { openFindPanel: vi.fn() },
+      setStatus,
+      vi.fn(),
+      { imageAction },
+    );
+
+    handler(
+      new CustomEvent('writer:editor-command', {
+        detail: { id: 'format.image' },
+      }),
+    );
+
+    await Promise.resolve();
+
+    expect(imageAction).toHaveBeenCalledWith(editor);
     expect(setStatus).not.toHaveBeenCalled();
   });
 });

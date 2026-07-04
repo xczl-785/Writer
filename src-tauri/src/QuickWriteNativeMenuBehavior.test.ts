@@ -14,10 +14,7 @@ const shortcutSource = readFileSync(
   'utf-8',
 );
 const libSource = readFileSync(join(currentDir, 'lib.rs'), 'utf-8');
-const cargoToml = readFileSync(
-  resolve(currentDir, '../Cargo.toml'),
-  'utf-8',
-);
+const cargoToml = readFileSync(resolve(currentDir, '../Cargo.toml'), 'utf-8');
 
 const quickWriteBuilder = source.slice(
   source.indexOf('fn build_quick_write_native_menu_with_locale'),
@@ -101,8 +98,6 @@ describe('QuickWrite native menu behavior', () => {
   it('contains only QuickWrite file commands and bridge-compatible editor commands', () => {
     expect(quickWriteBuilder).toContain('"menu.quick_write.open_file"');
     expect(quickWriteBuilder).toContain('"menu.quick_write.save_to"');
-    expect(quickWriteBuilder).toContain('"menu.quick_write.export_html"');
-    expect(quickWriteBuilder).toContain('"menu.quick_write.print_to_pdf"');
     expect(quickWriteBuilder).toContain('"menu.quick_write.new_window"');
     expect(quickWriteBuilder).toContain('"menu.quick_write.close"');
     expect(quickWriteBuilder).toContain('"menu.quick_write.edit_undo"');
@@ -135,6 +130,8 @@ describe('QuickWrite native menu behavior', () => {
       '"menu.file.save_workspace"',
       '"menu.file.save_workspace_as"',
       '"menu.file.export_pdf"',
+      '"menu.quick_write.export_html"',
+      '"menu.quick_write.print_to_pdf"',
       '"menu.file.close_folder"',
       '"menu.file.close_workspace"',
       '"menu.edit.find"',

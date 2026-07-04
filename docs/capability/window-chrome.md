@@ -4,7 +4,7 @@
 
 - **id**: `window-chrome`
 - **name**: Window Chrome
-- **summary**: Manages custom macOS and Windows title bars, window controls, drag regions, interactive control isolation, and Windows title-bar menu entry interactions such as Help > About Writer.
+- **summary**: Manages custom macOS and Windows title bars, window controls, drag regions, interactive control isolation, Writer menu/sidebar chrome composition, and Windows title-bar menu entry interactions such as Help > About Writer.
 - **scope**: Includes platform title bar routing, Windows/macOS title bar structure, `data-tauri-drag-region`, window control buttons, and isolation for menu/sidebar controls; excludes workspace business logic and editor content interactions.
 - **entry_points**:
   - `PlatformTitleBar`
@@ -26,6 +26,8 @@
 ## Capability Summary
 
 This capability provides the cross-platform custom window title bar. `PlatformTitleBar` routes to `MacTitleBar` or `WindowsTitleBar` based on the runtime platform. On Windows, draggable title-bar space is declared with `data-tauri-drag-region`, while interactive controls are isolated with `data-no-drag` and pointer-event boundaries so that menu actions, sidebar toggle actions, and window control buttons are not misinterpreted as blank title-bar gestures. Minimize, maximize/restore, and close remain explicit button-driven Tauri window actions.
+
+V5.8.0R1 removes the attempted QuickWrite chrome fork and reverts shared chrome/editor changes that only served QuickWrite appearance. QuickWrite must not add a lookalike title-bar menu or inject app-specific workspace/sidebar switches into this capability. Later QuickWrite menu work must reuse Writer's menu schema/command bus or a downshifted common menu layer, with workspace/recent/sidebar/file-tree commands excluded by adapter boundaries.
 
 As of 2026-03-21, Windows title-bar blank-space gestures no longer mix manual `onDoubleClick` / `startDragging()` handlers with `data-tauri-drag-region`. Dragging and double-click maximize/restore for blank title-bar space now rely on the Tauri drag-region behavior only, preventing duplicate gesture handling on Windows.
 
@@ -90,6 +92,14 @@ In focus zen or similar modes, the title bar may hide via `isVisible`-driven opa
 The About Writer dialog must not hard-code Windows-only platform copy. It must resolve the current desktop platform at runtime and present a platform-specific environment line that stays correct for Windows, macOS, and Linux distributions.
 
 **Evidence**: `src/ui/components/About/AboutWriterPanel.tsx`
+
+---
+
+### CR-007: QuickWrite must not fork chrome or add workspace bypass switches
+
+QuickWrite must not use this capability to create a parallel title-bar/menu shell. Shared chrome must remain Writer-owned unless a common abstraction serves both Writer and QuickWrite without importing workspace/sidebar/recent/file-tree semantics into QuickWrite. QuickWrite's future menu path must reuse Writer's menu schema/command bus or a downshifted common layer rather than a self-built similar menu.
+
+**Evidence**: `src/ui/chrome/chromeState.ts`、`src/ui/chrome/WindowsTitleBar.tsx`、`src/ui/chrome/MacTitleBar.tsx`、`src/apps/quick-write/importBoundary.test.ts`
 
 ---
 

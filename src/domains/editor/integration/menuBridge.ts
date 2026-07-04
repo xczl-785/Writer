@@ -2,6 +2,7 @@ import type { Editor } from '@tiptap/react';
 import {
   createMenuCommandHandler,
   type MenuCommandHandler,
+  type MenuImageAction,
 } from '../handlers/menuCommandHandler';
 
 type FindReplacePort = { openFindPanel: (mode: 'find' | 'replace') => void };
@@ -13,6 +14,7 @@ type MenuHandlerFactory = (
   findReplace: FindReplacePort,
   setStatus: SetStatus,
   setOutlineOpen: SetOutlineOpen,
+  options?: { imageAction?: MenuImageAction },
 ) => MenuCommandHandler;
 
 type AttachEditorMenuBridgeArgs = {
@@ -20,6 +22,7 @@ type AttachEditorMenuBridgeArgs = {
   findReplace: FindReplacePort;
   setStatus: SetStatus;
   setOutlineOpen: SetOutlineOpen;
+  imageAction?: MenuImageAction;
   handlerFactory?: MenuHandlerFactory;
 };
 
@@ -28,6 +31,7 @@ export function attachEditorMenuBridge({
   findReplace,
   setStatus,
   setOutlineOpen,
+  imageAction,
   handlerFactory = createMenuCommandHandler,
 }: AttachEditorMenuBridgeArgs): () => void {
   const onMenuCommand = handlerFactory(
@@ -35,6 +39,7 @@ export function attachEditorMenuBridge({
     findReplace,
     setStatus,
     setOutlineOpen,
+    { imageAction },
   );
   window.addEventListener(
     'writer:editor-command',

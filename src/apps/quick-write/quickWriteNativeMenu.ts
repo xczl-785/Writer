@@ -1,6 +1,11 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import type { QuickWriteMenuCommand } from './quickWriteMenu';
+import { menuCommandBus } from '../../core/command/menuCommandBus';
+import type { QuickWriteCommand } from './quickWriteCommands';
+import {
+  resolveQuickWriteMenuCommand,
+  resolveQuickWriteNativeMenuSchemaId,
+} from './QuickWriteMenuAdapter';
 
 export const QUICK_WRITE_NATIVE_MENU_EVENT = 'writer://menu-command';
 
@@ -8,37 +13,15 @@ type NativeMenuPayload = {
   id?: string;
 };
 
-const QUICK_WRITE_NATIVE_COMMANDS: ReadonlyMap<string, QuickWriteMenuCommand> =
-  new Map([
-    ['menu.quick_write.open_file', 'file.open'],
-    ['menu.quick_write.save_to', 'file.saveTo'],
-    ['menu.quick_write.export_html', 'file.exportHtml'],
-    ['menu.quick_write.print_to_pdf', 'file.printToPdf'],
-    ['menu.quick_write.new_window', 'file.newWindow'],
-    ['menu.quick_write.close', 'file.close'],
-    ['menu.quick_write.edit_undo', 'edit.undo'],
-    ['menu.quick_write.edit_cut', 'edit.cut'],
-    ['menu.quick_write.edit_copy', 'edit.copy'],
-    ['menu.quick_write.edit_paste', 'edit.paste'],
-    ['menu.quick_write.edit_select_all', 'edit.selectAll'],
-    ['menu.quick_write.edit_find', 'edit.find'],
-    ['menu.quick_write.edit_replace', 'edit.replace'],
-    ['menu.quick_write.format_bold', 'format.bold'],
-    ['menu.quick_write.format_italic', 'format.italic'],
-    ['menu.quick_write.format_link', 'format.link'],
-    ['menu.quick_write.paragraph_body', 'paragraph.body'],
-    ['menu.quick_write.paragraph_heading', 'paragraph.heading'],
-    ['menu.quick_write.paragraph_bulleted_list', 'paragraph.bulletedList'],
-    ['menu.quick_write.paragraph_numbered_list', 'paragraph.numberedList'],
-    ['menu.quick_write.paragraph_table', 'paragraph.table'],
-  ]);
-
 export const resolveQuickWriteNativeMenuCommand = (
   id: string,
-): QuickWriteMenuCommand | null => QUICK_WRITE_NATIVE_COMMANDS.get(id) ?? null;
+): QuickWriteCommand | null => {
+  const menuId = resolveQuickWriteNativeMenuSchemaId(id);
+  return menuId ? resolveQuickWriteMenuCommand(menuId) : null;
+};
 
 export function useQuickWriteNativeMenuBridge(
-  onCommand: (command: QuickWriteMenuCommand) => void,
+  onFallbackCommand?: (command: QuickWriteCommand) => void,
 ) {
   useEffect(() => {
     let disposed = false;
@@ -56,9 +39,16 @@ export function useQuickWriteNativeMenuBridge(
             if (!id) {
               return;
             }
-            const command = resolveQuickWriteNativeMenuCommand(id);
+            const menuId = resolveQuickWriteNativeMenuSchemaId(id);
+            if (!menuId) {
+              return;
+            }
+            if (menuCommandBus.dispatch(menuId)) {
+              return;
+            }
+            const command = resolveQuickWriteMenuCommand(menuId);
             if (command) {
-              onCommand(command);
+              onFallbackCommand?.(command);
             }
           },
         );
@@ -74,5 +64,5 @@ export function useQuickWriteNativeMenuBridge(
       disposed = true;
       cleanup?.();
     };
-  }, [onCommand]);
+  }, [onFallbackCommand]);
 }

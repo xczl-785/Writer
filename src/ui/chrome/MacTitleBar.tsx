@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { SidebarToggleIcon } from './SidebarToggleIcon';
 import type { AppChromeModel } from './chromeState';
@@ -5,6 +6,7 @@ import { useSidebarToggleBehavior } from './useSidebarToggleBehavior';
 
 type MacTitleBarProps = {
   chrome: AppChromeModel;
+  menuBar?: ReactNode;
 };
 
 async function minimizeWindow(): Promise<void> {
@@ -49,10 +51,13 @@ function TrafficLight({
   );
 }
 
-export function MacTitleBar({ chrome }: MacTitleBarProps) {
-  const { isSidebarVisible, isFocusZen, isVisible } = chrome.state;
+export function MacTitleBar({ chrome, menuBar }: MacTitleBarProps) {
+  const { isSidebarVisible, showSidebarToggle, isFocusZen, isVisible } =
+    chrome.state;
   const { toggleSidebar, setFocusZen } = chrome.actions;
-  const leftWidth = isSidebarVisible ? 256 : 72;
+  const leftWidth =
+    showSidebarToggle && isSidebarVisible ? 256 : menuBar ? 96 : 72;
+  const hasSidebarSurface = showSidebarToggle && isSidebarVisible;
   const sidebarToggleBehavior = useSidebarToggleBehavior({
     isFocusZen,
     onToggleSidebar: toggleSidebar,
@@ -70,7 +75,7 @@ export function MacTitleBar({ chrome }: MacTitleBarProps) {
         data-tauri-drag-region
         style={{
           width: leftWidth,
-          borderRightWidth: isSidebarVisible ? 1 : 0,
+          borderRightWidth: hasSidebarSurface ? 1 : 0,
         }}
       >
         <div className="flex items-center gap-2 pl-4">
@@ -86,16 +91,19 @@ export function MacTitleBar({ chrome }: MacTitleBarProps) {
         <div className="absolute inset-0" data-tauri-drag-region />
         <div className="relative z-10 flex min-w-0 flex-1 items-center pointer-events-none">
           <div className="flex items-center gap-2 px-3 pointer-events-auto">
-            <button
-              type="button"
-              onClick={sidebarToggleBehavior.onClick}
-              onDoubleClick={sidebarToggleBehavior.onDoubleClick}
-              className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-              aria-label="Toggle Sidebar"
-              title="Toggle Sidebar"
-            >
-              <SidebarToggleIcon />
-            </button>
+            {showSidebarToggle ? (
+              <button
+                type="button"
+                onClick={sidebarToggleBehavior.onClick}
+                onDoubleClick={sidebarToggleBehavior.onDoubleClick}
+                className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+                aria-label="Toggle Sidebar"
+                title="Toggle Sidebar"
+              >
+                <SidebarToggleIcon />
+              </button>
+            ) : null}
+            {menuBar}
           </div>
           <div className="min-w-0 flex-1" />
         </div>

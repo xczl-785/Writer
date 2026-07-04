@@ -18,6 +18,7 @@ import {
 } from './constants';
 import { FindReplacePanel } from '../ui/components/FindReplacePanel';
 import { useImagePaste } from '../hooks/useImagePaste';
+import { applyImageAction } from '../hooks/imageActions';
 import {
   type ToolbarShortcutRuntime,
   createFindReplaceShortcutExtension,
@@ -151,6 +152,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
     } = useSlashMenu({
       editor: currentEditor,
       defaultTableInsert: DEFAULT_TABLE_INSERT,
+      imageAction: applyImageAction,
       getSafeCoordsAtPos,
     });
 
@@ -304,6 +306,7 @@ export const EditorImpl = forwardRef<EditorHandle, EditorProps>(
         findReplace,
         setStatus,
         setOutlineOpen: setIsOutlineOpen,
+        imageAction: applyImageAction,
       });
     }, [editor, findReplace, setStatus]);
 

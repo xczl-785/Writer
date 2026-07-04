@@ -18,6 +18,7 @@ import {
   type TypewriterEventType,
   type TypewriterForceFreeReason,
 } from '../domain';
+import { getMountedEditorDom, getMountedEditorView } from './editorViewAccess';
 
 export { computeTypewriterTargetScrollTop, shouldActivateTypewriterAnchor };
 export const DEFAULT_TYPEWRITER_SCROLL_MIN_DELTA_PX = 6;
@@ -148,7 +149,12 @@ export const useTypewriterAnchor = ({
     const captureCaretTopSnapshot = () => {
       try {
         const selectionPos = editor.state.selection.from;
-        const coords = editor.view.coordsAtPos(selectionPos);
+        const view = getMountedEditorView(editor);
+        if (!view) {
+          caretTopBeforeInputMutation = null;
+          return;
+        }
+        const coords = view.coordsAtPos(selectionPos);
         caretTopBeforeInputMutation = coords.top;
       } catch {
         caretTopBeforeInputMutation = null;
@@ -215,7 +221,7 @@ export const useTypewriterAnchor = ({
         return;
       }
 
-      const editorDom = editor.view.dom as HTMLElement | null;
+      const editorDom = getMountedEditorDom(editor);
       const scrollContainer = editorDom ? findScrollContainer(editorDom) : null;
       if (!editorDom || !scrollContainer) {
         return;
@@ -255,7 +261,9 @@ export const useTypewriterAnchor = ({
       }
 
       const selectionPos = editor.state.selection.from;
-      const coords = editor.view.coordsAtPos(selectionPos);
+      const view = getMountedEditorView(editor);
+      if (!view) return;
+      const coords = view.coordsAtPos(selectionPos);
       const containerRect = scrollContainer.getBoundingClientRect();
 
       const thresholdY =
@@ -367,7 +375,8 @@ export const useTypewriterAnchor = ({
       });
     };
 
-    const editorDom = editor.view.dom as HTMLElement | null;
+    const editorDom = getMountedEditorDom(editor);
+    if (!editorDom) return;
     const handleBeforeInput = (event: InputEvent) => {
       if (event.isComposing) return;
       captureCaretTopSnapshot();

@@ -26,8 +26,9 @@ describe('platform title bar integration', () => {
     expect(appTsx).toContain("import { AppChrome } from './AppChrome'");
     expect(appTsx).toContain('createAppChromeModel');
     expect(appTsx).toContain('<AppChrome chrome={chrome} />');
-    expect(appChromeTsx).toContain('<PlatformTitleBar chrome={chrome} />');
+    expect(appChromeTsx).toContain('<PlatformTitleBar chrome={chrome}');
     expect(platformTitleBarTsx).toContain('chrome: AppChromeModel;');
+    expect(platformTitleBarTsx).toContain('menuBar?: ReactNode;');
     expect(chromeStateTs).toContain('export type AppChromeModel');
     expect(chromeStateTs).toContain('createAppChromeModel');
   });

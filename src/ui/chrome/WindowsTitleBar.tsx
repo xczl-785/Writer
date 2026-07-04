@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Copy, Minus, Square, X } from 'lucide-react';
 import { WindowsMenuBar } from './WindowsMenuBar';
@@ -8,6 +8,7 @@ import { useSidebarToggleBehavior } from './useSidebarToggleBehavior';
 
 type WindowsTitleBarProps = {
   chrome: AppChromeModel;
+  menuBar?: ReactNode;
 };
 
 const SIDEBAR_WIDTH = 256;
@@ -47,13 +48,19 @@ async function closeWindow(): Promise<void> {
   }
 }
 
-export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
-  const { hasRecentItems, isSidebarVisible, isFocusZen, isVisible } =
-    chrome.state;
+export function WindowsTitleBar({ chrome, menuBar }: WindowsTitleBarProps) {
+  const {
+    hasRecentItems,
+    isSidebarVisible,
+    showSidebarToggle,
+    isFocusZen,
+    isVisible,
+  } = chrome.state;
   const { toggleSidebar, setFocusZen } = chrome.actions;
   const [isMaximized, setIsMaximized] = useState(false);
   const [isWindowFocused, setIsWindowFocused] = useState(true);
-  const leftWidth = isSidebarVisible ? SIDEBAR_WIDTH : 0;
+  const hasSidebarSurface = showSidebarToggle && isSidebarVisible;
+  const leftWidth = showSidebarToggle && isSidebarVisible ? SIDEBAR_WIDTH : 0;
   const rootInsetClass = isMaximized ? 'px-[8px] pt-[8px]' : '';
   const sidebarSurfaceClass = isMaximized ? 'rounded-tl-[10px]' : '';
   const mainSurfaceClass = isMaximized ? 'rounded-tr-[10px]' : '';
@@ -65,9 +72,17 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
 
   useEffect(() => {
     let mounted = true;
-    const windowHandle = getCurrentWindow();
+    let windowHandle: ReturnType<typeof getCurrentWindow>;
     let disposeResize: (() => void) | undefined;
     let disposeFocus: (() => void) | undefined;
+
+    try {
+      windowHandle = getCurrentWindow();
+    } catch {
+      return () => {
+        mounted = false;
+      };
+    }
 
     async function refreshWindowState(): Promise<void> {
       try {
@@ -135,9 +150,9 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
           data-tauri-drag-region
           style={{
             width: leftWidth,
-            paddingLeft: isSidebarVisible ? 12 : 0,
-            paddingRight: isSidebarVisible ? 12 : 0,
-            borderRightWidth: isSidebarVisible ? 1 : 0,
+            paddingLeft: hasSidebarSurface ? 12 : 0,
+            paddingRight: hasSidebarSurface ? 12 : 0,
+            borderRightWidth: hasSidebarSurface ? 1 : 0,
           }}
         >
           <BrandIcon />
@@ -152,21 +167,25 @@ export function WindowsTitleBar({ chrome }: WindowsTitleBarProps) {
         >
           <div className="relative z-10 flex min-w-0 flex-1 items-center pointer-events-none">
             <div className="flex items-center gap-2 px-2 pointer-events-auto">
-              <button
-                type="button"
-                data-no-drag
-                onClick={sidebarToggleBehavior.onClick}
-                onDoubleClick={sidebarToggleBehavior.onDoubleClick}
-                className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
-                aria-label="Toggle Sidebar"
-                title="Toggle Sidebar"
-              >
-                <SidebarToggleIcon />
-              </button>
-              <WindowsMenuBar
-                hasRecentItems={hasRecentItems}
-                platform="windows"
-              />
+              {showSidebarToggle ? (
+                <button
+                  type="button"
+                  data-no-drag
+                  onClick={sidebarToggleBehavior.onClick}
+                  onDoubleClick={sidebarToggleBehavior.onDoubleClick}
+                  className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300"
+                  aria-label="Toggle Sidebar"
+                  title="Toggle Sidebar"
+                >
+                  <SidebarToggleIcon />
+                </button>
+              ) : null}
+              {menuBar ?? (
+                <WindowsMenuBar
+                  hasRecentItems={hasRecentItems}
+                  platform="windows"
+                />
+              )}
             </div>
 
             <div

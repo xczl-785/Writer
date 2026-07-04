@@ -11,7 +11,7 @@ import { countCharacters } from './statusBarUtils';
 import { getWorkspaceIndicatorLabel } from './workspaceIndicator';
 import { t } from '../../shared/i18n';
 import { useNotificationStore } from '../../state/slices/notificationSlice';
-import './StatusBar.css';
+import { StatusBarView } from './StatusBarView';
 
 type StatusBarProps = {
   isFocusZen?: boolean;
@@ -159,65 +159,27 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     }
   };
 
-  const focusZenClass =
-    isFocusZen && !isVisibleInFocusZen ? 'status-bar--focus-zen-hidden' : '';
-
   return (
-    <div
-      className={`status-bar ${getStatusClass()} ${isFaded ? 'fade' : ''} ${focusZenClass}`}
-    >
-      <div className="status-bar__left">
-        <div className="status-indicator-wrap">
-          <div className="status-indicator" />
-          {displayStatus === 'error' && activeError ? (
-            <div className="status-error-panel" role="tooltip">
-              <p className="status-error-title">{activeError.reason}</p>
-              <p className="status-error-suggestion">
-                {activeError.suggestion}
-              </p>
-              {activeError.action ? (
-                <button
-                  type="button"
-                  className="status-error-action"
-                  onClick={() => activeError.action?.run()}
-                >
-                  {activeError.action.label}
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-        <span className="status-message">{getStatusText()}</span>
-        {/* 工作区标识 - V6规范 */}
-        {showWorkspace && (
-          <div
-            className={`status-workspace-indicator ${
-              workspaceType === 'multi'
-                ? 'status-workspace-indicator--multi'
-                : ''
-            }`}
-          >
-            <span className="status-workspace-name">{workspaceName}</span>
-          </div>
-        )}
-      </div>
-      <div className="status-bar__right">
-        <span className="status-meta">
-          {charactersCount} {t('status.chars')}
-        </span>
-        <button
-          type="button"
-          className="status-meta status-meta-btn"
-          title={`${t('status.encoding')}: ${encodingLabel}`}
-          onClick={() =>
-            setStatus('idle', `${t('status.encoding')}: ${encodingLabel}`)
-          }
-        >
-          {encodingLabel}
-        </button>
-        {/* SYNC 已移除，保留占位 */}
-        <span className="w-2" />
-      </div>
-    </div>
+    <StatusBarView
+      activeError={activeError}
+      charactersCount={charactersCount}
+      displayStatus={getStatusClass()}
+      encodingLabel={encodingLabel}
+      isFaded={isFaded}
+      isFocusZen={isFocusZen}
+      isVisibleInFocusZen={isVisibleInFocusZen}
+      message={getStatusText()}
+      onEncodingClick={() =>
+        setStatus('idle', `${t('status.encoding')}: ${encodingLabel}`)
+      }
+      workspace={
+        showWorkspace
+          ? {
+              name: workspaceName,
+              type: workspaceType === 'multi' ? 'multi' : 'single',
+            }
+          : null
+      }
+    />
   );
 };

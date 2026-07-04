@@ -7,7 +7,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { FilePenLine } from 'lucide-react';
 import {
   reduceSingleDocumentSessionShell,
   selectSingleDocumentSessionShellView,
@@ -20,14 +19,13 @@ import {
   type QuickWriteEditorHandle,
 } from './QuickWriteEditor';
 import { useSettingsStore } from '../../domains/settings/state/settingsStore';
-import { QuickWriteMenuBar } from './QuickWriteMenuBar';
-import { QuickWriteStatusBar } from './QuickWriteStatusBar';
-import {
-  quickWriteMenuSchema,
-  type QuickWriteMenuCommand,
-  type QuickWriteMenuGroup,
-} from './quickWriteMenu';
+import { type QuickWriteCommand } from './quickWriteCommands';
+import { QuickWriteMenuAdapter } from './QuickWriteMenuAdapter';
 import { useQuickWriteNativeMenuBridge } from './quickWriteNativeMenu';
+import { PlatformTitleBar } from '../../ui/chrome';
+import { createAppChromeModel } from '../../ui/chrome/chromeState';
+import { StatusBarView } from '../../ui/statusbar/StatusBarView';
+import { countCharacters } from '../../ui/statusbar/statusBarUtils';
 import {
   createQuickWriteRuntimeAdapter,
   type QuickWriteOpenedFile,
@@ -56,6 +54,8 @@ interface QuickWriteOperationError {
 
 type QuickWriteLocale = 'zh-CN' | 'en-US';
 type QuickWriteShellStyle = CSSProperties & Record<`--${string}`, string>;
+const QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH =
+  'quickwrite://startup-fallback-draft';
 
 interface QuickWriteCopy {
   autosavePending: string;
@@ -74,15 +74,12 @@ interface QuickWriteCopy {
     empty: string;
     open: string;
   };
-  draftModeLabel: string;
-  draftModeTooltip: string;
+  draftLabel: string;
   draftStatusTooltip: string;
   filePath: string;
   filePathUnavailable: string;
   menu: {
-    disabled: Partial<Record<QuickWriteMenuCommand, string>>;
-    groups: Record<QuickWriteMenuGroup['id'], string>;
-    items: Record<QuickWriteMenuCommand, string>;
+    disabled: Partial<Record<QuickWriteCommand, string>>;
   };
   noDocumentTooltip: string;
   operationActivity: Record<QuickWriteOperationPhase, string>;
@@ -90,9 +87,7 @@ interface QuickWriteCopy {
   operationFailure: Record<QuickWriteOperationPhase | 'unknown', string>;
   pleaseWait: string;
   quickWriteBusy: string;
-  recoveredDraftLabel: string;
   saveFailed: string;
-  saved: string;
   statusAriaLabels: {
     documentStatus: string;
     saveStatus: string;
@@ -118,9 +113,7 @@ const QUICK_WRITE_COPY: Record<QuickWriteLocale, QuickWriteCopy> = {
       empty: 'Empty',
       open: 'Open',
     },
-    draftModeLabel: 'Draft mode',
-    draftModeTooltip:
-      'Draft mode: autosaves to QuickWrite recovery until Save To creates a file',
+    draftLabel: 'Draft',
     draftStatusTooltip: 'Draft mode: autosaving to QuickWrite recovery',
     filePath: 'File path',
     filePathUnavailable: 'File path unavailable',
@@ -129,36 +122,6 @@ const QUICK_WRITE_COPY: Record<QuickWriteLocale, QuickWriteCopy> = {
         'file.exit': 'Native QuickWrite app lifecycle is not available yet',
         'file.newWindow':
           'Native QuickWrite window runtime is not available yet',
-      },
-      groups: {
-        edit: 'Edit',
-        file: 'File',
-        format: 'Format',
-        paragraph: 'Paragraph',
-      },
-      items: {
-        'edit.copy': 'Copy',
-        'edit.cut': 'Cut',
-        'edit.paste': 'Paste',
-        'edit.find': 'Find',
-        'edit.replace': 'Replace',
-        'edit.selectAll': 'Select All',
-        'edit.undo': 'Undo',
-        'file.close': 'Close',
-        'file.exportHtml': 'Export HTML...',
-        'file.printToPdf': 'Print to PDF...',
-        'file.exit': 'Exit',
-        'file.newWindow': 'New Window',
-        'file.open': 'Open File',
-        'file.saveTo': 'Save To...',
-        'format.bold': 'Bold',
-        'format.italic': 'Italic',
-        'format.link': 'Link',
-        'paragraph.body': 'Body',
-        'paragraph.bulletedList': 'Bulleted List',
-        'paragraph.heading': 'Heading',
-        'paragraph.numberedList': 'Numbered List',
-        'paragraph.table': 'Table',
       },
     },
     noDocumentTooltip: 'No QuickWrite document is open',
@@ -184,9 +147,7 @@ const QUICK_WRITE_COPY: Record<QuickWriteLocale, QuickWriteCopy> = {
     },
     pleaseWait: 'Please wait.',
     quickWriteBusy: 'QuickWrite is busy',
-    recoveredDraftLabel: 'Recovered draft',
     saveFailed: 'Save failed',
-    saved: 'Saved',
     statusAriaLabels: {
       documentStatus: 'QuickWrite document status',
       saveStatus: 'QuickWrite save status',
@@ -210,8 +171,7 @@ const QUICK_WRITE_COPY: Record<QuickWriteLocale, QuickWriteCopy> = {
       empty: '空',
       open: '已打开',
     },
-    draftModeLabel: '草稿模式',
-    draftModeTooltip: '草稿模式：保存为文件前会自动保存到随手写恢复区',
+    draftLabel: '草稿',
     draftStatusTooltip: '草稿模式：正在自动保存到随手写恢复区',
     filePath: '文件路径',
     filePathUnavailable: '文件路径不可用',
@@ -219,36 +179,6 @@ const QUICK_WRITE_COPY: Record<QuickWriteLocale, QuickWriteCopy> = {
       disabled: {
         'file.exit': '原生随手写应用生命周期尚不可用',
         'file.newWindow': '原生随手写窗口运行时尚不可用',
-      },
-      groups: {
-        edit: '编辑',
-        file: '文件',
-        format: '格式',
-        paragraph: '段落',
-      },
-      items: {
-        'edit.copy': '复制',
-        'edit.cut': '剪切',
-        'edit.paste': '粘贴',
-        'edit.find': '查找',
-        'edit.replace': '替换',
-        'edit.selectAll': '全选',
-        'edit.undo': '撤销',
-        'file.close': '关闭',
-        'file.exportHtml': '导出 HTML...',
-        'file.printToPdf': '打印为 PDF...',
-        'file.exit': '退出',
-        'file.newWindow': '新建窗口',
-        'file.open': '打开文件',
-        'file.saveTo': '另存为...',
-        'format.bold': '加粗',
-        'format.italic': '斜体',
-        'format.link': '链接',
-        'paragraph.body': '正文',
-        'paragraph.bulletedList': '项目符号列表',
-        'paragraph.heading': '标题',
-        'paragraph.numberedList': '编号列表',
-        'paragraph.table': '表格',
       },
     },
     noDocumentTooltip: '没有打开随手写文档',
@@ -258,7 +188,7 @@ const QUICK_WRITE_COPY: Record<QuickWriteLocale, QuickWriteCopy> = {
       printToPdf: '正在打开系统 PDF 打印对话框...',
       newWindow: '正在打开新窗口...',
       open: '正在打开文件...',
-      saveTo: '正在保存为文件...',
+      saveTo: '正在保存到文件...',
       startup: '正在启动随手写...',
     },
     operationFailed: '操作失败',
@@ -268,15 +198,13 @@ const QUICK_WRITE_COPY: Record<QuickWriteLocale, QuickWriteCopy> = {
       printToPdf: 'PDF 打印失败',
       newWindow: '新窗口打开失败',
       open: '打开失败',
-      saveTo: '另存为失败',
+      saveTo: '保存到失败',
       startup: '启动失败',
       unknown: '操作失败',
     },
     pleaseWait: '请稍候。',
     quickWriteBusy: '随手写正忙',
-    recoveredDraftLabel: '已恢复草稿',
     saveFailed: '保存失败',
-    saved: '已保存',
     statusAriaLabels: {
       documentStatus: '随手写文档状态',
       saveStatus: '随手写保存状态',
@@ -354,21 +282,13 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
     useState<QuickWriteOperationError | null>(null);
   const [operationPhase, setOperationPhase] =
     useState<QuickWriteOperationPhase | null>('startup');
+  const [isEditorLoading, setIsEditorLoading] = useState(false);
   const [state, dispatch] = useReducer(reduceQuickWriteShell, initialState);
   const themePreference = useSettingsStore((item) => item.themePreference);
   const editorFontSize = useSettingsStore((item) => item.editorFontSize);
   const localePreference = useSettingsStore((item) => item.localePreference);
   const locale = resolveQuickWriteLocale(localePreference);
   const copy = QUICK_WRITE_COPY[locale];
-  const canOpenNewTemporaryDocumentWindow =
-    quickWriteRuntime.canOpenNewTemporaryDocumentWindow();
-  const localizedMenuGroups = useMemo(
-    () =>
-      localizeQuickWriteMenuGroups(copy, {
-        canOpenNewTemporaryDocumentWindow,
-      }),
-    [canOpenNewTemporaryDocumentWindow, copy],
-  );
   const shellStyle = useMemo<QuickWriteShellStyle>(() => {
     const themeVariables =
       themePreference === 'light' || themePreference === 'dark'
@@ -392,10 +312,11 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
   operationPhaseRef.current = operationPhase;
   const isBusy = operationPhase !== null;
   const isEditorDisabled =
-    isBusy || view.documentKind === 'closed' || view.documentKind === 'empty';
-  const isDraftMode = view.documentKind === 'temporary';
+    isBusy ||
+    isEditorLoading ||
+    view.documentKind === 'closed' ||
+    view.documentKind === 'empty';
   const documentTitle = getQuickWriteDocumentTitle(view, copy);
-  const documentSubtitle = getQuickWriteDocumentSubtitle(view, copy);
   const statusModel = getQuickWriteStatusModel({
     copy,
     documentKind: view.documentKind,
@@ -405,6 +326,33 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
     operationPhase,
     pendingSave: view.pendingSave !== null,
     path: view.documentPath,
+  });
+  const chrome = useMemo(
+    () =>
+      createAppChromeModel({
+        hasRecentItems: false,
+        isFocusZen: false,
+        isHeaderAwake: true,
+        isSidebarVisible: false,
+        showSidebarToggle: false,
+        onSetFocusZen: () => {},
+        onSetSidebarVisible: () => {},
+        onToggleSidebar: () => {},
+      }),
+    [],
+  );
+  const statusBarDisplayStatus = getQuickWriteStatusBarDisplayStatus(
+    statusModel.saveState,
+  );
+  const statusBarError = getQuickWriteStatusBarError({
+    copy,
+    operationError,
+    statusModel,
+  });
+  const statusBarMessage = getQuickWriteStatusBarMessage({
+    copy,
+    documentKind: view.documentKind,
+    statusModel,
   });
 
   useEffect(() => {
@@ -438,12 +386,23 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         return;
       }
       dispatchShell({ type: 'editDocument', content: markdown });
-      dispatchShell({ type: 'requestSave' });
+      if (
+        stateRef.current.session.recoveryPath !==
+        QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH
+      ) {
+        dispatchShell({ type: 'requestSave' });
+      }
     }, [dispatchShell]);
 
   const flushCurrentDocument = useCallback(async (): Promise<boolean> => {
     await synchronizeEditorMarkdownSnapshot();
     let current = stateRef.current;
+    if (
+      current.session.recoveryPath ===
+      QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH
+    ) {
+      return true;
+    }
     if (
       !current.pendingSave &&
       current.session.status === 'dirty' &&
@@ -517,6 +476,7 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         return;
       }
 
+      await synchronizeEditorMarkdownSnapshot();
       const current = stateRef.current;
       const draftId = activeDraftIdRef.current;
       await quickWriteRuntime.savePendingDocument({
@@ -541,7 +501,13 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
     } finally {
       endOperation('saveTo');
     }
-  }, [beginOperation, dispatchShell, endOperation, quickWriteRuntime]);
+  }, [
+    beginOperation,
+    dispatchShell,
+    endOperation,
+    quickWriteRuntime,
+    synchronizeEditorMarkdownSnapshot,
+  ]);
 
   const handleExportHtml = useCallback(async () => {
     if (!beginOperation('exportHtml')) {
@@ -730,13 +696,18 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
       }
       setOperationError(null);
       dispatchShell({ type: 'editDocument', content });
-      dispatchShell({ type: 'requestSave' });
+      if (
+        stateRef.current.session.recoveryPath !==
+        QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH
+      ) {
+        dispatchShell({ type: 'requestSave' });
+      }
     },
     [dispatchShell, isEditorDisabled],
   );
 
   const handleEditorCommand = useCallback(
-    (command: QuickWriteMenuCommand) => {
+    (command: QuickWriteCommand) => {
       const editor = editorRef.current;
       if (!editor || isEditorDisabled) {
         return;
@@ -748,7 +719,7 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
   );
 
   const handleMenuCommand = useCallback(
-    (command: QuickWriteMenuCommand) => {
+    (command: QuickWriteCommand) => {
       switch (command) {
         case 'file.open':
           void handleOpen();
@@ -816,66 +787,6 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
     };
   }, [handleRuntimeFileOpen, quickWriteRuntime]);
 
-  const disabledCommands = useMemo<
-    Partial<Record<QuickWriteMenuCommand, string>>
-  >(() => {
-    const disabled: Partial<Record<QuickWriteMenuCommand, string>> = {};
-    if (isBusy) {
-      disabled['file.open'] = getOperationDisabledReason(operationPhase, copy);
-      disabled['file.saveTo'] = getOperationDisabledReason(
-        operationPhase,
-        copy,
-      );
-      disabled['file.exportHtml'] = getOperationDisabledReason(
-        operationPhase,
-        copy,
-      );
-      disabled['file.printToPdf'] = getOperationDisabledReason(
-        operationPhase,
-        copy,
-      );
-      disabled['file.close'] = getOperationDisabledReason(operationPhase, copy);
-      disabled['file.newWindow'] = getOperationDisabledReason(
-        operationPhase,
-        copy,
-      );
-    }
-    if (!canOpenNewTemporaryDocumentWindow) {
-      disabled['file.newWindow'] = copy.menu.disabled['file.newWindow'];
-    }
-    if (isEditorDisabled) {
-      const reason = copy.disabledNoEditableDocument;
-      disabled['file.exportHtml'] = reason;
-      disabled['file.printToPdf'] = reason;
-      disabled['edit.undo'] = reason;
-      disabled['edit.cut'] = reason;
-      disabled['edit.copy'] = reason;
-      disabled['edit.paste'] = reason;
-      disabled['edit.selectAll'] = reason;
-      disabled['edit.find'] = reason;
-      disabled['edit.replace'] = reason;
-      disabled['format.bold'] = reason;
-      disabled['format.italic'] = reason;
-      disabled['format.link'] = reason;
-      disabled['paragraph.body'] = reason;
-      disabled['paragraph.heading'] = reason;
-      disabled['paragraph.bulletedList'] = reason;
-      disabled['paragraph.numberedList'] = reason;
-      disabled['paragraph.table'] = reason;
-    }
-    if (view.documentKind === 'closed') {
-      disabled['file.close'] = copy.disabledDocumentAlreadyClosed;
-    }
-    return disabled;
-  }, [
-    canOpenNewTemporaryDocumentWindow,
-    copy,
-    isBusy,
-    isEditorDisabled,
-    operationPhase,
-    view.documentKind,
-  ]);
-
   useEffect(() => {
     let isCancelled = false;
 
@@ -933,9 +844,40 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         if (isCancelled) {
           return;
         }
-        setOperationError({ phase: 'startup', error });
-        operationPhaseRef.current = 'startup';
-        setOperationPhase('startup');
+        const startupError = error;
+        setOperationError({ phase: 'startup', error: startupError });
+        void quickWriteRuntime
+          .openNewRecoveryDraft()
+          .then((draft) => {
+            if (isCancelled) {
+              return;
+            }
+            activeDraftIdRef.current = draft.metadata.draftId;
+            restoredEditorStateRef.current = draft.metadata.editorState;
+            dispatchShell({
+              type: 'openTemporaryDocument',
+              recoveryPath: draft.metadata.recoveryPath,
+              content: draft.content,
+              contentVersion: draft.metadata.contentVersion,
+            });
+          })
+          .catch(() => {
+            if (isCancelled) {
+              return;
+            }
+            activeDraftIdRef.current = null;
+            restoredEditorStateRef.current = undefined;
+            dispatchShell({
+              type: 'openTemporaryDocument',
+              recoveryPath: QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH,
+              content: '',
+            });
+          })
+          .finally(() => {
+            if (!isCancelled) {
+              endOperation('startup');
+            }
+          });
       });
 
     return () => {
@@ -1006,7 +948,8 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
       !state.pendingSave &&
       !state.lastSaveError &&
       state.session.status === 'dirty' &&
-      state.session.contentVersion !== state.session.savedVersion
+      state.session.contentVersion !== state.session.savedVersion &&
+      state.session.recoveryPath !== QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH
     ) {
       dispatchShell({ type: 'requestSave' });
     }
@@ -1015,13 +958,14 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
     state.lastSaveError,
     state.pendingSave,
     state.session.contentVersion,
+    state.session.recoveryPath,
     state.session.savedVersion,
     state.session.status,
   ]);
 
   return (
     <main
-      className="quick-write-shell"
+      className="quick-write-app"
       data-editor-font-size={editorFontSize}
       data-locale={localePreference}
       data-resolved-locale={locale}
@@ -1029,31 +973,19 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
       lang={locale}
       style={shellStyle}
     >
-      <header className="quick-write-topbar">
-        <div className="quick-write-title-block">
-          <div className="quick-write-title-row">
-            {isDraftMode ? (
-              <span title={copy.draftModeTooltip}>
-                <FilePenLine
-                  aria-label={copy.draftModeLabel}
-                  className="quick-write-draft-icon"
-                  role="img"
-                  size={16}
-                />
-              </span>
-            ) : null}
-            <h1 title={documentTitle}>{documentTitle}</h1>
+      <PlatformTitleBar
+        chrome={chrome}
+        menuBar={
+          <div className="quick-write-title-menu">
+            <QuickWriteMenuAdapter
+              disabled={isBusy}
+              hasEditableDocument={!isEditorDisabled}
+              onCommand={handleMenuCommand}
+            />
           </div>
-          <span title={view.documentPath ?? documentSubtitle}>
-            {documentSubtitle}
-          </span>
-        </div>
-      </header>
-      <QuickWriteMenuBar
-        disabledCommands={disabledCommands}
-        menuGroups={localizedMenuGroups}
-        onCommand={handleMenuCommand}
+        }
       />
+
       {operationError ? (
         <output
           aria-label="QuickWrite operation error"
@@ -1063,45 +995,54 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         </output>
       ) : null}
 
+      <output
+        className="quick-write-draft-status"
+        data-status={statusModel.saveState}
+        title={statusModel.tooltip}
+      >
+        {statusModel.activityLabel}
+      </output>
+      <output
+        aria-label={copy.statusAriaLabels.documentStatus}
+        className="quick-write-sr-status"
+      >
+        {statusModel.documentStatus}
+      </output>
+      <output
+        aria-label={copy.statusAriaLabels.saveStatus}
+        className="quick-write-sr-status"
+      >
+        {statusModel.activityLabel}
+      </output>
       <QuickWriteEditor
         disabled={isEditorDisabled}
+        documentId={
+          view.documentPath ??
+          state.session.recoveryPath ??
+          `quickwrite://${view.documentKind}`
+        }
+        draftLabel={copy.draftLabel}
         path={view.documentPath}
         ref={editorRef}
         restoreState={restoredEditorStateRef.current}
         value={state.content}
         onMarkdownChange={updateEditorContent}
+        onSaveShortcut={handleSaveTo}
+        onLoadStateChange={setIsEditorLoading}
       />
-      <QuickWriteStatusBar
-        activityLabel={statusModel.activityLabel}
-        documentStatus={statusModel.documentStatus}
-        filePath={statusModel.filePath}
-        labels={copy.statusAriaLabels}
-        saveState={statusModel.saveState}
-        tooltip={statusModel.tooltip}
+      <StatusBarView
+        activeError={statusBarError}
+        charactersCount={countCharacters(state.content)}
+        className="quick-write-shared-status-bar"
+        displayStatus={statusBarDisplayStatus}
+        encodingLabel="UTF-8"
+        message={statusBarMessage}
       />
     </main>
   );
 }
 
 export default QuickWriteApp;
-
-const getQuickWriteDocumentKindLabel = (
-  documentKind: ReturnType<
-    typeof selectSingleDocumentSessionShellView
-  >['documentKind'],
-  copy: QuickWriteCopy,
-): string => {
-  switch (documentKind) {
-    case 'temporary':
-      return copy.documentKind.draft;
-    case 'file':
-      return copy.documentKind.file;
-    case 'closed':
-      return copy.documentKind.closed;
-    case 'empty':
-      return copy.documentKind.draft;
-  }
-};
 
 const getErrorMessage = (error: unknown, copy: QuickWriteCopy): string =>
   error instanceof Error ? error.message : copy.operationFailed;
@@ -1117,19 +1058,6 @@ const getQuickWriteDocumentTitle = (
     return copy.documentKind.closed;
   }
   return 'QuickWrite';
-};
-
-const getQuickWriteDocumentSubtitle = (
-  view: ReturnType<typeof selectSingleDocumentSessionShellView>,
-  copy: QuickWriteCopy,
-): string => {
-  if (view.documentKind === 'file' && view.documentPath) {
-    return view.documentPath;
-  }
-  return (
-    localizeQuickWriteDisplayLabel(view.displayLabel, copy) ??
-    getQuickWriteDocumentKindLabel(view.documentKind, copy)
-  );
 };
 
 interface QuickWriteStatusInput {
@@ -1220,8 +1148,7 @@ const getQuickWriteStatusModel = ({
   }
 
   return {
-    activityLabel:
-      documentKind === 'closed' ? copy.documentStatus.closed : copy.saved,
+    activityLabel: documentKind === 'closed' ? copy.documentStatus.closed : '',
     documentStatus: getDocumentStatusLabel(documentKind, isDirty, copy),
     filePath,
     saveState: 'saved' as const,
@@ -1319,13 +1246,55 @@ const getCurrentSaveState = (
   return isDirty ? 'dirty' : 'saved';
 };
 
-const getOperationDisabledReason = (
-  operationPhase: QuickWriteOperationPhase | null,
-  copy: QuickWriteCopy,
-): string =>
-  operationPhase
-    ? `${getOperationActivityLabel(operationPhase, copy)} ${copy.pleaseWait}`
-    : copy.quickWriteBusy;
+const getQuickWriteStatusBarDisplayStatus = (
+  saveState: ReturnType<typeof getQuickWriteStatusModel>['saveState'],
+): 'saved' | 'dirty' | 'saving' | 'error' => {
+  if (saveState === 'failed') {
+    return 'error';
+  }
+  return saveState;
+};
+
+const getQuickWriteStatusBarMessage = ({
+  copy,
+  documentKind,
+  statusModel,
+}: {
+  copy: QuickWriteCopy;
+  documentKind: QuickWriteStatusInput['documentKind'];
+  statusModel: ReturnType<typeof getQuickWriteStatusModel>;
+}): string => {
+  if (statusModel.activityLabel) {
+    return statusModel.activityLabel;
+  }
+  if (documentKind === 'file') {
+    return copy.documentKind.file;
+  }
+  if (documentKind === 'closed') {
+    return copy.documentKind.closed;
+  }
+  return copy.documentKind.draft;
+};
+
+const getQuickWriteStatusBarError = ({
+  copy,
+  operationError,
+  statusModel,
+}: {
+  copy: QuickWriteCopy;
+  operationError: QuickWriteOperationError | null;
+  statusModel: ReturnType<typeof getQuickWriteStatusModel>;
+}) => {
+  if (statusModel.saveState !== 'failed') {
+    return null;
+  }
+  return {
+    reason: statusModel.activityLabel || copy.saveFailed,
+    suggestion: operationError
+      ? getOperationFailureLabel(operationError.phase, copy)
+      : copy.pleaseWait,
+  };
+};
 
 const getBaseName = (path: string): string => {
   const parts = path.split(/[\\/]/);
@@ -1345,36 +1314,6 @@ const resolveQuickWriteLocale = (
   }
   return 'en-US';
 };
-
-const localizeQuickWriteDisplayLabel = (
-  displayLabel: string | null,
-  copy: QuickWriteCopy,
-): string | null => {
-  if (!displayLabel) {
-    return null;
-  }
-  return displayLabel === QUICK_WRITE_COPY['en-US'].recoveredDraftLabel
-    ? copy.recoveredDraftLabel
-    : displayLabel;
-};
-
-const localizeQuickWriteMenuGroups = (
-  copy: QuickWriteCopy,
-  options: { canOpenNewTemporaryDocumentWindow: boolean },
-): QuickWriteMenuGroup[] =>
-  quickWriteMenuSchema.map((group) => ({
-    ...group,
-    label: copy.menu.groups[group.id],
-    items: group.items.map((item) => ({
-      ...item,
-      disabledReason:
-        item.command === 'file.newWindow' &&
-        options.canOpenNewTemporaryDocumentWindow
-          ? undefined
-          : (copy.menu.disabled[item.command] ?? item.disabledReason),
-      label: copy.menu.items[item.command],
-    })),
-  }));
 
 const buildQuickWriteHtmlDocument = ({
   body,

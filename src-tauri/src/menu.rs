@@ -660,22 +660,6 @@ fn build_quick_write_native_menu_with_locale<R: Runtime>(
             &item(
                 app,
                 locale,
-                "menu.quick_write.export_html",
-                "导出 HTML…",
-                "Export HTML…",
-                Some("CmdOrCtrl+Shift+E"),
-            )?,
-            &item(
-                app,
-                locale,
-                "menu.quick_write.print_to_pdf",
-                "打印为 PDF…",
-                "Print to PDF…",
-                Some("CmdOrCtrl+P"),
-            )?,
-            &item(
-                app,
-                locale,
                 "menu.quick_write.new_window",
                 "新建窗口",
                 "New Window",

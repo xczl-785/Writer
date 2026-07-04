@@ -12,21 +12,36 @@ import { DEFAULT_TABLE_INSERT } from '../core/constants';
 import {
   executeCopyAsMarkdown,
   executeCopyAsPlainText,
-  executePasteCommand,
+} from '../integration/copyCommandBridge';
+import { executePasteCommand } from '../integration/pasteCommandBridge';
+import {
   insertClipboardHtml,
   insertClipboardText,
-} from '../integration';
+} from '../integration/markdownClipboard';
 import { applyLinkAction } from '../hooks/linkActions';
-import { applyImageAction } from '../hooks/imageActions';
 
 export type MenuCommandHandler = (event: Event) => void;
+type ApplyImageActionResult =
+  | 'applied'
+  | 'cancelled'
+  | 'failed'
+  | 'unavailable';
+export type MenuImageAction = (
+  editor: Editor,
+) => ApplyImageActionResult | void | Promise<ApplyImageActionResult | void>;
+
+type MenuCommandHandlerOptions = {
+  imageAction?: MenuImageAction;
+};
 
 export function createMenuCommandHandler(
   editor: Editor,
   findReplace: { openFindPanel: (mode: 'find' | 'replace') => void },
   setStatus: (status: 'idle' | 'error', message: string) => void,
   setIsOutlineOpen: (value: boolean | ((prev: boolean) => boolean)) => void,
+  options: MenuCommandHandlerOptions = {},
 ): MenuCommandHandler {
+  const { imageAction } = options;
   const showLevel2ClipboardError = (source: string): void => {
     const message = t('status.menu.clipboardDenied');
     useStatusStore.getState().setStatus('idle', null);
@@ -156,7 +171,11 @@ export function createMenuCommandHandler(
         }
         return;
       case 'format.image':
-        void applyImageAction(editor).then((result) => {
+        if (!imageAction) {
+          setStatus('error', t('status.menu.unavailable'));
+          return;
+        }
+        void Promise.resolve(imageAction(editor)).then((result) => {
           if (result === 'unavailable') {
             setStatus('error', t('status.menu.unavailable'));
           }
@@ -166,6 +185,9 @@ export function createMenuCommandHandler(
         runEditorCommand(() =>
           editor.chain().focus().toggleHeading({ level: 1 }).run(),
         );
+        return;
+      case 'paragraph.body':
+        runEditorCommand(() => editor.chain().focus().setParagraph().run());
         return;
       case 'paragraph.heading_2':
         runEditorCommand(() =>

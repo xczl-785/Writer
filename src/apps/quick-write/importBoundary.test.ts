@@ -18,7 +18,9 @@ const appCommandsRoot = resolve(appRoot, 'commands');
 
 const forbiddenPathPrefixes = [
   'app/',
-  'domains/editor/core/',
+  'domains/editor/core/EditorImpl',
+  'domains/editor/core/EditorStateFacade',
+  'domains/editor/core/useEditorInstanceController',
   'domains/workspace/',
   'domains/file/',
   'ui/sidebar/',
@@ -40,7 +42,6 @@ const forbiddenSymbols = new Set([
   'App',
   'Editor',
   'EditorImpl',
-  'EditorShell',
   'useEditorStateFacade',
 ]);
 

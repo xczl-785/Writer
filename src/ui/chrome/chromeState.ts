@@ -3,6 +3,7 @@ import { isChromeHeaderVisible } from './headerVisibilityPolicy';
 export type AppChromeState = {
   hasRecentItems: boolean;
   isSidebarVisible: boolean;
+  showSidebarToggle: boolean;
   isFocusZen: boolean;
   isHeaderAwake: boolean;
   isVisible: boolean;
@@ -22,6 +23,7 @@ export type AppChromeModel = {
 type CreateAppChromeModelInput = {
   hasRecentItems: boolean;
   isSidebarVisible: boolean;
+  showSidebarToggle?: boolean;
   isFocusZen: boolean;
   isHeaderAwake: boolean;
   onToggleSidebar: () => void;
@@ -32,6 +34,7 @@ type CreateAppChromeModelInput = {
 export function createAppChromeModel({
   hasRecentItems,
   isSidebarVisible,
+  showSidebarToggle = true,
   isFocusZen,
   isHeaderAwake,
   onToggleSidebar,
@@ -42,6 +45,7 @@ export function createAppChromeModel({
     state: {
       hasRecentItems,
       isSidebarVisible,
+      showSidebarToggle,
       isFocusZen,
       isHeaderAwake,
       isVisible: isChromeHeaderVisible({ isFocusZen, isHeaderAwake }),

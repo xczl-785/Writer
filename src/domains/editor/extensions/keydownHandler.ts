@@ -23,13 +23,20 @@ type EditorRef = { current: TiptapEditor | null };
  * - Backspace/Delete in table cell selection: Delete cell content
  * - ArrowLeft at block start before table: Navigate into table
  */
-export function createEditorKeyDownHandler(options: { editorRef: EditorRef }) {
-  const { editorRef } = options;
+export function createEditorKeyDownHandler(options: {
+  editorRef: EditorRef;
+  onSaveShortcut?: () => void;
+}) {
+  const { editorRef, onSaveShortcut } = options;
   return (view: EditorView, event: KeyboardEvent): boolean => {
     // Cmd/Ctrl + S: Save
     if ((event.metaKey || event.ctrlKey) && event.key === 's') {
       event.preventDefault();
-      menuCommandBus.dispatch('menu.file.save');
+      if (onSaveShortcut) {
+        onSaveShortcut();
+      } else {
+        menuCommandBus.dispatch('menu.file.save');
+      }
       return true;
     }
 

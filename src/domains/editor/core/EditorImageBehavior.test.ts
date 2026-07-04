@@ -13,11 +13,24 @@ describe('Editor image behavior', () => {
     join(currentDir, '..', 'handlers', 'menuCommandHandler.ts'),
     'utf-8',
   );
+  const editorImplTs = readFileSync(
+    join(currentDir, 'EditorImpl.tsx'),
+    'utf-8',
+  );
 
-  it('routes image insertion through shared image action helper', () => {
-    expect(slashMenuTs).toContain('applyImageAction');
+  it('keeps slash image insertion behind an injected action port', () => {
+    expect(slashMenuTs).toContain('imageAction?: SlashImageAction');
+    expect(slashMenuTs).toContain('if (imageAction)');
+    expect(slashMenuTs).not.toContain('applyImageAction');
+    expect(editorImplTs).toContain('import { applyImageAction }');
+    expect(editorImplTs).toContain('imageAction: applyImageAction');
     expect(slashMenuTs).not.toContain('readAsDataURL');
-    expect(menuHandlerTs).toContain('applyImageAction');
+  });
+
+  it('keeps Writer menu image insertion routed through image action helper', () => {
+    expect(menuHandlerTs).toContain('imageAction?: MenuImageAction');
+    expect(menuHandlerTs).not.toContain('applyImageAction');
+    expect(editorImplTs).toContain('imageAction: applyImageAction');
     expect(menuHandlerTs).not.toContain(
       "setStatus('idle', t('status.menu.todo'))",
     );
