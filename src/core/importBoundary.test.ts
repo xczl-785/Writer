@@ -38,9 +38,6 @@ const allowedCoreRuntimeConsumerFiles = new Set(
   [
     // Runtime platform adapter: owns the Tauri-to-core port implementation.
     'services/runtime/TauriRuntimePorts.ts',
-    // D-1 transition bridge: QuickWrite runtime adapter narrows core ports for
-    // draft/session recovery until runtime ports move behind an app-local facade.
-    'apps/quick-write/quickWriteRuntime.ts',
   ].map((path) => `${normalizedSrcRoot}/${path}`),
 );
 

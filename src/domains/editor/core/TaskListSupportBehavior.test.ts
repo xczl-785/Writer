@@ -47,9 +47,7 @@ describe('Task list editor support', () => {
     expect(legacyMarkdownServiceTs).toContain('markdownExtensions');
     expect(legacyMarkdownServiceTs).toContain('markdownManager');
     expect(legacyMarkdownServiceTs).toContain('type EditorJSON');
-    expect(legacyMarkdownServiceTs).toContain(
-      "from '../../core/editor'",
-    );
+    expect(legacyMarkdownServiceTs).toContain("from '../../core/editor'");
     expect(legacyMarkdownServiceTs).not.toContain(
       '../../core/editor/markdown/MarkdownService',
     );

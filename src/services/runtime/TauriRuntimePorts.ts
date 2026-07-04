@@ -128,34 +128,7 @@ export const tauriFileWatcherPort: FileWatcherRuntimePort = {
   },
 };
 
-export const tauriQuickWriteWindowPort: QuickWriteWindowPort = {
-  openNewTemporaryDocumentWindow() {
-    return invoke('open_quick_write_window');
-  },
-};
-
-export const tauriQuickWritePrintPort: QuickWritePrintPort = {
-  async printDocument() {
-    if (typeof window === 'undefined' || typeof window.print !== 'function') {
-      throw new Error('QuickWrite print runtime is not available');
-    }
-
-    window.print();
-  },
-};
-
-export type TauriRuntimePorts = RuntimePorts & {
-  quickWritePrint: QuickWritePrintPort;
-  quickWriteWindow: QuickWriteWindowPort;
-};
-
-interface QuickWritePrintPort {
-  printDocument(): Promise<void>;
-}
-
-interface QuickWriteWindowPort {
-  openNewTemporaryDocumentWindow(): Promise<void>;
-}
+export type TauriRuntimePorts = RuntimePorts;
 
 export const tauriRuntimePorts: TauriRuntimePorts = {
   fileContent: tauriFileContentPort,
@@ -163,8 +136,6 @@ export const tauriRuntimePorts: TauriRuntimePorts = {
   appConfig: tauriAppConfigPort,
   fileDialog: tauriFileDialogPort,
   startupFile: tauriStartupFilePort,
-  quickWritePrint: tauriQuickWritePrintPort,
-  quickWriteWindow: tauriQuickWriteWindowPort,
 };
 
 const isAlreadyExistsError = (error: unknown): boolean =>

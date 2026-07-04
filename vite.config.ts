@@ -39,7 +39,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         app: resolve(__dirname, 'index.html'),
-        quickWrite: resolve(__dirname, 'quick-write.html'),
       },
       output: {
         manualChunks(id) {

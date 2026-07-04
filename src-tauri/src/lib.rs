@@ -2,8 +2,6 @@ pub mod cli;
 pub mod config;
 pub mod fs;
 pub mod menu;
-pub mod quick_write_shortcut;
-pub mod quick_write_tray;
 pub mod security;
 pub mod watcher;
 pub mod workspace;
@@ -54,11 +52,6 @@ fn read_clipboard_payload() -> Result<ClipboardPayload, String> {
     Ok(ClipboardPayload { html, text })
 }
 
-#[tauri::command]
-fn open_quick_write_window(app: AppHandle) -> Result<(), String> {
-    quick_write_tray::open_quick_write_new_draft_window(&app)
-}
-
 #[derive(Serialize)]
 struct ClipboardPayload {
     html: Option<String>,
@@ -97,7 +90,6 @@ pub fn run() {
             get_startup_file_path,
             get_pending_file_path,
             read_clipboard_payload,
-            open_quick_write_window,
             fs::list_tree,
             workspace::list_tree_batch,
             fs::read_file,
@@ -135,8 +127,6 @@ pub fn run() {
             )?;
             let native_menu = menu::build_native_menu(&app.handle())?;
             app.set_menu(native_menu)?;
-            quick_write_tray::register_quick_write_tray(&app.handle())?;
-            quick_write_shortcut::register_quick_write_global_shortcut(&app.handle());
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;

@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import {
-  menuCommandBus,
-  type MenuCommandPayload,
-} from '../core/command';
+import { menuCommandBus, type MenuCommandPayload } from '../core/command';
 
 export const NATIVE_MENU_COMMAND_EVENT = 'writer://menu-command';
 

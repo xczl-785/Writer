@@ -8,7 +8,7 @@ describe('native file menu workspace items', () => {
   const source = readFileSync(join(currentDir, 'menu.rs'), 'utf-8');
   const writerBuilder = source.slice(
     source.indexOf('fn build_writer_native_menu_with_locale'),
-    source.indexOf('fn build_quick_write_native_menu_with_locale'),
+    source.indexOf('pub fn emit_menu_command'),
   );
 
   it('includes dedicated workspace save commands in the file menu', () => {

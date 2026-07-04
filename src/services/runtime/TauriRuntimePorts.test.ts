@@ -46,29 +46,6 @@ describe('TauriRuntimePorts', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('maps QuickWrite new-window runtime to the native command', async () => {
-    invokeMock.mockResolvedValue(undefined);
-    const { tauriQuickWriteWindowPort } = await import('./TauriRuntimePorts');
-
-    await tauriQuickWriteWindowPort.openNewTemporaryDocumentWindow();
-
-    expect(invokeMock).toHaveBeenCalledWith('open_quick_write_window');
-  });
-
-  it('maps QuickWrite PDF print runtime to the current webview print dialog', async () => {
-    const print = vi.fn();
-    Object.defineProperty(window, 'print', {
-      configurable: true,
-      value: print,
-    });
-    const { tauriQuickWritePrintPort } = await import('./TauriRuntimePorts');
-
-    await tauriQuickWritePrintPort.printDocument();
-
-    expect(print).toHaveBeenCalledTimes(1);
-    expect(invokeMock).not.toHaveBeenCalled();
-  });
-
   it('maps startup and pending file queries to existing Tauri commands', async () => {
     invokeMock
       .mockResolvedValueOnce('/docs/startup.md')
