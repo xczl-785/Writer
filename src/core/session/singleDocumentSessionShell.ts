@@ -192,6 +192,16 @@ export const reduceSingleDocumentSessionShell = (
     }
     case 'saveSettled':
       if (!state.pendingSave) {
+        if (event.result.ok && event.result.contentVersion !== undefined) {
+          return {
+            ...state,
+            session: reduceSingleDocumentSession(state.session, {
+              type: 'saveSucceeded',
+              savedVersion: event.result.contentVersion,
+            }),
+            lastSaveError: null,
+          };
+        }
         return state;
       }
 
@@ -201,7 +211,9 @@ export const reduceSingleDocumentSessionShell = (
           ...(event.result.ok
             ? {
                 type: 'saveSucceeded' as const,
-                savedVersion: state.pendingSave.contentVersion,
+                savedVersion:
+                  event.result.contentVersion ??
+                  state.pendingSave.contentVersion,
               }
             : { type: 'saveFailed' as const }),
         }),

@@ -22,10 +22,20 @@ import { useSettingsStore } from '../../domains/settings/state/settingsStore';
 import { type QuickWriteCommand } from './quickWriteCommands';
 import { QuickWriteMenuAdapter } from './QuickWriteMenuAdapter';
 import { useQuickWriteNativeMenuBridge } from './quickWriteNativeMenu';
+import {
+  SaveScheduler,
+  type SaveSchedulerInput,
+} from '../../core/autosave/SaveScheduler';
 import { PlatformTitleBar } from '../../ui/chrome';
 import { createAppChromeModel } from '../../ui/chrome/chromeState';
 import { StatusBarView } from '../../ui/statusbar/StatusBarView';
 import { countCharacters } from '../../ui/statusbar/statusBarUtils';
+import { EDITOR_CONFIG } from '../../config/editor';
+import {
+  useStatusStore,
+  type SaveErrorDetails,
+  type SaveStatus,
+} from '../../state/slices/statusSlice';
 import {
   createQuickWriteRuntimeAdapter,
   type QuickWriteOpenedFile,
@@ -56,6 +66,12 @@ type QuickWriteLocale = 'zh-CN' | 'en-US';
 type QuickWriteShellStyle = CSSProperties & Record<`--${string}`, string>;
 const QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH =
   'quickwrite://startup-fallback-draft';
+
+type QuickWriteAutosaveInput = SaveSchedulerInput & {
+  contentVersion: number;
+  draftId: string | null;
+  targetKind: 'file' | 'recovery';
+};
 
 interface QuickWriteCopy {
   autosavePending: string;
@@ -287,6 +303,9 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
   const themePreference = useSettingsStore((item) => item.themePreference);
   const editorFontSize = useSettingsStore((item) => item.editorFontSize);
   const localePreference = useSettingsStore((item) => item.localePreference);
+  const quickWriteSaveStatus = useStatusStore((item) => item.saveStatus);
+  const quickWriteSaveError = useStatusStore((item) => item.saveError);
+  const quickWriteStatusMessage = useStatusStore((item) => item.message);
   const locale = resolveQuickWriteLocale(localePreference);
   const copy = QUICK_WRITE_COPY[locale];
   const shellStyle = useMemo<QuickWriteShellStyle>(() => {
@@ -306,6 +325,61 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
       dispatch(event);
     },
     [],
+  );
+  const autosaveScheduler = useMemo(
+    () =>
+      new SaveScheduler(EDITOR_CONFIG.autosave.debounceMs, {
+        save: async (input: SaveSchedulerInput) => {
+          const quickWriteInput = input as QuickWriteAutosaveInput;
+          await quickWriteRuntime.savePendingDocument({
+            targetKind: quickWriteInput.targetKind,
+            path: quickWriteInput.path,
+            draftId: quickWriteInput.draftId,
+            content: quickWriteInput.content,
+            contentVersion: quickWriteInput.contentVersion,
+            ...(quickWriteInput.targetKind === 'recovery'
+              ? { editorState: editorRef.current?.getEditorStateSnapshot() }
+              : {}),
+          });
+        },
+        onScheduled: () => {
+          useStatusStore.getState().markDirty();
+        },
+        onSaveStarted: ({ path }) => {
+          dispatchShell({ type: 'requestSave' });
+          useStatusStore.getState().markSaving(path);
+        },
+        onSaveSucceeded: (input) => {
+          const quickWriteInput = input as QuickWriteAutosaveInput;
+          dispatchShell({
+            type: 'saveSettled',
+            result: {
+              ok: true,
+              target: { path: quickWriteInput.path },
+              contentVersion: quickWriteInput.contentVersion,
+              savedAt: Date.now(),
+            },
+          });
+          useStatusStore.getState().markSaved('Saved');
+        },
+        onSaveFailed: (input, error) => {
+          const quickWriteInput = input as QuickWriteAutosaveInput;
+          dispatchShell({
+            type: 'saveSettled',
+            result: {
+              ok: false,
+              target: { path: quickWriteInput.path },
+              contentVersion: quickWriteInput.contentVersion,
+              error,
+              failedAt: Date.now(),
+            },
+          });
+          useStatusStore
+            .getState()
+            .markSaveFailed(`Failed to save ${quickWriteInput.path}`);
+        },
+      }),
+    [dispatchShell, quickWriteRuntime],
   );
   const view = selectSingleDocumentSessionShellView(state);
   stateRef.current = state;
@@ -341,12 +415,13 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
       }),
     [],
   );
-  const statusBarDisplayStatus = getQuickWriteStatusBarDisplayStatus(
-    statusModel.saveState,
-  );
+  const statusBarDisplayStatus =
+    getQuickWriteStatusBarDisplayStatus(quickWriteSaveStatus);
   const statusBarError = getQuickWriteStatusBarError({
     copy,
     operationError,
+    saveError: quickWriteSaveError,
+    statusMessage: quickWriteStatusMessage,
     statusModel,
   });
   const statusBarMessage = getQuickWriteStatusBarMessage({
@@ -361,6 +436,16 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
     }
     document.documentElement.lang = locale;
   }, [locale]);
+
+  useEffect(() => {
+    useStatusStore.setState({
+      status: 'idle',
+      message: null,
+      saveStatus: 'saved',
+      saveError: null,
+      lastSavedAt: null,
+    });
+  }, []);
 
   const beginOperation = useCallback((phase: QuickWriteOperationPhase) => {
     if (operationPhaseRef.current !== null) {
@@ -386,84 +471,58 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         return;
       }
       dispatchShell({ type: 'editDocument', content: markdown });
-      if (
-        stateRef.current.session.recoveryPath !==
-        QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH
-      ) {
-        dispatchShell({ type: 'requestSave' });
-      }
     }, [dispatchShell]);
+
+  const scheduleCurrentDocumentSave = useCallback(
+    (current: SingleDocumentSessionShellState = stateRef.current) => {
+      const input = createQuickWriteAutosaveInput(
+        current,
+        activeDraftIdRef.current,
+      );
+      if (!input) {
+        return null;
+      }
+      autosaveScheduler.scheduleInput(input);
+      return input.path;
+    },
+    [autosaveScheduler],
+  );
 
   const flushCurrentDocument = useCallback(async (): Promise<boolean> => {
     await synchronizeEditorMarkdownSnapshot();
-    let current = stateRef.current;
+    const current = stateRef.current;
     if (
       current.session.recoveryPath ===
       QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH
     ) {
       return true;
     }
+
     if (
-      !current.pendingSave &&
-      current.session.status === 'dirty' &&
+      current.session.status === 'dirty' ||
       current.session.contentVersion !== current.session.savedVersion
     ) {
-      dispatchShell({ type: 'requestSave' });
-      current = stateRef.current;
+      scheduleCurrentDocumentSave(current);
     }
 
-    if (!current.pendingSave) {
+    const input = createQuickWriteAutosaveInput(
+      stateRef.current,
+      activeDraftIdRef.current,
+    );
+    if (!input || !autosaveScheduler.isPending(input.path)) {
       return true;
     }
-
-    while (current.pendingSave) {
-      const pendingSave = current.pendingSave;
-      const targetKind = current.pendingSaveTargetKind;
-      try {
-        await quickWriteRuntime.savePendingDocument({
-          targetKind: targetKind === 'file' ? 'file' : 'recovery',
-          path: pendingSave.target.path,
-          draftId: targetKind === 'recovery' ? activeDraftIdRef.current : null,
-          content: pendingSave.content,
-          contentVersion: pendingSave.contentVersion,
-          ...(targetKind === 'recovery'
-            ? { editorState: editorRef.current?.getEditorStateSnapshot() }
-            : {}),
-        });
-        dispatchShell({
-          type: 'saveSettled',
-          result: {
-            ok: true,
-            target: pendingSave.target,
-            savedAt: Date.now(),
-          },
-        });
-      } catch (error: unknown) {
-        dispatchShell({
-          type: 'saveSettled',
-          result: {
-            ok: false,
-            target: pendingSave.target,
-            error,
-            failedAt: Date.now(),
-          },
-        });
-        return false;
-      }
-
-      current = stateRef.current;
-      if (
-        !current.pendingSave &&
-        current.session.status === 'dirty' &&
-        current.session.contentVersion !== current.session.savedVersion
-      ) {
-        dispatchShell({ type: 'requestSave' });
-        current = stateRef.current;
-      }
+    try {
+      await autosaveScheduler.flush(input.path);
+    } catch {
+      return false;
     }
-
     return true;
-  }, [dispatchShell, quickWriteRuntime, synchronizeEditorMarkdownSnapshot]);
+  }, [
+    autosaveScheduler,
+    scheduleCurrentDocumentSave,
+    synchronizeEditorMarkdownSnapshot,
+  ]);
 
   const handleSaveTo = useCallback(async () => {
     if (!beginOperation('saveTo')) {
@@ -476,9 +535,16 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         return;
       }
 
-      await synchronizeEditorMarkdownSnapshot();
+      if (!(await flushCurrentDocument())) {
+        setOperationError({
+          phase: 'saveTo',
+          error: stateRef.current.lastSaveError ?? new Error('Save failed'),
+        });
+        return;
+      }
       const current = stateRef.current;
       const draftId = activeDraftIdRef.current;
+      useStatusStore.getState().markSaving(targetPath);
       await quickWriteRuntime.savePendingDocument({
         targetKind: 'file',
         path: targetPath,
@@ -496,17 +562,22 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         content: current.content,
         contentVersion: current.session.contentVersion,
       });
+      useStatusStore.getState().markSaved('Saved');
     } catch (error: unknown) {
       setOperationError({ phase: 'saveTo', error });
+      useStatusStore
+        .getState()
+        .markSaveFailed(`Failed to save ${copy.filePath}`);
     } finally {
       endOperation('saveTo');
     }
   }, [
     beginOperation,
+    copy.filePath,
     dispatchShell,
     endOperation,
+    flushCurrentDocument,
     quickWriteRuntime,
-    synchronizeEditorMarkdownSnapshot,
   ]);
 
   const handleExportHtml = useCallback(async () => {
@@ -700,10 +771,10 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         stateRef.current.session.recoveryPath !==
         QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH
       ) {
-        dispatchShell({ type: 'requestSave' });
+        scheduleCurrentDocumentSave(stateRef.current);
       }
     },
-    [dispatchShell, isEditorDisabled],
+    [dispatchShell, isEditorDisabled, scheduleCurrentDocumentSave],
   );
 
   const handleEditorCommand = useCallback(
@@ -884,84 +955,6 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
       isCancelled = true;
     };
   }, [dispatchShell, endOperation, quickWriteRuntime]);
-
-  useEffect(() => {
-    if (!state.pendingSave) {
-      return;
-    }
-
-    const pendingSave = state.pendingSave;
-    const targetKind = state.pendingSaveTargetKind;
-    let isCancelled = false;
-
-    void quickWriteRuntime
-      .savePendingDocument({
-        targetKind: targetKind === 'file' ? 'file' : 'recovery',
-        path: pendingSave.target.path,
-        draftId: targetKind === 'recovery' ? activeDraftIdRef.current : null,
-        content: pendingSave.content,
-        contentVersion: pendingSave.contentVersion,
-        ...(targetKind === 'recovery'
-          ? { editorState: editorRef.current?.getEditorStateSnapshot() }
-          : {}),
-      })
-      .then(() => {
-        if (isCancelled) {
-          return;
-        }
-        dispatchShell({
-          type: 'saveSettled',
-          result: {
-            ok: true,
-            target: pendingSave.target,
-            savedAt: Date.now(),
-          },
-        });
-      })
-      .catch((error: unknown) => {
-        if (isCancelled) {
-          return;
-        }
-        dispatchShell({
-          type: 'saveSettled',
-          result: {
-            ok: false,
-            target: pendingSave.target,
-            error,
-            failedAt: Date.now(),
-          },
-        });
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    dispatchShell,
-    quickWriteRuntime,
-    state.pendingSave,
-    state.pendingSaveTargetKind,
-  ]);
-
-  useEffect(() => {
-    if (
-      !state.pendingSave &&
-      !state.lastSaveError &&
-      state.session.status === 'dirty' &&
-      state.session.contentVersion !== state.session.savedVersion &&
-      state.session.recoveryPath !== QUICK_WRITE_STARTUP_FALLBACK_RECOVERY_PATH
-    ) {
-      dispatchShell({ type: 'requestSave' });
-    }
-  }, [
-    dispatchShell,
-    state.lastSaveError,
-    state.pendingSave,
-    state.session.contentVersion,
-    state.session.recoveryPath,
-    state.session.savedVersion,
-    state.session.status,
-  ]);
 
   return (
     <main
@@ -1241,9 +1234,9 @@ const getCurrentSaveState = (
 };
 
 const getQuickWriteStatusBarDisplayStatus = (
-  saveState: ReturnType<typeof getQuickWriteStatusModel>['saveState'],
+  saveState: SaveStatus,
 ): 'saved' | 'dirty' | 'saving' | 'error' => {
-  if (saveState === 'failed') {
+  if (saveState === 'error') {
     return 'error';
   }
   return saveState;
@@ -1273,12 +1266,25 @@ const getQuickWriteStatusBarMessage = ({
 const getQuickWriteStatusBarError = ({
   copy,
   operationError,
+  saveError,
+  statusMessage,
   statusModel,
 }: {
   copy: QuickWriteCopy;
   operationError: QuickWriteOperationError | null;
+  saveError: SaveErrorDetails | null;
+  statusMessage: string | null;
   statusModel: ReturnType<typeof getQuickWriteStatusModel>;
 }) => {
+  if (saveError) {
+    return saveError;
+  }
+  if (statusMessage) {
+    return {
+      reason: statusMessage,
+      suggestion: copy.pleaseWait,
+    };
+  }
   if (statusModel.saveState !== 'failed') {
     return null;
   }
@@ -1288,6 +1294,41 @@ const getQuickWriteStatusBarError = ({
       ? getOperationFailureLabel(operationError.phase, copy)
       : copy.pleaseWait,
   };
+};
+
+const createQuickWriteAutosaveInput = (
+  state: SingleDocumentSessionShellState,
+  draftId: string | null,
+): QuickWriteAutosaveInput | null => {
+  const { session } = state;
+  if (session.saveTargetKind === 'file') {
+    const path = session.sourcePath ?? session.documentPath;
+    if (!path) {
+      return null;
+    }
+    return {
+      path,
+      content: state.content,
+      contentVersion: session.contentVersion,
+      draftId: null,
+      targetKind: 'file',
+    };
+  }
+
+  if (session.saveTargetKind === 'recovery') {
+    if (!session.recoveryPath || !draftId) {
+      return null;
+    }
+    return {
+      path: session.recoveryPath,
+      content: state.content,
+      contentVersion: session.contentVersion,
+      draftId,
+      targetKind: 'recovery',
+    };
+  }
+
+  return null;
 };
 
 const getBaseName = (path: string): string => {

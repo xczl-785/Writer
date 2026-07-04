@@ -11,12 +11,14 @@ export interface SaveInput {
 export interface SaveSuccess {
   ok: true;
   target: SaveTarget;
+  contentVersion?: number;
   savedAt: number;
 }
 
 export interface SaveFailure {
   ok: false;
   target: SaveTarget;
+  contentVersion?: number;
   error: unknown;
   failedAt: number;
 }

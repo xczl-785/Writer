@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { RuntimePorts } from '../../core/runtime';
+import { EDITOR_CONFIG } from '../../config/editor';
 import {
   createRecoveryDraftManager,
   type RecoveryDraftIndexFile,
@@ -548,7 +549,7 @@ describe('QuickWriteApp', () => {
     await clickButton(container, 'Save To');
     await flushEffects();
     await setEditorValue(getEditor(container), 'file-backed template edit');
-    await flushEffects();
+    await waitForQuickWriteAutosave();
 
     const index = JSON.parse(
       ports.files.get('/app/recovery/index.json') ?? 'null',
@@ -686,7 +687,7 @@ describe('QuickWriteApp', () => {
     await flushEffects();
     const editor = getEditor(container);
     await setEditorValue(editor, 'first line');
-    await flushEffects();
+    await waitForQuickWriteAutosave();
 
     const status = container.querySelector(
       '[aria-label="QuickWrite document status"]',
@@ -719,7 +720,7 @@ describe('QuickWriteApp', () => {
     await flushEffects();
     const editor = getEditor(container);
     await setEditorValue(editor, 'file edit');
-    await flushEffects();
+    await waitForQuickWriteAutosave();
 
     expect(ports.files.get('/docs/open.md')).toBe('file edit');
     expect(ports.files.get('/app/recovery/drafts/active.md')).toBe('');
@@ -747,7 +748,7 @@ describe('QuickWriteApp', () => {
     await clickButton(container, 'Save To');
     await flushEffects();
     await setEditorValue(editor, 'file body');
-    await flushEffects();
+    await waitForQuickWriteAutosave();
 
     const index = JSON.parse(
       ports.files.get('/app/recovery/index.json') ?? 'null',
@@ -872,7 +873,7 @@ describe('QuickWriteApp', () => {
     ).toContain('save target unavailable');
     expect(ports.files.get('/docs/fail.md')).toBeUndefined();
     await setEditorValue(getEditor(container), 'draft after failure');
-    await flushEffects();
+    await waitForQuickWriteAutosave();
 
     expect(ports.files.get('/app/recovery/drafts/active.md')).toBe(
       'draft after failure',
@@ -1708,7 +1709,7 @@ describe('QuickWriteApp', () => {
     expect(container.textContent).toContain('Draft');
     expect(container.textContent).toContain('promotion failed');
     await setEditorValue(getEditor(container), 'draft after promotion failure');
-    await flushEffects();
+    await waitForQuickWriteAutosave();
 
     expect(ports.files.get('/docs/saved.md')).toBe('draft body');
     expect(ports.files.get('/app/recovery/drafts/active.md')).toBe(
@@ -1760,9 +1761,9 @@ describe('QuickWriteApp', () => {
     const editor = getEditor(container);
 
     await setEditorValue(editor, 'first line');
-    await flushEffects();
+    await waitForQuickWriteAutosave();
     await setEditorValue(editor, 'latest line');
-    await flushEffects();
+    await waitForQuickWriteAutosave();
 
     deferredFirstWrite.resolve();
     await flushEffects();
@@ -2044,6 +2045,7 @@ describe('QuickWriteApp', () => {
     await clickButton(container, 'Select All');
     await setEditorValue(editor, 'selection source updated');
     await waitForEditorMarkdown(editor, 'selection source updated');
+    await waitForQuickWriteAutosave();
     await waitForSavedRecoveryEditorState(ports);
     const index = JSON.parse(
       ports.files.get('/app/recovery/index.json') ?? 'null',
@@ -2441,7 +2443,7 @@ describe('QuickWriteApp', () => {
     await flushEffects();
 
     await setEditorValue(getEditor(container), 'pending body');
-    await flushEffects();
+    await waitForQuickWriteAutosave();
 
     expect(
       container.querySelector('[aria-label="QuickWrite save status"]')
@@ -2563,6 +2565,17 @@ const setEditorValue = async (
     await testApi.setMarkdown(value);
   });
   await waitForEditorValue(editor, value);
+};
+
+const waitForQuickWriteAutosave = async (): Promise<void> => {
+  await act(async () => {
+    await new Promise((resolve) =>
+      setTimeout(resolve, EDITOR_CONFIG.autosave.debounceMs + 20),
+    );
+  });
+  for (let index = 0; index < 5; index += 1) {
+    await flushEffects();
+  }
 };
 
 const loadEditorMarkdownWithoutChange = async (

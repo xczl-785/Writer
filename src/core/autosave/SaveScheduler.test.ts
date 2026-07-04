@@ -69,6 +69,25 @@ describe('SaveScheduler', () => {
     expect(scheduler.isPending('/note.md')).toBe(false);
   });
 
+  it('preserves extended save input fields when scheduled directly', async () => {
+    const save = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    const scheduler = new SaveScheduler(100, { save });
+
+    scheduler.scheduleInput({
+      path: '/note.md',
+      content: 'draft',
+      contentVersion: 3,
+    } as SaveSchedulerInput & { contentVersion: number });
+
+    await scheduler.flush('/note.md');
+
+    expect(save).toHaveBeenCalledWith({
+      path: '/note.md',
+      content: 'draft',
+      contentVersion: 3,
+    });
+  });
+
   it('rejects flush failures and reports retry with the failed content', async () => {
     const error = new Error('denied');
     const save = vi

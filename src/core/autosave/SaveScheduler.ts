@@ -18,7 +18,7 @@ export interface SaveSchedulerPorts {
 }
 
 interface PendingSave {
-  content: string;
+  input: SaveSchedulerInput;
   timer: ReturnType<typeof setTimeout>;
 }
 
@@ -37,19 +37,23 @@ export class SaveScheduler {
   }
 
   schedule(path: string, content: string): void {
+    this.scheduleInput({ path, content });
+  }
+
+  scheduleInput(input: SaveSchedulerInput): void {
+    const { path } = input;
     const existing = this.pendingSaves.get(path);
     if (existing) {
       clearTimeout(existing.timer);
     }
 
-    const input = { path, content };
     this.ports.onScheduled?.(input);
 
     const timer = setTimeout(() => {
-      void this.flush(path);
+      void this.flush(path).catch(() => undefined);
     }, this.debounceMs);
 
-    this.pendingSaves.set(path, { content, timer });
+    this.pendingSaves.set(path, { input, timer });
   }
 
   async flush(path: string): Promise<void> {
@@ -61,10 +65,7 @@ export class SaveScheduler {
     clearTimeout(pending.timer);
     this.pendingSaves.delete(path);
 
-    await this.runSave(
-      { path, content: pending.content },
-      { rejectOnFailure: true },
-    );
+    await this.runSave(pending.input, { rejectOnFailure: true });
   }
 
   cancel(path: string): void {
