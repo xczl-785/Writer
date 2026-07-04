@@ -996,13 +996,6 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
       ) : null}
 
       <output
-        className="quick-write-draft-status"
-        data-status={statusModel.saveState}
-        title={statusModel.tooltip}
-      >
-        {statusModel.activityLabel}
-      </output>
-      <output
         aria-label={copy.statusAriaLabels.documentStatus}
         className="quick-write-sr-status"
       >
@@ -1037,6 +1030,7 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         displayStatus={statusBarDisplayStatus}
         encodingLabel="UTF-8"
         message={statusBarMessage}
+        showMessage={false}
       />
     </main>
   );

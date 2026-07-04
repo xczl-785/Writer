@@ -36,6 +36,7 @@ export type StatusBarViewProps = {
   isVisibleInFocusZen?: boolean;
   message?: string | null;
   onEncodingClick?: () => void;
+  showMessage?: boolean;
   workspace?: StatusBarWorkspaceIndicator | null;
 };
 
@@ -85,6 +86,7 @@ export const StatusBarView: React.FC<StatusBarViewProps> = ({
   isVisibleInFocusZen = true,
   message = null,
   onEncodingClick,
+  showMessage = true,
   workspace = null,
 }) => {
   const focusZenClass =
@@ -124,7 +126,9 @@ export const StatusBarView: React.FC<StatusBarViewProps> = ({
             </div>
           ) : null}
         </div>
-        <span className="status-message">{statusText}</span>
+        {showMessage ? (
+          <span className="status-message">{statusText}</span>
+        ) : null}
         {workspace ? (
           <div
             className={`status-workspace-indicator ${
