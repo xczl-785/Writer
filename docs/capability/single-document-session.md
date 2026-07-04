@@ -5,11 +5,12 @@
 - **id**: `single-document-session`
 - **name**: Single Document Session
 - **summary**: 定义单文档会话状态、事件、reducer 和 app-shell harness；QuickWrite 单文档主界面消费该 shell，Writer workspace 生产路径仍未接入
-- **scope**: 包括 single document session state/types/reducer/dirty 判断、app-shell harness 的 open/edit/requestSave/saveSettled/close 契约，以及 QuickWrite 单文档 session 编排；不包括 workspace lifecycle、Sidebar/FileTree、RecentItems、StatusBar、生产 autosave 接入、独立包
+- **scope**: 包括 single document session state/types/reducer/dirty 判断、app-shell harness 的 open/edit/requestSave/saveSettled/close 契约、QuickWrite 单文档 session 编排，以及 QuickWrite 根 status bar 对当前文件身份/字符数/编码的展示；不包括 workspace lifecycle、Sidebar/FileTree、RecentItems、Writer 生产 StatusBar 接入、生产 autosave 接入、独立包
 - **entry_points**:
   - `src/core/session/singleDocumentSession.ts`
   - `src/core/session/singleDocumentSessionShell.ts`
   - `src/core/session/index.ts`
+  - `src/apps/quick-write/QuickWriteStatusBar.tsx`
 - **shared_with**:
   - `autosave`
   - `save-core`
@@ -29,19 +30,22 @@ V4.5 增加 `singleDocumentSessionShell` 作为纯 app-shell harness，用来证
 
 V5.8.0 QuickWrite UI 回正后，QuickWrite 主界面通过 `QuickWriteApp` 消费该 shell 维持单文档 session、草稿恢复、打开 Markdown、保存到文件、file-backed 自动写回和关闭保护。它仍没有接入 Writer workspace 生产路径；现有 workspaceStore、Sidebar/FileTree、RecentItems、StatusBar、autosave adapter 和 App close/navigation 逻辑仍沿用当前 Writer 实现。
 
+V5.8.0B 将 QuickWrite 文档身份展示归到根 app shell 的底部状态栏。编辑器 header 不再显示“草稿”小标题；`QuickWriteStatusBar` 复用 shared `StatusBarView` 的结构，显示保存状态、草稿/文件路径、字符数和编码，并作为 editor body 的 sibling 固定在底部，避免被内容滚动或横向滚动条吞掉。
+
 ---
 
 ## Entries
 
-| Entry                                  | Trigger                        | Evidence                                         | Notes                                            |
-| -------------------------------------- | ------------------------------ | ------------------------------------------------ | ------------------------------------------------ |
-| `createEmptySingleDocumentSession`     | 创建空会话 state               | `src/core/session/singleDocumentSession.ts`      | 返回 empty/null path/版本 0                      |
-| `reduceSingleDocumentSession`          | 根据 session event 归约 state  | `src/core/session/singleDocumentSession.ts`      | 纯 reducer，不触发副作用                         |
-| `isSingleDocumentSessionDirty`         | 比较 content/saved version     | `src/core/session/singleDocumentSession.ts`      | 版本不一致即 dirty                               |
-| `reduceSingleDocumentSessionShell`     | 单文档 app shell 编排 harness  | `src/core/session/singleDocumentSessionShell.ts` | open/edit/requestSave/saveSettled/close 纯状态流 |
-| `selectSingleDocumentSessionShellView` | app shell 视图状态选择器       | `src/core/session/singleDocumentSessionShell.ts` | 暴露 canSave/canCloseWithoutSaving/pendingSave   |
-| `src/core/session/index.ts`            | re-export core session surface | `src/core/session/index.ts`                      | 目前仅导出 single-document reducer               |
+| Entry                                  | Trigger                        | Evidence                                         | Notes                                                              |
+| -------------------------------------- | ------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------ |
+| `createEmptySingleDocumentSession`     | 创建空会话 state               | `src/core/session/singleDocumentSession.ts`      | 返回 empty/null path/版本 0                                        |
+| `reduceSingleDocumentSession`          | 根据 session event 归约 state  | `src/core/session/singleDocumentSession.ts`      | 纯 reducer，不触发副作用                                           |
+| `isSingleDocumentSessionDirty`         | 比较 content/saved version     | `src/core/session/singleDocumentSession.ts`      | 版本不一致即 dirty                                                 |
+| `reduceSingleDocumentSessionShell`     | 单文档 app shell 编排 harness  | `src/core/session/singleDocumentSessionShell.ts` | open/edit/requestSave/saveSettled/close 纯状态流                   |
+| `selectSingleDocumentSessionShellView` | app shell 视图状态选择器       | `src/core/session/singleDocumentSessionShell.ts` | 暴露 canSave/canCloseWithoutSaving/pendingSave                     |
+| `src/core/session/index.ts`            | re-export core session surface | `src/core/session/index.ts`                      | 目前仅导出 single-document reducer                                 |
 | `QuickWriteApp`                        | QuickWrite 单文档界面编排      | `src/apps/quick-write/QuickWriteApp.tsx`         | 消费 shell state，并由 QuickWrite runtime 执行恢复/打开/保存副作用 |
+| `QuickWriteStatusBar`                  | QuickWrite 根状态栏展示        | `src/apps/quick-write/QuickWriteStatusBar.tsx`   | 复用 `StatusBarView`，展示草稿/文件路径、字符数、编码              |
 
 ---
 
@@ -87,13 +91,22 @@ QuickWrite 当前主界面消费 `singleDocumentSessionShell` 管理单文档状
 
 ---
 
+### CR-006: QuickWrite 文档身份归属根状态栏
+
+QuickWrite 的草稿/文件路径身份应由根 app shell 底部状态栏展示，编辑器 header 不再保留重复的“草稿”小标题。状态栏必须是 editor body 的 sibling，并复用 shared `StatusBarView` 结构；横向/纵向内容滚动不得把状态栏挤压进编辑内容区或覆盖文件身份。
+
+**Evidence**: `src/apps/quick-write/QuickWriteAppShell.tsx`、`src/apps/quick-write/QuickWriteEditor.tsx`、`src/apps/quick-write/QuickWriteStatusBar.tsx`、`src/apps/quick-write/QuickWriteApp.test.ts`
+
+---
+
 ## Impact Surface
 
 | Area                        | What to check                                                          | Evidence                                                                                                    |
 | --------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Reducer semantics           | open/edit/save success/save failure/close 生命周期不回退               | `src/core/session/singleDocumentSession.test.ts`                                                            |
 | Shell harness               | requestSave 生成 `SaveInput`，saveSettled 根据 `SaveResult` 回填状态   | `src/core/session/singleDocumentSessionShell.test.ts`                                                       |
-| QuickWrite consumer         | 单文档恢复/打开/保存/关闭不依赖 workspace、file tree、recent            | `src/apps/quick-write/QuickWriteApp.test.ts`、`src/apps/quick-write/importBoundary.test.ts`                 |
+| QuickWrite consumer         | 单文档恢复/打开/保存/关闭不依赖 workspace、file tree、recent           | `src/apps/quick-write/QuickWriteApp.test.ts`、`src/apps/quick-write/importBoundary.test.ts`                 |
+| QuickWrite status identity  | 草稿/文件路径身份显示在根状态栏，编辑器 header 不重复显示              | `src/apps/quick-write/QuickWriteStatusBar.tsx`、`src/apps/quick-write/QuickWriteEditor.tsx`                 |
 | Production boundary         | 不在未接入前改写 App/workspace autosave 当前真相                       | `src/app/App.tsx`、`src/domains/file/services/AutosaveService.ts`                                           |
 | Future autosave integration | pending autosave + Cmd+S/切文件/关闭窗口/dirty close workspace 需要 QA | `src/app/commands/fileCommands.ts`、`src/app/App.tsx`、`src/domains/workspace/services/WorkspaceManager.ts` |
 | Core purity                 | reducer 和 shell harness 不 import Writer store、UI 或 services        | `src/core/session/singleDocumentSession.ts`、`src/core/session/singleDocumentSessionShell.ts`               |
@@ -113,6 +126,7 @@ QuickWrite 当前主界面消费 `singleDocumentSessionShell` 管理单文档状
 - 生产接入点、store 替换策略和 UI 状态映射尚未定义。
 - dirty close workspace 与 pending autosave 的最终策略仍需 V3 QA 后固化。
 - recovery draft manager、Save As、关闭保护 UI 不在 V4.5 harness 已完成范围内。
+- QuickWrite 独立包剥离后的 status/chrome 物理归属仍需在剥离阶段重新确认，但当前能力边界不允许反向侵入 Writer workspace。
 
 ---
 
@@ -122,6 +136,7 @@ QuickWrite 当前主界面消费 `singleDocumentSessionShell` 管理单文档状
 | --------------------------------- | --------------------------------------------------- | ----------------------------------------------------- |
 | `src/core/session/index.ts`       | re-export session core public surface               | `src/core/session/index.ts`                           |
 | `QuickWriteApp`                   | QuickWrite 单文档 session 编排和 runtime 副作用入口 | `src/apps/quick-write/QuickWriteApp.tsx`              |
+| `QuickWriteStatusBar`             | QuickWrite 根 app shell 状态栏入口                  | `src/apps/quick-write/QuickWriteStatusBar.tsx`        |
 | `singleDocumentSession.test`      | 验证当前 reducer 语义                               | `src/core/session/singleDocumentSession.test.ts`      |
 | `singleDocumentSessionShell.test` | 验证 app-shell harness 不依赖 Writer workspace 语义 | `src/core/session/singleDocumentSessionShell.test.ts` |
 
