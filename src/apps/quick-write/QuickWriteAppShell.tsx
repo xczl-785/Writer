@@ -35,7 +35,9 @@ export function QuickWriteAppShell({
       lang={locale}
       style={shellStyle}
     >
-      <PlatformTitleBar chrome={chrome} menuBar={menuBar} />
+      <div className="quick-write-window-chrome">
+        <PlatformTitleBar chrome={chrome} menuBar={menuBar} />
+      </div>
       <div className="quick-write-app-body">
         <section className="quick-write-document-surface">{children}</section>
       </div>

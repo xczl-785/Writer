@@ -22,7 +22,6 @@ interface QuickWriteEditorProps {
   draftLabel: string;
   documentId: string | null;
   value: string;
-  path: string | null;
   restoreState?: RecoveryDraftEditorState;
   onMarkdownChange(value: string): void;
   onSaveShortcut?: () => void;
@@ -38,7 +37,6 @@ export const QuickWriteEditor = forwardRef<
     draftLabel,
     documentId,
     value,
-    path,
     restoreState,
     onMarkdownChange,
     onSaveShortcut,
@@ -91,7 +89,7 @@ export const QuickWriteEditor = forwardRef<
       documentId={resolvedDocumentId}
       loadKey={loadKey}
       readOnly={disabled}
-      breadcrumb={<span>{path ?? draftLabel}</span>}
+      breadcrumb={null}
       onMarkdownChange={onMarkdownChange}
       onSaveShortcut={onSaveShortcut}
       onLoadStateChange={onLoadStateChange}

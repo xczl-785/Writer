@@ -90,6 +90,15 @@
   line-height: 1.4;
 }
 
+.quick-write-window-chrome {
+  flex: 0 0 auto;
+}
+
+.quick-write-window-chrome > div > div:first-child {
+  border-right-width: 0 !important;
+  background: var(--quick-write-bg-primary);
+}
+
 .quick-write-app-body {
   flex: 1 1 auto;
   display: flex;

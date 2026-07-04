@@ -1014,7 +1014,6 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
           `quickwrite://${view.documentKind}`
         }
         draftLabel={copy.draftLabel}
-        path={view.documentPath}
         ref={editorRef}
         restoreState={restoredEditorStateRef.current}
         value={state.content}
@@ -1248,8 +1247,8 @@ const getQuickWriteStatusBarMessage = ({
   documentKind: QuickWriteStatusInput['documentKind'];
   statusModel: ReturnType<typeof getQuickWriteStatusModel>;
 }): string => {
-  if (statusModel.activityLabel) {
-    return statusModel.activityLabel;
+  if (statusModel.filePath) {
+    return statusModel.filePath;
   }
   if (documentKind === 'file') {
     return copy.documentKind.file;

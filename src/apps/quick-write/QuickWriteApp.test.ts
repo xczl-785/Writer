@@ -631,6 +631,9 @@ describe('QuickWriteApp', () => {
     );
     const editor = getEditor(container);
     const statusBar = container.querySelector<HTMLElement>('.status-bar');
+    const editorBreadcrumb = container.querySelector<HTMLElement>(
+      '.editor-header__breadcrumb',
+    );
     const titleMenu = container.querySelector<HTMLElement>(
       '.quick-write-title-menu',
     );
@@ -638,6 +641,8 @@ describe('QuickWriteApp', () => {
     expect(shell).not.toBe(null);
     expect(body?.parentElement).toBe(shell);
     expect(statusBar?.parentElement).toBe(shell);
+    expect(statusBar?.textContent).toContain('Draft');
+    expect(editorBreadcrumb?.textContent).toBe('');
     expect(documentSurface?.parentElement).toBe(body);
     expect(editor.closest('.quick-write-document-surface')).toBe(
       documentSurface,
