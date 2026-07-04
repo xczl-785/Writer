@@ -620,6 +620,41 @@ describe('QuickWriteApp', () => {
     await cleanup(container, root);
   });
 
+  it('keeps chrome, editor body, and status bar as root-level shell regions', async () => {
+    const { container, root } = renderQuickWriteApp();
+
+    await flushEffects();
+    const shell = container.querySelector<HTMLElement>('.quick-write-app');
+    const body = container.querySelector<HTMLElement>('.quick-write-app-body');
+    const documentSurface = container.querySelector<HTMLElement>(
+      '.quick-write-document-surface',
+    );
+    const editor = getEditor(container);
+    const statusBar = container.querySelector<HTMLElement>(
+      '.quick-write-shared-status-bar',
+    );
+    const titleMenu = container.querySelector<HTMLElement>(
+      '.quick-write-title-menu',
+    );
+
+    expect(shell).not.toBe(null);
+    expect(body?.parentElement).toBe(shell);
+    expect(statusBar?.parentElement).toBe(shell);
+    expect(documentSurface?.parentElement).toBe(body);
+    expect(editor.closest('.quick-write-document-surface')).toBe(
+      documentSurface,
+    );
+    expect(statusBar?.closest('.quick-write-app-body')).toBe(null);
+    expect(titleMenu?.closest('.quick-write-app-body')).toBe(null);
+    const shellChildren = Array.from(shell?.children ?? []);
+    expect(shellChildren).toHaveLength(3);
+    expect(shellChildren[0]?.contains(titleMenu)).toBe(true);
+    expect(shellChildren[1]).toBe(body);
+    expect(shellChildren[2]).toBe(statusBar);
+
+    await cleanup(container, root);
+  });
+
   it('falls back to the next active recovery draft when the latest draft cannot be read', async () => {
     const ports = createMemoryPorts();
     const manager = createRecoveryDraftManager({

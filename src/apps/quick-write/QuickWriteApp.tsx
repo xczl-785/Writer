@@ -18,18 +18,20 @@ import {
   QuickWriteEditor,
   type QuickWriteEditorHandle,
 } from './QuickWriteEditor';
+import { QuickWriteAppShell } from './QuickWriteAppShell';
 import { useSettingsStore } from '../../domains/settings/state/settingsStore';
 import { type QuickWriteCommand } from './quickWriteCommands';
 import { QuickWriteMenuAdapter } from './QuickWriteMenuAdapter';
+import {
+  QuickWriteStatusBar,
+  countQuickWriteCharacters,
+} from './QuickWriteStatusBar';
 import { useQuickWriteNativeMenuBridge } from './quickWriteNativeMenu';
 import {
   SaveScheduler,
   type SaveSchedulerInput,
 } from '../../core/autosave/SaveScheduler';
-import { PlatformTitleBar } from '../../ui/chrome';
 import { createAppChromeModel } from '../../ui/chrome/chromeState';
-import { StatusBarView } from '../../ui/statusbar/StatusBarView';
-import { countCharacters } from '../../ui/statusbar/statusBarUtils';
 import { EDITOR_CONFIG } from '../../config/editor';
 import {
   useStatusStore,
@@ -957,28 +959,32 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
   }, [dispatchShell, endOperation, quickWriteRuntime]);
 
   return (
-    <main
-      className="quick-write-app"
-      data-editor-font-size={editorFontSize}
-      data-locale={localePreference}
-      data-resolved-locale={locale}
-      data-theme-preference={themePreference}
-      lang={locale}
-      style={shellStyle}
+    <QuickWriteAppShell
+      chrome={chrome}
+      editorFontSize={editorFontSize}
+      footer={
+        <QuickWriteStatusBar
+          activeError={statusBarError}
+          charactersCount={countQuickWriteCharacters(state.content)}
+          displayStatus={statusBarDisplayStatus}
+          encodingLabel="UTF-8"
+          message={statusBarMessage}
+        />
+      }
+      locale={locale}
+      localePreference={localePreference}
+      menuBar={
+        <div className="quick-write-title-menu">
+          <QuickWriteMenuAdapter
+            disabled={isBusy}
+            hasEditableDocument={!isEditorDisabled}
+            onCommand={handleMenuCommand}
+          />
+        </div>
+      }
+      shellStyle={shellStyle}
+      themePreference={themePreference}
     >
-      <PlatformTitleBar
-        chrome={chrome}
-        menuBar={
-          <div className="quick-write-title-menu">
-            <QuickWriteMenuAdapter
-              disabled={isBusy}
-              hasEditableDocument={!isEditorDisabled}
-              onCommand={handleMenuCommand}
-            />
-          </div>
-        }
-      />
-
       {operationError ? (
         <output
           aria-label="QuickWrite operation error"
@@ -1016,16 +1022,7 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         onSaveShortcut={handleSaveTo}
         onLoadStateChange={setIsEditorLoading}
       />
-      <StatusBarView
-        activeError={statusBarError}
-        charactersCount={countCharacters(state.content)}
-        className="quick-write-shared-status-bar"
-        displayStatus={statusBarDisplayStatus}
-        encodingLabel="UTF-8"
-        message={statusBarMessage}
-        showMessage={false}
-      />
-    </main>
+    </QuickWriteAppShell>
   );
 }
 

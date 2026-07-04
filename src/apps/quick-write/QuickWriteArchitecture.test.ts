@@ -77,18 +77,38 @@ describe('QuickWrite architecture', () => {
     expect(source).not.toContain('Sidebar');
   });
 
-  it('uses shared Writer chrome and status bar view without workspace status coupling', () => {
-    const source = readQuickWriteSource('QuickWriteApp.tsx');
+  it('uses a QuickWrite-owned shell around shared Writer chrome without app-shell coupling', () => {
+    const appSource = readQuickWriteSource('QuickWriteApp.tsx');
+    const shellSource = readQuickWriteSource('QuickWriteAppShell.tsx');
 
-    expect(source).toContain("from '../../ui/chrome'");
-    expect(source).toContain('PlatformTitleBar');
-    expect(source).toContain('createAppChromeModel');
-    expect(source).toContain('showSidebarToggle: false');
-    expect(source).toContain('<QuickWriteMenuAdapter');
-    expect(source).toContain('<StatusBarView');
+    expect(shellSource).toContain("from '../../ui/chrome'");
+    expect(shellSource).toContain('PlatformTitleBar');
+    expect(shellSource).toContain('quick-write-app-body');
+    expect(shellSource).toContain('quick-write-document-surface');
+    expect(appSource).toContain('createAppChromeModel');
+    expect(appSource).toContain('showSidebarToggle: false');
+    expect(appSource).toContain('<QuickWriteAppShell');
+    expect(appSource).toContain('<QuickWriteMenuAdapter');
+    expect(appSource).toContain('<QuickWriteStatusBar');
+    expect(appSource).not.toContain('PlatformTitleBar');
+    expect(appSource).not.toContain('<StatusBarView');
+    expect(appSource).not.toContain("from '../../ui/statusbar/StatusBar'");
+    expect(appSource).not.toContain('useWorkspaceStore');
+    expect(appSource).not.toContain('RecentItemsService');
+    expect(shellSource).not.toContain("from '../../app/");
+    expect(shellSource).not.toContain('useWorkspaceStore');
+    expect(shellSource).not.toContain('RecentItemsService');
+  });
+
+  it('uses a QuickWrite status adapter over the shared status bar view', () => {
+    const source = readQuickWriteSource('QuickWriteStatusBar.tsx');
+
     expect(source).toContain("from '../../ui/statusbar/StatusBarView'");
+    expect(source).toContain('StatusBarView');
+    expect(source).toContain('quick-write-shared-status-bar');
     expect(source).not.toContain("from '../../ui/statusbar/StatusBar'");
     expect(source).not.toContain('useWorkspaceStore');
+    expect(source).not.toContain('useEditorStore');
     expect(source).not.toContain('RecentItemsService');
   });
 
