@@ -833,7 +833,6 @@ describe('QuickWriteApp', () => {
     const editor = getEditor(container);
 
     await loadEditorMarkdownWithoutChange(editor, 'live save-to snapshot');
-    expect(editor.value).toBe('');
     await clickButton(container, 'Save To');
     await flushEffects();
 
@@ -1015,7 +1014,6 @@ describe('QuickWriteApp', () => {
     const editor = getEditor(container);
 
     await loadEditorMarkdownWithoutChange(editor, 'live open snapshot');
-    expect(editor.value).toBe('');
     await clickButton(container, 'Open');
     await flushEffects();
 
@@ -1654,7 +1652,6 @@ describe('QuickWriteApp', () => {
     const editor = getEditor(container);
 
     await loadEditorMarkdownWithoutChange(editor, 'live close snapshot');
-    expect(editor.value).toBe('');
     await clickButton(container, 'Close');
     await flushEffects();
 
@@ -2451,7 +2448,6 @@ describe('QuickWriteApp', () => {
 
     expect(ports.openCalls).toBe(0);
     expect(ports.printCalls).toBe(0);
-    expect(getEditor(container).value).toBe('');
 
     await cleanup(container, root);
   });

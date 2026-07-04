@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.quick-write.tsbuildinfo",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "types": ["vitest/globals", "node", "vite/client"],
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": [
+    "src/apps/quick-write/main.tsx",
+    "src/apps/quick-write/importBoundary.test.ts",
+    "src/apps/quick-write/QuickWriteArchitecture.test.ts",
+    "src-tauri/QuickWriteTauriConfigBehavior.test.ts",
+    "src-tauri/src/QuickWriteNativeMenuBehavior.test.ts",
+    "src-tauri/src/QuickWriteWindowCommandBehavior.test.ts",
+    "test/importBoundaryUtils.ts",
+    "vite.quick-write.config.ts"
+  ]
+}
