@@ -314,9 +314,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'settings.general.language.label': '显示语言 (Language)',
     'settings.general.language.desc':
       '选择界面语言，设置更改后将于重新启动时生效 (Choose interface language)',
-    'settings.general.resumeSession.label': '恢复上次会话',
-    'settings.general.resumeSession.desc':
-      '自动重新加载上一次退出的已打开文件与工作区目录',
     'settings.general.autosave.label': '自动保存修改',
     'settings.general.autosave.desc':
       '编辑内容暂停输入 1 秒后自动静默保存，极低打扰',
@@ -715,9 +712,6 @@ export const MESSAGES: Record<AppLocale, Messages> = {
     'settings.general.language.label': 'Display Language',
     'settings.general.language.desc':
       'Select interface language. Changes will take effect after restart.',
-    'settings.general.resumeSession.label': 'Restore Session',
-    'settings.general.resumeSession.desc':
-      'Automatically reload files and workspace from the last session.',
     'settings.general.autosave.label': 'Auto Save',
     'settings.general.autosave.desc':
       'Changes are saved silently after 1 second of inactivity.',

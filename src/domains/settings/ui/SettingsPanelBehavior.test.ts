@@ -29,7 +29,7 @@ describe('Settings panel behavior', () => {
   it('keeps only language selector active in general settings', () => {
     expect(settingsTsx).toContain("id: 'language'");
     expect(settingsTsx).toContain("mode: 'active'");
-    expect(settingsTsx).toContain("id: 'resume-session'");
+    expect(settingsTsx).not.toContain("id: 'resume-session'");
     expect(settingsTsx).toContain("id: 'autosave'");
     expect(settingsTsx).not.toContain("id: 'default-path'");
   });

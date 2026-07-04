@@ -97,14 +97,6 @@ export function SettingsPanel({
       },
       {
         kind: 'toggle',
-        id: 'resume-session',
-        label: t('settings.general.resumeSession.label'),
-        description: t('settings.general.resumeSession.desc'),
-        mode: 'coming-soon',
-        checked: false,
-      },
-      {
-        kind: 'toggle',
         id: 'autosave',
         label: t('settings.general.autosave.label'),
         description: t('settings.general.autosave.desc'),
