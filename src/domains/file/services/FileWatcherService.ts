@@ -4,8 +4,9 @@
  */
 
 import { tauriFileWatcherPort } from '../../../services/runtime/TauriRuntimePorts';
-import type { Unlisten } from '../../../core/runtime';
 import { normalizePath } from '../../../utils/pathUtils';
+
+type Unlisten = () => void;
 
 export interface FileChangeEvent {
   type: 'add' | 'change' | 'unlink' | 'unlinkDir' | 'rename';

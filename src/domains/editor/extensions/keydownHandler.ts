@@ -10,7 +10,7 @@ import {
   executeCopyAsMarkdown,
   executeCopyAsPlainText,
 } from '../integration/copyCommandBridge';
-import { menuCommandBus } from '../../../core/command/menuCommandBus';
+import { menuCommandBus } from '../../../core/command';
 
 type EditorRef = { current: TiptapEditor | null };
 

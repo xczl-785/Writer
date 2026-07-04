@@ -1,1 +1,5 @@
-export * from '../../core/command/menuCommandBus';
+export {
+  menuCommandBus,
+  type MenuCommandHandler,
+  type MenuCommandPayload,
+} from '../../core/command';

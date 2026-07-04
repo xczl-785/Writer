@@ -21,7 +21,6 @@ import {
   getInitialFilePath,
   listenFileOpen,
 } from '../services/startup/StartupService';
-import type { Unlisten } from '../core/runtime';
 import { ErrorService } from '../services/error/ErrorService';
 import { showLevel2Notification } from '../services/error/level2Notification';
 import { createRetryAction } from '../services/error/retryActions';
@@ -86,6 +85,7 @@ import { useFileTreeStore } from '../domains/file/state/fileStore';
 import './App.css';
 
 type DropZone = { sidebar: boolean; main: boolean };
+type Unlisten = () => void;
 
 function getDropZone(
   sidebarRef: HTMLElement | null,

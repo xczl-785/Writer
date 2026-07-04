@@ -1,1 +1,5 @@
-export * from '../../../core/editor/clipboard/textNormalization';
+export {
+  isRicherParse,
+  isSoleDegenerateCodeBlock,
+  stripCommonIndent,
+} from '../../../core/editor';

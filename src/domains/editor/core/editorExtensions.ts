@@ -3,7 +3,7 @@ import {
   createEditorSchemaExtensions as createCoreEditorSchemaExtensions,
   type EditorExtensionOptions,
   type ResolveImageSrc,
-} from '../../../core/editor/schema/editorExtensions';
+} from '../../../core/editor';
 import { ImageResolver } from '../../../services/images/ImageResolver';
 
 export type { EditorExtensionOptions, ResolveImageSrc };

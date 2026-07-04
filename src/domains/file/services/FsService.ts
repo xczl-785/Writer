@@ -1,17 +1,20 @@
 import { invoke } from '@tauri-apps/api/core';
 import { tauriRuntimePorts } from '../../../services/runtime/TauriRuntimePorts';
-import {
-  type EncodingStatus,
-  type JsonValue,
-  type PathKind,
-} from '../../../core/runtime';
 import type { FileNode } from '../../../state/types';
 
-export type {
-  EncodingStatus,
-  JsonValue,
-  PathKind,
-} from '../../../core/runtime';
+export type JsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+export interface EncodingStatus {
+  label: string;
+}
+
+export type PathKind = 'file' | 'directory' | 'missing' | 'other';
 
 export interface FolderPathResult {
   path: string;

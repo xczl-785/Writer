@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { menuCommandBus } from '../../core/command/menuCommandBus';
+import { menuCommandBus } from '../../core/command';
 import type { QuickWriteCommand } from './quickWriteCommands';
 import {
   resolveQuickWriteMenuCommand,

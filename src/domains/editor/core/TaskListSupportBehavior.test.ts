@@ -41,10 +41,18 @@ describe('Task list editor support', () => {
   });
 
   it('keeps legacy task list source paths as core re-exports', () => {
+    expect(legacyMarkdownServiceTs).toContain('MarkdownService');
+    expect(legacyMarkdownServiceTs).toContain('markdownExtensions');
+    expect(legacyMarkdownServiceTs).toContain('markdownManager');
+    expect(legacyMarkdownServiceTs).toContain('type EditorJSON');
     expect(legacyMarkdownServiceTs).toContain(
-      "export * from '../../core/editor/markdown/MarkdownService'",
+      "from '../../core/editor'",
     );
-    expect(legacyEditorExtensionsTs).toContain(
+    expect(legacyMarkdownServiceTs).not.toContain(
+      '../../core/editor/markdown/MarkdownService',
+    );
+    expect(legacyEditorExtensionsTs).toContain('../../../core/editor');
+    expect(legacyEditorExtensionsTs).not.toContain(
       '../../../core/editor/schema/editorExtensions',
     );
     expect(legacyEditorExtensionsTs).toContain('ImageResolver.resolve');

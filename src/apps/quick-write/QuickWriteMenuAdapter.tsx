@@ -5,7 +5,7 @@ import {
   type MenuSchemaGroup,
   type MenuSchemaItem,
 } from '../../ui/chrome/menuSchema';
-import { menuCommandBus } from '../../core/command/menuCommandBus';
+import { menuCommandBus } from '../../core/command';
 import type { QuickWriteCommand } from './quickWriteCommands';
 
 type QuickWriteMenuAdapterProps = {

@@ -1,1 +1,5 @@
-export * from '../../../../core/editor/findReplace/findReplaceDomain';
+export {
+  collectFindTextMatches,
+  getActiveFindMatchIndex,
+  type FindTextMatch,
+} from '../../../../core/editor';

@@ -1,1 +1,6 @@
-export * from '../../core/editor/markdown/MarkdownService';
+export {
+  MarkdownService,
+  markdownExtensions,
+  markdownManager,
+  type EditorJSON,
+} from '../../core/editor';

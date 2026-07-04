@@ -1,5 +1,6 @@
 import { tauriRuntimePorts } from '../runtime/TauriRuntimePorts';
-import type { Unlisten } from '../../core/runtime/fsPrimitives';
+
+type Unlisten = () => void;
 
 export async function getStartupFilePath(): Promise<string | null> {
   try {

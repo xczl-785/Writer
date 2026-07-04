@@ -5,8 +5,8 @@ import {
   createMarkdownClipboardTextParser as createCoreMarkdownClipboardTextParser,
   insertClipboardText as insertCoreClipboardText,
   type MarkdownClipboardOptions,
-} from '../../../core/editor/clipboard/markdownClipboard';
-import type { PasteIntent } from '../../../core/editor/clipboard/pasteIntentController';
+} from '../../../core/editor';
+import type { PasteIntent } from '../../../core/editor';
 import { ErrorService } from '../../../services/error/ErrorService';
 
 export {
@@ -15,7 +15,7 @@ export {
   shouldSkipMarkdownParsingForSize,
   type ClipboardIssueLogger,
   type MarkdownClipboardOptions,
-} from '../../../core/editor/clipboard/markdownClipboard';
+} from '../../../core/editor';
 export {
   createSmartClipboardTextSerializer,
   serializeSliceAsMarkdown,
@@ -23,7 +23,7 @@ export {
   containsStructuralNode,
   STRUCTURAL_NODE_TYPES,
   STRUCTURAL_MARK_TYPES,
-} from '../../../core/editor/clipboard/smartClipboardSerializer';
+} from '../../../core/editor';
 
 function withWriterClipboardLogging(
   options: MarkdownClipboardOptions = {},

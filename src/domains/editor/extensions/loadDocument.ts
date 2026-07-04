@@ -1,1 +1,4 @@
-export * from '../../../core/editor/extensions/loadDocument';
+export {
+  LoadDocument,
+  type LoadDocumentHistoryOptions,
+} from '../../../core/editor';

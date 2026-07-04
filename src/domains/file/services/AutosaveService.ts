@@ -1,4 +1,4 @@
-import { SaveScheduler } from '../../../core/autosave/SaveScheduler';
+import { SaveScheduler } from '../../../core/autosave';
 import { FsService } from './FsService';
 import { useStatusStore } from '../../../state/slices/statusSlice';
 import { useEditorStore } from '../../editor/state/editorStore';
@@ -8,7 +8,7 @@ import { useNotificationStore } from '../../../state/slices/notificationSlice';
 import type {
   SaveSchedulerInput,
   SaveSchedulerRetry,
-} from '../../../core/autosave/SaveScheduler';
+} from '../../../core/autosave';
 
 const DEBOUNCE_MS = EDITOR_CONFIG.autosave.debounceMs;
 const AUTOSAVE_SOURCE = 'autosave';

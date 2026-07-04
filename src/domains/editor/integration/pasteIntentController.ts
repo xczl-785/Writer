@@ -1,1 +1,6 @@
-export * from '../../../core/editor/clipboard/pasteIntentController';
+export {
+  clearNextPasteIntent,
+  consumeNextPasteIntent,
+  setNextPasteIntent,
+  type PasteIntent,
+} from '../../../core/editor';

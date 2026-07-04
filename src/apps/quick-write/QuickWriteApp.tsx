@@ -31,7 +31,7 @@ import { useQuickWriteNativeMenuBridge } from './quickWriteNativeMenu';
 import {
   SaveScheduler,
   type SaveSchedulerInput,
-} from '../../core/autosave/SaveScheduler';
+} from '../../core/autosave';
 import { createAppChromeModel } from '../../ui/chrome/chromeState';
 import { EDITOR_CONFIG } from '../../config/editor';
 import {
