@@ -11,9 +11,26 @@ import {
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const srcRoot = resolve(currentDir, '..', '..');
+const projectRoot = resolve(srcRoot, '..');
+const manifestPath = join(projectRoot, 'quick-write.project.json');
+const quickWriteProductionFiles = [
+  'QuickWriteApp.tsx',
+  'QuickWriteAppShell.tsx',
+  'QuickWriteEditor.tsx',
+  'QuickWriteMenuAdapter.tsx',
+  'QuickWriteStatusBar.tsx',
+];
 
 const readQuickWriteSource = (fileName: string): string =>
   readFileSync(join(currentDir, fileName), 'utf-8');
+
+const readQuickWriteProductionSources = (): Record<string, string> =>
+  Object.fromEntries(
+    quickWriteProductionFiles.map((fileName) => [
+      fileName,
+      readQuickWriteSource(fileName),
+    ]),
+  );
 
 function collectRelativeImportGraph(entryFile: string): string[] {
   const visited = new Set<string>();
@@ -48,6 +65,60 @@ function collectRelativeImportGraph(entryFile: string): string[] {
 }
 
 describe('QuickWrite architecture', () => {
+  it('records UI fidelity ownership without classifying Writer product UI as core', () => {
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as {
+      uiFidelityBaseline?: {
+        classificationValues?: string[];
+        classificationMatrix?: Record<
+          string,
+          { classification?: string; paths?: string[] }
+        >;
+      };
+    };
+    const values = new Set(
+      manifest.uiFidelityBaseline?.classificationValues ?? [],
+    );
+    const matrix = manifest.uiFidelityBaseline?.classificationMatrix ?? {};
+    const requiredObjects = [
+      'QuickWriteAppShell',
+      'QuickWriteEditor',
+      'QuickWriteMenuAdapter',
+      'QuickWriteStatusBar',
+      'SchemaMenuBar',
+      'StatusBarView',
+      'SettingsPanel',
+      'PlatformTitleBar',
+      'TitleBar',
+      'SingleDocumentEditor',
+    ];
+    const writerProductUiObjects = [
+      'SchemaMenuBar',
+      'StatusBarView',
+      'SettingsPanel',
+      'PlatformTitleBar',
+      'TitleBar',
+      'SingleDocumentEditor',
+    ];
+
+    expect([...values]).toEqual(
+      expect.arrayContaining([
+        'core',
+        'quickwrite-copy',
+        'adapter',
+        'writer-retain',
+        'later-decision',
+      ]),
+    );
+    expect(Object.keys(matrix)).toEqual(expect.arrayContaining(requiredObjects));
+    for (const objectName of requiredObjects) {
+      expect(values.has(matrix[objectName]?.classification ?? '')).toBe(true);
+      expect(matrix[objectName]?.paths?.length).toBeGreaterThan(0);
+    }
+    for (const objectName of writerProductUiObjects) {
+      expect(matrix[objectName]?.classification).not.toBe('core');
+    }
+  });
+
   it('renders through the shared Writer single-document editor adapter', () => {
     const source = readQuickWriteSource('QuickWriteEditor.tsx');
 
@@ -98,6 +169,41 @@ describe('QuickWrite architecture', () => {
     expect(shellSource).not.toContain("from '../../app/");
     expect(shellSource).not.toContain('useWorkspaceStore');
     expect(shellSource).not.toContain('RecentItemsService');
+  });
+
+  it('keeps titlebar, menu, editor, settings, and status paths on retained structure', () => {
+    const appSource = readQuickWriteSource('QuickWriteApp.tsx');
+    const shellSource = readQuickWriteSource('QuickWriteAppShell.tsx');
+    const editorSource = readQuickWriteSource('QuickWriteEditor.tsx');
+    const menuSource = readQuickWriteSource('QuickWriteMenuAdapter.tsx');
+    const statusSource = readQuickWriteSource('QuickWriteStatusBar.tsx');
+
+    expect(shellSource).toContain('<PlatformTitleBar');
+    expect(appSource).toContain('<QuickWriteMenuAdapter');
+    expect(appSource).toContain('<QuickWriteEditor');
+    expect(appSource).toContain('<QuickWriteStatusBar');
+    expect(appSource).toContain('<SettingsPanel');
+    expect(editorSource).toContain('<SingleDocumentEditor');
+    expect(menuSource).toContain('<SchemaMenuBar');
+    expect(statusSource).toContain('<StatusBarView');
+  });
+
+  it('does not introduce local QuickWrite titlebar, nav, document chrome, footer status, or editor implementations', () => {
+    const sources = readQuickWriteProductionSources();
+    const combinedSource = Object.values(sources).join('\n');
+
+    expect(combinedSource).not.toContain('QuickWriteTitleBar');
+    expect(combinedSource).not.toContain('QuickWriteNav');
+    expect(combinedSource).not.toContain('QuickWriteDocumentHeader');
+    expect(combinedSource).not.toContain('QuickWriteDocumentFooter');
+    expect(combinedSource).not.toContain('QuickWriteFooterStatusBar');
+    expect(combinedSource).not.toContain('quick-write-nav');
+    expect(combinedSource).not.toContain('quick-write-document-header');
+    expect(combinedSource).not.toContain('quick-write-document-footer');
+    expect(combinedSource).not.toContain('quick-write-footer-status');
+    expect(combinedSource).not.toContain('<textarea');
+    expect(combinedSource).not.toContain('useEditor(');
+    expect(combinedSource).not.toContain('document.execCommand');
   });
 
   it('uses a QuickWrite status adapter over the shared status bar view', () => {

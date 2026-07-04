@@ -68,6 +68,92 @@
       "src-tauri/src/QuickWriteWindowCommandBehavior.test.ts"
     ]
   },
+  "uiFidelityBaseline": {
+    "classificationValues": [
+      "core",
+      "quickwrite-copy",
+      "adapter",
+      "writer-retain",
+      "later-decision"
+    ],
+    "classificationMatrix": {
+      "QuickWriteAppShell": {
+        "classification": "quickwrite-copy",
+        "paths": [
+          "src/apps/quick-write/QuickWriteAppShell.tsx",
+          "src/apps/quick-write/QuickWriteApp.css"
+        ],
+        "baseline": "QuickWrite-owned shell and CSS keep the in-repo visual surface without copying the Writer app shell."
+      },
+      "QuickWriteEditor": {
+        "classification": "adapter",
+        "paths": [
+          "src/apps/quick-write/QuickWriteEditor.tsx"
+        ],
+        "baseline": "QuickWrite adapts commands and lifecycle to the retained shared SingleDocumentEditor."
+      },
+      "QuickWriteMenuAdapter": {
+        "classification": "adapter",
+        "paths": [
+          "src/apps/quick-write/QuickWriteMenuAdapter.tsx"
+        ],
+        "baseline": "QuickWrite owns menu selection and command mapping while rendering through SchemaMenuBar."
+      },
+      "QuickWriteStatusBar": {
+        "classification": "adapter",
+        "paths": [
+          "src/apps/quick-write/QuickWriteStatusBar.tsx"
+        ],
+        "baseline": "QuickWrite adapts its document status model to the retained shared StatusBarView."
+      },
+      "SchemaMenuBar": {
+        "classification": "writer-retain",
+        "paths": [
+          "src/ui/chrome/SchemaMenuBar.tsx",
+          "src/ui/chrome/menuSchema.ts"
+        ],
+        "baseline": "Shared Writer chrome rendering is retained as product UI, not promoted to pure core."
+      },
+      "StatusBarView": {
+        "classification": "writer-retain",
+        "paths": [
+          "src/ui/statusbar/StatusBarView.tsx",
+          "src/ui/statusbar/statusBarUtils.ts"
+        ],
+        "baseline": "Shared Writer status presentation is retained as product UI, with QuickWrite data supplied by an adapter."
+      },
+      "SettingsPanel": {
+        "classification": "writer-retain",
+        "paths": [
+          "src/ui/components/Settings/SettingsPanel.tsx",
+          "src/domains/settings/state/settingsStore.ts"
+        ],
+        "baseline": "Shared Writer settings UI remains retained product UI; QuickWrite only constrains its usage."
+      },
+      "PlatformTitleBar": {
+        "classification": "writer-retain",
+        "paths": [
+          "src/ui/chrome/PlatformTitleBar.tsx"
+        ],
+        "baseline": "Shared Writer titlebar selection stays retained product UI behind the QuickWrite shell."
+      },
+      "TitleBar": {
+        "classification": "writer-retain",
+        "paths": [
+          "src/ui/chrome/MacTitleBar.tsx",
+          "src/ui/chrome/WindowsTitleBar.tsx"
+        ],
+        "baseline": "Concrete Writer titlebar views are retained product UI and must not be recast as pure core."
+      },
+      "SingleDocumentEditor": {
+        "classification": "writer-retain",
+        "paths": [
+          "src/domains/editor/core/SingleDocumentEditor.tsx"
+        ],
+        "baseline": "The existing shared single-document editor surface is retained; QuickWrite must not rewrite it as a local textarea or direct Tiptap editor."
+      }
+    }
+  },
   "productionImportRoots": [
     "src/apps/quick-write"
   ],

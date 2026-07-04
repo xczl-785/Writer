@@ -10,6 +10,26 @@ const sourceExtensions = ['.ts', '.tsx', '.mts', '.cts'];
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
 
 const failures = [];
+const requiredUiFidelityObjects = [
+  'QuickWriteAppShell',
+  'QuickWriteEditor',
+  'QuickWriteMenuAdapter',
+  'QuickWriteStatusBar',
+  'SchemaMenuBar',
+  'StatusBarView',
+  'SettingsPanel',
+  'PlatformTitleBar',
+  'TitleBar',
+  'SingleDocumentEditor',
+];
+const writerProductUiObjects = [
+  'SchemaMenuBar',
+  'StatusBarView',
+  'SettingsPanel',
+  'PlatformTitleBar',
+  'TitleBar',
+  'SingleDocumentEditor',
+];
 
 function normalizePath(path) {
   return normalize(path).replaceAll('\\', '/');
@@ -178,6 +198,74 @@ function validateManifestEnumeratesRequiredObjects() {
   );
 }
 
+function validateUiFidelityBaseline() {
+  const baseline = manifest.uiFidelityBaseline;
+  assert(
+    baseline && typeof baseline === 'object' && !Array.isArray(baseline),
+    'uiFidelityBaseline must be an object',
+  );
+
+  const classificationValues = baseline?.classificationValues;
+  assert(
+    Array.isArray(classificationValues) && classificationValues.length > 0,
+    'uiFidelityBaseline.classificationValues must enumerate allowed classifications',
+  );
+
+  const allowedClassifications = new Set(classificationValues ?? []);
+  for (const classification of [
+    'core',
+    'quickwrite-copy',
+    'adapter',
+    'writer-retain',
+    'later-decision',
+  ]) {
+    assert(
+      allowedClassifications.has(classification),
+      `uiFidelityBaseline.classificationValues must include ${classification}`,
+    );
+  }
+
+  const matrix = baseline?.classificationMatrix;
+  assert(
+    matrix && typeof matrix === 'object' && !Array.isArray(matrix),
+    'uiFidelityBaseline.classificationMatrix must be an object',
+  );
+
+  for (const objectName of requiredUiFidelityObjects) {
+    const entry = matrix?.[objectName];
+    assert(
+      entry && typeof entry === 'object' && !Array.isArray(entry),
+      `uiFidelityBaseline.classificationMatrix.${objectName} must exist`,
+    );
+    assert(
+      typeof entry?.classification === 'string',
+      `uiFidelityBaseline.classificationMatrix.${objectName}.classification must exist`,
+    );
+    assert(
+      allowedClassifications.has(entry?.classification),
+      `uiFidelityBaseline.classificationMatrix.${objectName}.classification is invalid: ${entry?.classification}`,
+    );
+    assert(
+      Array.isArray(entry?.paths) && entry.paths.length > 0,
+      `uiFidelityBaseline.classificationMatrix.${objectName}.paths must enumerate at least one path`,
+    );
+
+    for (const objectPath of entry?.paths ?? []) {
+      assert(
+        typeof objectPath === 'string' && existsSync(join(projectRoot, objectPath)),
+        `uiFidelityBaseline.classificationMatrix.${objectName} path is missing: ${objectPath}`,
+      );
+    }
+  }
+
+  for (const objectName of writerProductUiObjects) {
+    assert(
+      matrix?.[objectName]?.classification !== 'core',
+      `Writer product UI ${objectName} must not be classified as core`,
+    );
+  }
+}
+
 function validateRejectedCopiesDoNotExist() {
   for (const rejectedPath of manifest.forbiddenProductionDependencies
     ?.rejectedQuickWriteCopies ?? []) {
@@ -239,6 +327,7 @@ function validateProductionImports() {
 
 validateRequiredPaths();
 validateManifestEnumeratesRequiredObjects();
+validateUiFidelityBaseline();
 validateRejectedCopiesDoNotExist();
 validateProductionImports();
 
