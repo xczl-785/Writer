@@ -24,11 +24,9 @@ export function QuickWriteStatusBar({
     <StatusBarView
       activeError={activeError}
       charactersCount={charactersCount}
-      className="quick-write-shared-status-bar"
       displayStatus={displayStatus}
       encodingLabel={encodingLabel}
       message={message}
-      showMessage={false}
     />
   );
 }

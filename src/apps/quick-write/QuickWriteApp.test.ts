@@ -630,9 +630,7 @@ describe('QuickWriteApp', () => {
       '.quick-write-document-surface',
     );
     const editor = getEditor(container);
-    const statusBar = container.querySelector<HTMLElement>(
-      '.quick-write-shared-status-bar',
-    );
+    const statusBar = container.querySelector<HTMLElement>('.status-bar');
     const titleMenu = container.querySelector<HTMLElement>(
       '.quick-write-title-menu',
     );
@@ -2106,7 +2104,9 @@ describe('QuickWriteApp', () => {
     expect(container.querySelector('.quick-write-topbar')).toBe(null);
     expect(container.querySelector('.quick-write-menu-bar')).toBe(null);
     expect(container.querySelector('.quick-write-status-bar')).toBe(null);
-    expect(container.querySelector('.schema-menu-bar')).not.toBe(null);
+    expect(
+      container.querySelector('[data-menu-group-id="menu.file"]'),
+    ).not.toBe(null);
     await openMenuGroup(container, 'menu.file');
     expect(
       container.querySelector('[data-menu-item-id="menu.file.export_html"]'),

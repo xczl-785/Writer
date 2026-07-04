@@ -105,7 +105,8 @@ describe('QuickWrite architecture', () => {
 
     expect(source).toContain("from '../../ui/statusbar/StatusBarView'");
     expect(source).toContain('StatusBarView');
-    expect(source).toContain('quick-write-shared-status-bar');
+    expect(source).not.toContain('quick-write-shared-status-bar');
+    expect(source).not.toContain('showMessage={false}');
     expect(source).not.toContain("from '../../ui/statusbar/StatusBar'");
     expect(source).not.toContain('useWorkspaceStore');
     expect(source).not.toContain('useEditorStore');

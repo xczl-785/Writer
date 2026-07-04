@@ -90,121 +90,6 @@
   line-height: 1.4;
 }
 
-.schema-menu-bar {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  min-height: 34px;
-  padding: 4px 10px;
-  border-bottom: var(--hairline-width) solid var(--quick-write-border);
-  background: var(--quick-write-bg-secondary);
-  color: var(--quick-write-text-primary);
-}
-
-.schema-menu-group {
-  position: relative;
-}
-
-.schema-menu-group-button,
-.schema-menu-item {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-}
-
-.schema-menu-group-button {
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 13px;
-}
-
-.schema-menu-group-button:hover,
-.schema-menu-group-button[aria-expanded='true'] {
-  background: color-mix(
-    in srgb,
-    var(--quick-write-text-primary) 8%,
-    transparent
-  );
-}
-
-.schema-menu-popover,
-.schema-menu-submenu {
-  position: absolute;
-  z-index: 50;
-  min-width: 220px;
-  padding: 6px;
-  border: var(--hairline-width) solid var(--quick-write-border);
-  border-radius: 8px;
-  background: var(--quick-write-bg-elevated);
-  box-shadow: 0 12px 32px rgb(15 23 42 / 16%);
-}
-
-.schema-menu-popover {
-  top: calc(100% + 6px);
-  left: 0;
-}
-
-.schema-menu-submenu {
-  top: 0;
-  left: calc(100% + 6px);
-}
-
-.schema-menu-item-wrap {
-  position: relative;
-}
-
-.schema-menu-item {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  border-radius: 6px;
-  padding: 6px 8px;
-  color: var(--quick-write-text-primary);
-  font-size: 13px;
-  text-align: left;
-}
-
-.schema-menu-item:not(:disabled):hover {
-  background: color-mix(
-    in srgb,
-    var(--quick-write-text-primary) 8%,
-    transparent
-  );
-}
-
-.schema-menu-item:disabled {
-  cursor: not-allowed;
-  color: var(--quick-write-text-secondary);
-  opacity: 0.52;
-}
-
-.schema-menu-item > span:last-child {
-  color: var(--quick-write-text-secondary);
-  font-size: 11px;
-}
-
-.schema-menu-separator {
-  min-height: 1px;
-  margin: 5px 4px;
-  border-top: var(--hairline-width) solid var(--quick-write-border);
-  color: var(--quick-write-text-secondary);
-  font-size: 11px;
-}
-
-.quick-write-title-menu .schema-menu-bar {
-  min-height: 0;
-  padding: 0;
-  border-bottom: 0;
-  background: transparent;
-}
-
-.quick-write-title-menu .schema-menu-popover {
-  top: calc(100% + 10px);
-}
-
 .quick-write-app-body {
   flex: 1 1 auto;
   display: flex;
@@ -220,12 +105,6 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-}
-
-.quick-write-shared-status-bar {
-  position: relative;
-  z-index: 20;
-  flex: 0 0 28px;
 }
 
 .quick-write-sr-status {
