@@ -22,6 +22,7 @@ import { getQuickWriteTemplateById } from './quickWriteTemplates';
 const tauriEventListeners = vi.hoisted(
   () => new Map<string, (event: { payload?: { id?: string } }) => void>(),
 );
+const closeWindowMock = vi.hoisted(() => vi.fn(() => Promise.resolve()));
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(
@@ -37,6 +38,17 @@ vi.mock('@tauri-apps/api/event', () => ({
       };
     },
   ),
+}));
+
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: () => ({
+    close: closeWindowMock,
+    minimize: vi.fn(() => Promise.resolve()),
+    toggleMaximize: vi.fn(() => Promise.resolve()),
+    isMaximized: vi.fn(() => Promise.resolve(false)),
+    onResized: vi.fn(() => Promise.resolve(() => {})),
+    onFocusChanged: vi.fn(() => Promise.resolve(() => {})),
+  }),
 }));
 
 function renderQuickWriteApp(
@@ -70,6 +82,7 @@ describe('QuickWriteApp', () => {
   beforeEach(() => {
     installEditorLayoutPolyfills();
     tauriEventListeners.clear();
+    closeWindowMock.mockClear();
   });
 
   afterEach(() => {
@@ -1598,7 +1611,7 @@ describe('QuickWriteApp', () => {
     await cleanup(container, root);
   });
 
-  it('closes only after a dirty document flush succeeds', async () => {
+  it('closes the current window only after a dirty document flush succeeds', async () => {
     const ports = createMemoryRuntimePorts('/app-config');
     const manager = createRecoveryDraftManager({
       rootDir: '/app/recovery',
@@ -1617,24 +1630,17 @@ describe('QuickWriteApp', () => {
     expect(ports.files.get('/app/recovery/drafts/active.md')).toBe(
       'dirty draft',
     );
-    expect(getEditor(container).value).toBe('');
+    expect(closeWindowMock).toHaveBeenCalledTimes(1);
+    expect(getEditor(container).value).toBe('dirty draft');
     expect(
       container.querySelector('[aria-label="QuickWrite document status"]')
         ?.textContent,
-    ).toBe('Closed');
-    expect(container.querySelector('.quick-write-status-bar')).toBe(null);
-    await openMenuGroup(container, 'menu.file');
-    expect(
-      container.querySelector('[data-menu-item-id="menu.file.print_to_pdf"]'),
-    ).toBe(null);
-    await dispatchNativeMenuCommand('menu.quick_write.print_to_pdf');
-    await flushEffects();
-    expect(ports.printCalls).toBe(0);
+    ).toBe('Open');
 
     await cleanup(container, root);
   });
 
-  it('flushes the current shared editor snapshot before closing the document', async () => {
+  it('flushes the current shared editor snapshot before closing the window', async () => {
     const ports = createMemoryRuntimePorts('/app-config');
     const manager = createRecoveryDraftManager({
       rootDir: '/app/recovery',
@@ -1655,15 +1661,12 @@ describe('QuickWriteApp', () => {
     expect(ports.files.get('/app/recovery/drafts/active.md')).toBe(
       'live close snapshot',
     );
-    expect(
-      container.querySelector('[aria-label="QuickWrite document status"]')
-        ?.textContent,
-    ).toBe('Closed');
+    expect(closeWindowMock).toHaveBeenCalledTimes(1);
 
     await cleanup(container, root);
   });
 
-  it('does not close when the dirty flush fails', async () => {
+  it('does not close the window when the dirty flush fails', async () => {
     const ports = createMemoryRuntimePorts('/app-config', {
       writeFileAtomic(path, content, files) {
         if (path === '/app/recovery/drafts/active.md' && content !== '') {
@@ -1689,6 +1692,7 @@ describe('QuickWriteApp', () => {
     await flushEffects();
 
     expect(getEditor(container).value).toBe('dirty draft');
+    expect(closeWindowMock).not.toHaveBeenCalled();
     expect(container.textContent).toContain('close flush failed');
 
     await cleanup(container, root);
@@ -1715,7 +1719,8 @@ describe('QuickWriteApp', () => {
 
     await clickButton(container, 'Close');
     await flushEffects();
-    expect(getEditor(container).value).toBe('');
+    expect(closeWindowMock).toHaveBeenCalledTimes(1);
+    expect(getEditor(container).value).toBe('fallback draft content');
     expect(container.textContent).not.toContain('startup recovery failed');
 
     await cleanup(container, root);
@@ -2186,10 +2191,16 @@ describe('QuickWriteApp', () => {
     ).toBe('format.link');
     expect(
       resolveQuickWriteNativeMenuCommand('menu.quick_write.export_html'),
-    ).toBe('file.exportHtml');
+    ).toBe(null);
     expect(
       resolveQuickWriteNativeMenuCommand('menu.quick_write.print_to_pdf'),
-    ).toBe('file.printToPdf');
+    ).toBe(null);
+    expect(resolveQuickWriteNativeMenuCommand('menu.quick_write.close')).toBe(
+      'file.close',
+    );
+    expect(
+      resolveQuickWriteNativeMenuCommand('menu.quick_write.settings'),
+    ).toBe('file.settings');
     expect(resolveQuickWriteNativeMenuCommand('menu.file.export_pdf')).toBe(
       null,
     );
@@ -2374,6 +2385,20 @@ describe('QuickWriteApp', () => {
 
     expect(ports.newWindowCalls).toBe(1);
     expect(getEditor(container).value).toBe('current draft body');
+
+    await cleanup(container, root);
+  });
+
+  it('opens the Writer settings panel from the QuickWrite file menu', async () => {
+    const { container, root } = renderQuickWriteApp();
+    await flushEffects();
+
+    await clickButton(container, 'Settings');
+    await flushEffects();
+
+    const settingsDialog = container.querySelector('.settings-overlay');
+    expect(settingsDialog).not.toBe(null);
+    expect(settingsDialog?.textContent).toContain('通用设置');
 
     await cleanup(container, root);
   });
@@ -2792,6 +2817,8 @@ const getNativeMenuCommandForButtonLabel = (label: string): string | null => {
       return 'menu.quick_write.new_window';
     case 'Close':
       return 'menu.quick_write.close';
+    case 'Settings':
+      return 'menu.quick_write.settings';
     case 'Select All':
       return 'menu.quick_write.edit_select_all';
     default:
@@ -2843,6 +2870,7 @@ const getMenuTargetForButtonLabel = (
       'Print to PDF',
       'New Window',
       'Close',
+      'Settings',
     ].some((prefix) => label.startsWith(prefix))
   ) {
     return {
@@ -2857,7 +2885,9 @@ const getMenuTargetForButtonLabel = (
               ? 'menu.file.print_to_pdf'
               : label.startsWith('New Window')
                 ? 'menu.file.new_window'
-                : 'menu.file.close_file',
+                : label.startsWith('Settings')
+                  ? 'menu.file.settings'
+                  : 'menu.file.close',
     };
   }
   if (

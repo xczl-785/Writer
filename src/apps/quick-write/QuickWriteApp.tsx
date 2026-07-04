@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
   reduceSingleDocumentSessionShell,
   selectSingleDocumentSessionShellView,
@@ -45,6 +46,7 @@ import {
 } from './quickWriteRuntime';
 import { getQuickWriteTemplateById } from './quickWriteTemplates';
 import type { SettingsLocalePreference } from '../../domains/settings/state/settingsStore';
+import { SettingsPanel } from '../../ui/components/Settings';
 import './QuickWriteApp.css';
 
 interface QuickWriteAppProps {
@@ -300,11 +302,15 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
     useState<QuickWriteOperationError | null>(null);
   const [operationPhase, setOperationPhase] =
     useState<QuickWriteOperationPhase | null>('startup');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditorLoading, setIsEditorLoading] = useState(false);
   const [state, dispatch] = useReducer(reduceQuickWriteShell, initialState);
   const themePreference = useSettingsStore((item) => item.themePreference);
   const editorFontSize = useSettingsStore((item) => item.editorFontSize);
   const localePreference = useSettingsStore((item) => item.localePreference);
+  const setLocalePreference = useSettingsStore(
+    (item) => item.setLocalePreference,
+  );
   const quickWriteSaveStatus = useStatusStore((item) => item.saveStatus);
   const quickWriteSaveError = useStatusStore((item) => item.saveError);
   const quickWriteStatusMessage = useStatusStore((item) => item.message);
@@ -727,7 +733,7 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
     ],
   );
 
-  const handleClose = useCallback(async () => {
+  const handleCloseWindow = useCallback(async () => {
     if (!beginOperation('close')) {
       return;
     }
@@ -737,13 +743,22 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         return;
       }
 
-      activeDraftIdRef.current = null;
-      restoredEditorStateRef.current = undefined;
-      dispatchShell({ type: 'closeDocument' });
+      await getCurrentWindow().close();
+    } catch (error: unknown) {
+      setOperationError({ phase: 'close', error });
     } finally {
       endOperation('close');
     }
-  }, [beginOperation, dispatchShell, endOperation, flushCurrentDocument]);
+  }, [beginOperation, endOperation, flushCurrentDocument]);
+
+  const openSettings = useCallback(() => setIsSettingsOpen(true), []);
+  const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
+  const handleLocalePreferenceChange = useCallback(
+    (preference: SettingsLocalePreference) => {
+      setLocalePreference(preference);
+    },
+    [setLocalePreference],
+  );
 
   const handleNewWindow = useCallback(async () => {
     if (!beginOperation('newWindow')) {
@@ -807,7 +822,10 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
           void handlePrintToPdf();
           return;
         case 'file.close':
-          void handleClose();
+          void handleCloseWindow();
+          return;
+        case 'file.settings':
+          openSettings();
           return;
         case 'file.newWindow':
           void handleNewWindow();
@@ -819,13 +837,14 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
       }
     },
     [
-      handleClose,
+      handleCloseWindow,
       handleEditorCommand,
       handleExportHtml,
       handlePrintToPdf,
       handleNewWindow,
       handleOpen,
       handleSaveTo,
+      openSettings,
     ],
   );
 
@@ -1020,6 +1039,13 @@ export function QuickWriteApp({ runtime }: QuickWriteAppProps) {
         onMarkdownChange={updateEditorContent}
         onSaveShortcut={handleSaveTo}
         onLoadStateChange={setIsEditorLoading}
+      />
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        viewportTier="default"
+        localePreference={localePreference}
+        onLocalePreferenceChange={handleLocalePreferenceChange}
+        onClose={closeSettings}
       />
     </QuickWriteAppShell>
   );

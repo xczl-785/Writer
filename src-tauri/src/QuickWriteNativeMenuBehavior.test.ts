@@ -100,6 +100,7 @@ describe('QuickWrite native menu behavior', () => {
     expect(quickWriteBuilder).toContain('"menu.quick_write.save_to"');
     expect(quickWriteBuilder).toContain('"menu.quick_write.new_window"');
     expect(quickWriteBuilder).toContain('"menu.quick_write.close"');
+    expect(quickWriteBuilder).toContain('"menu.quick_write.settings"');
     expect(quickWriteBuilder).toContain('"menu.quick_write.edit_undo"');
     expect(quickWriteBuilder).toContain('"menu.quick_write.edit_cut"');
     expect(quickWriteBuilder).toContain('"menu.quick_write.edit_copy"');

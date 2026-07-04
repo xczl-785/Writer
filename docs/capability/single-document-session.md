@@ -32,6 +32,8 @@ V5.8.0 QuickWrite UI 回正后，QuickWrite 主界面通过 `QuickWriteApp` 消�
 
 V5.8.0B 将 QuickWrite 文档身份展示归到根 app shell 的底部状态栏。编辑器 header 不再显示“草稿”小标题；`QuickWriteStatusBar` 复用 shared `StatusBarView` 的结构，显示保存状态、草稿/文件路径、字符数和编码，并作为 editor body 的 sibling 固定在底部，避免被内容滚动或横向滚动条吞掉。
 
+同一轮中，QuickWrite File > Close 的产品语义调整为关闭当前窗口，而不是关闭当前文件并留下 closed-document view。关闭前仍会 flush 当前文档；flush 失败时窗口不关闭并显示错误。`singleDocumentSessionShell` 仍保留 `closeDocument` reducer 事件用于 core 状态建模，但 QuickWrite 菜单不再把它作为用户可见的“关闭文件”动作。
+
 ---
 
 ## Entries
@@ -99,17 +101,26 @@ QuickWrite 的草稿/文件路径身份应由根 app shell 底部状态栏展示
 
 ---
 
+### CR-007: QuickWrite 菜单关闭动作不进入 closed-document view
+
+QuickWrite 顶部菜单的“关闭”动作代表关闭当前 QuickWrite 窗口。它可以复用当前 flush 保护，确保 dirty 内容写入成功后再关闭窗口；但不得把当前 UI 切换为 `documentKind === 'closed'` 的可见状态，也不得重新展示“关闭文件”文案。
+
+**Evidence**: `src/apps/quick-write/QuickWriteApp.tsx`、`src/apps/quick-write/QuickWriteMenuAdapter.tsx`、`src/apps/quick-write/QuickWriteApp.test.ts`
+
+---
+
 ## Impact Surface
 
-| Area                        | What to check                                                          | Evidence                                                                                                    |
-| --------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Reducer semantics           | open/edit/save success/save failure/close 生命周期不回退               | `src/core/session/singleDocumentSession.test.ts`                                                            |
-| Shell harness               | requestSave 生成 `SaveInput`，saveSettled 根据 `SaveResult` 回填状态   | `src/core/session/singleDocumentSessionShell.test.ts`                                                       |
-| QuickWrite consumer         | 单文档恢复/打开/保存/关闭不依赖 workspace、file tree、recent           | `src/apps/quick-write/QuickWriteApp.test.ts`、`src/apps/quick-write/importBoundary.test.ts`                 |
-| QuickWrite status identity  | 草稿/文件路径身份显示在根状态栏，编辑器 header 不重复显示              | `src/apps/quick-write/QuickWriteStatusBar.tsx`、`src/apps/quick-write/QuickWriteEditor.tsx`                 |
-| Production boundary         | 不在未接入前改写 App/workspace autosave 当前真相                       | `src/app/App.tsx`、`src/domains/file/services/AutosaveService.ts`                                           |
-| Future autosave integration | pending autosave + Cmd+S/切文件/关闭窗口/dirty close workspace 需要 QA | `src/app/commands/fileCommands.ts`、`src/app/App.tsx`、`src/domains/workspace/services/WorkspaceManager.ts` |
-| Core purity                 | reducer 和 shell harness 不 import Writer store、UI 或 services        | `src/core/session/singleDocumentSession.ts`、`src/core/session/singleDocumentSessionShell.ts`               |
+| Area                        | What to check                                                              | Evidence                                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Reducer semantics           | open/edit/save success/save failure/close 生命周期不回退                   | `src/core/session/singleDocumentSession.test.ts`                                                            |
+| Shell harness               | requestSave 生成 `SaveInput`，saveSettled 根据 `SaveResult` 回填状态       | `src/core/session/singleDocumentSessionShell.test.ts`                                                       |
+| QuickWrite consumer         | 单文档恢复/打开/保存/关闭不依赖 workspace、file tree、recent               | `src/apps/quick-write/QuickWriteApp.test.ts`、`src/apps/quick-write/importBoundary.test.ts`                 |
+| QuickWrite status identity  | 草稿/文件路径身份显示在根状态栏，编辑器 header 不重复显示                  | `src/apps/quick-write/QuickWriteStatusBar.tsx`、`src/apps/quick-write/QuickWriteEditor.tsx`                 |
+| QuickWrite close semantics  | 菜单“关闭”先 flush 当前文档再关闭窗口，不进入 visible closed-document view | `src/apps/quick-write/QuickWriteApp.tsx`、`src/apps/quick-write/QuickWriteApp.test.ts`                      |
+| Production boundary         | 不在未接入前改写 App/workspace autosave 当前真相                           | `src/app/App.tsx`、`src/domains/file/services/AutosaveService.ts`                                           |
+| Future autosave integration | pending autosave + Cmd+S/切文件/关闭窗口/dirty close workspace 需要 QA     | `src/app/commands/fileCommands.ts`、`src/app/App.tsx`、`src/domains/workspace/services/WorkspaceManager.ts` |
+| Core purity                 | reducer 和 shell harness 不 import Writer store、UI 或 services            | `src/core/session/singleDocumentSession.ts`、`src/core/session/singleDocumentSessionShell.ts`               |
 
 ---
 

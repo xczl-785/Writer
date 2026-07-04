@@ -32,7 +32,7 @@ This capability provides the cross-platform custom window title bar. `PlatformTi
 
 V5.8.0R1 removes the attempted QuickWrite chrome fork and reverts shared chrome/editor changes that only served QuickWrite appearance. QuickWrite must not add a lookalike title-bar menu or inject app-specific workspace/sidebar switches into this capability. Later QuickWrite menu work must reuse Writer's menu schema/command bus or a downshifted common menu layer, with workspace/recent/sidebar/file-tree commands excluded by adapter boundaries.
 
-V5.8.0B implements that path without changing Writer's production chrome. QuickWrite now composes a root-level shell in `QuickWriteAppShell`, mounts the shared `PlatformTitleBar`, and supplies a `QuickWriteMenuAdapter` that filters Writer menu schema sections down to QuickWrite-safe File/Edit/Paragraph/Format entries while dispatching through `menuCommandBus`. The shared `SchemaMenuBar` owns the Writer title-bar menu presentation for schema-driven consumers; QuickWrite does not create a separate menu interaction chain. The QuickWrite-only `.quick-write-window-chrome` wrapper only normalizes the no-sidebar macOS traffic-light strip background and does not alter shared `MacTitleBar` or `WindowsTitleBar` behavior.
+V5.8.0B implements that path without changing Writer's production chrome. QuickWrite now composes a root-level shell in `QuickWriteAppShell`, mounts the shared `PlatformTitleBar`, and supplies a `QuickWriteMenuAdapter` that filters Writer menu schema sections down to QuickWrite-safe File/Edit/Paragraph/Format entries while dispatching through `menuCommandBus`. The shared `SchemaMenuBar` owns the Writer title-bar menu presentation for schema-driven consumers; QuickWrite does not create a separate menu interaction chain. The QuickWrite-only `.quick-write-window-chrome` wrapper only normalizes the no-sidebar macOS traffic-light strip background and does not alter shared `MacTitleBar` or `WindowsTitleBar` behavior. QuickWrite File > Close is a window-close action after save flushing, not a document-close action; File > Settings opens the shared Writer settings panel shell with QuickWrite-owned CSS and without importing the Writer app layer.
 
 As of 2026-03-21, Windows title-bar blank-space gestures no longer mix manual `onDoubleClick` / `startDragging()` handlers with `data-tauri-drag-region`. Dragging and double-click maximize/restore for blank title-bar space now rely on the Tauri drag-region behavior only, preventing duplicate gesture handling on Windows.
 
@@ -126,19 +126,28 @@ QuickWrite may filter out workspace/recent/sidebar/file-tree entries, but the vi
 
 ---
 
+### CR-010: QuickWrite close/settings menu actions stay window-scoped
+
+QuickWrite File > Close must use the visible label "关闭"/"Close" and close the current QuickWrite window after flushing the current document. It must not use Writer's `menu.file.close_file` label or transition the single-document shell into a visible closed-document state. QuickWrite File > Settings may reuse `SettingsPanel`, but must be wired through QuickWrite's adapter and must not import `src/app` shell modules or workspace settings behavior.
+
+**Evidence**: `src/apps/quick-write/QuickWriteMenuAdapter.tsx`、`src/apps/quick-write/QuickWriteApp.tsx`、`src/apps/quick-write/QuickWriteApp.css`、`src-tauri/src/menu.rs`、`src/apps/quick-write/importBoundary.test.ts`
+
+---
+
 ## Impact Surface
 
-| Area                  | What to check                                                                                          | Evidence                                                                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Platform routing      | Platform dispatch still works                                                                          | `src/ui/chrome/PlatformTitleBar.tsx`                                                                         |
-| Windows title bar     | Drag-region declarations, maximize state sync, and button behavior remain correct                      | `src/ui/chrome/WindowsTitleBar.tsx`                                                                          |
-| Mac title bar         | Traffic-light controls and drag-region behavior remain intact                                          | `src/ui/chrome/MacTitleBar.tsx`                                                                              |
-| Windows menu bar      | `data-no-drag`, `data-menu-open`, and Help > About Writer still behave correctly                       | `src/ui/chrome/WindowsMenuBar.tsx`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                   |
-| Schema menu bar       | Schema-driven menu presentation still matches Writer title-bar menu interaction expectations           | `src/ui/chrome/SchemaMenuBar.tsx`, `src/ui/chrome/WindowsMenuBar.tsx`                                        |
-| QuickWrite chrome     | Root title-bar/menu remains outside editor scroll content and filters Writer menu schema safely        | `src/apps/quick-write/QuickWriteAppShell.tsx`, `src/apps/quick-write/QuickWriteMenuAdapter.tsx`              |
-| About dialog          | Icon presentation uses `/icon.svg`, runtime platform copy remains correct, and updater CTA still works | `src/ui/components/About/AboutWriterPanel.tsx`, `src/app/App.css`, `src/ui/components/About/aboutUpdater.ts` |
-| focus zen integration | Title-bar visibility changes do not break menu wake-up or button clicks                                | `src/ui/layout/useFocusZenWakeup.ts`, `src/ui/chrome/WindowsTitleBar.tsx`                                    |
-| Test coverage         | Platform-title-bar and Windows-title-bar integration tests remain green                                | `src/app/PlatformTitleBarIntegration.test.ts`, `src/ui/chrome/WindowsTitleBarIntegration.test.ts`            |
+| Area                      | What to check                                                                                          | Evidence                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Platform routing          | Platform dispatch still works                                                                          | `src/ui/chrome/PlatformTitleBar.tsx`                                                                            |
+| Windows title bar         | Drag-region declarations, maximize state sync, and button behavior remain correct                      | `src/ui/chrome/WindowsTitleBar.tsx`                                                                             |
+| Mac title bar             | Traffic-light controls and drag-region behavior remain intact                                          | `src/ui/chrome/MacTitleBar.tsx`                                                                                 |
+| Windows menu bar          | `data-no-drag`, `data-menu-open`, and Help > About Writer still behave correctly                       | `src/ui/chrome/WindowsMenuBar.tsx`, `src/ui/chrome/menuSchema.ts`, `src-tauri/src/menu.rs`                      |
+| Schema menu bar           | Schema-driven menu presentation still matches Writer title-bar menu interaction expectations           | `src/ui/chrome/SchemaMenuBar.tsx`, `src/ui/chrome/WindowsMenuBar.tsx`                                           |
+| QuickWrite chrome         | Root title-bar/menu remains outside editor scroll content and filters Writer menu schema safely        | `src/apps/quick-write/QuickWriteAppShell.tsx`, `src/apps/quick-write/QuickWriteMenuAdapter.tsx`                 |
+| QuickWrite close/settings | Close remains window-scoped and Settings opens without importing Writer app shell                      | `src/apps/quick-write/QuickWriteApp.tsx`, `src/apps/quick-write/QuickWriteApp.test.ts`, `src-tauri/src/menu.rs` |
+| About dialog              | Icon presentation uses `/icon.svg`, runtime platform copy remains correct, and updater CTA still works | `src/ui/components/About/AboutWriterPanel.tsx`, `src/app/App.css`, `src/ui/components/About/aboutUpdater.ts`    |
+| focus zen integration     | Title-bar visibility changes do not break menu wake-up or button clicks                                | `src/ui/layout/useFocusZenWakeup.ts`, `src/ui/chrome/WindowsTitleBar.tsx`                                       |
+| Test coverage             | Platform-title-bar and Windows-title-bar integration tests remain green                                | `src/app/PlatformTitleBarIntegration.test.ts`, `src/ui/chrome/WindowsTitleBarIntegration.test.ts`               |
 
 ---
 

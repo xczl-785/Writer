@@ -66,7 +66,13 @@ const QUICK_WRITE_MENU_SCHEMA: MenuSchemaGroup[] = [
         { 'zh-CN': '新建随手写窗口', 'en-US': 'New QuickWrite Window' },
         'Ctrl+Shift+N',
       ),
-      fromWriterSchema('menu.file.close_file'),
+      quickWriteItem(
+        'menu.file.close',
+        { 'zh-CN': '关闭', 'en-US': 'Close' },
+        'Ctrl+W',
+      ),
+      separator('separator.quick_write.file.2'),
+      fromWriterSchema('menu.file.settings'),
     ],
   },
   {
@@ -123,7 +129,8 @@ export const QUICK_WRITE_MENU_COMMANDS: QuickWriteMenuCommandEntry[] = [
   { menuId: 'menu.file.open_file', command: 'file.open' },
   { menuId: 'menu.file.save_to', command: 'file.saveTo' },
   { menuId: 'menu.file.new_window', command: 'file.newWindow' },
-  { menuId: 'menu.file.close_file', command: 'file.close' },
+  { menuId: 'menu.file.close', command: 'file.close' },
+  { menuId: 'menu.file.settings', command: 'file.settings' },
   { menuId: 'menu.edit.undo', command: 'edit.undo' },
   { menuId: 'menu.edit.redo', command: 'edit.redo' },
   { menuId: 'menu.edit.cut', command: 'edit.cut' },
@@ -153,7 +160,8 @@ export const QUICK_WRITE_NATIVE_MENU_TO_SCHEMA_ID: ReadonlyMap<string, string> =
     ['menu.quick_write.open_file', 'menu.file.open_file'],
     ['menu.quick_write.save_to', 'menu.file.save_to'],
     ['menu.quick_write.new_window', 'menu.file.new_window'],
-    ['menu.quick_write.close', 'menu.file.close_file'],
+    ['menu.quick_write.close', 'menu.file.close'],
+    ['menu.quick_write.settings', 'menu.file.settings'],
     ['menu.quick_write.edit_undo', 'menu.edit.undo'],
     ['menu.quick_write.edit_redo', 'menu.edit.redo'],
     ['menu.quick_write.edit_cut', 'menu.edit.cut'],
@@ -212,7 +220,13 @@ export function QuickWriteMenuAdapter({
     <SchemaMenuBar
       groups={groups}
       isItemEnabled={(item) => {
-        if (item.enabled === false || item.separator || disabled) {
+        if (item.enabled === false || item.separator) {
+          return false;
+        }
+        if (item.id === 'menu.file.settings') {
+          return true;
+        }
+        if (disabled) {
           return false;
         }
         if (

@@ -5,6 +5,7 @@ export type QuickWriteCommand =
   | 'file.printToPdf'
   | 'file.newWindow'
   | 'file.close'
+  | 'file.settings'
   | 'file.exit'
   | 'edit.undo'
   | 'edit.redo'

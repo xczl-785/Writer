@@ -674,6 +674,15 @@ fn build_quick_write_native_menu_with_locale<R: Runtime>(
                 "Close",
                 Some("CmdOrCtrl+W"),
             )?,
+            &PredefinedMenuItem::separator(app)?,
+            &item(
+                app,
+                locale,
+                "menu.quick_write.settings",
+                "设置",
+                "Settings",
+                Some("CmdOrCtrl+,"),
+            )?,
         ],
     )?;
 
