@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 describe('Task list editor support', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
+  const workspaceRoot = resolve(currentDir, '../../../..');
+  const corePackageRoot = resolve(workspaceRoot, '../Write-core');
   const legacyMarkdownServiceTs = readFileSync(
     join(currentDir, '../../../services/markdown/MarkdownService.ts'),
     'utf-8',
   );
   const coreMarkdownServiceTs = readFileSync(
-    join(currentDir, '../../../core/editor/markdown/MarkdownService.ts'),
+    join(corePackageRoot, 'src/core/editor/markdown/MarkdownService.ts'),
     'utf-8',
   );
   const legacyEditorExtensionsTs = readFileSync(
@@ -18,7 +20,7 @@ describe('Task list editor support', () => {
     'utf-8',
   );
   const coreEditorExtensionsTs = readFileSync(
-    join(currentDir, '../../../core/editor/schema/editorExtensions.ts'),
+    join(corePackageRoot, 'src/core/editor/schema/editorExtensions.ts'),
     'utf-8',
   );
   const editorCss = readFileSync(join(currentDir, 'Editor.css'), 'utf-8');

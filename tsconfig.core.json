@@ -9,6 +9,12 @@
     "skipLibCheck": true,
 
     "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@tiptap/*": ["node_modules/@tiptap/*"],
+      "prosemirror-*": ["node_modules/prosemirror-*"],
+      "orderedmap": ["node_modules/orderedmap"]
+    },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",

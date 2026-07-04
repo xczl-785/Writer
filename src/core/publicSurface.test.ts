@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as coreRuntime from './runtime';
 import {
   FIND_MATCH_LIMIT,
   LoadDocument,
@@ -18,7 +19,7 @@ import {
 } from './index';
 
 describe('core public surface', () => {
-  it('exports shared core entry points without exposing runtime primitives', () => {
+  it('keeps Writer src/core as package re-export shims', () => {
     const currentDir = dirname(fileURLToPath(import.meta.url));
     const indexSource = readFileSync(join(currentDir, 'index.ts'), 'utf-8');
     const runtimeIndexSource = readFileSync(
@@ -26,13 +27,9 @@ describe('core public surface', () => {
       'utf-8',
     );
 
-    expect(indexSource).toContain("export * from './autosave';");
-    expect(indexSource).toContain("export * from './command';");
-    expect(indexSource).toContain("export * from './editor';");
-    expect(indexSource).toContain("export * from './save';");
-    expect(indexSource).toContain("export * from './session';");
-    expect(indexSource).not.toContain("export * from './runtime';");
-    expect(runtimeIndexSource).toBe("export * from './fsPrimitives';\n");
+    expect(indexSource).toBe("export * from '@writer/core';\n");
+    expect(runtimeIndexSource).toBe("export * from '@writer/core/runtime';\n");
+    expect('RuntimePorts' in coreRuntime).toBe(false);
 
     expect(typeof SaveScheduler).toBe('function');
     expect(typeof menuCommandBus.dispatch).toBe('function');

@@ -29,6 +29,7 @@
     "release:push": "node build/release-tag.mjs --push"
   },
   "dependencies": {
+    "@writer/core": "file:../Write-core",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-opener": "^2.5.3",

@@ -1,1 +1,1 @@
-export * from './menuCommandBus';
+export * from '@writer/core/command/index';

@@ -4,10 +4,32 @@ import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'node:path';
 
 const DEV_PORT = 43173;
+const dedupeEditorPackages = [
+  '@tiptap/core',
+  '@tiptap/extension-highlight',
+  '@tiptap/extension-image',
+  '@tiptap/extension-list',
+  '@tiptap/extension-table',
+  '@tiptap/extension-table-cell',
+  '@tiptap/extension-table-header',
+  '@tiptap/extension-table-row',
+  '@tiptap/markdown',
+  '@tiptap/pm',
+  '@tiptap/react',
+  '@tiptap/starter-kit',
+  'orderedmap',
+  'prosemirror-model',
+  'prosemirror-state',
+  'prosemirror-transform',
+  'prosemirror-view',
+];
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    dedupe: dedupeEditorPackages,
+  },
   server: {
     host: '127.0.0.1',
     port: DEV_PORT,

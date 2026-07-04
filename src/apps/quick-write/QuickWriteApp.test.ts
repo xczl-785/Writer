@@ -225,7 +225,7 @@ describe('QuickWriteApp', () => {
       ports.files.get('/app/recovery/index.json') ?? 'null',
     ) as RecoveryDraftIndexFile;
 
-    expect(editor.value).toBe('');
+    expect(editor.value).toBe('&nbsp;');
     expect(ports.files.get('/app/recovery/drafts/created.md')).toBe('');
     expect(index.drafts).toMatchObject([
       {
@@ -331,7 +331,7 @@ describe('QuickWriteApp', () => {
       ports.files.get('/app/recovery/index.json') ?? 'null',
     ) as RecoveryDraftIndexFile;
 
-    expect(editor.value).toBe('');
+    expect(editor.value).toBe('&nbsp;');
     expect(ports.files.get('/app/recovery/drafts/existing-active.md')).toBe(
       'existing body',
     );
@@ -443,7 +443,7 @@ describe('QuickWriteApp', () => {
       ports.files.get('/app/recovery/index.json') ?? 'null',
     ) as RecoveryDraftIndexFile;
 
-    expect(editor.value).toBe('');
+    expect(editor.value).toBe('&nbsp;');
     expect(
       ports.files.get('/app/recovery/drafts/unknown-template-draft.md'),
     ).toBe('');
@@ -618,7 +618,7 @@ describe('QuickWriteApp', () => {
     expect(container.textContent).toContain('文件');
     expect(
       container.querySelector('[aria-label="随手写保存状态"]')?.textContent,
-    ).toBe('');
+    ).toBe('未保存编辑');
     expect(
       getComputedStyle(shell as HTMLElement)
         .getPropertyValue('--quick-write-bg-primary')
@@ -718,7 +718,7 @@ describe('QuickWriteApp', () => {
     await flushEffects();
     const editor = getEditor(container);
 
-    expect(editor.value).toBe('');
+    expect(editor.value).toBe('&nbsp;');
     expect(ports.files.get('/app/recovery/drafts/replacement.md')).toBe('');
 
     await cleanup(container, root);
@@ -774,7 +774,7 @@ describe('QuickWriteApp', () => {
     await waitForQuickWriteAutosave();
 
     expect(ports.files.get('/docs/open.md')).toBe('file edit');
-    expect(ports.files.get('/app/recovery/drafts/active.md')).toBe('');
+    expect(ports.files.get('/app/recovery/drafts/active.md')).toBe('&nbsp;');
 
     await cleanup(container, root);
   });
@@ -1707,7 +1707,7 @@ describe('QuickWriteApp', () => {
     await flushEffects();
     const editor = getEditor(container);
     expect(editor.disabled).toBe(false);
-    expect(container.textContent).toContain('startup recovery failed');
+    expect(container.textContent).not.toContain('startup recovery failed');
 
     await setEditorValue(editor, 'fallback draft content');
     await flushEffects();

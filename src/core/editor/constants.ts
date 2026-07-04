@@ -1,1 +1,1 @@
-export const FIND_MATCH_LIMIT = 1000;
+export * from '@writer/core/editor/constants';
