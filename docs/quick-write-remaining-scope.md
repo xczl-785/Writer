@@ -2,7 +2,17 @@
 
 更新日期：2026-07-04
 
-适用范围：Writer V5 随手写 App shell 收尾阶段。本文只整理剩余功能、验收项和裁决项，不作为 capability current rules 的替代。
+适用范围：QuickWrite 三仓剥离后的收尾阶段。本文只整理剩余功能、验收项和裁决项，不作为 capability current rules 的替代。
+
+## 当前仓库边界
+
+截至 V5.8.0D-8，QuickWrite 已从 Writer 仓物理剥离：
+
+- Writer 仓：`/Users/zhengpanpan/Program/Writer/Writer`
+- Core 仓：`/Users/zhengpanpan/Program/Writer/Write-core`
+- QuickWrite 仓：`/Users/zhengpanpan/Program/Writer/QuickWrite`
+
+Writer 仓不再提供可运行的 QuickWrite 产品入口，不再包含 `quick-write.html`、`src/apps/quick-write/**`、`vite.quick-write.config.ts`、`tsconfig.quick-write.json`、QuickWrite Tauri config 或 QuickWrite 专属 native menu/tray/shortcut 代码。QuickWrite 后续精修、桌面 smoke、Tauri 配置、产品 UI 和独立发布路线均应在 QuickWrite 仓推进；Core primitive 改动应在 Write-core 仓推进；Writer 只验证自身 workspace 产品线不被回流污染。
 
 ## 当前判断
 
@@ -19,10 +29,10 @@
 
 ### 独立产品壳
 
-- 独立 QuickWrite 入口。
+- 独立 QuickWrite 入口位于 QuickWrite 仓。
 - 不进入 Writer workspace shell。
 - 不引入 workspace、file tree、recent、tabs、草稿箱作为主流程。
-- QuickWrite Tauri 配置已存在：`src-tauri/tauri.quick-write.conf.json`。
+- QuickWrite Tauri 配置位于 QuickWrite 仓：`src-tauri/tauri.conf.json` 和 `src-tauri/tauri.quick-write.conf.json`。
 
 ### 单文档写作主链路
 
@@ -146,22 +156,22 @@ V5.8 已被拆成 5 个执行段。建议把它们当作收尾分组，不再继
 浏览器形态：
 
 ```bash
-cd /Users/zhengpanpan/Program/Writer/Writer
-npm run dev:quick-write
+cd /Users/zhengpanpan/Program/Writer/QuickWrite
+pnpm run dev
 ```
 
 桌面 Tauri 形态：
 
 ```bash
-cd /Users/zhengpanpan/Program/Writer/Writer
-npm run tauri:quick-write:dev
+cd /Users/zhengpanpan/Program/Writer/QuickWrite
+pnpm tauri dev
 ```
 
 打包命令：
 
 ```bash
-cd /Users/zhengpanpan/Program/Writer/Writer
-npm run tauri:quick-write:build
+cd /Users/zhengpanpan/Program/Writer/QuickWrite
+pnpm tauri build
 ```
 
 说明：浏览器形态适合快速看 UI 和 Web 交互；桌面 Tauri 形态才覆盖 native menu、托盘、全局快捷键、系统打印等桌面能力。

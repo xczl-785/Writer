@@ -4,13 +4,12 @@
 
 - **id**: `command-system`
 - **name**: 命令系统
-- **summary**: 通过 command-core 发布-订阅命令总线处理 Writer 与 QuickWrite 原生菜单命令，实现前后端命令解耦
-- **scope**: 包括 menuCommandBus、命令注册、命令分发、创建入口路由、QuickWrite 菜单适配和 native menu bridge；不包括具体的业务逻辑实现
+- **summary**: 通过 `@writer/core` 发布-订阅命令总线处理 Writer 原生菜单命令；QuickWrite 独立仓通过同一 Core package 消费命令总线
+- **scope**: 包括 Writer menuCommandBus 消费、命令注册、命令分发、创建入口路由和 native menu bridge；QuickWrite 菜单适配和 native bridge 已迁出到 QuickWrite 仓；不包括具体的业务逻辑实现
 - **entry_points**:
   - Tauri 原生菜单事件 `writer://menu-command`
   - useNativeMenuBridge 监听并分发
-  - useQuickWriteNativeMenuBridge 监听并分发 QuickWrite native menu
-  - `src/core/command/menuCommandBus.ts`
+  - Core package `@writer/core/command`
   - 旧入口 `src/ui/commands/menuCommandBus.ts` re-export
 - **shared_with**: none
 - **check_on_change**:
@@ -24,9 +23,9 @@
 
 ## Capability Summary
 
-命令系统采用发布-订阅模式，通过 command-core 的 menuCommandBus 实现原生菜单命令的统一处理。Tauri 后端菜单触发事件后，useNativeMenuBridge 监听并调用 menuCommandBus.dispatch，由注册的处理器执行具体逻辑。旧 `src/ui/commands/menuCommandBus.ts` 保留 re-export 兼容入口。
+命令系统采用发布-订阅模式，通过 `@writer/core` 的 menuCommandBus 实现原生菜单命令的统一处理。Tauri 后端菜单触发事件后，useNativeMenuBridge 监听并调用 menuCommandBus.dispatch，由注册的处理器执行具体逻辑。旧 `src/ui/commands/menuCommandBus.ts` 保留 re-export 兼容入口。
 
-QuickWrite 不创建第二套命令总线。`QuickWriteMenuAdapter` 过滤 QuickWrite-safe 菜单项并注册到同一 `menuCommandBus`；`useQuickWriteNativeMenuBridge` 将 `menu.quick_write.*` native IDs 映射回 schema IDs，再通过 command bus 分发。QuickWrite File > Close 映射到 window close 语义，File > Settings 映射到 QuickWrite 设置面板打开动作。
+QuickWrite 不再位于 Writer 仓。QuickWrite 的菜单适配、native bridge 和 Tauri 菜单配置现在由 `/Users/zhengpanpan/Program/Writer/QuickWrite` 维护，并通过 `@writer/core` 消费同一 command bus primitive。Writer 仓不得恢复 `src/apps/quick-write/**` 或 QuickWrite native menu bridge。
 
 ---
 
@@ -36,15 +35,14 @@ QuickWrite 不创建第二套命令总线。`QuickWriteMenuAdapter` 过滤 Quick
 | ----------------------------- | --------------------------------- | ------------------------------------------------ | --------------------------------- |
 | Tauri 菜单事件                | 用户点击原生菜单项                | `src-tauri/src/menu.rs`                          | 后端 emit `writer://menu-command` |
 | useNativeMenuBridge           | 监听 `writer://menu-command` 事件 | `src/app/useNativeMenuBridge.ts:15-24`           | 调用 menuCommandBus.dispatch      |
-| useQuickWriteNativeMenuBridge | 监听 QuickWrite native menu 事件  | `src/apps/quick-write/quickWriteNativeMenu.ts`   | 映射 `menu.quick_write.*` 后分发  |
-| menuCommandBus.register       | 注册命令处理器                    | `src/core/command/menuCommandBus.ts:5-13`        | 旧 UI 路径 re-export 兼容         |
-| menuCommandBus.dispatch       | 查找并执行处理器                  | `src/core/command/menuCommandBus.ts:15-21`       | 返回 boolean                      |
+| menuCommandBus.register       | 注册命令处理器                    | `@writer/core/command`                           | 旧 UI 路径 re-export 兼容         |
+| menuCommandBus.dispatch       | 查找并执行处理器                  | `@writer/core/command`                           | 返回 boolean                      |
 | File 命令注册                 | registerFileCommands              | `src/app/commands/fileCommands.ts:63-285`        | 包含 save/new/open 等             |
 | Edit 命令注册                 | registerEditCommands              | `src/app/commands/editCommands.ts:16-67`         | 转发到编辑器                      |
 | Format 命令注册               | registerFormatCommands            | `src/app/commands/formatCommands.ts`             | 转发到编辑器                      |
 | Paragraph 命令注册            | registerParagraphCommands         | `src/app/commands/paragraphCommands.ts`          | 转发到编辑器                      |
 | View 命令注册                 | registerViewCommands              | `src/app/commands/viewCommands.ts:19-56`         | 包含 outline/sidebar/focus_mode   |
-| QuickWrite 命令注册           | QuickWriteMenuAdapter             | `src/apps/quick-write/QuickWriteMenuAdapter.tsx` | 过滤 workspace/sidebar 命令       |
+| QuickWrite 命令注册           | QuickWriteMenuAdapter             | `QuickWrite/src/apps/quick-write/QuickWriteMenuAdapter.tsx` | QuickWrite 仓维护，过滤 workspace/sidebar 命令 |
 
 ---
 
@@ -54,7 +52,7 @@ QuickWrite 不创建第二套命令总线。`QuickWriteMenuAdapter` 过滤 Quick
 
 handlers 使用 `Map<string, MenuCommandHandler>` 存储，key 为命令 ID，value 为处理函数。
 
-**Evidence**: `src/core/command/menuCommandBus.ts:3`
+**Evidence**: `/Users/zhengpanpan/Program/Writer/Write-core/src/core/command/menuCommandBus.ts`
 
 ---
 
@@ -62,7 +60,7 @@ handlers 使用 `Map<string, MenuCommandHandler>` 存储，key 为命令 ID，va
 
 register 方法返回一个函数，调用时删除对应的处理器（仅当处理器仍为当前注册的处理器时）。
 
-**Evidence**: `src/core/command/menuCommandBus.ts:6-12`
+**Evidence**: `/Users/zhengpanpan/Program/Writer/Write-core/src/core/command/menuCommandBus.ts`
 
 ---
 
@@ -70,7 +68,7 @@ register 方法返回一个函数，调用时删除对应的处理器（仅当�
 
 dispatch 方法返回 boolean：找到处理器返回 true 并执行，未找到返回 false。
 
-**Evidence**: `src/core/command/menuCommandBus.ts:15-21`
+**Evidence**: `/Users/zhengpanpan/Program/Writer/Write-core/src/core/command/menuCommandBus.ts`
 
 ---
 
@@ -106,11 +104,11 @@ Edit、Format、Paragraph 类命令通过 `writer:editor-command` 自定义事�
 
 ---
 
-### CR-008: QuickWrite native IDs 必须映射回 schema command IDs
+### CR-008: QuickWrite native IDs 属于 QuickWrite 仓
 
-QuickWrite 原生菜单可以使用 `menu.quick_write.*` native IDs，但渲染菜单和 command bus 注册必须保持 schema command IDs，例如 `menu.file.close`、`menu.file.settings`。QuickWrite native bridge 应先映射再分发，避免绕过 `menuCommandBus` 或重新实现一套菜单动作系统。
+QuickWrite 原生菜单可以使用 `menu.quick_write.*` native IDs，但该映射属于 QuickWrite 仓。Writer 仓只维护 Writer menu schema、Writer native menu 和 Core command bus 消费，不再保存 QuickWrite native bridge 或 QuickWrite 专属 Tauri 菜单测试。
 
-**Evidence**: `src/apps/quick-write/quickWriteNativeMenu.ts`、`src/apps/quick-write/QuickWriteMenuAdapter.tsx`、`src-tauri/src/menu.rs`
+**Evidence**: `/Users/zhengpanpan/Program/Writer/QuickWrite/src/apps/quick-write/quickWriteNativeMenu.ts`、`/Users/zhengpanpan/Program/Writer/QuickWrite/src/apps/quick-write/QuickWriteMenuAdapter.tsx`、`/Users/zhengpanpan/Program/Writer/QuickWrite/src-tauri/src/menu.rs`
 
 ---
 
@@ -118,9 +116,9 @@ QuickWrite 原生菜单可以使用 `menu.quick_write.*` native IDs，但渲染�
 
 | Area                     | What to check                                                  | Evidence                                                                                                                                                             |
 | ------------------------ | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| menuCommandBus API       | register/dispatch 接口不变                                     | `src/core/command/menuCommandBus.ts`、`src/ui/commands/menuCommandBus.ts` re-export                                                                                  |
+| menuCommandBus API       | register/dispatch 接口不变                                     | `@writer/core/command`、`src/ui/commands/menuCommandBus.ts` re-export                                                                                                |
 | useNativeMenuBridge      | 事件监听和分发逻辑不变                                         | `src/app/useNativeMenuBridge.ts`                                                                                                                                     |
-| QuickWrite native bridge | `menu.quick_write.*` 映射到 schema IDs 后通过 command bus 分发 | `src/apps/quick-write/quickWriteNativeMenu.ts`、`src/apps/quick-write/QuickWriteMenuAdapter.tsx`                                                                     |
+| QuickWrite native bridge | `menu.quick_write.*` 映射到 schema IDs 后通过 command bus 分发 | QuickWrite 仓：`src/apps/quick-write/quickWriteNativeMenu.ts`、`src/apps/quick-write/QuickWriteMenuAdapter.tsx`                                                       |
 | File 命令注册            | 所有 File 类命令正常注册                                       | `src/app/commands/fileCommands.ts`                                                                                                                                   |
 | Edit 命令注册            | 所有 Edit 类命令正常转发                                       | `src/app/commands/editCommands.ts`                                                                                                                                   |
 | Format 命令注册          | 所有 Format 类命令正常转发                                     | `src/app/commands/formatCommands.ts`                                                                                                                                 |
@@ -155,7 +153,7 @@ QuickWrite 原生菜单可以使用 `menu.quick_write.*` native IDs，但渲染�
 | paragraphCommands             | 注册 Paragraph 菜单命令              | `src/app/commands/paragraphCommands.ts`        |
 | viewCommands                  | 注册 View 菜单命令                   | `src/app/commands/viewCommands.ts`             |
 | useNativeMenuBridge           | 监听 Tauri 菜单事件并分发            | `src/app/useNativeMenuBridge.ts`               |
-| useQuickWriteNativeMenuBridge | 监听 QuickWrite Tauri 菜单事件并分发 | `src/apps/quick-write/quickWriteNativeMenu.ts` |
+| QuickWrite native/menu adapter | QuickWrite 仓监听 Tauri 菜单事件并分发 | `QuickWrite/src/apps/quick-write/quickWriteNativeMenu.ts` |
 
 ---
 
