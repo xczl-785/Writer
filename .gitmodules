@@ -1,0 +1,3 @@
+[submodule "vendor/Write-core"]
+	path = vendor/Write-core
+	url = git@github.com:xczl-785/Write-core.git

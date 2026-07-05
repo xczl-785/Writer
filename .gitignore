@@ -12,6 +12,7 @@ dist/
 dist-ssr/
 *.tsbuildinfo
 .eslintcache
+.cache/
 
 # 3. Local Editor / IDE Workspaces
 .vscode/
